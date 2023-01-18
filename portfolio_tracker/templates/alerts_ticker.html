@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Main page{% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block link %}
+    <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
+    <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
+    <div class="dropdown">
+        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        Список отслеживания
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='crypto') }}">Crypto</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='stocks') }}">Stocls</a></li>
+        </ul>
+    </div>
+    <button onclick="document.location='{{ url_for('alerts_list', market_id=ticker.market.id) }}'" type="button" class="btn btn-light btn-sm">{{ ticker.market.name }}</button>
+    <button type="button" class="btn btn-light btn-sm" disabled>{{ ticker.name }}</button>
+{% endblock %}
+{% block content %}
+<div class="col-md-12 mb-5">
+    <div class="row">
+        <div class="col-md-6">
+            <h1 class="fs-6 text-muted m-0">{{ ticker.name }} ({{ ticker.symbol|upper }})
+                {% if ticker.market_cap_rank %}
+                    <span class="badge text-bg-light">#{{ ticker.market_cap_rank }}</span>
+                {% endif %}
+            </h1>
+            <div class="hstack gap-2">
+                {% if ticker.image %}
+                    <img class="img-asset" src="{{ url_for('static', filename=ticker.image) }}">
+                {% endif %}
+                <span class="fs-1 fw-semibold">${{ price|round(4, 'common') }}</span>
+            </div>
+        </div>
+        <div class="col-md-6 position-right">
+            <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#Alert">Добавить уведомление</button>
+        </div>
+    </div>
+</div>
+{% if ticker.alerts[0] %}
+<div class="bd-example pb-3">
+    <table class="table table-sm align-middle">
+        <thead>
+            <tr>
+                <th scope="col">Цена</th>
+                <th scope="col">Комментарий</th>
+                <th scope="col">Откуда</th>
+                <th scope="col" class="text-end">Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for alert in ticker.alerts|sort(reverse=true, attribute="price") %}
+            <tr>
+                <td>
+                    {% if alert.type == 'down' %}
+                    <span class="text-red">Ниже</span>
+                    {% else %}
+                    <span class="text-green">Выше</span>
+                    {% endif %}
+                    ${{ alert.price }} <br> <span class="small_text">{{ alert.date }}</span>
+                </td>
+                <td>{{ alert.comment }}</td>
+                <td>
+                    {% if alert.asset_id %}
+                    <a class="text-decoration-none link-secondary" href="{{ url_for('asset_info', ticker_id=ticker.id, portfolio_id=alert.asset.portfolio_id) }}">
+                        <i class="bi icon bi-briefcase"></i>{{ alert.asset.portfolio.name }}
+                    </a>
+                    {% else %}
+                    <span class="link-secondary">
+                        <i class="bi icon bi-bell"></i>Список отслеживания
+                    </span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    {% if alert.comment != 'Ордер' %}
+                    <form name="delete_alert" action="{{ url_for('alert_delete') }}" method="post">
+                        <input type="hidden" name="id" value="{{ alert.id }}">
+                        <button type="submit" class="btn btn-link action-icon p-0"><i class="bi icon bi-trash-fill"></i></button>
+                    </form>
+                    {% else %}
+                    <a class="action-icon text-decoration-none cursor-pointer opacity-25" aria-disabled="true"  tabindex="-1" title="Невозможно удалить, это уведомление на ордер">
+                        <i class="bi icon bi-trash-fill"></i>
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    <div class="col-md-12 p-5 mb-3">
+        <p class="text-center lead">Пока ничего нет...</p>
+    </div>
+{% endif %}
+<!-- Modal Alerts -->
+<div class="modal fade" id="Alert" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-3">Уведомления</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            {% if ticker.alerts %}
+            <div class="modal-body">
+                <table class="table table-sm align-middle table-borderless">
+                    <tbody>
+                        {% for alert in ticker.alerts|sort(reverse=true, attribute="price") %}
+                            <tr>
+                                <td>
+                                    {% if alert.type == 'down' %}
+                                    <span class="text-red">Ниже</span>
+                                    {% else %}
+                                    <span class="text-green">Выше</span>
+                                    {% endif %}
+                                    ${{ alert.price }}
+                                    <p class="small_text">{{ alert.date }}</p>
+                                </td>
+                                <td>{{ alert.comment }}</td>
+                                <td>
+                                    {% if alert.comment != 'Ордер' %}
+                                    <form action="{{ url_for('alert_delete') }}" method="post">
+                                        <input type="hidden" name="id" value="{{ alert.id }}">
+                                        <button type="submit" class="btn-close" aria-label="Close"></button>
+                                    </form>
+                                    {% else %}
+                                    <button type="button" class="btn-close opacity-25"></button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            <div class="modal-footer d-flex flex-column">
+                <form class=""  method="post" action="{{ url_for('alert_add') }}">
+                    <input type="hidden" name="asset_id" value="">
+                    <input type="hidden" name="ticker_id" value="{{ ticker.id }}">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="mb-1">
+                                <label for="price" class="form-label h7">Цена</label>
+                                <div class="input-group">
+                                    <span class="input-prefix">$</span>
+                                    <input type="number" step=any class="form-control rounded-3" id="price" value="{{ price }}" name="price" autocomplete="off" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="comment" class="form-label h7">Комментарий</label>
+                                <textarea class="form-control silver" placeholder="Что можете сказать?" id="comment" name="comment"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="w-100 mb-2 btn rounded-3 btn-primary btn-title" type="submit">Добавить уведомление</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

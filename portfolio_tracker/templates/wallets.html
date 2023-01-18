@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}Main page{% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block link %}
+    <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
+    <button type="button" class="btn btn-light btn-sm" disabled>Кошельки</button>
+    <div class="dropdown">
+        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='crypto') }}">Crypto</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='stocks') }}">Stocls</a></li>
+        </ul>
+    </div>
+{% endblock %}
+{% block content %}
+<div class="col-md-12 mb-5">
+    <div class="row">
+        <div class="col-md-6">
+            <h1>Кошельки</h1>
+        </div>
+        <div class="col-md-6 position-right">
+            <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addWallet" data-bs-action="add" data-bs-title="Добавить кошелек">Добавить кошелек</button>
+            <button class="btn btn-warning btn-sm ms-1" type="button" data-bs-toggle="modal" data-bs-target="#inputoutCash">Перевод</button>
+        </div>
+    </div>
+</div>
+{% if wallets|sum(attribute='id') %}
+    <div class="row mb-5">
+        <div class="col-md-auto">
+            <p class="small_text">Всего вложено</p>
+            <span class="text-average">${{ total_spent|round|int }}</span>
+        </div>
+        <div class="col-md-auto">
+            <p class="small_text">В ордерах</p>
+            <span class="text-average">
+                ${{ wallets|sum(attribute='money_in_order')|round|int }}
+            </span>
+        </div>
+        <div class="col-md-auto">
+            <p class="small_text">Свободные</p>
+            <span class="text-average">
+                {% if wallets|sum(attribute='money_all') - wallets|sum(attribute='money_in_order') - total_spent == 0 %}
+                    $0
+                {% elif wallets|sum(attribute='money_all') - wallets|sum(attribute='money_in_order') - total_spent > 0 %}
+                    ${{ (wallets|sum(attribute='money_all') - wallets|sum(attribute='money_in_order') - total_spent)|round|int }}
+                {% else %}
+                    -${{ -1 * (wallets|sum(attribute='money_all') - wallets|sum(attribute='money_in_order') - total_spent)|round|int }}
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    <div class="bd-example">
+        <table class="table table-sm align-middle table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">Наименование</th>
+                    <th scope="col">Вложено / сейчас</th>
+                    <th scope="col">В ордерах</th>
+                    <th scope="col">Свободные</th>
+                    <th scope="col" class="text-end">Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for wallet in wallets %}
+                    <tr>
+                        <td class="text-average cursor-pointer" onclick="document.location = '{{ url_for('wallet_info', wallet_name=wallet.name) }}';"> {{ wallet.name }} </td>
+                        <td class="cursor-pointer" onclick="document.location = '{{ url_for('wallet_info', wallet_name=wallet.name) }}';">
+                            {% if wallet.transactions|sum(attribute='total_spent') %}
+                                ${{ (wallet.transactions|sum(attribute='total_spent') - wallet.money_in_order)|round|int }} /
+                            {% else %}
+                                - /
+                            {% endif %}
+                            {% if holder_list[wallet.name] %}
+                                ${{ holder_list[wallet.name]|round|int }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="cursor-pointer" onclick="document.location = '{{ url_for('wallet_info', wallet_name=wallet.name) }}';">
+                            {% if wallet.money_in_order %}
+                                ${{ wallet.money_in_order|round|int }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="cursor-pointer" onclick="document.location = '{{ url_for('wallet_info', wallet_name=wallet.name) }}';">
+                            {% if not ((wallet.money_all - wallet.transactions|sum(attribute='total_spent')) == 0 and wallet.transactions|sum(attribute='total_spent') == 0) %}
+                                {% if (wallet.money_all - wallet.transactions|sum(attribute='total_spent')) < 0 %}
+                                    -${{ -1 * (wallet.money_all - wallet.transactions|sum(attribute='total_spent'))|round|int }}
+                                {% else %}
+                                    ${{ (wallet.money_all - wallet.transactions|sum(attribute='total_spent'))|round|int }}
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#addWallet" data-bs-id="{{ wallet.id }}" data-bs-name="{{ wallet.name }}" data-bs-money_all="{{ wallet.money_all }}" data-bs-action="update" data-bs-title="Изменить кошелек" title="Изменить">
+                                <i class="bi icon bi-pencil-square"></i>
+                            </a>
+                            {% if wallet.money_all <= 0 and wallet.transactions|sum(attribute='total_spent') <= 0 %}
+                                <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#deleteWallet" data-bs-id="{{ wallet.id }}" data-bs-title="Удалить кошелек {{ wallet.name }}?" title="Удалить">
+                                    <i class="bi icon bi-trash-fill"></i>
+                                </a>
+                            {% else %}
+                                <a class="action-icon text-decoration-none cursor-pointer opacity-25" aria-disabled="true"  tabindex="-1" title="Невозможно удалить, есть остатки или транзакции">
+                                    <i class="bi icon bi-trash-fill"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="col-md-12 p-5 mb-3">
+        <p class="text-center lead">Пока ничего нет...</p>
+    </div>
+{% endif %}
+{% if coins_zero_quantity %}
+    <div class="row">
+        <p class="small_text">Другие монеты</p>
+        {% for coin in coins_zero_quantity %}
+            <a href="{{ url_for('coin_info', coin_name=coin.name) }}"> {{ coin.name }} </a>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Modal Wallet add or update-->
+<div class="modal fade" id="addWallet" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-3">Добавить кошелек</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form class=""  method="post" action="{{ url_for('wallet_add') }}">
+                    <input type="hidden" class="id" name="id">
+                    <input type="hidden" class="action" name="action">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label h7">Название</label>
+                                <input type="text" class="form-control rounded-3 name" id="name" placeholder="" name="name" autocomplete="off" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="money_all" class="form-label h7">Баланс</label>
+                                <div class="input-group">
+                                    <span class="input-prefix">$</span>
+                                    <input type="number" class="form-control rounded-3 money_all" id="money_all" placeholder="0,00" name="money_all" autocomplete="off">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="w-100 mb-2 btn btn rounded-3 btn-primary btn-title" type="submit">Добавить кошелек</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cash Input-output-->
+<div class="modal fade" id="inputoutCash" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-3">Ввод-вывод $</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form class=""  method="post" action="{{ url_for('wallet_in_out') }}">
+                    <div class="btn-group silver col-md-12 mb-3" role="group" aria-label="Basic radio toggle button group">
+                        <input type="radio" class="btn-check" name="type" value="Ввод" id="btnradio1" autocomplete="off" checked>
+                        <label class="btn btn-outline-active btn-sm" for="btnradio1">Ввод</label>
+
+                        <input type="radio" class="btn-check" name="type" value="Вывод" id="btnradio2" autocomplete="off">
+                        <label class="btn btn-outline-not_active btn-sm" for="btnradio2">Вывод</label>
+
+                        <input type="button" class="btn-check" id="btnradio3" autocomplete="off" data-bs-toggle="modal" data-bs-target="#transferCash">
+                        <label class="btn btn-outline-not_active btn-sm" for="btnradio3">Перевод</label>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="transfer_amount" class="form-label h7">Сумма</label>
+                                <div class="input-group">
+                                    <span class="input-prefix">$</span>
+                                    <input type="number" class="form-control rounded-3" id="transfer_amount" placeholder="0,00" name="transfer_amount" autocomplete="off" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="wallet" class="form-label h7">Кошелек</label>
+                                <select class="form-select" id="wallet" name="wallet" required>
+                                    <option selected>...</option>
+                                    {% for wallet in wallets %}
+                                        <option>{{ wallet.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="w-100 mb-2 btn btn rounded-3 btn-primary btn-title" type="submit">Готово</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal Cash Transfer-->
+<div class="modal fade" id="transferCash" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-3">Перевод $</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form class=""  method="post" action="{{ url_for('wallet_transfer') }}">
+                    <div class="btn-group silver col-md-12 mb-3" role="group">
+                        <input type="button" class="btn-check" id="btnradio5" autocomplete="off" data-bs-toggle="modal" data-bs-target="#inputoutCash">
+                        <label class="btn btn-outline-not_active btn-sm" for="btnradio5">Назад</label>
+
+                        <input type="radio" class="btn-check" name="type" value="Перевод" id="btnradio3" autocomplete="off" checked>
+                        <label class="btn btn-outline-not_active btn-sm" for="btnradio3">Перевод</label>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-12">
+                            <div class="mb-1">
+                                <label for="transfer_amount" class="form-label h7">Сумма</label>
+                                <div class="input-group">
+                                    <span class="input-prefix">$</span>
+                                    <input type="number" class="form-control rounded-3" id="transfer_amount" placeholder="0,00" name="transfer_amount" autocomplete="off" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="wallet_out" class="form-label h7">Кошелек отправитель</label>
+                                <select class="form-select" id="wallet_out" name="wallet_out" required>
+                                    <option selected>...</option>
+                                    {% for wallet in wallets %}
+                                        <option>{{ wallet.name }}</option>
+                                    {% endfor %}
+                                 </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="wallet_in" class="form-label h7">Кошелек получатель</label>
+                                <select class="form-select" id="wallet_in" name="wallet_in" required>
+                                    <option selected>...</option>
+                                    {% for wallet in wallets %}
+                                        <option>{{ wallet.name }}</option>
+                                    {% endfor %}
+                                 </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="w-100 mb-2 btn btn rounded-3 btn-primary btn-title" type="submit">Готово</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteWallet" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-3">Вы уверенны?</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form class="d-inline" action="{{ url_for('wallet_delete') }}" method="post">
+                    <input type="hidden" name="id" class="id">
+                    <button type="submit" class="w-100 mb-2 btn btn rounded-3 btn-primary btn-delete"><strong>Да</strong></button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+// Отправка данных  в форму на добавление и изменение кошелька
+var updateModal = document.getElementById('addWallet')
+updateModal.addEventListener('show.bs.modal', function (event) {
+  var button = event.relatedTarget
+
+  var id = button.getAttribute('data-bs-id')
+  var modalId = addWallet.querySelector('.modal-body .id')
+  var name = button.getAttribute('data-bs-name')
+  var modalName = addWallet.querySelector('.modal-body .name')
+  var money_all = button.getAttribute('data-bs-money_all')
+  var modalMoney_all = addWallet.querySelector('.modal-body .money_all')
+  var action = button.getAttribute('data-bs-action')
+  var modalAction = addWallet.querySelector('.modal-body .action')
+  var title = button.getAttribute('data-bs-title')
+  var modalTitle = addWallet.querySelector('.modal-title')
+  var modalButton = addWallet.querySelector('.btn-title')
+
+  modalId.value = id
+  modalName.value = name
+  modalMoney_all.value = money_all
+  modalAction.value = action
+  modalTitle.textContent = `${title}`
+  modalButton.textContent = `${title}`
+})
+// Отправка данных в форму удаления
+var updateModal = document.getElementById('deleteWallet')
+updateModal.addEventListener('show.bs.modal', function (event) {
+  var button = event.relatedTarget
+
+  var id = button.getAttribute('data-bs-id')
+  var modalId = deleteWallet.querySelector('.modal-body .id')
+  var title = button.getAttribute('data-bs-title')
+  var modalTitle = deleteWallet.querySelector('.modal-title')
+
+  modalId.value = id
+  modalTitle.textContent = `${title}`
+})
+</script>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Main page{% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block link %}
+
+{% endblock %}
+{% block content %}
+<div class="col-md-12 mb-5">
+    <div class="row">
+        <div class="col-md-6">
+            <h1>Настройки</h1>
+        </div>
+    </div>
+</div>
+
+
+<form class=""  method="post" action="{{ url_for('settings_update') }}">
+    <div class="row g-2">
+        <div class="col-md-6">
+            <div class="mb-1">
+                <label for="market_cap_rank" class="form-label h7">Загрузка тикеров</label>
+                <input type="number" class="form-control rounded-3" id="market_cap_rank" placeholder="" name="market_cap_rank" autocomplete="off" required>
+            </div>
+        </div>
+    </div>
+    <button class="w-100 mb-2 btn btn rounded-3 btn-primary" type="submit">Сохранить</button>
+</form>
+
+
+{% endblock %}

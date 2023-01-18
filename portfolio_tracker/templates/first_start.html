@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet">
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.2/font/bootstrap-icons.css">
+    <script src="{{ url_for('static', filename='js/jquery-3.5.1.js') }}"></script>
+    <title>Первый запуск</title>
+</head>
+<body class="bg-light">
+    <div class="container">
+        <main>
+            <div class="py-5 text-center">
+                <h2>Первая настройка</h2>
+                <p class="lead">Добро пожаловать, это первая настройка приложения при запуске</p>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-md-7 col-lg-8 form-body">
+                    <h4 class="mb-3">Загрузка тикеров</h4>
+                    <form method="post" action="{{ url_for('first_start') }}" onsubmit="load_spinner();">
+                        <hr class="my-4">
+
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="crypto" name="crypto" checked onclick="check()">
+                            <label class="form-check-label" for="crypto">Рынок криптовалют</label>
+                        </div>
+                        <hr class="my-4">
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="stocks" name="stocks" onclick="check()">
+                            <label class="form-check-label" for="stocks">Рынок акций</label>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="api_key_polygon" class="form-label">API key Polygon</label>
+                            <input type="text" class="form-control" id="api_key_polygon" name="api_key_polygon" required disabled>
+                            <p>Получиль бесплатный API на <a href="https://polygon.io/dashboard/signup">polygon.io</a></p>
+                        </div>
+                        <hr class="my-4">
+
+                        <button class="w-50 btn btn-primary btn-lg" type="submit" id="submit">Применить</button>
+                        <button class="w-50 btn btn-primary btn-lg visually-hidden" type="button" id="spinner" disabled>
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            Загрузка тикеров...
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+<script>
+// Спинер на кнопке при загрузке тикеров
+function load_spinner(){
+  var submitButton = document.querySelector('.form-body #submit');
+  var spinnerButton = document.querySelector('.form-body #spinner');
+
+  submitButton.classList.add("visually-hidden");
+  spinnerButton.classList.remove("visually-hidden");
+
+}
+
+// Отключение полей или кнопки в зависимости от выбранных пунктов
+
+function check() {
+var stocks = document.getElementById('stocks')
+var crypto = document.getElementById('crypto')
+var submit = document.getElementById('submit')
+var stocks_input = document.getElementById('api_key_polygon');
+if (stocks.checked)
+stocks_input.disabled = false;
+else
+stocks_input.disabled = true;
+
+if (crypto.checked === false & stocks.checked === false)
+submit.disabled = true;
+else
+submit.disabled = false;
+}
+
+
+
+// Отправка данных в форму удаления
+var updateModal = document.getElementById('deletePortfolio')
+updateModal.addEventListener('show.bs.modal', function (event) {
+  var button = event.relatedTarget
+
+  var id = button.getAttribute('data-bs-id')
+  var modalId = deletePortfolio.querySelector('.modal-body #id')
+  var title = button.getAttribute('data-bs-title')
+  var modalTitle = deletePortfolio.querySelector('.modal-title')
+
+  modalId.value = id
+  modalTitle.textContent = `${title}`
+})
+</script>
+</body>
+</html>

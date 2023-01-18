@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Main page{% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block link %}
+    <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
+    <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
+    <button type="button" class="btn btn-light btn-sm" disabled>{{ wallet.name }}</button>
+    <div class="dropdown">
+        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='crypto') }}">Crypto</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='stocks') }}">Stocls</a></li>
+        </ul>
+    </div>
+{% endblock %}
+{% block content %}
+<div class="col-md-12 mb-5">
+    <div class="row">
+        <div class="col-md-6">
+            <h1>{{ wallet.name }} </h1>
+        </div>
+    </div>
+</div>
+<div class="row mb-5">
+    <div class="col-md-auto">
+        <p class="small_text">Всего вложено / сейчас</p>
+        <span class="text-average">
+            ${{ (wallet.transactions|sum(attribute='total_spent') - wallet.money_in_order)|round|int }} / ${{ wallet_cost_now|round|int }}
+        </span>
+    </div>
+    <div class="col-md-auto">
+        <p class="small_text">В ордереах</p>
+        <span class="text-average">${{ wallet.money_in_order|round|int }}</span>
+    </div>
+    <div class="col-md-auto">
+        <p class="small_text">Свободные средства</p>
+        <span class="text-average">
+            {% if (wallet.money_all - wallet.transactions|sum(attribute='total_spent')) < 0 %}
+                -${{ -1 * (wallet.money_all - wallet.transactions|sum(attribute='total_spent'))|round|int }}
+            {% else %}
+                ${{ (wallet.money_all - wallet.transactions|sum(attribute='total_spent'))|round|int }}
+            {% endif %}
+        </span>
+    </div>
+</div>
+{% if wallet.transactions %}
+    <div class="bd-example">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Наименование</th>
+                    <th scope="col">Количество</th>
+                    <th scope="col">Стоимость сейчас</th>
+                    <th scope="col">В ордере</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for asset in assets_list %}
+                    <tr>
+                        <td class="text-average cursor-pointer" >{{ assets_list[asset]['name'] }} <span class="text-muted">{{ assets_list[asset]['symbol']|upper }}</span></td>
+                        <td>{{ assets_list[asset]['quantity'] }} {{ assets_list[asset]['symbol']|upper }}</td>
+                        <td>${{ (assets_list[asset]['quantity'] * price_list[asset])|round(1, 'common') }}</td>
+                        <td>${{ assets_list[asset]['order'] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="col-md-12 p-5 mb-3">
+        <p class="text-center lead">Пока ничего нет...</p>
+    </div>
+{% endif %}
+
+{% endblock %}
