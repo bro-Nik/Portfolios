@@ -1,9 +1,8 @@
-from flask import Flask, render_template, redirect, url_for, request, flash, session
+from flask import render_template, redirect, url_for, request, flash, session
 from transliterate import slugify
 import os
 import requests
 
-from portfolio_tracker import app, db
 from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Ticker, Market, Alert, Setting
 from portfolio_tracker.defs import *
 

@@ -62,18 +62,20 @@
             {% if portfolio_cost_now == 0 %}
                 -
             {% else %}
-                {% if portfolio_cost_now - portfolio.assets|sum(attribute='total_spent') >= 0 %}
+                {% if portfolio_cost_now - portfolio.assets|sum(attribute='total_spent') > 0 %}
                     <span class="text-green text-average">+${{ (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int }}
                     {% if portfolio.assets|sum(attribute='total_spent') > 0 %}
                         ({{ ((portfolio_cost_now - portfolio.assets|sum(attribute='total_spent')) / portfolio.assets|sum(attribute='total_spent') * 100)|round|int }}%)
                     {% endif %}
                     </span>
-                {% else %}
+                {% elif portfolio_cost_now - portfolio.assets|sum(attribute='total_spent') < 0 %}
                     <span class="text-red text-average">-${{ -1 * (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int }}
                     {% if portfolio.assets|sum(attribute='total_spent') != 0 %}
-                        ({{ ((portfolio_cost_now - portfolio.assets|sum(attribute='total_spent')) / portfolio.assets|sum(attribute='total_spent') * 100)|round|int }}%)
+                        ({{ ((portfolio_cost_now - portfolio.assets|sum(attribute='total_spent')) / portfolio.assets|sum(attribute='total_spent') * 100)|round|int|abs }}%)
                     {% endif %}
                     </span>
+                {% else %}
+                    <span class="text-average">$0</span>
                 {% endif %}
             {% endif %}
         </div>

@@ -7,9 +7,9 @@ from datetime import datetime, timedelta
 from threading import Timer
 from threading import Thread
 
-from portfolio_tracker import app, db
+from portfolio_tracker.app import app, db
 from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Ticker, Market, Alert
-from portfolio_tracker import *
+#from portfolio_tracker import *
 
 
 cg = CoinGeckoAPI()

@@ -30,19 +30,32 @@
         <div class="row mb-5">
             <div class="col-md-auto">
                 <p class="small_text">Всего вложено / сейчас</p>
-                <span class="text-average">${{ total_spent|round(1, 'common') }} / ${{ cost_now|round(1, 'common') }}</span>
+                <span class="text-average">
+                    ${{ total_spent|round|int }} /
+                    {% if cost_now|round|int > total_spent|round|int %}
+                        <span class="text-green">
+                            ${{ cost_now|round|int }}
+                        </span>
+                    {% elif cost_now|round|int < total_spent|round|int %}
+                        <span class="text-red">
+                            ${{ cost_now|round|int }}
+                        </span>
+                    {% else %}
+                        ${{ cost_now|round|int }}
+                    {% endif %}
+                </span>
             </div>
             <div class="col-md-auto">
                 <p class="small_text">Прибыль / убыток</p>
                 {% if cost_now - total_spent >= 0 %}
                     <span class="text-green text-average">
-                        +${{ (cost_now - total_spent)|round(1, 'common') }}
+                        +${{ (cost_now - total_spent)|round|int }}
                         ({{ ((cost_now - total_spent) / total_spent * 100)|round|int }}%)
                     </span>
                 {% else %}
                     <span class="text-red text-average">
-                        -${{ (total_spent - cost_now)|round(1, 'common') }}
-                        ({{ ((cost_now - total_spent) / total_spent * 100)|round|int }}%)
+                        -${{ (total_spent - cost_now)|round|int }}
+                        ({{ ((cost_now - total_spent) / total_spent * 100)|round|int|abs }}%)
                     </span>
                 {% endif %}
             </div>

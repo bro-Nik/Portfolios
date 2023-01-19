@@ -1,1 +1,1 @@
-from portfolio_tracker import app
+from portfolio_tracker.app import app

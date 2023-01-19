@@ -1,4 +1,4 @@
-from portfolio_tracker import db
+from portfolio_tracker.app import db
 
 
 class Transaction(db.Model):
