@@ -76,7 +76,11 @@
                                                 <i class="bi icon bi-bell"></i><span class="small_text">Список отслеживания</span>
                                             </a>
                                             {% endif %}
-                                            <button type="submit" class="btn-close"></button>
+                                            {% if triggered_alerts[alert]['comment'] != 'Ордер' %}
+                                                <button type="submit" class="btn-close"></button>
+                                            {% else %}
+                                                <button type="button" class="btn-close opacity-25" title="Перейдите в портфль и нажмите галочку 'Ордер сработал'"></button>
+                                            {% endif %}
                                         </form>
                                     </div>
                                 {% endfor %}

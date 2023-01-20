@@ -29,7 +29,7 @@
             </h1>
             <div class="hstack gap-2">
                 {% if ticker.image %}
-                    <img class="img-asset" src="{{ url_for('static', filename=ticker.image) }}">
+                    <img class="img-asset" src="{{ ticker.image }}">
                 {% endif %}
                 <span class="fs-1 fw-semibold">${{ price|round(4, 'common') }}</span>
             </div>

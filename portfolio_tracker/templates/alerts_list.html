@@ -60,7 +60,7 @@
                     <td class="text-average">
                         <a class="link-dark text-decoration-none" href="{{ url_for('alerts_ticker', market_id=ticker.market_id, ticker_id=ticker.id) }}">
                             {% if ticker.image %}
-                            <img class="img-asset-min" src="{{ url_for('static', filename=ticker.image) }}">
+                            <img class="img-asset-min" src="{{ ticker.image }}">
                             {% endif %}
                             {{ ticker.name }} <span class="text-muted">{{ ticker.symbol|upper }}</span>
                         </a>
@@ -71,7 +71,7 @@
                         {% endfor %}
                     </td>
                     <td class="text-end">
-                        {% if not orders[ticker.id] %}
+                        {% if ticker.id not in orders %}
                             <a class="action-icon text-decoration-none" href="{{ url_for('alerts_delete_ticker', ticker_id=ticker.id) }}" title="Удалить">
                                 <i class="bi icon bi-trash-fill"></i>
                             </a>

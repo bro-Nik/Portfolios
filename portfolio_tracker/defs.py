@@ -5,7 +5,7 @@ from tqdm import tqdm
 from urllib.parse import urljoin, urlparse
 from datetime import datetime, timedelta
 from threading import Timer
-from threading import Thread
+import threading
 
 from portfolio_tracker.app import app, db
 from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Ticker, Market, Alert
@@ -16,9 +16,11 @@ cg = CoinGeckoAPI()
 date = datetime.now().date()
 
 settings_list = {}
+
 price_list_crypto = {}
 price_list_stocks = {}
-triggered_alerts = {}
+
+all_alerts_list = {}
 
 
 def price_list_def():
@@ -26,9 +28,11 @@ def price_list_def():
     global settings_list, price_list_crypto, price_list_stocks
     for market in settings_list['markets']:
         if market == 'crypto':
-            price_list_crypto = price_list_crypto_def() if price_list_crypto == {} else price_list_crypto
+            if price_list_crypto == {}:
+                price_list_crypto_def()
         if market == 'stocks':
-            price_list_stocks = price_list_stocks_def() if price_list_stocks == {} else price_list_stocks
+            if price_list_stocks == {}:
+                price_list_stocks_def()
     price_list = {**price_list_crypto, **price_list_stocks}
 
     return price_list
@@ -36,37 +40,37 @@ def price_list_def():
 
 def price_list_crypto_def():
     ''' Запрос цен у КоинГеко криптовалюта '''
-    with app.test_request_context():
+    with app.app_context():
         global price_list_crypto
-        market = db.session.execute(db.select(Market).filter_by(name='Crypto')).scalar()
-        ids = []
-        for ticker in market.tickers:
-            if ticker.id:
-                ids.append(ticker.id)
-        price_list = cg.get_price(vs_currencies='usd', ids=ids)
-        if price_list:
+        if price_list_crypto == {}:
+            market = db.session.execute(db.select(Market).filter_by(name='Crypto')).scalar()
+            ids = []
             for ticker in market.tickers:
                 if ticker.id:
-                    price_list[ticker.id] = price_list[ticker.id]['usd']
+                    ids.append(ticker.id)
+        else:
+            ids = list(price_list_crypto.keys()) # берем id тикеров из прайса
+            ids.remove('update-crypto') # удаляем ключ времени обновления
+
+        price_list = cg.get_price(vs_currencies='usd', ids=ids)
+        if price_list:
+            for ticker in ids:
+                price_list[ticker] = price_list[ticker]['usd']
 
             price_list['update-crypto'] = datetime.now()
             price_list_crypto = price_list
-            print('Крипто прайс обновлен ', price_list['update-crypto'], ' Период ', settings_list['update_period']['crypto'], 'мин')
+            print('Крипто прайс обновлен ', price_list['update-crypto'])
             alerts_update_def()
-        else:
-            price_list = price_list_crypto
 
         if settings_list['update_period']['crypto'] > 0:
-            Timer(settings_list['update_period']['crypto']*60, price_list_crypto_def).start()
+            Timer(settings_list['update_period']['crypto'] * 60, price_list_crypto_def).start()
         else:
             Timer(86400, price_list_crypto_def).start()
-
-        return price_list
 
 
 def price_list_stocks_def():
     ''' Запрос цен у Polygon фондовый рынок '''
-    with app.test_request_context():
+    with app.app_context():
         global price_list_stocks
         price_list = {}
         day = 1
@@ -82,60 +86,86 @@ def price_list_stocks_def():
             else:
                 # если нет результата, делаем запрос еще на 1 день раньше (возможно праздники)
                 day += 1
+                k = day % 4
                 # задержка на бесплатном тарифе
-                print('Задержка 15 сек (загрузка прайса Акции)')
-                time.sleep(15)
+                if k == 0:
+                    print('Задержка (загрузка прайса Акции)')
+                    time.sleep(60)
 
         if price_list:
             price_list['update-stocks'] = datetime.now()
             price_list_stocks = price_list
-            print('Фондовый прайс обновлен ', price_list['update-stocks'], ' Период ', settings_list['update_period']['stocks'], 'мин')
+            print('Фондовый прайс обновлен ', price_list['update-stocks'])
             alerts_update_def()
-        else:
-            price_list = price_list_stocks
 
         if settings_list['update_period']['stocks'] > 0:
             Timer(settings_list['update_period']['stocks'] * 60, price_list_stocks_def).start()
         else:
             Timer(86400, price_list_stocks_def).start()
 
-        return price_list
-
 
 def alerts_update_def():
-    ''' Функция проверяет нет ли сработавших уведомлений '''
-    alerts_in_base = db.session.execute(db.select(Alert).filter_by(worked=None)).scalars()
+    ''' Функция собирает уведомления и проверяет нет ли сработавших '''
+    global all_alerts_list
     price_list = {**price_list_crypto, **price_list_stocks}
     flag = False
-    if alerts_in_base != ():
-        for alert in alerts_in_base:
-            if (alert.type == 'down' and price_list[alert.ticker_id] <= alert.price) or (alert.type == 'up' and price_list[alert.ticker_id] >= alert.price):
-                alert.worked = True
-                flag = True
+    # первый запрос уведомлений
+    if all_alerts_list == {}:
+        alerts_in_base = db.session.execute(db.select(Alert)).scalars()
+        all_alerts_list['not_worked'] = {}
+        all_alerts_list['worked'] = {}
+        if alerts_in_base != ():
+            for alert in alerts_in_base:
+                if (alert.type == 'down' and price_list[alert.ticker_id] <= alert.price) or (alert.type == 'up' and price_list[alert.ticker_id] >= alert.price):
+                    alert.worked = True
+                    flag = True
+                # если это сработавшее уведомление
+                if alert.worked:
+                    all_alerts_list['worked'][alert.id] = {}
+                    all_alerts_list['worked'][alert.id]['price'] = alert.price
+                    all_alerts_list['worked'][alert.id]['type'] = alert.type
+                    all_alerts_list['worked'][alert.id]['comment'] = alert.comment
+                    all_alerts_list['worked'][alert.id]['ticker'] = alert.ticker.name
+                    all_alerts_list['worked'][alert.id]['ticker_id'] = alert.ticker_id
+                    if alert.asset_id:
+                        all_alerts_list['worked'][alert.id]['portfolio_id'] = alert.asset.portfolio_id
+                        all_alerts_list['worked'][alert.id]['portfolio_name'] = alert.asset.portfolio.name
+                    else:
+                        all_alerts_list['worked'][alert.id]['market_id'] = alert.ticker.market_id
+                # если это не сработавшее уведомление
+                if not alert.worked:
+                    all_alerts_list['not_worked'][alert.id] = {}
+                    all_alerts_list['not_worked'][alert.id]['type'] = alert.type
+                    all_alerts_list['not_worked'][alert.id]['price'] = alert.price
+                    all_alerts_list['not_worked'][alert.id]['ticker_id'] = alert.ticker_id
+
+
+    # последующие запросы уведомлений без запроса в базу
+    else:
+        if all_alerts_list['not_worked'] != {}:
+            for alert in list(all_alerts_list['not_worked'].keys()):
+                print(alert)
+                if (all_alerts_list['not_worked'][alert]['type'] == 'down' and price_list[all_alerts_list['not_worked'][alert]['ticker_id']] <= all_alerts_list['not_worked'][alert]['price']) or (all_alerts_list['not_worked'][alert]['type'] == 'up' and price_list[all_alerts_list['not_worked'][alert]['ticker_id']] >= all_alerts_list['not_worked'][alert]['price']):
+                    alert_in_base = db.session.execute(db.select(Alert).filter_by(id=alert)).scalar()
+                    alert_in_base.worked = True
+                    flag = True
+                    # удаляем из несработавших
+                    all_alerts_list['not_worked'].pop(alert)
+                    # добавляем в сработавшие
+                    all_alerts_list['worked'][alert_in_base.id] = {}
+                    all_alerts_list['worked'][alert_in_base.id]['price'] = alert_in_base.price
+                    all_alerts_list['worked'][alert_in_base.id]['type'] = alert_in_base.type
+                    all_alerts_list['worked'][alert_in_base.id]['comment'] = alert_in_base.comment
+                    all_alerts_list['worked'][alert_in_base.id]['ticker'] = alert_in_base.ticker.name
+                    all_alerts_list['worked'][alert_in_base.id]['ticker_id'] = alert_in_base.ticker_id
+                    if alert_in_base.asset_id:
+                        all_alerts_list['worked'][alert_in_base.id]['portfolio_id'] = alert_in_base.asset.portfolio_id
+                        all_alerts_list['worked'][alert_in_base.id]['portfolio_name'] = alert_in_base.asset.portfolio.name
+                    else:
+                        all_alerts_list['worked'][alert_in_base.id]['market_id'] = alert_in_base.ticker.market_id
 
     if flag:
         db.session.commit()
-    if flag or triggered_alerts == {}:
-        alerts_query_def()
-
-def alerts_query_def():
-    ''' Запрос сработавших уведомлений '''
-    global triggered_alerts
-    alerts_worked = db.session.execute(db.select(Alert).filter_by(worked=True)).scalars()
-
-    for alert in alerts_worked:
-        triggered_alerts[alert.id] = {}
-        triggered_alerts[alert.id]['price'] = alert.price
-        triggered_alerts[alert.id]['type'] = alert.type
-        triggered_alerts[alert.id]['comment'] = alert.comment
-        triggered_alerts[alert.id]['ticker'] = alert.ticker.name
-        triggered_alerts[alert.id]['ticker_id'] = alert.ticker_id
-        if alert.asset_id:
-            triggered_alerts[alert.id]['portfolio_id'] = alert.asset.portfolio_id
-            triggered_alerts[alert.id]['portfolio_name'] = alert.asset.portfolio.name
-        else:
-            triggered_alerts[alert.id]['market_id'] = alert.ticker.market_id
-    print('алерты обновили')
 
 
 def when_updated_def(when_updated):
