@@ -6,22 +6,20 @@ from urllib.parse import urljoin, urlparse
 from datetime import datetime, timedelta
 from threading import Timer
 import threading
+import locale
+
 
 from portfolio_tracker.app import app, db
 from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Ticker, Market, Alert
-#from portfolio_tracker import *
 
 
 cg = CoinGeckoAPI()
 date = datetime.now().date()
 
 settings_list = {}
-
 price_list_crypto = {}
 price_list_stocks = {}
-
 all_alerts_list = {}
-
 
 def price_list_def():
     ''' Общая функция сбора цен '''
@@ -59,7 +57,7 @@ def price_list_crypto_def():
 
             price_list['update-crypto'] = datetime.now()
             price_list_crypto = price_list
-            print('Крипто прайс обновлен ', price_list['update-crypto'])
+            print('Крипто прайс обновлен ', price_list['update-crypto'], threading.current_thread().name)
             alerts_update_def()
 
         if settings_list['update_period']['crypto'] > 0:
@@ -89,7 +87,7 @@ def price_list_stocks_def():
                 k = day % 4
                 # задержка на бесплатном тарифе
                 if k == 0:
-                    print('Задержка (загрузка прайса Акции)')
+                    print('Задержка 1 мин. (загрузка прайса Акции)')
                     time.sleep(60)
 
         if price_list:
@@ -144,7 +142,6 @@ def alerts_update_def():
     else:
         if all_alerts_list['not_worked'] != {}:
             for alert in list(all_alerts_list['not_worked'].keys()):
-                print(alert)
                 if (all_alerts_list['not_worked'][alert]['type'] == 'down' and price_list[all_alerts_list['not_worked'][alert]['ticker_id']] <= all_alerts_list['not_worked'][alert]['price']) or (all_alerts_list['not_worked'][alert]['type'] == 'up' and price_list[all_alerts_list['not_worked'][alert]['ticker_id']] >= all_alerts_list['not_worked'][alert]['price']):
                     alert_in_base = db.session.execute(db.select(Alert).filter_by(id=alert)).scalar()
                     alert_in_base.worked = True
@@ -249,3 +246,31 @@ def tickers_load(market_id):
             load_crypto_tickers(99, market_in_base.id)
         if market_id == 'stocks':
             load_stocks_tickers(99, market_in_base.id)
+
+
+def smart_round(value):
+    ''' Окрушление зависимое от величины числа для Jinja '''
+    try:
+        number = float(value)
+        if number >= 100:
+            number = round(number, 1)
+        elif number >= 10:
+            number = round(number, 2)
+        elif number >= 1:
+            number = round(number, 3)
+        elif number >= 0.1:
+            number = round(number, 5)
+        elif number >= 0.0001:
+            number = round(number, 7)
+
+        return number
+    except: # строка не является float / int
+        return ''
+
+app.add_template_filter(smart_round)
+
+def number_group(number):
+    ''' Разделитель тысяных для Jinja '''
+    return "{:,}".format(number).replace(',', ' ')
+
+app.add_template_filter(number_group)

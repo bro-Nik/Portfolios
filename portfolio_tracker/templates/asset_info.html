@@ -30,15 +30,15 @@
                 {% if asset.ticker.image %}
                     <img class="img-asset" src="{{ asset.ticker.image }}">
                 {% endif %}
-                <span class="fs-1 fw-semibold">${{ price|round(4, 'common') }}</span>
+                <span class="fs-1 fw-semibold">${{ price|smart_round|number_group }}</span>
             </div>
             <div class="row">
                 {% for alert in asset.alerts %}
                     <div class="col-md-auto p-0 me-1">
                         {% if alert.worked %}
-                        <span class="badge text-bg-success fw-normal none-cursor">${{ alert.price }}</span>
+                        <span class="badge text-bg-success fw-normal none-cursor">${{ alert.price|number_group }}</span>
                         {% else %}
-                        <span class="badge text-bg-light fw-normal none-cursor">${{ alert.price }}</span>
+                        <span class="badge text-bg-light fw-normal none-cursor">${{ alert.price|number_group }}</span>
                         {% endif %}
                     </div>
                 {% endfor %}
@@ -61,13 +61,13 @@
 <div class="row mb-5">
     <div class="col-md-auto">
         <p class="small_text">Количество</p>
-        <span class="text-average">{{ asset.quantity|round(6, 'common') }} {{ asset.ticker.symbol|upper }}</span>
+        <span class="text-average">{{ asset.quantity|smart_round|number_group }} {{ asset.ticker.symbol|upper }}</span>
     </div>
     <div class="col-md-auto">
         <p class="small_text">Средняя цена покупки</p>
         <span class="text-average">
             {% if asset.quantity > 0 and asset.total_spent > 0 %}
-                ${{ (asset.total_spent / asset.quantity)|round(2, 'common') }}
+                ${{ (asset.total_spent / asset.quantity)|smart_round|number_group }}
             {% else %}
                 -
             {% endif%}
@@ -77,12 +77,12 @@
         <p class="small_text">Всего вложено / сейчас</p>
         <span class="text-average">
             {% if asset.total_spent > 0 %}
-                ${{ asset.total_spent|round|int }} /
+                ${{ asset.total_spent|round|int|number_group }} /
             {% else %}
                 - /
             {% endif %}
             {% if asset.quantity > 0 %}
-                ${{ (asset.quantity * price)|round|int  }}
+                ${{ (asset.quantity * price)|round|int|number_group  }}
             {% else %}
                 -
             {% endif%}
@@ -90,18 +90,18 @@
     </div>
     <div class="col-md-auto">
         <p class="small_text">Прибыль / убыток</p>
-        {% if (asset.quantity * price - asset.total_spent) > 0 %}
-            <span class="text-green text-average">+${{ (asset.quantity * price - asset.total_spent)|round|int }}
+        {% if (asset.quantity * price - asset.total_spent)|round|int > 0 %}
+            <span class="text-green text-average">+${{ (asset.quantity * price - asset.total_spent)|round|int|number_group }}
                 {% if asset.total_spent > 0 %}
-                    ({{ ((asset.quantity * price - asset.total_spent) / asset.total_spent * 100)|round|int }}%)
+                    ({{ ((asset.quantity * price - asset.total_spent) / asset.total_spent * 100)|round|int|number_group }}%)
                 {% endif %}
             </span>
-        {% elif (asset.quantity * price - asset.total_spent) < 0 %}
-            <span class="text-red text-average">-${{ -1 * (asset.quantity * price - asset.total_spent)|round|int }} ({{ ((asset.quantity * price - asset.total_spent) / asset.total_spent * 100)|round|int|abs }}%)</span>
+        {% elif (asset.quantity * price - asset.total_spent)|round|int < 0 %}
+            <span class="text-red text-average">-${{ (asset.quantity * price - asset.total_spent)|round|int|abs|number_group }} ({{ ((asset.quantity * price - asset.total_spent) / asset.total_spent * 100)|round|int|abs }}%)</span>
         {% elif asset.quantity == 0 %}
             <span class="text-average">-</span>
         {% else %}
-            <span class="text-average">$0.0</span>
+            <span class="text-average">$0</span>
         {% endif %}
     </div>
     <div class="col-md-auto">
@@ -138,12 +138,12 @@
             <tr>
             {% endif %}
                 <td>{{ transaction.type }} {{ '(Ордер)' if transaction.order else '' }} <br> <span class="small_text">{{ transaction.date }}</span></td>
-                <td>${{ transaction.price }}</td>
+                <td>${{ transaction.price|smart_round|number_group }}</td>
                 <td>
                     {% if transaction.type == 'Покупка' %}
-                        +${{ transaction.total_spent }} <br> <span class="text-green text-average small_text"> +{{ transaction.quantity|round(6, 'common') }} {{ asset.ticker.symbol|upper }} </span>
+                        +${{ transaction.total_spent|number_group }} <br> <span class="text-green text-average small_text"> +{{ transaction.quantity|smart_round|number_group }} {{ asset.ticker.symbol|upper }} </span>
                     {% else %}
-                        -${{ -1 * transaction.total_spent }} <br> <span class="text-red text-average small_text"> -{{ -1 * transaction.quantity|round(6, 'common') }} {{ asset.ticker.symbol|upper }} </span>
+                        -${{ transaction.total_spent|abs|number_group }} <br> <span class="text-red text-average small_text"> -{{ transaction.quantity|abs|smart_round|number_group }} {{ asset.ticker.symbol|upper }} </span>
                     {% endif %}
                 </td>
                 <td  class="cursor-pointer" onclick="document.location = '{{ url_for('wallet_info', wallet_name=transaction.wallet.name) }}';">

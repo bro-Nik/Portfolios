@@ -30,12 +30,12 @@
     <div class="row mb-5">
         <div class="col-md-auto">
             <p class="small_text">Всего вложено</p>
-            <span class="text-average">${{ total_spent|round|int }}</span>
+            <span class="text-average">${{ total_spent|round|int|number_group }}</span>
         </div>
         <div class="col-md-auto">
             <p class="small_text">В ордерах</p>
             <span class="text-average">
-                ${{ wallets|sum(attribute='money_in_order')|round|int }}
+                ${{ wallets|sum(attribute='money_in_order')|round|int|number_group }}
             </span>
         </div>
         <div class="col-md-auto">
@@ -44,9 +44,9 @@
                 {% if wallets|sum(attribute='money_all') - wallets|sum(attribute='money_in_order') - total_spent == 0 %}
                     $0
                 {% elif wallets|sum(attribute='money_all') - wallets|sum(attribute='money_in_order') - total_spent > 0 %}
-                    ${{ (wallets|sum(attribute='money_all') - wallets|sum(attribute='money_in_order') - total_spent)|round|int }}
+                    ${{ (wallets|sum(attribute='money_all') - wallets|sum(attribute='money_in_order') - total_spent)|round|int|number_group }}
                 {% else %}
-                    -${{ -1 * (wallets|sum(attribute='money_all') - wallets|sum(attribute='money_in_order') - total_spent)|round|int }}
+                    -${{ (wallets|sum(attribute='money_all') - wallets|sum(attribute='money_in_order') - total_spent)|round|int|abs|number_group }}
                 {% endif %}
             </span>
         </div>
@@ -68,19 +68,19 @@
                         <td class="text-average cursor-pointer" onclick="document.location = '{{ url_for('wallet_info', wallet_name=wallet.name) }}';"> {{ wallet.name }} </td>
                         <td class="cursor-pointer" onclick="document.location = '{{ url_for('wallet_info', wallet_name=wallet.name) }}';">
                             {% if wallet.transactions|sum(attribute='total_spent') %}
-                                ${{ (wallet.transactions|sum(attribute='total_spent') - wallet.money_in_order)|round|int }} /
+                                ${{ (wallet.transactions|sum(attribute='total_spent') - wallet.money_in_order)|round|int|number_group }} /
                             {% else %}
                                 - /
                             {% endif %}
                             {% if holder_list[wallet.name] %}
-                                ${{ holder_list[wallet.name]|round|int }}
+                                ${{ holder_list[wallet.name]|round|int|number_group }}
                             {% else %}
                                 -
                             {% endif %}
                         </td>
                         <td class="cursor-pointer" onclick="document.location = '{{ url_for('wallet_info', wallet_name=wallet.name) }}';">
                             {% if wallet.money_in_order %}
-                                ${{ wallet.money_in_order|round|int }}
+                                ${{ wallet.money_in_order|round|int|number_group }}
                             {% else %}
                                 -
                             {% endif %}
@@ -88,9 +88,9 @@
                         <td class="cursor-pointer" onclick="document.location = '{{ url_for('wallet_info', wallet_name=wallet.name) }}';">
                             {% if not ((wallet.money_all - wallet.transactions|sum(attribute='total_spent')) == 0 and wallet.transactions|sum(attribute='total_spent') == 0) %}
                                 {% if (wallet.money_all - wallet.transactions|sum(attribute='total_spent')) < 0 %}
-                                    -${{ -1 * (wallet.money_all - wallet.transactions|sum(attribute='total_spent'))|round|int }}
+                                    -${{ (wallet.money_all - wallet.transactions|sum(attribute='total_spent'))|round|int|abs|number_group }}
                                 {% else %}
-                                    ${{ (wallet.money_all - wallet.transactions|sum(attribute='total_spent'))|round|int }}
+                                    ${{ (wallet.money_all - wallet.transactions|sum(attribute='total_spent'))|round|int|number_group }}
                                 {% endif %}
                             {% else %}
                                 -

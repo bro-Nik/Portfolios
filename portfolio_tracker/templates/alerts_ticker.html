@@ -31,7 +31,7 @@
                 {% if ticker.image %}
                     <img class="img-asset" src="{{ ticker.image }}">
                 {% endif %}
-                <span class="fs-1 fw-semibold">${{ price|round(4, 'common') }}</span>
+                <span class="fs-1 fw-semibold">${{ price|smart_round|number_group }}</span>
             </div>
         </div>
         <div class="col-md-6 position-right">
@@ -59,7 +59,7 @@
                     {% else %}
                     <span class="text-green">Выше</span>
                     {% endif %}
-                    ${{ alert.price }} <br> <span class="small_text">{{ alert.date }}</span>
+                    ${{ alert.price|smart_round|number_group }} <br> <span class="small_text">{{ alert.date }}</span>
                 </td>
                 <td>{{ alert.comment }}</td>
                 <td>

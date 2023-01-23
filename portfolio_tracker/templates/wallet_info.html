@@ -27,20 +27,20 @@
     <div class="col-md-auto">
         <p class="small_text">Всего вложено / сейчас</p>
         <span class="text-average">
-            ${{ (wallet.transactions|sum(attribute='total_spent') - wallet.money_in_order)|round|int }} / ${{ wallet_cost_now|round|int }}
+            ${{ (wallet.transactions|sum(attribute='total_spent') - wallet.money_in_order)|round|int|number_group }} / ${{ wallet_cost_now|round|int|number_group }}
         </span>
     </div>
     <div class="col-md-auto">
         <p class="small_text">В ордереах</p>
-        <span class="text-average">${{ wallet.money_in_order|round|int }}</span>
+        <span class="text-average">${{ wallet.money_in_order|round|int|number_group }}</span>
     </div>
     <div class="col-md-auto">
         <p class="small_text">Свободные средства</p>
         <span class="text-average">
             {% if (wallet.money_all - wallet.transactions|sum(attribute='total_spent')) < 0 %}
-                -${{ -1 * (wallet.money_all - wallet.transactions|sum(attribute='total_spent'))|round|int }}
+                -${{ (wallet.money_all - wallet.transactions|sum(attribute='total_spent'))|round|int|abs|number_group }}
             {% else %}
-                ${{ (wallet.money_all - wallet.transactions|sum(attribute='total_spent'))|round|int }}
+                ${{ (wallet.money_all - wallet.transactions|sum(attribute='total_spent'))|round|int|number_group }}
             {% endif %}
         </span>
     </div>
@@ -59,10 +59,10 @@
             <tbody>
                 {% for asset in assets_list %}
                     <tr>
-                        <td class="text-average cursor-pointer" >{{ assets_list[asset]['name'] }} <span class="text-muted">{{ assets_list[asset]['symbol']|upper }}</span></td>
-                        <td>{{ assets_list[asset]['quantity'] }} {{ assets_list[asset]['symbol']|upper }}</td>
-                        <td>${{ (assets_list[asset]['quantity'] * price_list[asset])|round(1, 'common') }}</td>
-                        <td>${{ assets_list[asset]['order'] }}</td>
+                        <td class="text-average" >{{ assets_list[asset]['name'] }} <span class="text-muted">{{ assets_list[asset]['symbol']|upper }}</span></td>
+                        <td>{{ assets_list[asset]['quantity']|smart_round|number_group }} {{ assets_list[asset]['symbol']|upper }}</td>
+                        <td>${{ (assets_list[asset]['quantity'] * price_list[asset])|round|int|number_group }}</td>
+                        <td>${{ assets_list[asset]['order']|round|int|number_group }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

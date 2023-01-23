@@ -87,7 +87,6 @@ def portfolios():
     orders_in_portfolio = {}
     if portfolios != ():
         for portfolio in portfolios:
-            #if portfolio.market.id == 'crypto':
             for asset in portfolio.assets:
                 total_spent += asset.total_spent
                 cost_now += (asset.quantity * price_list[asset.ticker.id])
@@ -95,15 +94,7 @@ def portfolios():
                     if not transaction.order:
                         total_spent_list[portfolio.id] = float(total_spent_list.setdefault(portfolio.id, 0)) + float(transaction.total_spent)
                         cost_now_list[portfolio.id] = float(cost_now_list.setdefault(portfolio.id, 0)) + float(transaction.quantity) * float(price_list[asset.ticker.id])
-            #if portfolio.market.name == 'stocks':
-            #    price_list = price_list_def(portfolio.market_id)
-            #    for asset in portfolio.assets:
-            #        total_spent += asset.total_spent
-            #        cost_now += (asset.quantity * price_list[asset.ticker.id])
-            #        for transaction in asset.transactions:
-            #            if not transaction.order:
-            #                total_spent_list[portfolio.id] = float(total_spent_list.setdefault(portfolio.id, 0)) + float(transaction.total_spent)
-            #                cost_now_list[portfolio.id] = float(cost_now_list.setdefault(portfolio.id, 0)) + float(transaction.quantity) * float(price_list[asset.ticker.id])
+
             # в каких портфелях есть ордера, чтобы не удалить
             for asset in portfolio.assets:
                 for transaction in asset.transactions:
@@ -302,7 +293,6 @@ def transaction_add(portfolio_id):
                 new_total_spent = new_total_spent * -1
 
             if transaction.order:
-                #transaction.asset.order += (new_total_spent - transaction.total_spent)
                 # изменяем уведомление
                 alert_in_base = db.session.execute(db.select(Alert).filter_by(asset_id=transaction.asset_id, price=transaction.price)).scalar()
                 alert_in_base.price = new_price
@@ -335,7 +325,6 @@ def transaction_delete(portfolio_id):
     if transaction.order:
         wallet_in_base = db.session.execute(db.select(Wallet).filter_by(id=transaction.wallet_id)).scalar()
         wallet_in_base.money_in_order -= float(transaction.total_spent)
-        #asset_in_base.order -= float(transaction.total_spent)
         # удаляем уведомление
         alert_in_base = db.session.execute(db.select(Alert).filter_by(asset_id=asset_in_base.id, price=transaction.price)).scalar()
         if alert_in_base:
@@ -355,7 +344,6 @@ def order_to_transaction(portfolio_id):
     transaction = db.session.execute(db.select(Transaction).filter_by(id=request.form['id'])).scalar()
     transaction.order = 0
     transaction.date = request.form['date']
-    #transaction.asset.order -= float(transaction.total_spent)
     transaction.asset.quantity += transaction.quantity
     transaction.asset.total_spent += float(transaction.total_spent)
     transaction.wallet.money_in_order -= float(transaction.total_spent)
@@ -516,7 +504,6 @@ def alert_add():
     if 'asset_in_base' in locals():
         if asset_in_base:
             alert.asset_id = asset_in_base.id
-            # return redirect(url_for('asset_info', ticker_id=asset_in_base.ticker.id, portfolio_id=asset_in_base.portfolio_id))
 
     db.session.add(alert)
     db.session.commit()

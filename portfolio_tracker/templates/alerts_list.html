@@ -67,7 +67,7 @@
                     </td>
                     <td>
                         {% for alert in ticker.alerts %}
-                        ${{ alert.price }}
+                        <span class="badge text-bg-secondary fw-normal none-cursor">${{ alert.price|smart_round|number_group }}</span>
                         {% endfor %}
                     </td>
                     <td class="text-end">

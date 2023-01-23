@@ -32,7 +32,11 @@
                     </div>
                     <div>
                     {% for ticker in tickers|sort(attribute="market_cap_rank") %}
-                        <a class="dropdown-item" href="{{ url_for('asset_add', portfolio_id=portfolio.id, ticker_id=ticker.id) }}"><span class="text-average">{{ ticker.name }}</span> {{ ticker.symbol|upper }}</a>
+                        <a class="dropdown-item" href="{{ url_for('asset_add', portfolio_id=portfolio.id, ticker_id=ticker.id) }}">
+                            <span class="d-inline-block text-truncate text-average" style="max-width: 150px;">{{ ticker.name }}</span>
+                            <span class="align-top text-muted">{{ ticker.symbol|upper }}</span>
+                            {% if ticker.market_cap_rank %} <span class="text-muted float-end">#{{ ticker.market_cap_rank }}</span> {% endif %}
+                        </a>
                     {% endfor %}
                     </div>
                 </div>
@@ -48,11 +52,11 @@
                 {% if portfolio_cost_now == 0 %}
                     - / -
                 {% else %}
-                    ${{ portfolio.assets|sum(attribute='total_spent')|round|int }} /
+                    ${{ portfolio.assets|sum(attribute='total_spent')|round|int|number_group }} /
                     {% if portfolio_cost_now >= portfolio.assets|sum(attribute='total_spent') %}
-                        <span class="text-green">${{ portfolio_cost_now|round|int }}</span>
+                        <span class="text-green">${{ portfolio_cost_now|round|int|number_group }}</span>
                     {% else %}
-                        <span class="text-red">${{ portfolio_cost_now|round|int }}</span>
+                        <span class="text-red">${{ portfolio_cost_now|round|int|number_group }}</span>
                     {% endif %}
                 {% endif %}
             </span>
@@ -62,17 +66,21 @@
             {% if portfolio_cost_now == 0 %}
                 -
             {% else %}
-                {% if portfolio_cost_now - portfolio.assets|sum(attribute='total_spent') > 0 %}
-                    <span class="text-green text-average">+${{ (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int }}
-                    {% if portfolio.assets|sum(attribute='total_spent') > 0 %}
-                        ({{ ((portfolio_cost_now - portfolio.assets|sum(attribute='total_spent')) / portfolio.assets|sum(attribute='total_spent') * 100)|round|int }}%)
-                    {% endif %}
+                {% if (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int == 0 %}
+                    <span class="text-average">$0</span>
+                {% elif portfolio_cost_now - portfolio.assets|sum(attribute='total_spent') > 0 %}
+                    <span class="text-green text-average">
+                        +${{ (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int|number_group }}
+                        {% if portfolio.assets|sum(attribute='total_spent') > 0 %}
+                            ({{ ((portfolio_cost_now - portfolio.assets|sum(attribute='total_spent')) / portfolio.assets|sum(attribute='total_spent') * 100)|round|int }}%)
+                        {% endif %}
                     </span>
                 {% elif portfolio_cost_now - portfolio.assets|sum(attribute='total_spent') < 0 %}
-                    <span class="text-red text-average">-${{ -1 * (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int }}
-                    {% if portfolio.assets|sum(attribute='total_spent') != 0 %}
-                        ({{ ((portfolio_cost_now - portfolio.assets|sum(attribute='total_spent')) / portfolio.assets|sum(attribute='total_spent') * 100)|round|int|abs }}%)
-                    {% endif %}
+                    <span class="text-red text-average">
+                        -${{ (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int|abs|number_group }}
+                        {% if portfolio.assets|sum(attribute='total_spent') != 0 %}
+                            ({{ ((portfolio_cost_now - portfolio.assets|sum(attribute='total_spent')) / portfolio.assets|sum(attribute='total_spent') * 100)|round|int|abs }}%)
+                        {% endif %}
                     </span>
                 {% else %}
                     <span class="text-average">$0</span>
@@ -108,37 +116,39 @@
                         </a>
                     </td>
                     <td>
-                        ${{ price_list[asset.ticker.id]|round(2, 'common') }} /
+                        ${{ price_list[asset.ticker.id]|smart_round|number_group }}
                         {% if asset.total_spent > 0 %}
-                            ${{ (asset.total_spent / asset.quantity)|round(2, 'common') }}
-                        {% else %}
-                            -
+                            / ${{ (asset.total_spent / asset.quantity)|smart_round|number_group }}
                         {% endif %}
                     </td>
                     <td>
                         {% if asset.quantity > 0 %}
-                            ${{ (asset.quantity * price_list[asset.ticker.id])|round|int}}
+                            ${{ (asset.quantity * price_list[asset.ticker.id])|round|int|number_group }}
                             {% if asset.total_spent > 0 %}
-                                 / ${{ asset.total_spent|round|int }}
+                                 / ${{ asset.total_spent|round|int|number_group }}
                             {% endif %}
                             <br>
-                            <span class="text-average small_text">{{ asset.quantity|round(6, 'common') }} {{ asset.ticker.symbol|upper }}</span>
+                            <span class="text-average small_text">{{ asset.quantity|smart_round|number_group }} {{ asset.ticker.symbol|upper }}</span>
                         {% else %}
                             -
                         {% endif %}
                     </td>
                     <td>
                         {% if asset.quantity > 0 %}
-                            {% if ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent) > 0 %}
-                                <span class="text-green text-average"> +${{ ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent)|round|int }}
+                            {% if ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent)|round|int > 0 %}
+                                <span class="text-green text-average">
+                                    +${{ ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent)|round|int|number_group }}
                                     {% if asset.total_spent > 0 %}
                                         ({{ ((asset.quantity * price_list[asset.ticker.id] - asset.total_spent) / asset.total_spent * 100 )|round|int }}%)
                                     {% endif %}
                                 </span>
-                            {% elif ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent) < 0 %}
-                                <span class="text-red text-average">-${{ -1 * ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent)|round|int }} ({{ ((asset.quantity * price_list[asset.ticker.id] - asset.total_spent) / asset.total_spent * 100)|round|int|abs }}%)</span>
+                            {% elif ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent)|round|int < 0 %}
+                                <span class="text-red text-average">
+                                    -${{ ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent)|round|int|abs|number_group }}
+                                    ({{ ((asset.quantity * price_list[asset.ticker.id] - asset.total_spent) / asset.total_spent * 100)|round|int|abs }}%)
+                                </span>
                             {% else %}
-                                <span class="text-average">$0.0</span>
+                                $0
                             {% endif %}
                         {% else %}
                             -
