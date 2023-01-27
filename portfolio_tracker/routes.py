@@ -2,6 +2,7 @@ from flask import render_template, redirect, url_for, request, flash, session
 from transliterate import slugify
 import os
 import requests
+from celery import Celery
 
 from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Ticker, Market, Alert, Setting
 from portfolio_tracker.defs import *
@@ -76,9 +77,6 @@ def settings_update():
 @app.route('/', methods=['GET'])
 def portfolios():
     ''' Страница портфелей '''
-    if settings_list.get('first_start'):
-        return redirect(url_for('first_start'))
-
     price_list = price_list_def()
     portfolios = tuple(db.session.execute(db.select(Portfolio)).scalars())
     total_spent = cost_now = 0
@@ -102,7 +100,7 @@ def portfolios():
                         orders_in_portfolio[portfolio.id] = True
                         break
 
-    return render_template('portfolios.html', portfolios=portfolios, total_spent=total_spent, cost_now=cost_now, total_spent_list=total_spent_list, cost_now_list=cost_now_list, orders_in_portfolio=orders_in_portfolio, triggered_alerts=all_alerts_list['worked'])
+    return render_template('portfolios.html', portfolios=portfolios, total_spent=total_spent, cost_now=cost_now, total_spent_list=total_spent_list, cost_now_list=cost_now_list, orders_in_portfolio=orders_in_portfolio, triggered_alerts=pickle.loads(redis.get('all_alerts'))['worked'])
 
 @app.route('/nothing')
 def nothing():
@@ -140,6 +138,16 @@ def portfolio_delete():
     ''' Удаление портфеля '''
     portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(id=request.form['id'])).scalar()
     if portfolio_in_base:
+        for asset in portfolio_in_base.assets:
+            for alert in asset.alerts:
+                # удаляем уведомления
+                #all_alerts_list['worked'].pop(alert.id, None)
+                #all_alerts_list['not_worked'].pop(alert.id, None)
+                #db.session.delete(alert)
+                # отставляем уведомления
+                alert.asset_id = None
+                alert.comment = 'Портфель ' + str(asset.portfolio.name) + ' удален'
+
         db.session.delete(portfolio_in_base)
         db.session.commit()
     return redirect(url_for('portfolios'))
@@ -150,11 +158,13 @@ def portfolio_info(portfolio_id):
     price_list = price_list_def()
     portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(id=portfolio_id)).scalar()
     if portfolio_in_base:
+
+
         tickers_in_base = db.session.execute(db.select(Ticker).filter_by(market=portfolio_in_base.market)).scalars()
         portfolio_cost_now = 0
         for asset in portfolio_in_base.assets:
             portfolio_cost_now += (asset.quantity * price_list[asset.ticker.id])
-        return render_template('portfolio_info.html', portfolio=portfolio_in_base, price_list=price_list, portfolio_cost_now=portfolio_cost_now, tickers=tickers_in_base, triggered_alerts=all_alerts_list['worked'])
+        return render_template('portfolio_info.html', portfolio=portfolio_in_base, price_list=price_list, portfolio_cost_now=portfolio_cost_now, tickers=tickers_in_base, triggered_alerts=pickle.loads(redis.get('all_alerts'))['worked'])
     else:
         return redirect(url_for('portfolios'))
 
@@ -222,11 +232,11 @@ def asset_info(ticker_id, portfolio_id):
     if portfolio_in_base and ticker_in_base:
         asset = db.session.execute(db.select(Asset).filter_by(ticker_id=ticker_in_base.id, portfolio_id=portfolio_in_base.id)).scalar()
     price_list = price_list_def()
-    price = price_list[ticker_in_base.id]
+    price = float(price_list[ticker_in_base.id])
     # прайсы обновлены (когда)
     when_updated = when_updated_def(price_list[str('update-' + portfolio_in_base.market_id)])
 
-    return render_template('asset_info.html', asset=asset, price=price, when_updated=when_updated, date=date, wallets=tuple(wallets), portfolio=portfolio_in_base, triggered_alerts=all_alerts_list['worked'])
+    return render_template('asset_info.html', asset=asset, price=price, when_updated=when_updated, date=date, wallets=tuple(wallets), portfolio=portfolio_in_base, triggered_alerts=pickle.loads(redis.get('all_alerts'))['worked'])
 
 @app.route('/<string:portfolio_id>/transaction_add', methods=['POST'])
 def transaction_add(portfolio_id):
@@ -254,7 +264,6 @@ def transaction_add(portfolio_id):
 
         if transaction.order:
             price_list = price_list_def()
-            #asset_in_base.order += float(transaction.total_spent)
             wallet_in_base = db.session.execute(db.select(Wallet).filter_by(name=request.form['wallet'])).scalar()
             wallet_in_base.money_in_order += float(transaction.total_spent)
             # Добавляем уведомление
@@ -269,10 +278,13 @@ def transaction_add(portfolio_id):
             db.session.add(alert)
             db.session.commit()
             # записываем в список уведомлений
-            all_alerts_list['not_worked'][alert.id] = {}
-            all_alerts_list['not_worked'][alert.id]['type'] = alert.type
-            all_alerts_list['not_worked'][alert.id]['price'] = alert.price
-            all_alerts_list['not_worked'][alert.id]['ticker_id'] = alert.ticker_id
+            all_alerts = pickle.loads(redis.get('all_alerts'))
+            all_alerts['not_worked'][alert.id] = {}
+            all_alerts['not_worked'][alert.id]['type'] = alert.type
+            all_alerts['not_worked'][alert.id]['price'] = alert.price
+            all_alerts['not_worked'][alert.id]['ticker_id'] = alert.ticker_id
+            redis.set('all_alerts', pickle.dumps(all_alerts))
+
         else:
             asset_in_base.quantity += transaction.quantity
             asset_in_base.total_spent += float(transaction.total_spent)
@@ -296,7 +308,9 @@ def transaction_add(portfolio_id):
                 # изменяем уведомление
                 alert_in_base = db.session.execute(db.select(Alert).filter_by(asset_id=transaction.asset_id, price=transaction.price)).scalar()
                 alert_in_base.price = new_price
-                all_alerts_list['not_worked'][alert_in_base.id]['price'] = new_price
+                all_alerts = pickle.loads(redis.get('all_alerts'))
+                all_alerts['not_worked'][alert_in_base.id]['price'] = new_price
+                redis.set('all_alerts', pickle.dumps(all_alerts))
             else:
                 transaction.asset.quantity += (new_quantity - transaction.quantity)
                 transaction.asset.total_spent += (new_total_spent - float(transaction.total_spent))
@@ -328,8 +342,10 @@ def transaction_delete(portfolio_id):
         # удаляем уведомление
         alert_in_base = db.session.execute(db.select(Alert).filter_by(asset_id=asset_in_base.id, price=transaction.price)).scalar()
         if alert_in_base:
-            all_alerts_list['worked'].pop(alert_in_base.id, None)
-            all_alerts_list['not_worked'].pop(alert_in_base.id, None)
+            all_alerts = pickle.loads(redis.get('all_alerts'))
+            all_alerts['worked'].pop(alert_in_base.id, None)
+            all_alerts['not_worked'].pop(alert_in_base.id, None)
+            redis.set('all_alerts', pickle.dumps(all_alerts))
         db.session.delete(alert_in_base)
     else:
         asset_in_base.quantity -= transaction.quantity
@@ -351,8 +367,10 @@ def order_to_transaction(portfolio_id):
     # удаление уведомления
     alert_in_base = db.session.execute(db.select(Alert).filter_by(asset_id=transaction.asset_id, price=transaction.price)).scalar()
     if alert_in_base:
-        all_alerts_list['worked'].pop(alert_in_base.id, None)
-        all_alerts_list['not_worked'].pop(alert_in_base.id, None)
+        all_alerts = pickle.loads(redis.get('all_alerts'))
+        all_alerts['worked'].pop(alert_in_base.id, None)
+        all_alerts['not_worked'].pop(alert_in_base.id, None)
+        redis.set('all_alerts', pickle.dumps(all_alerts))
         db.session.delete(alert_in_base)
     db.session.commit()
     return redirect(url_for('asset_info', ticker_id=transaction.asset.ticker.id, portfolio_id=portfolio_id))
@@ -376,7 +394,7 @@ def wallets():
                         total_spent += transaction.total_spent
 
 
-    return render_template('wallets.html', wallets=tuple(wallets), holder_list=holder_list, total_spent=total_spent, triggered_alerts=all_alerts_list['worked'])
+    return render_template('wallets.html', wallets=tuple(wallets), holder_list=holder_list, total_spent=total_spent, triggered_alerts=pickle.loads(redis.get('all_alerts'))['worked'])
 
 @app.route('/wallets/add', methods=['POST'])
 def wallet_add():
@@ -457,7 +475,7 @@ def wallet_info(wallet_name):
                         assets_list[transaction.asset.ticker_id]['symbol'] = transaction.asset.ticker.symbol
                     wallet_cost_now += float(transaction.quantity) * price_list[transaction.asset.ticker_id]
 
-    return render_template('wallet_info.html', wallet=wallet, assets_list=assets_list, price_list=price_list, wallet_cost_now=wallet_cost_now, triggered_alerts=all_alerts_list['worked'])
+    return render_template('wallet_info.html', wallet=wallet, assets_list=assets_list, price_list=price_list, wallet_cost_now=wallet_cost_now, triggered_alerts=pickle.loads(redis.get('all_alerts'))['worked'])
 
 
 @app.route('/alerts/<string:market_id>', methods=['GET'])
@@ -475,7 +493,7 @@ def alerts_list(market_id):
             for transaction in asset.transactions:
                 if transaction.order:
                     orders.append(ticker.id)
-    return render_template('alerts_list.html', tickers=tickers_in_base, orders=orders, tickers_in_list=tickers_in_list, triggered_alerts=all_alerts_list['worked'])
+    return render_template('alerts_list.html', tickers=tickers_in_base, orders=orders, tickers_in_list=tickers_in_list, triggered_alerts=pickle.loads(redis.get('all_alerts'))['worked'])
 
 @app.route('/alerts/add', methods=['POST'])
 def alert_add():
@@ -509,10 +527,12 @@ def alert_add():
     db.session.commit()
 
     # добавление уведомления в список
-    all_alerts_list['not_worked'][alert.id] = {}
-    all_alerts_list['not_worked'][alert.id]['type'] = alert.type
-    all_alerts_list['not_worked'][alert.id]['price'] = alert.price
-    all_alerts_list['not_worked'][alert.id]['ticker_id'] = alert.ticker_id
+    all_alerts = pickle.loads(redis.get('all_alerts'))
+    all_alerts['not_worked'][alert.id] = {}
+    all_alerts['not_worked'][alert.id]['type'] = alert.type
+    all_alerts['not_worked'][alert.id]['price'] = alert.price
+    all_alerts['not_worked'][alert.id]['ticker_id'] = alert.ticker_id
+    redis.set('all_alerts', pickle.dumps(all_alerts))
 
     if 'asset_in_base' in locals():
         return redirect(url_for('asset_info', ticker_id=asset_in_base.ticker.id, portfolio_id=asset_in_base.portfolio_id))
@@ -537,8 +557,10 @@ def alerts_delete_ticker(ticker_id):
         # удаляем уведомления
         if ticker_in_base.alerts != ():
             for alert in ticker_in_base.alerts:
-                all_alerts_list['worked'].pop(alert.id, None)
-                all_alerts_list['not_worked'].pop(alert.id, None)
+                all_alerts = pickle.loads(redis.get('all_alerts'))
+                all_alerts['worked'].pop(alert.id, None)
+                all_alerts['not_worked'].pop(alert.id, None)
+                redis.set('all_alerts', pickle.dumps(all_alerts))
                 db.session.delete(alert)
         db.session.commit()
     return redirect(url_for('alerts_list', market_id=ticker_in_base.market_id))
@@ -549,7 +571,7 @@ def alerts_ticker(market_id, ticker_id):
     ticker_in_base = db.session.execute(db.select(Ticker).filter_by(id=ticker_id)).scalar()
     price_list = price_list_def()
     price = price_list[ticker_in_base.id]
-    return render_template('alerts_ticker.html', ticker=ticker_in_base, price=price, triggered_alerts=all_alerts_list['worked'])
+    return render_template('alerts_ticker.html', ticker=ticker_in_base, price=price, triggered_alerts=pickle.loads(redis.get('all_alerts'))['worked'])
 
 @app.route('/alerts/delete', methods=['POST'])
 def alert_delete():
@@ -562,8 +584,10 @@ def alert_delete():
         market_id = alert_in_base.ticker.market_id
 
     if alert_in_base:
-        all_alerts_list['worked'].pop(alert_in_base.id, None)
-        all_alerts_list['not_worked'].pop(alert_in_base.id, None)
+        all_alerts = pickle.loads(redis.get('all_alerts'))
+        all_alerts['worked'].pop(alert_in_base.id, None)
+        all_alerts['not_worked'].pop(alert_in_base.id, None)
+        redis.set('all_alerts', pickle.dumps(all_alerts))
         db.session.delete(alert_in_base)
         db.session.commit()
 
@@ -571,5 +595,4 @@ def alert_delete():
         return redirect(url_for('asset_info', ticker_id=ticker_id, portfolio_id=portfolio_id))
     else:
         return redirect(url_for('alerts_ticker', ticker_id=ticker_id, market_id=market_id))
-
 
