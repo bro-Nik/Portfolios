@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Main page{% endblock %}
+{% block title %} {{ asset.ticker.name }} / {{ asset.portfolio.name }}{% endblock %}
 {% block head %}
     {{ super() }}
 {% endblock %}
@@ -11,8 +11,8 @@
     <div class="dropdown">
         <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
         <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='crypto') }}">Crypto</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='stocks') }}">Stocls</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
         </ul>
     </div>
 {% endblock %}
@@ -48,8 +48,8 @@
             </div>
         </div>
         <div class="col-md-6 position-right">
-            <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="" data-bs-date="{{ date }}" data-bs-price="{{ price }}" data-bs-wallet="{{ wallets[0].name }}" data-bs-title="Добавить транзакцию">Добавить транзакцию</button>
-            <button class="btn btn-warning btn-sm ms-1" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="True" data-bs-date="{{ date }}" data-bs-price="{{ price }}" data-bs-wallet="{{ wallets[0].name }}" data-bs-title="Добавить ордер">Ордер</button>
+            <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="" data-bs-date="{{ date }}" data-bs-price="{{ price }}" data-bs-wallet="{{ wallets[0].id }}" data-bs-title="Добавить транзакцию">Добавить транзакцию</button>
+            <button class="btn btn-warning btn-sm ms-1" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="True" data-bs-date="{{ date }}" data-bs-price="{{ price }}" data-bs-wallet="{{ wallets[0].id }}" data-bs-title="Добавить ордер">Ордер</button>
             <button type="button" class="btn btn-light dropdown-toggle btn-sm ms-1" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
             <ul class="dropdown-menu" style="">
                 <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ asset.id }}" data-bs-action="{{ url_for('asset_delete', portfolio_id=portfolio.id) }}" data-bs-title="Удалить {{ asset.ticker.name }}?">Удалить {{ asset.ticker.name }}</a></li>
@@ -245,10 +245,10 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-1">
-                                <label for="wallet" class="form-label h7">Кошелек</label>
-                                <select class="form-select" id="wallet" name="wallet" required>
+                                <label for="wallet_id" class="form-label h7">Кошелек</label>
+                                <select class="form-select" id="wallet_id" name="wallet_id" required>
                                     {% for wallet in wallets %}
-                                        <option>{{ wallet.name }}</option>
+                                        <option value="{{ wallet.id }}">{{ wallet.name }}</option>
                                     {% endfor %}
                                  </select>
                             </div>
@@ -444,7 +444,7 @@ updateModal.addEventListener('show.bs.modal', function (event) {
   var date = button.getAttribute('data-bs-date')
   var modalDate = Transaction.querySelector('.modal-body #date')
   var wallet = button.getAttribute('data-bs-wallet')
-  var modalWallet = Transaction.querySelector('.modal-body #wallet')
+  var modalWallet = Transaction.querySelector('.modal-body #wallet_id')
   var comment = button.getAttribute('data-bs-comment')
   var modalComment = Transaction.querySelector('.modal-body #comment')
   var order = button.getAttribute('data-bs-order')

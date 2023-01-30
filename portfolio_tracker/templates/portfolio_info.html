@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Main page{% endblock %}
+{% block title %} {{ portfolio.name }} / Портфели {% endblock %}
 {% block head %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/bootstrap-table.js') }}"></script>
@@ -12,8 +12,8 @@
     <div class="dropdown">
         <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
         <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='crypto') }}">Crypto</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='stocks') }}">Stocls</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
         </ul>
     </div>
 {% endblock %}

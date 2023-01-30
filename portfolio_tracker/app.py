@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
 from celery import Celery
 import redis
 
@@ -29,6 +30,8 @@ def make_celery(app):
 celery = make_celery(app)
 
 redis = redis.StrictRedis('localhost', 6379)
+
+login_manager = LoginManager(app)
 
 from portfolio_tracker.models import Setting, Market
 from portfolio_tracker.defs import *

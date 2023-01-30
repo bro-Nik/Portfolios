@@ -6,7 +6,7 @@ from celery.schedules import crontab
 import pickle
 
 from portfolio_tracker.app import app, db, celery, redis
-from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Ticker, Market, Alert
+from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Ticker, Market, Alert, Trackedticker
 
 
 cg = CoinGeckoAPI()
@@ -16,7 +16,7 @@ settings_list = {}
 
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(120.0, price_list_crypto_def.s())
+    sender.add_periodic_task(20.0, price_list_crypto_def.s())
 
 def price_list_def():
     ''' Общая функция сбора цен '''
@@ -25,9 +25,9 @@ def price_list_def():
             if not redis.get('price_list_crypto'):
                 price_list_crypto_def()
 
-        #if market == 'stocks':
-        #    if price_list_stocks == {}:
-        #        price_list_stocks_def()
+        if market == 'stocks':
+            if not redis.get('price_list_stocks'):
+                price_list_stocks_def()
 
     price_list_crypto = pickle.loads(redis.get('price_list_crypto')) if redis.get('price_list_crypto') else {}
     price_list_stocks = pickle.loads(redis.get('price_list_stocks')) if redis.get('price_list_stocks') else {}
@@ -65,33 +65,32 @@ def price_list_crypto_def():
 @celery.task
 def price_list_stocks_def():
     ''' Запрос цен у Polygon фондовый рынок '''
-    with app.app_context():
-        global price_list_stocks
-        price_list = {}
-        day = 1
-        while price_list == {}:
-            date = datetime.now().date() - timedelta(days=day)
-            url = 'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/' + str(date) + '?adjusted=true&include_otc=false&apiKey=' + settings_list['api_key_polygon']
-            response = requests.get(url)
-            data = response.json()
-            if data.get('results'):
-                for ticker in data['results']:
-                    # вчерашняя цена закрытия, т.к. бесплатно
-                    price_list[ticker['T'].lower()] = ticker['c']
-            else:
-                # если нет результата, делаем запрос еще на 1 день раньше (возможно праздники)
-                day += 1
-                k = day % 4
-                # задержка на бесплатном тарифе
-                if k == 0:
-                    print('Задержка 1 мин. (загрузка прайса Акции)')
-                    time.sleep(60)
+    #price_list_stocks = pickle.loads(redis.get('price_list_stocks')) if redis.get('price_list_stocks') else {}
+    price_list = {}
+    day = 1
+    while price_list == {}:
+        date = datetime.now().date() - timedelta(days=day)
+        url = 'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/' + str(date) + '?adjusted=true&include_otc=false&apiKey=' + settings_list['api_key_polygon']
+        response = requests.get(url)
+        data = response.json()
+        if data.get('results'):
+            for ticker in data['results']:
+                # вчерашняя цена закрытия, т.к. бесплатно
+                price_list[ticker['T'].lower()] = ticker['c']
+        else:
+            # если нет результата, делаем запрос еще на 1 день раньше (возможно праздники)
+            day += 1
+            k = day % 4
+            # задержка на бесплатном тарифе
+            if k == 0:
+                print('Задержка 1 мин. (загрузка прайса Акции)')
+                time.sleep(60)
 
-        if price_list:
-            price_list['update-stocks'] = datetime.now()
-            price_list_stocks = price_list
-            print('Фондовый прайс обновлен ', price_list['update-stocks'])
-            alerts_update_def()
+    if price_list:
+        price_list['update-stocks'] = datetime.now()
+        redis.set('price_list_stocks', pickle.dumps(price_list))
+        print('Фондовый прайс обновлен ', price_list['update-stocks'])
+        alerts_update_def()
 
 @celery.task
 def alerts_update_def():
@@ -100,63 +99,77 @@ def alerts_update_def():
     price_list_stocks = pickle.loads(redis.get('price_list_stocks')) if redis.get('price_list_stocks') else {}
     price_list = {**price_list_crypto, **price_list_stocks}
     flag = False
-    all_alerts = pickle.loads(redis.get('all_alerts')) if redis.get('all_alerts') else {}
+    not_worked_alerts = redis.get('not_worked_alerts')
     # первый запрос уведомлений
-    if all_alerts == {}:
-        all_alerts['not_worked'] = {}
-        all_alerts['worked'] = {}
-        alerts_in_base = db.session.execute(db.select(Alert)).scalars()
-        if alerts_in_base != ():
-            for alert in alerts_in_base:
-                if (alert.type == 'down' and float(price_list[alert.ticker_id]) <= alert.price) or (alert.type == 'up' and float(price_list[alert.ticker_id]) >= alert.price):
+    if not_worked_alerts is None:
+        not_worked_alerts = {}
+        worked_alerts = {}
+
+        tracked_tickers = db.session.execute(db.select(Trackedticker)).scalars()
+        for ticker in tracked_tickers:
+            for alert in ticker.alerts:
+                if alert.worked == False:
+                    break
+                if (alert.type == 'down' and float(price_list[ticker.ticker_id]) <= alert.price) or (alert.type == 'up' and float(price_list[ticker.ticker_id]) >= alert.price):
                     alert.worked = True
                     flag = True
+
                 # если это сработавшее уведомление
                 if alert.worked:
-                    all_alerts['worked'][alert.id] = {}
-                    all_alerts['worked'][alert.id]['price'] = alert.price
-                    all_alerts['worked'][alert.id]['type'] = alert.type
-                    all_alerts['worked'][alert.id]['comment'] = alert.comment
-                    all_alerts['worked'][alert.id]['ticker'] = alert.ticker.name
-                    all_alerts['worked'][alert.id]['ticker_id'] = alert.ticker_id
+                    worked_alerts[ticker.user_id] = {}
+                    worked_alerts[ticker.user_id][alert.id] = {}
+                    worked_alerts[ticker.user_id][alert.id]['price'] = alert.price
+                    worked_alerts[ticker.user_id][alert.id]['type'] = alert.type
+                    worked_alerts[ticker.user_id][alert.id]['comment'] = alert.comment
+                    worked_alerts[ticker.user_id][alert.id]['ticker'] = alert.trackedticker.ticker.name
+                    worked_alerts[ticker.user_id][alert.id]['ticker_id'] = alert.trackedticker.ticker_id
                     if alert.asset_id:
-                        all_alerts['worked'][alert.id]['portfolio_id'] = alert.asset.portfolio_id
-                        all_alerts['worked'][alert.id]['portfolio_name'] = alert.asset.portfolio.name
+                        worked_alerts[ticker.user_id][alert.id]['portfolio_id'] = alert.asset.portfolio_id
+                        worked_alerts[ticker.user_id][alert.id]['portfolio_name'] = alert.asset.portfolio.name
                     else:
-                        all_alerts['worked'][alert.id]['market_id'] = alert.ticker.market_id
+                        worked_alerts[ticker.user_id][alert.id]['market_id'] = alert.ticker.market_id
                 # если это не сработавшее уведомление
                 if not alert.worked:
-                    all_alerts['not_worked'][alert.id] = {}
-                    all_alerts['not_worked'][alert.id]['type'] = alert.type
-                    all_alerts['not_worked'][alert.id]['price'] = alert.price
-                    all_alerts['not_worked'][alert.id]['ticker_id'] = alert.ticker_id
-        redis.set('all_alerts', pickle.dumps(all_alerts))
+                    not_worked_alerts[alert.id] = {}
+                    not_worked_alerts[alert.id]['type'] = alert.type
+                    not_worked_alerts[alert.id]['price'] = alert.price
+                    not_worked_alerts[alert.id]['ticker_id'] = ticker.ticker_id
+        redis.set('worked_alerts', pickle.dumps(worked_alerts))
+        redis.set('not_worked_alerts', pickle.dumps(not_worked_alerts))
 
     # последующие запросы уведомлений без запроса в базу
     else:
-        if all_alerts['not_worked'] != {}:
-            for alert in list(all_alerts['not_worked'].keys()):
-                if (all_alerts['not_worked'][alert]['type'] == 'down' and price_list[all_alerts['not_worked'][alert]['ticker_id']] <= all_alerts['not_worked'][alert]['price']) or (all_alerts['not_worked'][alert]['type'] == 'up' and price_list[all_alerts['not_worked'][alert]['ticker_id']] >= all_alerts['not_worked'][alert]['price']):
+        not_worked_alerts = pickle.loads(redis.get('not_worked_alerts'))
+        worked_alerts = pickle.loads(redis.get('worked_alerts'))
+
+        if not_worked_alerts != {}:
+            for alert in list(not_worked_alerts.keys()):
+                if (not_worked_alerts[alert]['type'] == 'down' and price_list[not_worked_alerts[alert]['ticker_id']] <= not_worked_alerts[alert]['price']) \
+                        or (not_worked_alerts[alert]['type'] == 'up' and price_list[not_worked_alerts[alert]['ticker_id']] >= not_worked_alerts[alert]['price']):
                     alert_in_base = db.session.execute(db.select(Alert).filter_by(id=alert)).scalar()
                     alert_in_base.worked = True
                     flag = True
                     # удаляем из несработавших
-                    all_alerts['not_worked'].pop(alert)
+                    not_worked_alerts.pop(alert)
                     # добавляем в сработавшие
-                    all_alerts['worked'][alert_in_base.id] = {}
-                    all_alerts['worked'][alert_in_base.id]['price'] = alert_in_base.price
-                    all_alerts['worked'][alert_in_base.id]['type'] = alert_in_base.type
-                    all_alerts['worked'][alert_in_base.id]['comment'] = alert_in_base.comment
-                    all_alerts['worked'][alert_in_base.id]['ticker'] = alert_in_base.ticker.name
-                    all_alerts['worked'][alert_in_base.id]['ticker_id'] = alert_in_base.ticker_id
+                    user_id = alert_in_base.trackedticker.user_id
+                    if not worked_alerts.get(user_id):
+                        worked_alerts[user_id] = {}
+                    worked_alerts[user_id][alert_in_base.id] = {}
+                    worked_alerts[user_id][alert_in_base.id]['price'] = alert_in_base.price
+                    worked_alerts[user_id][alert_in_base.id]['type'] = alert_in_base.type
+                    worked_alerts[user_id][alert_in_base.id]['comment'] = alert_in_base.comment
+                    worked_alerts[user_id][alert_in_base.id]['ticker'] = alert_in_base.trackedticker.ticker.name
+                    worked_alerts[user_id][alert_in_base.id]['ticker_id'] = alert_in_base.trackedticker.ticker.id
                     if alert_in_base.asset_id:
-                        all_alerts['worked'][alert_in_base.id]['portfolio_id'] = alert_in_base.asset.portfolio_id
-                        all_alerts['worked'][alert_in_base.id]['portfolio_name'] = alert_in_base.asset.portfolio.name
+                        worked_alerts[user_id][alert_in_base.id]['portfolio_id'] = alert_in_base.asset.portfolio_id
+                        worked_alerts[user_id][alert_in_base.id]['portfolio_name'] = alert_in_base.asset.portfolio.name
                     else:
-                        all_alerts['worked'][alert_in_base.id]['market_id'] = alert_in_base.ticker.market_id
+                        worked_alerts[user_id][alert_in_base.id]['market_id'] = alert_in_base.ticker.market_id
 
     if flag:
-        redis.set('all_alerts', pickle.dumps(all_alerts))
+        redis.set('worked_alerts', pickle.dumps(worked_alerts))
+        redis.set('not_worked_alerts', pickle.dumps(not_worked_alerts))
         db.session.commit()
 
 

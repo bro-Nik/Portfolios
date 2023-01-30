@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Main page{% endblock %}
+{% block title %} {{ tracked_ticker.ticker.name }} / Список отслеживания {% endblock %}
 {% block head %}
     {{ super() }}
 {% endblock %}
@@ -7,29 +7,27 @@
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
     <div class="dropdown">
-        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        Список отслеживания
-        </button>
+        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
         <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='crypto') }}">Crypto</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='stocks') }}">Stocls</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
         </ul>
     </div>
-    <button onclick="document.location='{{ url_for('alerts_list', market_id=ticker.market.id) }}'" type="button" class="btn btn-light btn-sm">{{ ticker.market.name }}</button>
-    <button type="button" class="btn btn-light btn-sm" disabled>{{ ticker.name }}</button>
+    <button onclick="document.location='{{ url_for('tracking_list', market_id=tracked_ticker.ticker.market_id) }}'" type="button" class="btn btn-light btn-sm">{{ tracked_ticker.ticker.market.name }}</button>
+    <button type="button" class="btn btn-light btn-sm" disabled>{{ tracked_ticker.ticker.name }}</button>
 {% endblock %}
 {% block content %}
 <div class="col-md-12 mb-5">
     <div class="row">
         <div class="col-md-6">
-            <h1 class="fs-6 text-muted m-0">{{ ticker.name }} ({{ ticker.symbol|upper }})
-                {% if ticker.market_cap_rank %}
-                    <span class="badge text-bg-light">#{{ ticker.market_cap_rank }}</span>
+            <h1 class="fs-6 text-muted m-0">{{ tracked_ticker.ticker.name }} ({{ tracked_ticker.ticker.symbol|upper }})
+                {% if tracked_ticker.ticker.market_cap_rank %}
+                    <span class="badge text-bg-light">#{{ tracked_ticker.ticker.market_cap_rank }}</span>
                 {% endif %}
             </h1>
             <div class="hstack gap-2">
-                {% if ticker.image %}
-                    <img class="img-asset" src="{{ ticker.image }}">
+                {% if tracked_ticker.ticker.image %}
+                    <img class="img-asset" src="{{ tracked_ticker.ticker.image }}">
                 {% endif %}
                 <span class="fs-1 fw-semibold">${{ price|smart_round|number_group }}</span>
             </div>
@@ -39,7 +37,7 @@
         </div>
     </div>
 </div>
-{% if ticker.alerts[0] %}
+{% if tracked_ticker.alerts[0] %}
 <div class="bd-example pb-3">
     <table class="table table-sm align-middle">
         <thead>
@@ -51,7 +49,7 @@
             </tr>
         </thead>
         <tbody>
-        {% for alert in ticker.alerts|sort(reverse=true, attribute="price") %}
+        {% for alert in tracked_ticker.alerts|sort(reverse=true, attribute="price") %}
             <tr>
                 <td>
                     {% if alert.type == 'down' %}
@@ -64,7 +62,7 @@
                 <td>{{ alert.comment }}</td>
                 <td>
                     {% if alert.asset_id %}
-                    <a class="text-decoration-none link-secondary" href="{{ url_for('asset_info', ticker_id=ticker.id, portfolio_id=alert.asset.portfolio_id) }}">
+                    <a class="text-decoration-none link-secondary" href="{{ url_for('asset_info', ticker_id=tracked_ticker.ticker_id, portfolio_id=alert.asset.portfolio_id) }}">
                         <i class="bi icon bi-briefcase"></i>{{ alert.asset.portfolio.name }}
                     </a>
                     {% else %}
@@ -103,11 +101,11 @@
                 <h1 class="modal-title fs-3">Уведомления</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            {% if ticker.alerts %}
+            {% if tracked_ticker.alerts %}
             <div class="modal-body">
                 <table class="table table-sm align-middle table-borderless">
                     <tbody>
-                        {% for alert in ticker.alerts|sort(reverse=true, attribute="price") %}
+                        {% for alert in tracked_ticker.alerts|sort(reverse=true, attribute="price") %}
                             <tr>
                                 <td>
                                     {% if alert.type == 'down' %}
@@ -138,7 +136,7 @@
             <div class="modal-footer d-flex flex-column">
                 <form class=""  method="post" action="{{ url_for('alert_add') }}">
                     <input type="hidden" name="asset_id" value="">
-                    <input type="hidden" name="ticker_id" value="{{ ticker.id }}">
+                    <input type="hidden" name="tracked_ticker_id" value="{{ tracked_ticker.id }}">
                     <div class="row g-2">
                         <div class="col-md-6">
                             <div class="mb-1">

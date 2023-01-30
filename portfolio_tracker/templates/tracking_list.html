@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Main page{% endblock %}
+{% block title %} {{ tickers[0].market.name }} / Список отслеживания {% endblock %}
 {% block head %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/bootstrap-table.js') }}"></script>
@@ -9,12 +9,10 @@
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
     <div class="dropdown">
-        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        Список отслеживания
-        </button>
+        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
         <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='crypto') }}">Crypto</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='stocks') }}">Stocls</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
         </ul>
     </div>
     <button type="button" class="btn btn-light btn-sm" disabled>{{ tickers[0].market.name }}</button>
@@ -35,7 +33,7 @@
                     <hr class="dropdown-divider">
                     <div>
                     {% for ticker in tickers|sort(attribute="market_cap_rank") %}
-                        <a class="dropdown-item" href="{{ url_for('alerts_add_ticker', ticker_id=ticker.id) }}"><span class="text-average">{{ ticker.name }}</span> {{ ticker.symbol|upper }}</a>
+                        <a class="dropdown-item" href="{{ url_for('tracking_list_add_ticker', ticker_id=ticker.id) }}"><span class="text-average">{{ ticker.name }}</span> {{ ticker.symbol|upper }}</a>
                     {% endfor %}
                     </div>
                 </div>
@@ -43,7 +41,7 @@
         </div>
     </div>
 </div>
-{% if tickers_in_list %}
+{% if tracked_tickers %}
     <div class="">
         <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
             <thead>
@@ -54,25 +52,24 @@
                 </tr>
             </thead>
             <tbody>
-            {% for ticker in tickers %}
-            {% if ticker.alerts or ticker.white_list %}
+            {% for item in tracked_tickers %}
                 <tr>
                     <td class="text-average">
-                        <a class="link-dark text-decoration-none" href="{{ url_for('alerts_ticker', market_id=ticker.market_id, ticker_id=ticker.id) }}">
-                            {% if ticker.image %}
-                            <img class="img-asset-min" src="{{ ticker.image }}">
+                        <a class="link-dark text-decoration-none" href="{{ url_for('tracked_ticker_info', market_id=item.ticker.market_id, ticker_id=item.ticker.id) }}">
+                            {% if item.ticker.image %}
+                            <img class="img-asset-min" src="{{ item.ticker.image }}">
                             {% endif %}
-                            {{ ticker.name }} <span class="text-muted">{{ ticker.symbol|upper }}</span>
+                            {{ item.ticker.name }} <span class="text-muted">{{ item.ticker.symbol|upper }}</span>
                         </a>
                     </td>
                     <td>
-                        {% for alert in ticker.alerts %}
+                        {% for alert in item.alerts %}
                         <span class="badge text-bg-secondary fw-normal none-cursor">${{ alert.price|smart_round|number_group }}</span>
                         {% endfor %}
                     </td>
                     <td class="text-end">
-                        {% if ticker.id not in orders %}
-                            <a class="action-icon text-decoration-none" href="{{ url_for('alerts_delete_ticker', ticker_id=ticker.id) }}" title="Удалить">
+                        {% if item.ticker_id not in orders %}
+                            <a class="action-icon text-decoration-none" href="{{ url_for('tracking_list_delete_ticker', ticker_id=item.id) }}" title="Удалить">
                                 <i class="bi icon bi-trash-fill"></i>
                             </a>
                         {% else %}
@@ -82,7 +79,6 @@
                         {% endif %}
                     </td>
                 </tr>
-            {% endif %}
             {% endfor %}
             </tbody>
         </table>

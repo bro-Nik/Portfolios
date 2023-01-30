@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Main page{% endblock %}
+{% block title %} Портфели {% endblock %}
 {% block head %}
     {{ super() }}
 {% endblock %}
@@ -9,8 +9,8 @@
     <div class="dropdown">
         <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
         <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='crypto') }}">Crypto</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='stocks') }}">Stocls</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
         </ul>
     </div>
 {% endblock %}
@@ -107,7 +107,7 @@
                     <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#newPortfolio" data-bs-id="{{ portfolio.id }}" data-bs-name="{{ portfolio.name }}" data-bs-comment="{{ portfolio.comment }}" data-bs-class="visually-hidden" data-bs-title="Изменить портфолио" title="Изменить">
                         <i class="bi icon bi-pencil-square"></i>
                     </a>
-                    {% if (cost_now_list[portfolio.id] and total_spent_list[portfolio.id]) or orders_in_portfolio[portfolio.id] %}
+                    {% if (cost_now_list[portfolio.id] and total_spent_list[portfolio.id]) or (portfolio.id in orders_in_portfolio) %}
                     <a class="action-icon text-decoration-none cursor-pointer opacity-25" aria-disabled="true"  tabindex="-1" title="Невозможно удалить, есть остатки или транзакции">
                         <i class="bi icon bi-trash-fill"></i>
                     </a>

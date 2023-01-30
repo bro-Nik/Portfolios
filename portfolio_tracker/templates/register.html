@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Register</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}">
+
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery-3.5.1.js') }}"></script>
+
+    <style>
+        .form-signin {
+            max-width: 330px;
+            padding: 15px;
+        }
+        body {
+            display: flex;
+            align-items: center;
+            padding-top: 40px;
+            padding-bottom: 40px;
+            background-color: #f5f5f5;
+        }
+        html, body {
+            height: 100%;
+        }
+        .form-signin input[type="email"] {
+            margin-bottom: -1px;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        .form-floating>.form-control {
+            padding: 1rem 0.75rem;
+            height: calc(3.5rem + 2px);
+            line-height: 1.25;
+        }
+
+        .form-signin input[type="password"] {
+            margin-bottom: 10px;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+        .form-floating {
+            position: relative;
+        }
+        .form-signin .form-floating:focus-within {
+            z-index: 2;
+        }
+    </style>
+</head>
+
+<body class="text-center">
+    <main class="form-signin w-100 m-auto">
+        <form method="post">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-success alert-dismissible" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            {##<img class="mb-4" src="{{ url_for('static', filename='favicon.png') }}" alt="" width="60" height="60"> ##}
+            <h1 class="h3 mb-3 fw-normal">Регистрация</h1>
+
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com" name="email">
+                <label for="floatingInput">Email адрес</label>
+            </div>
+            <div class="form-floating">
+                <input type="password" class="form-control" id="floatingPassword" placeholder="Password" name="password">
+                <label for="floatingPassword">Пароль</label>
+            </div>
+            <div class="form-floating">
+                <input type="password" class="form-control" id="floatingPassword2" placeholder="Password" name="password2">
+                <label for="floatingPassword2">Пароль (еще раз)</label>
+            </div>
+
+            <div class="checkbox mb-3">
+                <a href="{{ url_for('login') }}">Вход</a>
+            </div>
+            <button class="w-100 btn btn-lg btn-primary" type="submit">Зарегистрироваться</button>
+            <p class="mt-5 mb-3 text-muted">© Portfolios</p>
+        </form>
+    </main>
+</body>
+</html>

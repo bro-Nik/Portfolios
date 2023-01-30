@@ -1,3 +1,5 @@
+from flask_login import UserMixin
+
 from portfolio_tracker.app import db
 
 
@@ -36,7 +38,6 @@ class Ticker(db.Model):
     link = db.Column(db.String)
     market = db.relationship('Market', backref=db.backref('tickers', lazy=True))
     market_id = db.Column(db.Integer, db.ForeignKey('market.id'))
-    white_list = db.Column(db.Boolean)
 
 class Market(db.Model):
     id = db.Column(db.String, primary_key=True)
@@ -47,21 +48,25 @@ class Wallet(db.Model):
     name = db.Column(db.String)
     money_all = db.Column(db.Float)
     money_in_order = db.Column(db.Float)
+    user = db.relationship('User', backref=db.backref('wallets', lazy=True))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 class Portfolio(db.Model):
-    id = db.Column(db.String, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     comment = db.Column(db.String)
     market = db.relationship('Market', backref=db.backref('portfolios', lazy=True))
     market_id = db.Column(db.Integer, db.ForeignKey('market.id'))
+    user = db.relationship('User', backref=db.backref('portfolios', lazy=True))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.String)
     asset = db.relationship('Asset', backref=db.backref('alerts', lazy=True))
     asset_id = db.Column(db.Integer, db.ForeignKey('asset.id'))
-    ticker = db.relationship('Ticker', backref=db.backref('alerts', lazy=True))
-    ticker_id = db.Column(db.Integer, db.ForeignKey('ticker.id'))
+    trackedticker = db.relationship('Trackedticker', backref=db.backref('alerts', lazy=True))
+    trackedticker_id = db.Column(db.Integer, db.ForeignKey('trackedticker.id'))
     price = db.Column(db.Float)
     type = db.Column(db.String)
     comment = db.Column(db.String)
@@ -71,3 +76,16 @@ class Setting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     value = db.Column(db.String)
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128))
+    email = db.Column(db.String, nullable=False, unique=True)
+    password = db.Column(db.String(255), nullable=False)
+
+class Trackedticker(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ticker = db.relationship('Ticker', backref=db.backref('trackedtickers', lazy=True))
+    ticker_id = db.Column(db.Integer, db.ForeignKey('ticker.id'))
+    user = db.relationship('User', backref=db.backref('trackedtickers', lazy=True))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))

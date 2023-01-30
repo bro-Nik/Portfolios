@@ -22,18 +22,26 @@
             <header class=" align-items-center py-3 mb-4 border-bottom">
                 <div class="hstack gap-2">
                     {% block link %}{% endblock %}
-                    <div class="ms-auto">
+                    <div class="d-flex ms-auto">
                         <a class="action-icon text-decoration-none position-relative" href="" data-bs-toggle="modal" data-bs-target="#Alerts">
                             <i class="bi icon bi-bell"></i>
-                            {% if triggered_alerts %}
+                            {% if worked_alerts %}
                             <span class="position-absolute top-0 start-100 badge rounded-pill bg-danger items-count">
-                                {{ triggered_alerts|length }}
+                                {{ worked_alerts|length }}
                             </span>
                             {% endif %}
                         </a>
-                        <a class="action-icon text-decoration-none" href="{{ url_for('settings') }}">
-                            <i class="bi icon bi-gear"></i>
-                        </a>
+                        <div class="ms-1 flex-shrink-0 dropdown">
+                            <a href="#" class="d-block link-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi icon bi-person-circle m-0"></i>
+                            </a>
+                            <ul class="dropdown-menu text-small shadow" style="">
+                                <li><a class="dropdown-item" href="#">Настройки</a></li>
+                                <li><a class="dropdown-item" href="#">Профиль</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Выйти</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -60,23 +68,23 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            {% if triggered_alerts %}
-                                {% for alert in triggered_alerts %}
+                            {% if worked_alerts %}
+                                {% for alert in worked_alerts %}
                                     <div class="alert alert-warning alert-dismissible" role="alert">
                                         <form action="{{ url_for('alert_delete') }}" class="alerts" method="post">
                                             <input type="hidden" name="id" value="{{ alert }}">
-                                            <span class="fw-bold">{{ triggered_alerts[alert]['ticker'] }}</span>
-                                            {{ 'упал до ' if triggered_alerts[alert]['type'] == 'down' else 'вырос до ' }} ${{ triggered_alerts[alert]['price'] }} {{ triggered_alerts[alert]['comment'] }}
-                                            {% if triggered_alerts[alert]['portfolio_id'] %}
-                                            <a class="text-decoration-none link-secondary text-nowrap" href="{{ (url_for('asset_info', ticker_id=triggered_alerts[alert]['ticker_id'], portfolio_id=triggered_alerts[alert]['portfolio_id'])) }}">
-                                                <i class="bi icon bi-briefcase"></i><span class="small_text">{{ triggered_alerts[alert]['portfolio_name'] }}</span>
+                                            <span class="fw-bold">{{ worked_alerts[alert]['ticker'] }}</span>
+                                            {{ 'упал до ' if worked_alerts[alert]['type'] == 'down' else 'вырос до ' }} ${{ worked_alerts[alert]['price'] }} {{ worked_alerts[alert]['comment'] }}
+                                            {% if worked_alerts[alert]['portfolio_id'] %}
+                                            <a class="text-decoration-none link-secondary text-nowrap" href="{{ (url_for('asset_info', ticker_id=worked_alerts[alert]['ticker_id'], portfolio_id=worked_alerts[alert]['portfolio_id'])) }}">
+                                                <i class="bi icon bi-briefcase"></i><span class="small_text">{{ worked_alerts[alert]['portfolio_name'] }}</span>
                                             </a>
                                             {% else %}
-                                            <a class="text-decoration-none link-secondary text-nowrap" href="{{ (url_for('alerts_ticker', ticker_id=triggered_alerts[alert]['ticker_id'], market_id=triggered_alerts[alert]['market_id'])) }}">
+                                            <a class="text-decoration-none link-secondary text-nowrap" href="{{ (url_for('alerts_ticker', ticker_id=worked_alerts[alert]['ticker_id'], market_id=worked_alerts[alert]['market_id'])) }}">
                                                 <i class="bi icon bi-bell"></i><span class="small_text">Список отслеживания</span>
                                             </a>
                                             {% endif %}
-                                            {% if triggered_alerts[alert]['comment'] != 'Ордер' %}
+                                            {% if worked_alerts[alert]['comment'] != 'Ордер' %}
                                                 <button type="submit" class="btn-close"></button>
                                             {% else %}
                                                 <button type="button" class="btn-close opacity-25" title="Перейдите в портфль и нажмите галочку 'Ордер сработал'"></button>

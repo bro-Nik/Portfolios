@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Main page{% endblock %}
+{% block title %} Кошельки {% endblock %}
 {% block head %}
     {{ super() }}
 {% endblock %}
@@ -9,8 +9,8 @@
     <div class="dropdown">
         <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
         <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='crypto') }}">Crypto</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('alerts_list', market_id='stocks') }}">Stocls</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
         </ul>
     </div>
 {% endblock %}
@@ -198,10 +198,10 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="wallet" class="form-label h7">Кошелек</label>
-                                <select class="form-select" id="wallet" name="wallet" required>
+                                <select class="form-select" id="wallet" name="wallet_id" required>
                                     <option selected>...</option>
                                     {% for wallet in wallets %}
-                                        <option>{{ wallet.name }}</option>
+                                        <option value="{{ wallet.id }}">{{ wallet.name }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -246,7 +246,7 @@
                                 <select class="form-select" id="wallet_out" name="wallet_out" required>
                                     <option selected>...</option>
                                     {% for wallet in wallets %}
-                                        <option>{{ wallet.name }}</option>
+                                        <option value="{{ wallet.id }}">{{ wallet.name }}</option>
                                     {% endfor %}
                                  </select>
                             </div>
@@ -257,7 +257,7 @@
                                 <select class="form-select" id="wallet_in" name="wallet_in" required>
                                     <option selected>...</option>
                                     {% for wallet in wallets %}
-                                        <option>{{ wallet.name }}</option>
+                                        <option value="{{ wallet.id }}">{{ wallet.name }}</option>
                                     {% endfor %}
                                  </select>
                             </div>
