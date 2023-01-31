@@ -64,7 +64,11 @@
                     </td>
                     <td>
                         {% for alert in item.alerts %}
-                        <span class="badge text-bg-secondary fw-normal none-cursor">${{ alert.price|smart_round|number_group }}</span>
+                            {% if alert.worked %}
+                                <span class="badge text-bg-success fw-normal none-cursor">${{ alert.price|number_group }}</span>
+                            {% elif alert.worked == None %}
+                                <span class="badge text-bg-light fw-normal none-cursor">${{ alert.price|number_group }}</span>
+                            {% endif %}
                         {% endfor %}
                     </td>
                     <td class="text-end">

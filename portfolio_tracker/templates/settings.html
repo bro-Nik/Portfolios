@@ -1,10 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Main page{% endblock %}
+{% block title %} Настройки {% endblock %}
 {% block head %}
     {{ super() }}
 {% endblock %}
 {% block link %}
-
+    <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
+    <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
+    <div class="dropdown">
+        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
+        </ul>
+    </div>
 {% endblock %}
 {% block content %}
 <div class="col-md-12 mb-5">
@@ -16,17 +24,28 @@
 </div>
 
 
-<form class=""  method="post" action="{{ url_for('settings_update') }}">
-    <div class="row g-2">
-        <div class="col-md-6">
-            <div class="mb-1">
-                <label for="market_cap_rank" class="form-label h7">Загрузка тикеров</label>
-                <input type="number" class="form-control rounded-3" id="market_cap_rank" placeholder="" name="market_cap_rank" autocomplete="off" required>
+<div class="row mb-5">
+    <div class="col-md-auto">
+        <p class="text-average">Профиль</p>
+        <span class="">{{ current_user.email }}</span>
+        <br>
+        <a class="link-danger text-decoration-none" role="button" data-bs-toggle="modal" data-bs-target="#delete">Удалить аккаунт</a>
+    </div>
+</div>
+<!-- Modal Delete -->
+<div class="modal fade" id="delete" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-3">Вы уверенны?</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="">Аккаунт будет удален безвозвратно.</p>
+                <a href="{{ url_for('user_delete') }}" class="w-100 mb-2 btn btn rounded-3 btn-primary btn-delete"><strong>Да</strong></a>
             </div>
         </div>
     </div>
-    <button class="w-100 mb-2 btn btn rounded-3 btn-primary" type="submit">Сохранить</button>
-</form>
-
+</div>
 
 {% endblock %}

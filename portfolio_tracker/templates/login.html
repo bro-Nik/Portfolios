@@ -26,28 +26,6 @@
         html, body {
             height: 100%;
         }
-        .form-signin input[type="email"] {
-            margin-bottom: -1px;
-            border-bottom-right-radius: 0;
-            border-bottom-left-radius: 0;
-        }
-        .form-floating>.form-control {
-            padding: 1rem 0.75rem;
-            height: calc(3.5rem + 2px);
-            line-height: 1.25;
-        }
-
-        .form-signin input[type="password"] {
-            margin-bottom: 10px;
-            border-top-left-radius: 0;
-            border-top-right-radius: 0;
-        }
-        .form-floating {
-            position: relative;
-        }
-        .form-signin .form-floating:focus-within {
-            z-index: 2;
-        }
     </style>
 </head>
 
@@ -65,24 +43,25 @@
                 {% endif %}
             {% endwith %}
             {##<img class="mb-4" src="{{ url_for('static', filename='favicon.png') }}" alt="" width="60" height="60"> ##}
-            <h1 class="h3 mb-3 fw-normal">Вход</h1>
-
-            <div class="form-floating">
-                <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com" name="email">
-                <label for="floatingInput">Email адрес</label>
+            <div class="d-flex justify-content-center align-items-end gap-2 mb-3">
+                <h1 class="h3 fw-normal">Вход</h1>
+                <a href="{{ url_for('register') }}" class="h4 fw-normal text-decoration-none">Регистрация</a>
             </div>
-            <div class="form-floating">
-                <input type="password" class="form-control" id="floatingPassword" placeholder="Password" name="password">
-                <label for="floatingPassword">Пароль</label>
+
+            <div class="mb-1">
+                <input type="email" class="form-control" id="floatingInput" placeholder="Email" name="email">
+            </div>
+            <div class="mb-3">
+                <input type="password" class="form-control" id="floatingPassword" placeholder="Пароль" name="password">
             </div>
 
             <div class="checkbox mb-3">
                 <label>
-                    <input type="checkbox" value="remember-me"> Запомнить меня
+                    <input type="checkbox" value="True" name="remember-me" checked> Запомнить меня
                 </label>
-                <a href="{{ url_for('register') }}">Зарегистрироваться</a>
+
             </div>
-            <button class="w-100 btn btn-lg btn-primary" type="submit">Войти</button>
+            <button class="w-100 btn btn-sm btn-primary" type="submit">Войти</button>
             <p class="mt-5 mb-3 text-muted">© Portfolios</p>
         </form>
     </main>

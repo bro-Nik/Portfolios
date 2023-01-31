@@ -37,7 +37,7 @@
                     <div class="col-md-auto p-0 me-1">
                         {% if alert.worked %}
                         <span class="badge text-bg-success fw-normal none-cursor">${{ alert.price|number_group }}</span>
-                        {% else %}
+                        {% elif alert.worked == None %}
                         <span class="badge text-bg-light fw-normal none-cursor">${{ alert.price|number_group }}</span>
                         {% endif %}
                     </div>

@@ -42,6 +42,7 @@
     <table class="table table-sm align-middle">
         <thead>
             <tr>
+                <th></th>
                 <th scope="col">Цена</th>
                 <th scope="col">Комментарий</th>
                 <th scope="col">Откуда</th>
@@ -50,7 +51,16 @@
         </thead>
         <tbody>
         {% for alert in tracked_ticker.alerts|sort(reverse=true, attribute="price") %}
-            <tr>
+            {% if alert.worked == True %}
+                <tr class="table-success">
+            {% else %}
+                <tr>
+            {% endif %}
+                <td>
+                    <form class="form-check form-switch" action="" method="post">
+                        <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked" {{ '' if alert.worked == False else 'checked' }} {{ 'disabled' if alert.comment == 'Ордер' else '' }}>
+                    </form>
+                </td>
                 <td>
                     {% if alert.type == 'down' %}
                     <span class="text-red">Ниже</span>
@@ -73,7 +83,7 @@
                 </td>
                 <td class="text-end">
                     {% if alert.comment != 'Ордер' %}
-                    <form name="delete_alert" action="{{ url_for('alert_delete') }}" method="post">
+                    <form name="delete_alert" action="{{ url_for('alert_delete') }}" method="post" class="d-inline">
                         <input type="hidden" name="id" value="{{ alert.id }}">
                         <button type="submit" class="btn btn-link action-icon p-0"><i class="bi icon bi-trash-fill"></i></button>
                     </form>
@@ -107,6 +117,11 @@
                     <tbody>
                         {% for alert in tracked_ticker.alerts|sort(reverse=true, attribute="price") %}
                             <tr>
+                                <td class="col-md-1">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" {{ '' if alert.worked == False else 'checked' }} {{ 'disabled' if alert.comment == 'Ордер' else '' }}>
+                                    </div>
+                                </td>
                                 <td>
                                     {% if alert.type == 'down' %}
                                     <span class="text-red">Ниже</span>

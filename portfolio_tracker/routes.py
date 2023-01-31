@@ -11,54 +11,6 @@ from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Tick
 from portfolio_tracker.defs import *
 
 
-@app.route('/first_start', methods=['GET', 'POST'])
-def first_start():
-    ''' Страница первого запуска '''
-    global settings_list
-    if request.method == 'GET':
-        return render_template('first_start.html')
-
-    if request.method == 'POST':
-        # маркеты
-        settings_list['markets'] = {}
-        settings_list['update_period'] = {}
-        if request.form.get('crypto'):
-            crypto = Market(name='Crypto',
-                            id='crypto')
-            db.session.add(crypto)
-            settings_list['markets'][crypto.id] = crypto.name
-            # период обновления
-            settings_list['update_period'][crypto.id] = 5
-            crypto_update_price = Setting(name='crypto',
-                                          value=5)
-            db.session.add(crypto_update_price)
-        if request.form.get('stocks'):
-            stocks = Market(name='Stocks',
-                            id='stocks')
-            db.session.add(stocks)
-            settings_list['markets'][stocks.id] = stocks.name
-            # период обновления
-            settings_list['update_period'][stocks.id] = 0
-            stocks_update_price = Setting(name='stocks',
-                                          value=0)
-            db.session.add(stocks_update_price)
-            # API
-            settings_list['api_key_polygon'] = request.form.get('api_key_polygon')
-            api_key_polygon = Setting(
-                name='api_key_polygon',
-                value=request.form.get('api_key_polygon')
-            )
-            db.session.add(api_key_polygon)
-
-        # загрузка тикеров
-        if request.form.get('crypto'):
-            tickers_load('crypto')
-        if request.form.get('stocks'):
-            tickers_load('stocks')
-        settings_list.pop('first_start')
-
-        return redirect(url_for('portfolios'))
-
 @app.route('/settings')
 @login_required
 def settings():
@@ -384,7 +336,7 @@ def order_to_transaction(portfolio_id):
     transaction.asset.quantity += transaction.quantity
     transaction.asset.total_spent += float(transaction.total_spent)
     transaction.wallet.money_in_order -= float(transaction.total_spent)
-    db.session.add(transaction)
+
     # удаление уведомления
     alert_in_base = db.session.execute(db.select(Alert).filter_by(asset_id=transaction.asset_id, price=transaction.price)).scalar()
     if alert_in_base:
@@ -651,7 +603,7 @@ def login():
             user = db.session.execute(db.select(User).filter_by(email=email)).scalar()
 
             if user and check_password_hash(user.password, password):
-                login_user(user)
+                login_user(user, remember=request.form.get('remember-me'))
                 next_page = request.args.get('next')
                 return redirect(next_page)
             else:
@@ -700,3 +652,40 @@ def redirect_to_signin(response):
         return redirect(url_for('login') + '?next=' + request.url)
 
     return response
+
+@app.route('/user/delete')
+def user_delete():
+    user = db.session.execute(db.select(User).filter_by(id=current_user.id)).scalar()
+
+    not_worked_alerts = pickle.loads(redis.get('not_worked_alerts'))
+    worked_alerts = pickle.loads(redis.get('worked_alerts'))
+
+    # alerts
+    for ticker in user.trackedtickers:
+        for alert in ticker.alerts:
+            not_worked_alerts.pop(alert.id, None)
+            db.session.delete(alert)
+        db.session.delete(ticker)
+
+    # wallets
+    for walllet in user.wallets:
+        db.session.delete(walllet)
+
+    # portfolios, assets, transactions
+    for portfolio in user.portfolios:
+        for asset in portfolio.assets:
+            for transaction in asset.transactions:
+                db.session.delete(transaction)
+            db.session.delete(asset)
+        db.session.delete(portfolio)
+
+    worked_alerts.pop(user.id, None)
+    # user
+    db.session.delete(user)
+    db.session.commit()
+
+    # commit redis
+    redis.set('not_worked_alerts', pickle.dumps(not_worked_alerts))
+    redis.set('worked_alerts', pickle.dumps(worked_alerts))
+
+    return redirect(url_for('login'))

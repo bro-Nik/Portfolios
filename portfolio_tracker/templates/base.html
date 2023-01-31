@@ -36,8 +36,7 @@
                                 <i class="bi icon bi-person-circle m-0"></i>
                             </a>
                             <ul class="dropdown-menu text-small shadow" style="">
-                                <li><a class="dropdown-item" href="#">Настройки</a></li>
-                                <li><a class="dropdown-item" href="#">Профиль</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('settings') }}">Настройки</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ url_for('logout') }}">Выйти</a></li>
                             </ul>
