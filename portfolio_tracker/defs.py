@@ -1,4 +1,6 @@
-from flask import session, Flask
+from random import random
+
+from flask import session, Flask, url_for
 from pycoingecko import CoinGeckoAPI
 import os, json, requests, time
 from datetime import datetime, timedelta
@@ -21,9 +23,9 @@ def setup_periodic_tasks(sender, **kwargs):
 def price_list_def():
     ''' Общая функция сбора цен '''
     for market in settings_list['markets']:
-        if market == 'crypto':
-            if not redis.get('price_list_crypto'):
-                price_list_crypto_def()
+        #if market == 'crypto':
+        #    if not redis.get('price_list_crypto'):
+        #        price_list_crypto_def()
 
         if market == 'stocks':
             if not redis.get('price_list_stocks'):
@@ -107,6 +109,7 @@ def alerts_update_def():
 
         tracked_tickers = db.session.execute(db.select(Trackedticker)).scalars()
         for ticker in tracked_tickers:
+            worked_alerts[ticker.user_id] = []
             for alert in ticker.alerts:
                 if alert.worked == False:
                     break
@@ -116,18 +119,20 @@ def alerts_update_def():
 
                 # если это сработавшее уведомление
                 if alert.worked:
-                    worked_alerts[ticker.user_id] = {}
-                    worked_alerts[ticker.user_id][alert.id] = {}
-                    worked_alerts[ticker.user_id][alert.id]['price'] = alert.price
-                    worked_alerts[ticker.user_id][alert.id]['type'] = alert.type
-                    worked_alerts[ticker.user_id][alert.id]['comment'] = alert.comment
-                    worked_alerts[ticker.user_id][alert.id]['ticker'] = alert.trackedticker.ticker.name
-                    worked_alerts[ticker.user_id][alert.id]['ticker_id'] = alert.trackedticker.ticker_id
+                    a = {}
+                    a['id'] = alert.id
+                    a['price'] = alert.price
+                    a['type'] = 'упал до ' if alert.type == 'down' else 'вырос до '
+                    a['comment'] = alert.comment
+                    a['ticker'] = alert.trackedticker.ticker.name
                     if alert.asset_id:
-                        worked_alerts[ticker.user_id][alert.id]['portfolio_id'] = alert.asset.portfolio_id
-                        worked_alerts[ticker.user_id][alert.id]['portfolio_name'] = alert.asset.portfolio.name
+                        a['link'] = url_for('asset_info', ticker_id=alert.trackedticker.ticker_id, portfolio_url=alert.asset.portfolio.url)
+                        a['link_for'] = alert.asset.portfolio.name
                     else:
-                        worked_alerts[ticker.user_id][alert.id]['market_id'] = alert.ticker.market_id
+                        a['link'] = url_for('alerts_ticker', ticker_id=alert.trackedticker.ticker_id, market_id=alert.ticker.market_id)
+                        alert['link_for'] = 'Список отслеживания'
+
+                    worked_alerts[ticker.user_id].append(a)
                 # если это не сработавшее уведомление
                 if not alert.worked:
                     not_worked_alerts[alert.id] = {}
@@ -154,18 +159,24 @@ def alerts_update_def():
                     # добавляем в сработавшие
                     user_id = alert_in_base.trackedticker.user_id
                     if not worked_alerts.get(user_id):
-                        worked_alerts[user_id] = {}
-                    worked_alerts[user_id][alert_in_base.id] = {}
-                    worked_alerts[user_id][alert_in_base.id]['price'] = alert_in_base.price
-                    worked_alerts[user_id][alert_in_base.id]['type'] = alert_in_base.type
-                    worked_alerts[user_id][alert_in_base.id]['comment'] = alert_in_base.comment
-                    worked_alerts[user_id][alert_in_base.id]['ticker'] = alert_in_base.trackedticker.ticker.name
-                    worked_alerts[user_id][alert_in_base.id]['ticker_id'] = alert_in_base.trackedticker.ticker.id
+                        worked_alerts[user_id] = []
+
+                    a = {}
+                    a['id'] = alert_in_base.id
+                    a['price'] = alert_in_base.price
+                    a['type'] = 'упал до ' if alert_in_base.type == 'down' else 'вырос до '
+                    a['comment'] = alert_in_base.comment
+                    a['ticker'] = alert_in_base.trackedticker.ticker.name
                     if alert_in_base.asset_id:
-                        worked_alerts[user_id][alert_in_base.id]['portfolio_id'] = alert_in_base.asset.portfolio_id
-                        worked_alerts[user_id][alert_in_base.id]['portfolio_name'] = alert_in_base.asset.portfolio.name
+                        a['link'] = url_for('asset_info', ticker_id=alert_in_base.trackedticker.ticker_id,
+                                            portfolio_url=alert_in_base.asset.portfolio.url)
+                        a['link_for'] = alert_in_base.asset.portfolio.name
                     else:
-                        worked_alerts[user_id][alert_in_base.id]['market_id'] = alert_in_base.ticker.market_id
+                        a['link'] = url_for('alerts_ticker', ticker_id=alert_in_base.trackedticker.ticker_id,
+                                            market_id=alert_in_base.ticker.market_id)
+                        alert['link_for'] = 'Список отслеживания'
+
+                    worked_alerts[user_id].append(a)
 
     if flag:
         redis.set('worked_alerts', pickle.dumps(worked_alerts))
@@ -285,5 +296,4 @@ def number_group(number):
     return "{:,}".format(number).replace(',', ' ')
 
 app.add_template_filter(number_group)
-
 

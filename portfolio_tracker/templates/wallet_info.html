@@ -60,7 +60,9 @@
                 {% for asset in assets_list %}
                     <tr>
                         <td class="text-average" >{{ assets_list[asset]['name'] }} <span class="text-muted">{{ assets_list[asset]['symbol']|upper }}</span></td>
-                        <td>{{ assets_list[asset]['quantity']|smart_round|number_group }} {{ assets_list[asset]['symbol']|upper }}</td>
+                        <td>
+                            <span class="text-average small_text">{{ assets_list[asset]['quantity']|smart_round|number_group }} {{ assets_list[asset]['symbol']|upper }}</span>
+                        </td>
                         <td>${{ (assets_list[asset]['quantity'] * price_list[asset])|round|int|number_group }}</td>
                         <td>${{ assets_list[asset]['order']|round|int|number_group }}</td>
                     </tr>

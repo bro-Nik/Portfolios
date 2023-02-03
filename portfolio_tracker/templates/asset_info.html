@@ -5,7 +5,7 @@
 {% endblock %}
 {% block link %}
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
-    <button onclick="document.location='{{ url_for('portfolio_info', portfolio_id=asset.portfolio.id) }}'" type="button" class="btn btn-light btn-sm">{{ asset.portfolio.name }}</button>
+    <button onclick="document.location='{{ url_for('portfolio_info', portfolio_url=asset.portfolio.url) }}'" type="button" class="btn btn-light btn-sm">{{ asset.portfolio.name }}</button>
     <button type="button" class="btn btn-light btn-sm" disabled>{{ asset.ticker.name }}</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
     <div class="dropdown">
@@ -24,13 +24,13 @@
                 {% if asset.ticker.market_cap_rank %}
                     <span class="badge text-bg-light">#{{ asset.ticker.market_cap_rank }}</span>
                 {% endif %}
-                <span class="small_text" title="Обновлено">{{ when_updated }}</span>
+                <span class="small_text" title="Обновлено" id="when_updated"></span>
             </h1>
             <div class="hstack gap-2">
                 {% if asset.ticker.image %}
                     <img class="img-asset" src="{{ asset.ticker.image }}">
                 {% endif %}
-                <span class="fs-1 fw-semibold">${{ price|smart_round|number_group }}</span>
+                <span class="fs-1 fw-semibold" id="asset-price"> $- </span>
             </div>
             <div class="row">
                 {% for alert in asset.alerts %}
@@ -52,7 +52,7 @@
             <button class="btn btn-warning btn-sm ms-1" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="True" data-bs-date="{{ date }}" data-bs-price="{{ price }}" data-bs-wallet="{{ wallets[0].id }}" data-bs-title="Добавить ордер">Ордер</button>
             <button type="button" class="btn btn-light dropdown-toggle btn-sm ms-1" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
             <ul class="dropdown-menu" style="">
-                <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ asset.id }}" data-bs-action="{{ url_for('asset_delete', portfolio_id=portfolio.id) }}" data-bs-title="Удалить {{ asset.ticker.name }}?">Удалить {{ asset.ticker.name }}</a></li>
+                <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ asset.id }}" data-bs-action="{{ url_for('asset_delete', portfolio_url=asset.portfolio.url) }}" data-bs-title="Удалить {{ asset.ticker.name }}?">Удалить {{ asset.ticker.name }}</a></li>
             </ul>
         </div>
     </div>
@@ -81,34 +81,18 @@
             {% else %}
                 - /
             {% endif %}
-            {% if asset.quantity > 0 %}
-                ${{ (asset.quantity * price)|round|int|number_group  }}
-            {% else %}
-                -
-            {% endif%}
         </span>
+        <span class="text-average" id="asset-cost_now"> - </span>
     </div>
     <div class="col-md-auto">
         <p class="small_text">Прибыль / убыток</p>
-        {% if (asset.quantity * price - asset.total_spent)|round|int > 0 %}
-            <span class="text-green text-average">+${{ (asset.quantity * price - asset.total_spent)|round|int|number_group }}
-                {% if asset.total_spent > 0 %}
-                    ({{ ((asset.quantity * price - asset.total_spent) / asset.total_spent * 100)|round|int|number_group }}%)
-                {% endif %}
-            </span>
-        {% elif (asset.quantity * price - asset.total_spent)|round|int < 0 %}
-            <span class="text-red text-average">-${{ (asset.quantity * price - asset.total_spent)|round|int|abs|number_group }} ({{ ((asset.quantity * price - asset.total_spent) / asset.total_spent * 100)|round|int|abs }}%)</span>
-        {% elif asset.quantity == 0 %}
-            <span class="text-average">-</span>
-        {% else %}
-            <span class="text-average">$0</span>
-        {% endif %}
+        <span class="text-average" id="asset-profit"> - </span>
     </div>
     <div class="col-md-auto">
         <p class="small_text">% от портфеля</p>
         <span class="text-average">
-            {% if portfolio.assets|sum(attribute='total_spent') and asset.total_spent > 0 %}
-                {{ (asset.total_spent / portfolio.assets|sum(attribute='total_spent') * 100)|round(1, 'common') }}%
+            {% if asset.portfolio.assets|sum(attribute='total_spent') and asset.total_spent > 0 %}
+                {{ (asset.total_spent / asset.portfolio.assets|sum(attribute='total_spent') * 100)|round(1, 'common') }}%
             {% else %}
             -
             {% endif %}
@@ -170,7 +154,7 @@
                     <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="change" data-bs-id="{{ transaction.id }}" data-bs-price="{{ transaction.price }}" data-bs-total_spent="{{ transaction.total_spent|abs }}" data-bs-date="{{ transaction.date }}" data-bs-wallet="{{ transaction.wallet.name }}" data-bs-comment="{{ transaction.comment }}" data-bs-class="hidden" data-bs-title="Изменить транзакцию" title="Изменить">
                         <i class="bi icon bi-pencil-square"></i>
                     </a>
-                    <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ transaction.id }}" data-bs-action="{{ url_for('transaction_delete', portfolio_id=portfolio.id) }}" data-bs-title="Удалить транзакцию?" title="Удалить">
+                    <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ transaction.id }}" data-bs-action="{{ url_for('transaction_delete', portfolio_url=asset.portfolio.url) }}" data-bs-title="Удалить транзакцию?" title="Удалить">
                         <i class="bi icon bi-trash-fill"></i>
                     </a>
                 </td>
@@ -185,7 +169,7 @@
     </div>
 {% endif %}
 <div class="">
-    <form method="post" action="{{ url_for('asset_update', portfolio_id=portfolio.id) }}">
+    <form method="post" action="{{ url_for('asset_update', portfolio_url=asset.portfolio.url) }}">
         <input type="hidden" name="id" value="{{ asset.id }}">
         <div class="form-floating pb-2">
             <textarea class="form-control" id="comment" style="height: 100px" name="comment">{{ asset.comment if asset.comment else '' }} </textarea>
@@ -205,7 +189,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form class=""  method="post" action="{{ url_for('transaction_add', portfolio_id=portfolio.id) }}">
+                <form class=""  method="post" action="{{ url_for('transaction_add', portfolio_url=asset.portfolio.url) }}">
                     <input type="hidden" name="id" id="id">
                     <input type="hidden" name="asset_id" value="{{ asset.id }}">
                     <input type="hidden" name="order" id="order">
@@ -334,7 +318,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form class="d-inline" action="{{ url_for('transaction_delete', portfolio_id=portfolio.id) }}" method="post">
+                <form class="d-inline" action="{{ url_for('transaction_delete', portfolio_url=asset.portfolio.url) }}" method="post">
                     <input type="hidden" name="id">
                     <button type="submit" class="w-100 mb-2 btn btn rounded-3 btn-primary btn-delete"><strong>Да</strong></button>
                 </form>
@@ -351,7 +335,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form class="d-inline" action="{{ url_for('order_to_transaction', portfolio_id=portfolio.id) }}" method="post">
+                <form class="d-inline" action="{{ url_for('order_to_transaction', portfolio_url=asset.portfolio.url) }}" method="post">
                     <input id="id" type="hidden" name="id">
                     <input type="hidden" name="date" value="{{ date }}">
                     <button type="submit" class="w-100 mb-2 btn btn rounded-3 btn-primary"><strong>Да</strong></button>
@@ -428,6 +412,7 @@
     </div>
 </div>
 
+
 <script>
 // Отправка данных  в форму на добавление или изменение транзакции
 var updateModal = document.getElementById('Transaction')
@@ -495,6 +480,47 @@ updateModal.addEventListener('show.bs.modal', function (event) {
 
   modalId.value = id
 })
+// Обновление ценовых данных без перезагрузки
+const url = {{ url_for('asset_detail', asset_id=asset.id)|tojson }}
+const Price = document.getElementById('asset-price');
+const costNow = document.getElementById('asset-cost_now');
+const Profit = document.getElementById('asset-profit');
+const whenUpdated = document.getElementById('when_updated');
+var data = {}
 
+async function letsStart() {
+   await getDataRequest();
+   updatePage();
+}
+
+function updatePage() {
+   Price.innerHTML = `$${data.price}`;
+   whenUpdated.innerHTML = `${data.when_updated}`;
+   costNow.innerHTML = `${data.cost_now}`;
+
+   if (data.profit_color === 'green') {
+      Profit.innerHTML = `<span class="text-green">${data.profit} ${data.profit_procent}</span>`;
+   }
+   else if (data.profit_color === 'red') {
+      Profit.innerHTML = `<span class="text-red">${data.profit} ${data.profit_procent}</span>`;
+   }
+   else  {
+      Profit.innerHTML = `<span class="text-average">${data.profit}</span>`;
+   }
+}
+
+function getDataRequest() {
+   return fetch(url, {
+      method: 'GET',
+      headers: {
+         "Content-type": "application/json; charset=UTF-8"
+      }
+   })
+   .then(res => res.json())
+   .then(data => window.data = data)
+}
+
+letsStart()
+setInterval(letsStart,500000);
 </script>
 {% endblock %}

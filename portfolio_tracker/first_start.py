@@ -28,9 +28,11 @@ if __name__ == '__main__':
 def first_start():
     ''' Страница первого запуска '''
     if request.method == 'GET':
+        print(cg.get_coins_markets('usd', per_page='200', page=1))
         return render_template('first_start.html')
 
     if request.method == 'POST':
+
         global settings_list
         # маркеты
         if request.form.get('crypto'):

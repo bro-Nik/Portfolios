@@ -53,6 +53,7 @@ class Wallet(db.Model):
 
 class Portfolio(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String)
     name = db.Column(db.String)
     comment = db.Column(db.String)
     market = db.relationship('Market', backref=db.backref('portfolios', lazy=True))

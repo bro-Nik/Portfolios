@@ -76,13 +76,13 @@
             <tbody>
             {% for portfolio in portfolios %}
             <tr>
-                <td class="text-average cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_id=portfolio.id) }}';">
+                <td class="text-average cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_url=portfolio.url) }}';">
                     {{ portfolio.name }}
                     <span class="text-muted small_text">{{ portfolio.market.name }}</span>
                 </td>
-                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_id=portfolio.id) }}';">
+                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_url=portfolio.url) }}';">
                     {{ "${}".format((total_spent_list[portfolio.id])|round|int|number_group) if total_spent_list[portfolio.id] else '-' }} / {{ "${}".format((cost_now_list[portfolio.id])|round|int|number_group) if cost_now_list[portfolio.id] else '-' }}</td>
-                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_id=portfolio.id) }}';">
+                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_url=portfolio.url) }}';">
                     {% if cost_now_list[portfolio.id] %}
                     {% if (cost_now_list[portfolio.id] - total_spent_list[portfolio.id])|round|int == 0 %}
                     $0
@@ -95,14 +95,14 @@
                     -
                     {% endif %}
                 </td>
-                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_id=portfolio.id) }}';">
+                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_url=portfolio.url) }}';">
                     {% if cost_now_list[portfolio.id] %}
                     {{ (cost_now_list[portfolio.id] / cost_now * 100)|round(1, 'common') }}%
                     {% else %}
                     -
                     {% endif %}
                 </td>
-                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_id=portfolio.id) }}';">{{ portfolio.comment if portfolio.comment else '-' }}</td>
+                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_url=portfolio.url) }}';">{{ portfolio.comment if portfolio.comment else '-' }}</td>
                 <td class="text-end">
                     <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#newPortfolio" data-bs-id="{{ portfolio.id }}" data-bs-name="{{ portfolio.name }}" data-bs-comment="{{ portfolio.comment }}" data-bs-class="visually-hidden" data-bs-title="Изменить портфолио" title="Изменить">
                         <i class="bi icon bi-pencil-square"></i>
