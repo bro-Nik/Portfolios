@@ -13,7 +13,7 @@ def create_app():
 
 app, db = create_app()
 
-from portfolio_tracker.models import Setting, Market
+from portfolio_tracker.models import Setting, Market, User
 from portfolio_tracker.defs import *
 
 
@@ -34,7 +34,16 @@ def first_start():
     if request.method == 'POST':
 
         global settings_list
+        # demo user
+        user = User(email='demo', password='demo')
+        db.session.add(user)
+        wallet = Wallet(name='Default', money_all=0, money_in_order=0, user_id=1)
+        db.session.add(wallet)
+
         # маркеты
+        other = Market(name='Other',
+                        id='other')
+        db.session.add(other)
         if request.form.get('crypto'):
             crypto = Market(name='Crypto',
                             id='crypto')

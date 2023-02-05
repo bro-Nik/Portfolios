@@ -32,7 +32,7 @@
                     </div>
                     <div>
                     {% for ticker in tickers|sort(attribute="market_cap_rank") %}
-                        <a class="dropdown-item" href="{{ url_for('asset_add', portfolio_url=portfolio.url, ticker_id=ticker.id) }}">
+                        <a class="dropdown-item" href="{{ url_for('asset_add', portfolio_id=portfolio.id, ticker_id=ticker.id) }}">
                             <span class="d-inline-block text-truncate text-average" style="max-width: 150px;">{{ ticker.name }}</span>
                             <span class="align-top text-muted">{{ ticker.symbol|upper }}</span>
                             {% if ticker.market_cap_rank %} <span class="text-muted float-end">#{{ ticker.market_cap_rank }}</span> {% endif %}

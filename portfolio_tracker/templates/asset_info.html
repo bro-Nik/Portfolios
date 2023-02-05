@@ -32,19 +32,22 @@
                 {% endif %}
                 <span class="fs-1 fw-semibold" id="asset-price"> $- </span>
             </div>
-            <div class="row">
-                {% for alert in asset.alerts %}
-                    <div class="col-md-auto p-0 me-1">
-                        {% if alert.worked %}
-                        <span class="badge text-bg-success fw-normal none-cursor">${{ alert.price|number_group }}</span>
-                        {% elif alert.worked == None %}
-                        <span class="badge text-bg-light fw-normal none-cursor">${{ alert.price|number_group }}</span>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-                <a class="action-icon cursor-pointer col-md-auto" data-bs-toggle="modal" data-bs-target="#Alert" title="Уведомления">
+            <div class="d-flex">
+                <a class="action-icon cursor-pointer text-decoration-none" data-bs-toggle="modal" data-bs-target="#Alert" title="Уведомления">
                     <i class="bi icon bi-bell"></i>
                 </a>
+                <div id="asset-alerts">
+                    {% for alert in asset.alerts %}
+                        {% if alert.worked %}
+                            <span id="alertId{{ alert.id }}" class="badge text-bg-success fw-normal cursor-pointer" data-bs-toggle="modal" data-bs-target="#Alert">${{ alert.price|number_group }}</span>
+                        {% elif alert.worked == None %}
+                            <span id="alertId{{ alert.id }}" class="badge text-bg-light fw-normal cursor-pointer" data-bs-toggle="modal" data-bs-target="#Alert">${{ alert.price|number_group }}</span>
+                        {% endif %}
+                    {% endfor %}
+                    {% if asset.alerts == [] %}
+                        <span class="badge text-bg-light fw-normal cursor-pointer" data-bs-toggle="modal" data-bs-target="#Alert">Добавить уведомление</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
         <div class="col-md-6 position-right">
@@ -357,7 +360,7 @@
                 <table class="table table-sm align-middle table-borderless">
                     <tbody>
                         {% for alert in asset.alerts|sort(reverse=true, attribute="price") %}
-                            <tr>
+                            <tr id="alertmodalId{{ alert.id }}">
                                 <td>
                                     {% if alert.type == 'down' %}
                                     <span class="text-red">Ниже</span>
@@ -520,7 +523,9 @@ function getDataRequest() {
    .then(data => window.data = data)
 }
 
+
+
 letsStart()
-setInterval(letsStart,500000);
+setInterval(letsStart,5000);
 </script>
 {% endblock %}

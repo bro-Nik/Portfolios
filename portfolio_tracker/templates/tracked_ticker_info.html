@@ -42,7 +42,6 @@
     <table class="table table-sm align-middle">
         <thead>
             <tr>
-                <th></th>
                 <th scope="col">Цена</th>
                 <th scope="col">Комментарий</th>
                 <th scope="col">Откуда</th>
@@ -57,11 +56,6 @@
                 <tr>
             {% endif %}
                 <td>
-                    <form class="form-check form-switch" action="" method="post">
-                        <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked" {{ '' if alert.worked == False else 'checked' }} {{ 'disabled' if alert.comment == 'Ордер' else '' }}>
-                    </form>
-                </td>
-                <td>
                     {% if alert.type == 'down' %}
                     <span class="text-red">Ниже</span>
                     {% else %}
@@ -72,7 +66,7 @@
                 <td>{{ alert.comment }}</td>
                 <td>
                     {% if alert.asset_id %}
-                    <a class="text-decoration-none link-secondary" href="{{ url_for('asset_info', ticker_id=tracked_ticker.ticker_id, portfolio_id=alert.asset.portfolio_id) }}">
+                    <a class="text-decoration-none link-secondary" href="{{ url_for('asset_info', ticker_id=tracked_ticker.ticker_id, portfolio_url=alert.asset.portfolio.url) }}">
                         <i class="bi icon bi-briefcase"></i>{{ alert.asset.portfolio.name }}
                     </a>
                     {% else %}
