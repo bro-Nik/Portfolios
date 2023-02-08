@@ -5,7 +5,7 @@
 {% endblock %}
 {% block link %}
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
-    <button onclick="document.location='{{ url_for('portfolio_info', portfolio_url=asset.portfolio.url) }}'" type="button" class="btn btn-light btn-sm">{{ asset.portfolio.name }}</button>
+    <button onclick="document.location='{{ url_for('portfolio_info', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}'" type="button" class="btn btn-light btn-sm">{{ asset.portfolio.name }}</button>
     <button type="button" class="btn btn-light btn-sm" disabled>{{ asset.ticker.name }}</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
     <div class="dropdown">
@@ -22,7 +22,7 @@
         <div class="col-md-6">
             <h1 class="fs-6 text-muted m-0">{{ asset.ticker.name }} ({{ asset.ticker.symbol|upper }})
                 {% if asset.ticker.market_cap_rank %}
-                    <span class="badge text-bg-light">#{{ asset.ticker.market_cap_rank }}</span>
+                    <span class="badge text-bg-light text-muted">#{{ asset.ticker.market_cap_rank }}</span>
                 {% endif %}
                 <span class="small_text" title="Обновлено" id="when_updated"></span>
             </h1>
@@ -32,21 +32,22 @@
                 {% endif %}
                 <span class="fs-1 fw-semibold" id="asset-price"> $- </span>
             </div>
-            <div class="d-flex">
-                <a class="action-icon cursor-pointer text-decoration-none" data-bs-toggle="modal" data-bs-target="#Alert" title="Уведомления">
-                    <i class="bi icon bi-bell"></i>
-                </a>
+            <div class="d-flex align-items-end">
+                <span class="badge text-bg-light fw-normal cursor-pointer text-muted me-1" data-bs-toggle="modal" data-bs-target="#Alert">
+                    <a class="action-icon cursor-pointer text-decoration-none" data-bs-toggle="modal" data-bs-target="#Alert" title="Уведомления">
+                        <i class="bi icon bi-bell"></i>
+                    </a>
+                    {{ 'Добавить уведомление' if asset.alerts == [] else '' }}
+                </span>
+
                 <div id="asset-alerts">
                     {% for alert in asset.alerts %}
                         {% if alert.worked %}
                             <span id="alertId{{ alert.id }}" class="badge text-bg-success fw-normal cursor-pointer" data-bs-toggle="modal" data-bs-target="#Alert">${{ alert.price|number_group }}</span>
                         {% elif alert.worked == None %}
-                            <span id="alertId{{ alert.id }}" class="badge text-bg-light fw-normal cursor-pointer" data-bs-toggle="modal" data-bs-target="#Alert">${{ alert.price|number_group }}</span>
+                            <span id="alertId{{ alert.id }}" class="badge text-bg-light fw-normal cursor-pointer text-muted" data-bs-toggle="modal" data-bs-target="#Alert">${{ alert.price|number_group }}</span>
                         {% endif %}
                     {% endfor %}
-                    {% if asset.alerts == [] %}
-                        <span class="badge text-bg-light fw-normal cursor-pointer" data-bs-toggle="modal" data-bs-target="#Alert">Добавить уведомление</span>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -55,7 +56,7 @@
             <button class="btn btn-warning btn-sm ms-1" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="True" data-bs-date="{{ date }}" data-bs-price="{{ price }}" data-bs-wallet="{{ wallets[0].id }}" data-bs-title="Добавить ордер">Ордер</button>
             <button type="button" class="btn btn-light dropdown-toggle btn-sm ms-1" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
             <ul class="dropdown-menu" style="">
-                <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ asset.id }}" data-bs-action="{{ url_for('asset_delete', portfolio_url=asset.portfolio.url) }}" data-bs-title="Удалить {{ asset.ticker.name }}?">Удалить {{ asset.ticker.name }}</a></li>
+                <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ asset.id }}" data-bs-action="{{ url_for('asset_delete', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}" data-bs-title="Удалить {{ asset.ticker.name }}?">Удалить {{ asset.ticker.name }}</a></li>
             </ul>
         </div>
     </div>
@@ -105,7 +106,7 @@
         </span>
     </div>
 </div>
-<div class="bd-example pb-3">
+<div class="pt-3 pb-3">
     <table class="table table-sm align-middle">
         <thead>
             <tr>
@@ -140,24 +141,20 @@
                         --
                     {% endif %}
                 </td>
-                {% if transaction.comment %}
-                    <td>{{ transaction.comment }}</td>
-                {% else %}
-                    <td>--</td>
-                {% endif %}
+                <td>{{ transaction.comment if transaction.comment else '--' }}</td>
                 <td class="text-end">
                     {% if transaction.order %}
-                        <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#ordertoTransaction" data-bs-id="{{ transaction.id }}" title="Сработал">
+                        <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#ordertoTransaction" data-bs-id="{{ transaction.id }}" title="Ордер сработал">
                             <i class="bi icon bi-check-square"></i>
                         </a>
                     {% endif %}
-                    <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="change" data-bs-id="{{ transaction.id }}" data-bs-price="{{ transaction.price }}" data-bs-total_spent="{{ transaction.total_spent|abs }}" data-bs-date="{{ transaction.date }}" data-bs-wallet="{{ transaction.wallet.name }}" data-bs-comment="{{ transaction.comment }}" data-bs-class="hidden" data-bs-title="Изменить транзакцию" title="Перевод">
+                    <a class="action-icon text-decoration-none visually-hidden" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="change" data-bs-id="{{ transaction.id }}" data-bs-price="{{ transaction.price }}" data-bs-total_spent="{{ transaction.total_spent|abs }}" data-bs-date="{{ transaction.date }}" data-bs-wallet="{{ transaction.wallet.id }}" data-bs-comment="{{ transaction.comment }}" data-bs-class="hidden" data-bs-title="Изменить транзакцию" title="Перевод">
                         <i class="bi icon bi-reply-fill"></i>
                     </a>
-                    <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="change" data-bs-id="{{ transaction.id }}" data-bs-price="{{ transaction.price }}" data-bs-total_spent="{{ transaction.total_spent|abs }}" data-bs-date="{{ transaction.date }}" data-bs-wallet="{{ transaction.wallet.name }}" data-bs-comment="{{ transaction.comment }}" data-bs-class="hidden" data-bs-title="Изменить транзакцию" title="Изменить">
+                    <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="change" data-bs-id="{{ transaction.id }}" data-bs-price="{{ transaction.price }}" data-bs-total_spent="{{ transaction.total_spent|abs }}" data-bs-date="{{ transaction.date }}" data-bs-wallet="{{ transaction.wallet.id }}" data-bs-comment="{{ transaction.comment }}" data-bs-class="hidden" data-bs-title="Изменить транзакцию" title="Изменить">
                         <i class="bi icon bi-pencil-square"></i>
                     </a>
-                    <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ transaction.id }}" data-bs-action="{{ url_for('transaction_delete', portfolio_url=asset.portfolio.url) }}" data-bs-title="Удалить транзакцию?" title="Удалить">
+                    <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ transaction.id }}" data-bs-action="{{ url_for('transaction_delete', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}" data-bs-title="Удалить транзакцию?" title="Удалить">
                         <i class="bi icon bi-trash-fill"></i>
                     </a>
                 </td>
@@ -172,7 +169,7 @@
     </div>
 {% endif %}
 <div class="">
-    <form method="post" action="{{ url_for('asset_update', portfolio_url=asset.portfolio.url) }}">
+    <form method="post" action="{{ url_for('asset_update', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}">
         <input type="hidden" name="id" value="{{ asset.id }}">
         <div class="form-floating pb-2">
             <textarea class="form-control" id="comment" style="height: 100px" name="comment">{{ asset.comment if asset.comment else '' }} </textarea>
@@ -192,7 +189,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form class=""  method="post" action="{{ url_for('transaction_add', portfolio_url=asset.portfolio.url) }}">
+                <form class=""  method="post" action="{{ url_for('transaction_add', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}">
                     <input type="hidden" name="id" id="id">
                     <input type="hidden" name="asset_id" value="{{ asset.id }}">
                     <input type="hidden" name="order" id="order">
@@ -321,7 +318,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form class="d-inline" action="{{ url_for('transaction_delete', portfolio_url=asset.portfolio.url) }}" method="post">
+                <form class="d-inline" action="{{ url_for('transaction_delete', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}" method="post">
                     <input type="hidden" name="id">
                     <button type="submit" class="w-100 mb-2 btn btn rounded-3 btn-primary btn-delete"><strong>Да</strong></button>
                 </form>
@@ -338,7 +335,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form class="d-inline" action="{{ url_for('order_to_transaction', portfolio_url=asset.portfolio.url) }}" method="post">
+                <form class="d-inline" action="{{ url_for('order_to_transaction', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}" method="post">
                     <input id="id" type="hidden" name="id">
                     <input type="hidden" name="date" value="{{ date }}">
                     <button type="submit" class="w-100 mb-2 btn btn rounded-3 btn-primary"><strong>Да</strong></button>
@@ -371,7 +368,7 @@
                                     <p class="small_text">{{ alert.date }}</p>
                                 </td>
                                 <td>{{ alert.comment }}</td>
-                                <td>
+                                <td class="text-end">
                                     {% if alert.comment != 'Ордер' %}
                                     <form action="{{ url_for('alert_delete') }}" method="post">
                                         <input type="hidden" name="id" value="{{ alert.id }}">
@@ -414,7 +411,6 @@
         </div>
     </div>
 </div>
-
 
 <script>
 // Отправка данных  в форму на добавление или изменение транзакции
@@ -480,7 +476,6 @@ updateModal.addEventListener('show.bs.modal', function (event) {
   var button = event.relatedTarget
   var id = button.getAttribute('data-bs-id')
   var modalId = ordertoTransaction.querySelector('.modal-body #id')
-
   modalId.value = id
 })
 // Обновление ценовых данных без перезагрузки
@@ -494,21 +489,17 @@ var data = {}
 async function letsStart() {
    await getDataRequest();
    updatePage();
-}
+   }
 
 function updatePage() {
    Price.innerHTML = `$${data.price}`;
    whenUpdated.innerHTML = `${data.when_updated}`;
-   costNow.innerHTML = `${data.cost_now}`;
 
-   if (data.profit_color === 'green') {
-      Profit.innerHTML = `<span class="text-green">${data.profit} ${data.profit_procent}</span>`;
-   }
-   else if (data.profit_color === 'red') {
-      Profit.innerHTML = `<span class="text-red">${data.profit} ${data.profit_procent}</span>`;
-   }
-   else  {
-      Profit.innerHTML = `<span class="text-average">${data.profit}</span>`;
+   if (costNow) {
+      costNow.innerHTML = `${data.cost_now}`;
+      if (data.profit_color === 'green') { Profit.innerHTML = `<span class="text-green">${data.profit} ${data.profit_procent}</span>`; }
+      else if (data.profit_color === 'red') { Profit.innerHTML = `<span class="text-red">${data.profit} ${data.profit_procent}</span>`; }
+      else  { Profit.innerHTML = `<span class="text-average">${data.profit}</span>`; }
    }
 }
 
@@ -523,9 +514,7 @@ function getDataRequest() {
    .then(data => window.data = data)
 }
 
-
-
 letsStart()
-setInterval(letsStart,5000);
+setInterval(letsStart, 10000);
 </script>
 {% endblock %}

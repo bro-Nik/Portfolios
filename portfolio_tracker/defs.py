@@ -14,22 +14,17 @@ from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Tick
 cg = CoinGeckoAPI()
 date = datetime.now().date()
 
-settings_list = {}
-
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(20.0, price_list_crypto_def.s())
+    sender.add_periodic_task(float(app.config['CRYPTO_UPDATE']), price_list_crypto_def.s())
+    sender.add_periodic_task(1800, price_list_stocks_def.s())
 
 def price_list_def():
     ''' Общая функция сбора цен '''
-    for market in settings_list['markets']:
-        if market == 'crypto':
-            if not redis.get('price_list_crypto'):
-                price_list_crypto_def()
-
-        if market == 'stocks':
-            if not redis.get('price_list_stocks'):
-                price_list_stocks_def()
+    if not redis.get('price_list_crypto'):
+        price_list_crypto_def()
+    if not redis.get('price_list_stocks'):
+        price_list_stocks_def()
 
     price_list_crypto = pickle.loads(redis.get('price_list_crypto')) if redis.get('price_list_crypto') else {}
     price_list_stocks = pickle.loads(redis.get('price_list_stocks')) if redis.get('price_list_stocks') else {}
@@ -43,7 +38,7 @@ def price_list_crypto_def():
     ''' Запрос цен у КоинГеко криптовалюта '''
     price_list_crypto = pickle.loads(redis.get('price_list_crypto')) if redis.get('price_list_crypto') else {}
     if price_list_crypto == {}:
-        market = db.session.execute(db.select(Market).filter_by(name='Crypto')).scalar()
+        market = db.session.execute(db.select(Market).filter_by(id='crypto')).scalar()
         ids = []
         for ticker in market.tickers:
             if ticker.id:
@@ -67,12 +62,11 @@ def price_list_crypto_def():
 @celery.task
 def price_list_stocks_def():
     ''' Запрос цен у Polygon фондовый рынок '''
-    #price_list_stocks = pickle.loads(redis.get('price_list_stocks')) if redis.get('price_list_stocks') else {}
     price_list = {}
     day = 1
     while price_list == {}:
         date = datetime.now().date() - timedelta(days=day)
-        url = 'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/' + str(date) + '?adjusted=true&include_otc=false&apiKey=' + settings_list['api_key_polygon']
+        url = 'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/' + str(date) + '?adjusted=true&include_otc=false&apiKey=' + app.config['API_KEY_POLYGON']
         response = requests.get(url)
         data = response.json()
         if data.get('results'):
@@ -92,7 +86,7 @@ def price_list_stocks_def():
         price_list['update-stocks'] = datetime.now()
         redis.set('price_list_stocks', pickle.dumps(price_list))
         print('Фондовый прайс обновлен ', price_list['update-stocks'])
-        alerts_update_def(price_list)
+        alerts_update_def.delay(price_list)
 
 @celery.task
 def alerts_update_def(price_list):
@@ -143,8 +137,8 @@ def alerts_update_def(price_list):
 
     # последующие запросы уведомлений без запроса в базу
     else:
-        not_worked_alerts = pickle.loads(redis.get('not_worked_alerts'))
-        worked_alerts = pickle.loads(redis.get('worked_alerts'))
+        not_worked_alerts = pickle.loads(redis.get('not_worked_alerts')) if redis.get('not_worked_alerts') else {}
+        worked_alerts = pickle.loads(redis.get('worked_alerts')) if redis.get('worked_alerts') else {}
 
         if not_worked_alerts != {}:
             for alert in list(not_worked_alerts.keys()):
@@ -245,11 +239,10 @@ def load_stocks_tickers(stop_load, market_id):
     if tickers_in_base != ():
         for ticker in tickers_in_base:
             tickers_list.append(ticker.id)
-    url = 'https://api.polygon.io/v3/reference/tickers?market=stocks&date=2022-12-30&active=true&order=asc&apiKey=' + settings_list['api_key_polygon']
+    url = 'https://api.polygon.io/v3/reference/tickers?market=stocks&date=2022-12-30&active=true&order=asc&apiKey=' + app.config['API_KEY_POLYGON']
     response = requests.get(url)
     data = response.json()
     for ticker in data['results']:
-        # ставим префикс, чтобы id не повторялись
         if ticker['ticker'].lower() not in tickers_list:
             new_ticker = Ticker(
                 id=ticker['ticker'].lower(),
@@ -259,16 +252,6 @@ def load_stocks_tickers(stop_load, market_id):
             )
         db.session.add(new_ticker)
     db.session.commit()
-
-
-def tickers_load(market_id):
-    ''' Загрузка тикеров '''
-    market_in_base = db.session.execute(db.select(Market).filter_by(id=market_id)).scalar()
-    if market_in_base:
-        if market_id == 'crypto':
-            load_crypto_tickers(99, market_in_base.id)
-        if market_id == 'stocks':
-            load_stocks_tickers(99, market_in_base.id)
 
 
 def smart_round(number):

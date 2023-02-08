@@ -145,19 +145,19 @@ function whoWorked(i) {
    if (elem) {
     if (elem.classList.contains('text-bg-light')) {
         elem.classList.add('text-bg-success');
-        elem.classList.remove('text-bg-light');
+        elem.classList.remove('text-bg-light', 'text-muted');
         }
     }
     let elemModal = document.getElementById(`alertmodalId${alerts[i].id}`);
    if (elemModal) {
-    if (!elemModal.classList.contains('table-success')) {
-        elemModal.classList.add('table-success');
+    if (!elemModal.classList.contains('table-green')) {
+        elemModal.classList.add('table-green');
         }
     }
 }
 
 updateAlerts()
-setInterval(updateAlerts,5000);
+setInterval(updateAlerts,10000);
 </script>
 </body>
 </html>

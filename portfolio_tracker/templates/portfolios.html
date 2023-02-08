@@ -61,14 +61,16 @@
             </div>
         </div>
     {% endif %}
-    <div class="bd-example">
+    <div class="fixed-height-1">
+    </div>
+    <div>
         <table class="table table-sm align-middle table-hover">
             <thead>
             <tr>
                 <th scope="col">Наименование</th>
                 <th scope="col">Активы</th>
                 <th scope="col">Прибыль / убыток</th>
-                <th scope="col">% доля от всех инвестиций</th>
+                <th scope="col">% от всех инвестиций</th>
                 <th scope="col">Комментарий</th>
                 <th scope="col" class="text-end">Действие</th>
             </tr>
@@ -76,13 +78,13 @@
             <tbody>
             {% for portfolio in portfolios %}
             <tr>
-                <td class="text-average cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_url=portfolio.url) }}';">
+                <td class="text-average cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', market_id=portfolio.market_id, portfolio_url=portfolio.url) }}';">
                     {{ portfolio.name }}
                     <span class="text-muted small_text">{{ portfolio.market.name }}</span>
                 </td>
-                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_url=portfolio.url) }}';">
+                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', market_id=portfolio.market_id, portfolio_url=portfolio.url) }}';">
                     {{ "${}".format((total_spent_list[portfolio.id])|round|int|number_group) if total_spent_list[portfolio.id] else '-' }} / {{ "${}".format((cost_now_list[portfolio.id])|round|int|number_group) if cost_now_list[portfolio.id] else '-' }}</td>
-                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_url=portfolio.url) }}';">
+                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', market_id=portfolio.market_id, portfolio_url=portfolio.url) }}';">
                     {% if cost_now_list[portfolio.id] %}
                     {% if (cost_now_list[portfolio.id] - total_spent_list[portfolio.id])|round|int == 0 %}
                     $0
@@ -95,14 +97,14 @@
                     -
                     {% endif %}
                 </td>
-                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_url=portfolio.url) }}';">
+                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', market_id=portfolio.market_id, portfolio_url=portfolio.url) }}';">
                     {% if cost_now_list[portfolio.id] %}
                     {{ (cost_now_list[portfolio.id] / cost_now * 100)|round(1, 'common') }}%
                     {% else %}
                     -
                     {% endif %}
                 </td>
-                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', portfolio_url=portfolio.url) }}';">{{ portfolio.comment if portfolio.comment else '-' }}</td>
+                <td class="cursor-pointer" onclick="document.location = '{{ url_for('portfolio_info', market_id=portfolio.market_id, portfolio_url=portfolio.url) }}';">{{ portfolio.comment if portfolio.comment else '-' }}</td>
                 <td class="text-end">
                     <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#newPortfolio" data-bs-id="{{ portfolio.id }}" data-bs-name="{{ portfolio.name }}" data-bs-comment="{{ portfolio.comment }}" data-bs-class="visually-hidden" data-bs-title="Изменить портфолио" title="Изменить">
                         <i class="bi icon bi-pencil-square"></i>
@@ -150,7 +152,7 @@
                             <select class="form-select" id="market_id" name="market_id" required>
                                 <option value="crypto"> Криптовалюта </option>
                                 <option value="stocks"> Фондовый рынок </option>
-                                <option value="other" disabled> Другое </option>
+                                <option value="other"> Другое </option>
                              </select>
                         </div>
                         <div class="col-md-12">
@@ -208,7 +210,8 @@ updateModal.addEventListener('show.bs.modal', function (event) {
   modalButton.textContent = `${title}`
   if (market_class === "visually-hidden")
     {modalMarket_class.classList.add("visually-hidden");}
-else {modalMarket_class.classList.remove("visually-hidden");}
+  else
+    {modalMarket_class.classList.remove("visually-hidden");}
 })
 
 // Отправка данных в форму удаления

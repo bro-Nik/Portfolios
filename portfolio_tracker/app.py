@@ -29,7 +29,7 @@ def make_celery(app):
 
 celery = make_celery(app)
 
-redis = redis.StrictRedis('localhost', 6379)
+redis = redis.StrictRedis('127.0.0.1', 6379)
 
 login_manager = LoginManager(app)
 

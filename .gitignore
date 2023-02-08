@@ -3,5 +3,5 @@
 .idea/
 __pycache__/
 portfolio_tracker/__pycache__/
-
+.env
 celerybeat-schedule

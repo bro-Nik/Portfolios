@@ -32,7 +32,7 @@
                     </div>
                     <div>
                     {% for ticker in tickers|sort(attribute="market_cap_rank") %}
-                        <a class="dropdown-item" href="{{ url_for('asset_add', portfolio_id=portfolio.id, ticker_id=ticker.id) }}">
+                        <a class="dropdown-item" href="{{ url_for('asset_add', market_id=portfolio.market_id, portfolio_id=portfolio.id, ticker_id=ticker.id) }}">
                             <span class="d-inline-block text-truncate text-average" style="max-width: 150px;">{{ ticker.name }}</span>
                             <span class="align-top text-muted">{{ ticker.symbol|upper }}</span>
                             {% if ticker.market_cap_rank %} <span class="text-muted float-end">#{{ ticker.market_cap_rank }}</span> {% endif %}
@@ -108,7 +108,7 @@
             {% for asset in portfolio.assets %}
                 <tr>
                     <td class="text-average">
-                        <a class="link-dark text-decoration-none" href="{{ url_for('asset_info', ticker_id=asset.ticker.id, portfolio_url=portfolio.url) }}">
+                        <a class="link-dark text-decoration-none" href="{{ url_for('asset_info', market_id=portfolio.market_id, portfolio_url=portfolio.url, asset_url=asset.ticker.id) }}">
                             {% if asset.ticker.image %}
                                 <img class="img-asset-min" src="{{ asset.ticker.image }}">
                             {% endif %}
@@ -155,7 +155,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if portfolio.assets|sum(attribute='total_spent') %}
+                        {% if portfolio.assets|sum(attribute='total_spent') and asset.total_spent %}
                             {{ (asset.total_spent / portfolio.assets|sum(attribute='total_spent') * 100)|round(1, 'common') }}% /
                         {% else %}
                             - /
@@ -167,7 +167,7 @@
                         {% endif %}
                     </td>
                     <td class="text-end">
-                        <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#customAsset" data-bs-id="{{ asset.id }}" data-bs-percent="{{ asset.percent if asset.percent else 0.00 }}" data-bs-comment="{{ asset.comment if asset.comment else '' }}" data-bs-title="Изменить актив" title="Изменить">
+                        <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#customAsset" data-bs-id="{{ asset.id }}" data-bs-percent="{{ asset.percent if asset.percent > 0 }}" data-bs-comment="{{ asset.comment if asset.comment else '' }}" data-bs-title="Изменить актив" title="Изменить">
                             <i class="bi icon bi-pencil-square"></i>
                         </a>
                         <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#deleteAsset" data-bs-id="{{ asset.id }}" data-bs-title="Удалить {{ asset.ticker.name }}?" title="Удалить">
@@ -198,7 +198,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form class=""  method="post" action="{{ url_for('asset_update', portfolio_url=portfolio.url) }}">
+                <form class=""  method="post" action="{{ url_for('asset_update', market_id=portfolio.market_id, portfolio_url=portfolio.url) }}">
                     <input type="hidden" name="id" id="id">
                     <div class="row g-2">
                         <div class="col-md-12">
@@ -233,7 +233,7 @@
             </div>
             <div class="modal-body">
                 <p class="">Будут удалены все транзакции актива</p>
-                <form class="d-inline" action="{{ url_for('asset_delete', portfolio_url=portfolio.url) }}" method="post">
+                <form class="d-inline" action="{{ url_for('asset_delete', market_id=portfolio.market_id, portfolio_url=portfolio.url) }}" method="post">
                     <input type="hidden" name="id">
                     <button type="submit" class="w-100 mb-2 btn btn rounded-3 btn-primary btn-delete"><strong>Да</strong></button>
                 </form>

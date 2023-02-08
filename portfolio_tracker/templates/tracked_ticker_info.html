@@ -38,7 +38,7 @@
     </div>
 </div>
 {% if tracked_ticker.alerts[0] %}
-<div class="bd-example pb-3">
+<div class="pt-3 pb-3">
     <table class="table table-sm align-middle">
         <thead>
             <tr>
@@ -66,7 +66,7 @@
                 <td>{{ alert.comment }}</td>
                 <td>
                     {% if alert.asset_id %}
-                    <a class="text-decoration-none link-secondary" href="{{ url_for('asset_info', ticker_id=tracked_ticker.ticker_id, portfolio_url=alert.asset.portfolio.url) }}">
+                    <a class="text-decoration-none link-secondary" href="{{ url_for('asset_info', market_id=alert.asset.portfolio.market_id, portfolio_url=alert.asset.portfolio.url, asset_url=tracked_ticker.ticker_id) }}">
                         <i class="bi icon bi-briefcase"></i>{{ alert.asset.portfolio.name }}
                     </a>
                     {% else %}

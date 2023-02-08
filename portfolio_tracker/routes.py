@@ -7,7 +7,7 @@ from celery import Celery
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from portfolio_tracker.app import login_manager
-from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Ticker, Market, Alert, Setting, User, Trackedticker
+from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Ticker, Market, Alert, Setting, User, Trackedticker, otherAsset, otherAssetBody, otherAssetOperation
 from portfolio_tracker.defs import *
 
 
@@ -35,15 +35,23 @@ def portfolios():
     orders_in_portfolio = []
     if portfolios != ():
         for portfolio in portfolios:
-            for asset in portfolio.assets:
-                total_spent += asset.total_spent
-                cost_now += (asset.quantity * price_list[asset.ticker.id])
-                for transaction in asset.transactions:
-                    if not transaction.order:
-                        total_spent_list[portfolio.id] = float(total_spent_list.setdefault(portfolio.id, 0)) + float(transaction.total_spent)
-                        cost_now_list[portfolio.id] = float(cost_now_list.setdefault(portfolio.id, 0)) + float(transaction.quantity) * float(price_list[asset.ticker.id])
-                    else:
-                        orders_in_portfolio.append(portfolio.id)
+            if portfolio.assets:
+                for asset in portfolio.assets:
+                    total_spent += asset.total_spent
+                    cost_now += (asset.quantity * price_list[asset.ticker.id])
+                    for transaction in asset.transactions:
+                        if not transaction.order:
+                            total_spent_list[portfolio.id] = float(total_spent_list.setdefault(portfolio.id, 0)) + float(transaction.total_spent)
+                            cost_now_list[portfolio.id] = float(cost_now_list.setdefault(portfolio.id, 0)) + float(transaction.quantity) * float(price_list[asset.ticker.id])
+                        else:
+                            orders_in_portfolio.append(portfolio.id)
+            else:
+                for asset in portfolio.other_assets:
+                    total_spent += sum([body.total_spent for body in asset.bodys])
+                    cost_now += sum([body.cost_now for body in asset.bodys]) + sum([operation.total_spent for operation in asset.operations])
+
+                    total_spent_list[portfolio.id] = float(total_spent_list.setdefault(portfolio.id, 0)) + float(sum([body.total_spent for body in asset.bodys]))
+                    cost_now_list[portfolio.id] = float(cost_now_list.setdefault(portfolio.id, 0)) + float(sum([body.cost_now for body in asset.bodys]) + sum([operation.total_spent for operation in asset.operations]))
 
     return render_template('portfolios.html', portfolios=portfolios, total_spent=total_spent, cost_now=cost_now, total_spent_list=total_spent_list, cost_now_list=cost_now_list, orders_in_portfolio=orders_in_portfolio)
 
@@ -58,9 +66,7 @@ def page_not_found(e):
 def portfolio_add():
     ''' Добавление и изменение портфеля '''
     def create_url():
-        text = str(portfolio.market_id) + '-' + str(portfolio.name)
-        url = slugify(str(text)) if slugify(str(text)) else text
-        return url
+        return slugify(str(portfolio.name)) if slugify(str(portfolio.name)) else portfolio.name
 
     portfolio = Portfolio(
         name=request.form['name'],
@@ -69,30 +75,27 @@ def portfolio_add():
         user_id=current_user.id
     )
 
-    portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(name=portfolio.name, user_id=current_user.id)).scalar()
-    if portfolio_in_base:
-        if portfolio_in_base.id == request.form.get('id'):
-            portfolio_in_base.name = portfolio.name
-            portfolio_in_base.url = create_url()
-            portfolio_in_base.comment = portfolio.comment
-            db.session.commit()
-            return redirect(url_for('portfolios'))
-        else:
+    if request.form.get('id'):
+        portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(id=request.form.get('id'), user_id=current_user.id)).scalar()
+        portfolio_in_base.name = portfolio.name
+        portfolio_in_base.url = create_url()
+        portfolio_in_base.comment = portfolio.comment
+        db.session.commit()
+
+    else:
+        portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(name=portfolio.name, market_id=portfolio.market_id, user_id=current_user.id)).scalar()
+        if portfolio_in_base:
             n = 2
             while portfolio.name in [i.name for i in current_user.portfolios if i.market_id == portfolio.market_id]:
                 portfolio.name = str(portfolio_in_base.name) + str(n)
                 n += 1
-            portfolio.url = create_url()
-            db.session.add(portfolio)
-            db.session.commit()
 
-            return redirect(url_for('portfolio_info', portfolio_url=portfolio.url))
-    else:
         portfolio.url = create_url()
         db.session.add(portfolio)
         db.session.commit()
+        return redirect(url_for('portfolio_info', market_id=portfolio.market_id, portfolio_url=portfolio.url))
 
-        return redirect(url_for('portfolio_info', portfolio_url=portfolio.url))
+    return redirect(url_for('portfolios'))
 
 @app.route('/portfolio_delete', methods=['POST'])
 @login_required
@@ -114,12 +117,13 @@ def portfolio_delete():
         db.session.commit()
     return redirect(url_for('portfolios', user_id=current_user.id))
 
-@app.route('/<string:portfolio_url>', methods=['GET'])
+@app.route('/<string:market_id>/<string:portfolio_url>', methods=['GET'])
 @login_required
-def portfolio_info(portfolio_url):
+def portfolio_info(market_id, portfolio_url):
     ''' Страница портфеля '''
+    session['last_url'] = request.url
     price_list = price_list_def()
-    portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(url=portfolio_url, user_id=current_user.id)).scalar()
+    portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(url=portfolio_url, market_id=market_id, user_id=current_user.id)).scalar()
     if portfolio_in_base:
         if portfolio_in_base.market_id != 'other':
             tickers_in_base = db.session.execute(db.select(Ticker).filter_by(market=portfolio_in_base.market)).scalars()
@@ -128,14 +132,20 @@ def portfolio_info(portfolio_url):
                 portfolio_cost_now += (asset.quantity * price_list[asset.ticker.id])
             return render_template('portfolio_info.html', portfolio=portfolio_in_base, price_list=price_list, portfolio_cost_now=portfolio_cost_now, tickers=tickers_in_base)
         else:
-            return render_template('other_portfolio_info.html', portfolio=portfolio_in_base, price_list=price_list, portfolio_cost_now=portfolio_cost_now, tickers=tickers_in_base)
+            portfolio_cost_now = 0
+            portfolio_total_spent = 0
+            for asset in portfolio_in_base.other_assets:
+                portfolio_total_spent += sum([body.total_spent for body in asset.bodys])
+                portfolio_cost_now += sum([body.cost_now for body in asset.bodys])
+                portfolio_cost_now += sum([operation.total_spent for operation in asset.operations])
+            return render_template('other_portfolio_info.html', portfolio=portfolio_in_base, price_list=price_list, portfolio_cost_now=portfolio_cost_now, portfolio_total_spent=portfolio_total_spent, tickers={})
     else:
         return redirect(url_for('portfolios'))
 
 
-@app.route('/<string:portfolio_id>/add/<string:ticker_id>', methods=['GET'])
+@app.route('/<string:market_id>/<string:portfolio_id>/add/<string:ticker_id>', methods=['GET'])
 @login_required
-def asset_add(portfolio_id, ticker_id):
+def asset_add(market_id, portfolio_id, ticker_id):
     ''' Добавление актива в портфель '''
     new_asset = Asset(
         percent=0,
@@ -158,24 +168,61 @@ def asset_add(portfolio_id, ticker_id):
             db.session.add(new_asset)
             db.session.commit()
 
-    return redirect(url_for('asset_info', ticker_id=ticker_id, portfolio_url=portfolio_in_base.url))
+    return redirect(url_for('asset_info', market_id=market_id, portfolio_url=portfolio_in_base.url, asset_url=ticker_id))
 
-@app.route('/<string:portfolio_url>/asset_update', methods=['POST'])
+@app.route('/<string:market_id>/<string:portfolio_url>/other_asset_add', methods=['POST'])
 @login_required
-def asset_update(portfolio_url):
+def other_asset_add(market_id, portfolio_url):
+    ''' Добавление актива в портфель '''
+    new_asset = otherAsset(
+        name=request.form.get('name'),
+        percent=request.form.get('percent') if request.form.get('percent') else 0,
+        comment=request.form.get('comment'),
+        total_spent=0
+    )
+    # Если обновление
+    if request.form.get('id'):
+        asset_in_base = db.session.execute(db.select(otherAsset).filter_by(id=request.form.get('id'))).scalar()
+        asset_in_base.name = new_asset.name
+        asset_in_base.percent = new_asset.percent
+        asset_in_base.comment = new_asset.comment
+        asset_url = asset_in_base.url
+        db.session.add(new_asset)
+        db.session.commit()
+
+    # Если добавление
+    else:
+        portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(url=portfolio_url, user_id=current_user.id)).scalar()
+        if portfolio_in_base:
+            n = 2
+            while new_asset.name in [i.name for i in portfolio_in_base.assets]:
+                new_asset.name += str(n)
+                n += 1
+            new_asset.url = slugify(str(new_asset.name)) if slugify(str(new_asset.name)) else new_asset.name
+            new_asset.portfolio_id = portfolio_in_base.id
+            asset_url = new_asset.url
+            db.session.add(new_asset)
+            db.session.commit()
+
+    return redirect(url_for('asset_info', market_id=market_id, portfolio_url=portfolio_url, asset_url=asset_url))
+
+
+@app.route('/<string:market_id>/<string:portfolio_url>/asset_update', methods=['POST'])
+@login_required
+def asset_update(market_id, portfolio_url):
     ''' Изменение актива '''
     asset_in_base = db.session.execute(db.select(Asset).filter_by(id=request.form.get('id'))).scalar()
     if asset_in_base:
         if request.form.get('percent'):
-            asset_in_base.percent = request.form.get('percent')
+            asset_in_base.percent = request.form.get('percent') if request.form.get('percent') else 0
         if request.form.get('comment'):
             asset_in_base.comment = request.form.get('comment')
         db.session.commit()
-    return redirect(url_for('asset_info', ticker_id=asset_in_base.ticker_id, portfolio_url=portfolio_url))
+    return redirect(session['last_url'])
 
-@app.route('/<string:portfolio_url>/asset_delete', methods=['POST'])
+@app.route('/<string:market_id>/<string:portfolio_url>/asset_delete', methods=['POST'])
 @login_required
-def asset_delete(portfolio_url):
+def asset_delete(market_id, portfolio_url):
     ''' Удаление актива '''
     asset_in_base = db.session.execute(db.select(Asset).filter_by(id=request.form.get('id'))).scalar()
     if asset_in_base:
@@ -190,33 +237,46 @@ def asset_delete(portfolio_url):
             #all_alerts_list['worked'].pop(alert.id, None)
             #all_alerts_list['not_worked'].pop(alert.id, None)
             #db.session.delete(alert)
-            # отставляем уведомления
+            # оставляем уведомления
             alert.asset_id = None
             alert.comment = 'Актив удален из портфеля ' + str(asset_in_base.portfolio.name)
 
         db.session.delete(asset_in_base)
         db.session.commit()
-    return redirect(url_for('portfolio_info', portfolio_url=portfolio_url))
+
+    return redirect(url_for('portfolio_info', market_id=market_id, portfolio_url=portfolio_url))
 
 
-@app.route('/<string:portfolio_url>/<string:ticker_id>')
+@app.route('/<string:market_id>/<string:portfolio_url>/<string:asset_url>')
 @login_required
-def asset_info(ticker_id, portfolio_url):
+def asset_info(market_id, portfolio_url, asset_url):
     ''' Страница актива в портфеле '''
     session['last_url'] = request.url
-    user = db.session.execute(db.select(User).filter_by(id=current_user.id)).scalar()
-    wallets = user.wallets
-    for portfolio in user.portfolios:
-        if portfolio.url == portfolio_url:
-            for asset in portfolio.assets:
-                if asset.ticker_id == ticker_id:
-                    asset_in_base = asset
-                    break
+    if market_id != 'other':
+        wallets = current_user.wallets
+        for portfolio in current_user.portfolios:
+            if portfolio.url == portfolio_url:
+                for asset in portfolio.assets:
+                    if asset.ticker_id == asset_url:
+                        asset_in_base = asset
+                        break
 
-    price_list = price_list_def()
-    price = float(price_list[asset_in_base.ticker_id])
+        price_list = price_list_def()
+        price = float(price_list[asset_in_base.ticker_id])
 
-    return render_template('asset_info.html', asset=asset_in_base, price=price, date=date, wallets=tuple(wallets))
+        return render_template('asset_info.html', asset=asset_in_base, price=price, date=date, wallets=tuple(wallets))
+
+    if market_id == 'other':
+        portfolio_total_spent = 0
+        for portfolio in current_user.portfolios:
+            if portfolio.url == portfolio_url:
+                for asset in portfolio.other_assets:
+                    portfolio_total_spent += sum([body.total_spent for body in asset.bodys])
+                    if asset.url == asset_url:
+                        asset_in_base = asset
+                        break
+
+        return render_template('other_asset_info.html', asset=asset_in_base, date=date, portfolio_total_spent=portfolio_total_spent)
 
 @app.route("/json/asset_info/<string:asset_id>")
 def asset_detail(asset_id):
@@ -253,9 +313,9 @@ def asset_detail(asset_id):
         "alerts": alerts
     }
 
-@app.route('/<string:portfolio_url>/transaction_add', methods=['POST'])
+@app.route('/<string:market_id>/<string:portfolio_url>/transaction_add', methods=['POST'])
 @login_required
-def transaction_add(portfolio_url):
+def transaction_add(market_id, portfolio_url):
     ''' Добавление или изменение транзакции '''
     asset_in_base = db.session.execute(db.select(Asset).filter_by(id=request.form['asset_id'])).scalar()
     wallet_in_base = db.session.execute(db.select(Wallet).filter_by(id=request.form['wallet_id'])).scalar()
@@ -300,7 +360,7 @@ def transaction_add(portfolio_url):
             db.session.add(alert)
             db.session.commit()
             # записываем в список уведомлений
-            not_worked_alerts = pickle.loads(redis.get('not_worked_alerts'))
+            not_worked_alerts = pickle.loads(redis.get('not_worked_alerts')) if redis.get('not_worked_alerts') else {}
             not_worked_alerts[alert.id] = {}
             not_worked_alerts[alert.id]['type'] = alert.type
             not_worked_alerts[alert.id]['price'] = alert.price
@@ -351,11 +411,11 @@ def transaction_add(portfolio_url):
             transaction.wallet_id = wallet_in_base.id
 
     db.session.commit()
-    return redirect(url_for('asset_info', ticker_id=asset_in_base.ticker.id, portfolio_url=portfolio_url))
+    return redirect(url_for('asset_info', market_id=market_id, portfolio_url=portfolio_url, asset_url=asset_in_base.ticker.id))
 
-@app.route('/<string:portfolio_url>/transaction_delete', methods=['POST'])
+@app.route('/<string:market_id>/<string:portfolio_url>/transaction_delete', methods=['POST'])
 @login_required
-def transaction_delete(portfolio_url):
+def transaction_delete(market_id, portfolio_url):
     ''' Удаление транзакции '''
     transaction = db.session.execute(db.select(Transaction).filter_by(id=request.form['id'])).scalar()
     asset_in_base = db.session.execute(db.select(Asset).filter_by(id=transaction.asset_id)).scalar()
@@ -372,11 +432,11 @@ def transaction_delete(portfolio_url):
         asset_in_base.total_spent -= transaction.total_spent
     db.session.delete(transaction)
     db.session.commit()
-    return redirect(url_for('asset_info', ticker_id=asset_in_base.ticker.id, portfolio_url=portfolio_url))
+    return redirect(url_for('asset_info', market_id=market_id, portfolio_url=portfolio_url, asset_url=asset_in_base.ticker.id))
 
-@app.route('/<string:portfolio_url>/order_to_transaction', methods=['POST'])
+@app.route('/<string:market_id>/<string:portfolio_url>/order_to_transaction', methods=['POST'])
 @login_required
-def order_to_transaction(portfolio_url):
+def order_to_transaction(market_id, portfolio_url):
     ''' Конвертация ордера в транзакцию '''
     transaction = db.session.execute(db.select(Transaction).filter_by(id=request.form['id'])).scalar()
     transaction.order = 0
@@ -388,10 +448,9 @@ def order_to_transaction(portfolio_url):
     # удаление уведомления
     alert_in_base = db.session.execute(db.select(Alert).filter_by(asset_id=transaction.asset_id, price=transaction.price)).scalar()
     if alert_in_base:
-        update_alerts_redis(alert_in_base.id)
-        db.session.delete(alert_in_base)
+        alert_delete_def(id=alert_in_base.id)
     db.session.commit()
-    return redirect(url_for('asset_info', ticker_id=transaction.asset.ticker.id, portfolio_url=portfolio_url))
+    return redirect(url_for('asset_info', market_id=market_id, portfolio_url=portfolio_url, asset_url=transaction.asset.ticker.id))
 
 
 @app.route('/wallets', methods=['GET'])
@@ -613,34 +672,41 @@ def alert_add():
 
 @app.route('/tracking_list/alert_delete', methods=['POST'])
 def alert_delete():
-    alert_in_base = db.session.execute(db.select(Alert).filter_by(id=request.form['id'])).scalar()
+    alert_delete_def(id=request.form.get('id'))
 
+    return redirect(session['last_url'])
+
+def alert_delete_def(id=None):
+    alert_in_base = db.session.execute(db.select(Alert).filter_by(id=id)).scalar()
+    update_alerts_redis(alert_in_base.id)
     if alert_in_base:
         update_alerts_redis(alert_in_base.id)
-        over_alerts = False
+        need_del_ticker = True
+
         for alert in alert_in_base.trackedticker.alerts:
             if alert.id != alert_in_base.id:
-                over_alerts = True
+                need_del_ticker = False
                 break
-        if not over_alerts:
+
+        if not alert_in_base.asset_id:
             session['last_url'] = session['last_url'].replace(('/' + alert_in_base.trackedticker.ticker_id), '')
+        if need_del_ticker:
             db.session.delete(alert_in_base.trackedticker)
         db.session.delete(alert_in_base)
         db.session.commit()
 
-    return redirect(session['last_url'])
-
 def update_alerts_redis(alert_id):
-    not_worked_alerts = pickle.loads(redis.get('not_worked_alerts'))
+    not_worked_alerts = pickle.loads(redis.get('not_worked_alerts')) if redis.get('not_worked_alerts') else {}
     not_worked_alerts.pop(alert_id, None)
     redis.set('not_worked_alerts', pickle.dumps(not_worked_alerts))
 
-    worked_alerts = pickle.loads(redis.get('worked_alerts'))
-    for i in worked_alerts[current_user.id]:
-        if i['id'] == alert_id:
-            worked_alerts[current_user.id].remove(i)
-            break
-    redis.set('worked_alerts', pickle.dumps(worked_alerts))
+    worked_alerts = pickle.loads(redis.get('worked_alerts')) if redis.get('worked_alerts') else {}
+    if worked_alerts != {}:
+        for i in worked_alerts[current_user.id]:
+            if i['id'] == alert_id:
+                worked_alerts[current_user.id].remove(i)
+                break
+        redis.set('worked_alerts', pickle.dumps(worked_alerts))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -731,10 +797,18 @@ def user_delete():
 
     # portfolios, assets, transactions
     for portfolio in user.portfolios:
-        for asset in portfolio.assets:
-            for transaction in asset.transactions:
-                db.session.delete(transaction)
-            db.session.delete(asset)
+        if portfolio.assets:
+            for asset in portfolio.assets:
+                for transaction in asset.transactions:
+                    db.session.delete(transaction)
+                db.session.delete(asset)
+        elif portfolio.other_assets:
+            for asset in portfolio.other_assets:
+                for body in asset.bodys:
+                    db.session.delete(body)
+                for operation in asset.operations:
+                    db.session.delete(operation)
+                db.session.delete(asset)
         db.session.delete(portfolio)
 
     # user
@@ -746,10 +820,7 @@ def user_delete():
 
 @app.route("/json/worked_alerts")
 def worked_alerts_detail():
-    try:
-        worked_alerts = pickle.loads(redis.get('worked_alerts')).get(current_user.id)
-    except:
-        worked_alerts = {}
+    worked_alerts = pickle.loads(redis.get('worked_alerts')).get(current_user.id) if redis.get('worked_alerts') else {}
     return worked_alerts
 
 @app.route("/demo_user")
@@ -757,3 +828,81 @@ def demo_user():
     user = db.session.execute(db.select(User).filter_by(email='demo')).scalar()
     login_user(user)
     return redirect(url_for('portfolios'))
+
+@app.route('/<string:market_id>/<string:portfolio_url>/other_asset_body_add', methods=['POST'])
+@login_required
+def other_asset_body_add(market_id, portfolio_url):
+    ''' Добавление или изменение тела актива '''
+    asset_in_base = db.session.execute(db.select(otherAsset).filter_by(id=request.form['asset_id'])).scalar()
+
+    new_body = otherAssetBody(
+        name=request.form['name'],
+        asset_id=request.form['asset_id'],
+        total_spent=request.form['total_spent'].replace(',', '.'),
+        cost_now=request.form.get('cost_now').replace(',', '.') if request.form.get('cost_now') else request.form['total_spent'].replace(',', '.'),
+        comment=request.form['comment'],
+        date=request.form['date']
+    )
+    # Изменение старого
+    if request.form.get('id'):
+        asset_body_in_base = db.session.execute(db.select(otherAssetBody).filter_by(id=request.form['id'])).scalar()
+        asset_body_in_base.name = new_body.name
+        asset_body_in_base.total_spent = new_body.total_spent
+        asset_body_in_base.cost_now = new_body.cost_now
+        asset_body_in_base.comment = new_body.comment
+        asset_body_in_base.date = new_body.date
+    else:
+        db.session.add(new_body)
+
+    db.session.commit()
+    return redirect(url_for('asset_info', market_id=market_id, portfolio_url=portfolio_url, asset_url=asset_in_base.url))
+
+
+@app.route('/<string:market_id>/<string:portfolio_url>/other_asset_operation_add', methods=['POST'])
+@login_required
+def other_asset_operation_add(market_id, portfolio_url):
+    ''' Добавление или изменение операции актива '''
+    asset_in_base = db.session.execute(db.select(otherAsset).filter_by(id=request.form['asset_id'])).scalar()
+    new_operation = otherAssetOperation(
+        asset_id=request.form['asset_id'],
+        total_spent=request.form['total_spent'].replace(',', '.'),
+        type=request.form['type'],
+        comment=request.form['comment'],
+        date=request.form['date']
+    )
+    # Изменение существующей операции
+    if request.form.get('id'):
+        asset_operation = db.session.execute(db.select(otherAssetOperation).filter_by(id=request.form['id'])).scalar()
+        asset_operation.total_spent = new_operation.total_spent
+        asset_operation.type = new_operation.type
+        asset_operation.comment = new_operation.comment
+        asset_operation.date = new_operation.date
+    else:
+        db.session.add(new_operation)
+
+    db.session.commit()
+    return redirect(url_for('asset_info', market_id=market_id, portfolio_url=portfolio_url, asset_url=asset_in_base.url))
+
+@app.route('/<string:market_id>/<string:portfolio_url>/other_asset_delete', methods=['POST'])
+@login_required
+def other_asset_delete(market_id, portfolio_url):
+    ''' Удаление транзакции '''
+    if request.form.get('type') == 'asset_body':
+        asset_body = db.session.execute(db.select(otherAssetBody).filter_by(id=request.form.get('id'))).scalar()
+        db.session.delete(asset_body)
+    if request.form.get('type') == 'asset_operation':
+        asset_operation = db.session.execute(db.select(otherAssetOperation).filter_by(id=request.form.get('id'))).scalar()
+        db.session.delete(asset_operation)
+    if request.form.get('type') == 'asset':
+        asset = db.session.execute(db.select(otherAsset).filter_by(id=request.form.get('id'))).scalar()
+        if asset.bodys:
+            for body in asset.bodys:
+                db.session.delete(body)
+        if asset.operations:
+            for operation in asset.operations:
+                db.session.delete(operation)
+        session['last_url'] = session['last_url'].replace(('/other/' + asset.url), '')
+        db.session.delete(asset)
+
+    db.session.commit()
+    return redirect(session['last_url'])

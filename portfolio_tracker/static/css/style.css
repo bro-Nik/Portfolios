@@ -153,3 +153,9 @@ thead > tr {
   -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
   background-color: #f9f9fd;
 }
+.table-green {
+    --bs-table-bg: #27d38326;
+    }
+.fixed-height-1, .fixed-table-toolbar {
+    height: 70px;
+}

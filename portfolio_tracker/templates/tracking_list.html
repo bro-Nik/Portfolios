@@ -53,6 +53,7 @@
             </thead>
             <tbody>
             {% for item in tracked_tickers %}
+            {% if item.ticker.market_id == tickers[0].market_id %}
                 <tr>
                     <td class="text-average">
                         <a class="link-dark text-decoration-none" href="{{ url_for('tracked_ticker_info', market_id=item.ticker.market_id, ticker_id=item.ticker.id) }}">
@@ -83,6 +84,7 @@
                         {% endif %}
                     </td>
                 </tr>
+            {% endif %}
             {% endfor %}
             </tbody>
         </table>
