@@ -20,7 +20,7 @@ class Transaction(db.Model):
 class Asset(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ticker = db.relationship('Ticker', backref=db.backref('assets', lazy=True))
-    ticker_id = db.Column(db.Integer, db.ForeignKey('ticker.id'))
+    ticker_id = db.Column(db.String(255), db.ForeignKey('ticker.id'))
     quantity = db.Column(db.Float)
     total_spent = db.Column(db.Float)
     percent = db.Column(db.Float)
@@ -30,7 +30,7 @@ class Asset(db.Model):
 
 class otherAsset(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(32))
+    name = db.Column(db.String(255))
     url = db.Column(db.String(32))
     total_spent = db.Column(db.Float)
     percent = db.Column(db.Float)
@@ -49,7 +49,7 @@ class otherAssetOperation(db.Model):
 
 class otherAssetBody(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(32))
+    name = db.Column(db.String(255))
     date = db.Column(db.String(32))
     asset = db.relationship('otherAsset', backref=db.backref('bodys', lazy=True))
     asset_id = db.Column(db.Integer, db.ForeignKey('other_asset.id'))
@@ -58,21 +58,21 @@ class otherAssetBody(db.Model):
     comment = db.Column(db.String(1024))
 
 class Ticker(db.Model):
-    id = db.Column(db.String, primary_key=True)
-    name = db.Column(db.String(128))
+    id = db.Column(db.String(255), primary_key=True)
+    name = db.Column(db.String(255))
     symbol = db.Column(db.String(128))
     image = db.Column(db.String(128))
     market_cap_rank = db.Column(db.Integer)
     market = db.relationship('Market', backref=db.backref('tickers', lazy=True))
-    market_id = db.Column(db.Integer, db.ForeignKey('market.id'))
+    market_id = db.Column(db.String(32), db.ForeignKey('market.id'))
 
 class Market(db.Model):
     id = db.Column(db.String(32), primary_key=True)
-    name = db.Column(db.String(32))
+    name = db.Column(db.String(255))
 
 class Wallet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(32))
+    name = db.Column(db.String(255))
     money_all = db.Column(db.Float)
     money_in_order = db.Column(db.Float)
     user = db.relationship('User', backref=db.backref('wallets', lazy=True))
@@ -81,10 +81,10 @@ class Wallet(db.Model):
 class Portfolio(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     url = db.Column(db.String(32))
-    name = db.Column(db.String(32))
+    name = db.Column(db.String(255))
     comment = db.Column(db.String(1024))
     market = db.relationship('Market', backref=db.backref('portfolios', lazy=True))
-    market_id = db.Column(db.Integer, db.ForeignKey('market.id'))
+    market_id = db.Column(db.String(32), db.ForeignKey('market.id'))
     user = db.relationship('User', backref=db.backref('portfolios', lazy=True))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
@@ -102,18 +102,18 @@ class Alert(db.Model):
 
 class Setting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(32))
+    name = db.Column(db.String(255))
     value = db.Column(db.String(32))
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128))
-    email = db.Column(db.String, nullable=False, unique=True)
+    name = db.Column(db.String(255))
+    email = db.Column(db.String(255), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
 
 class Trackedticker(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ticker = db.relationship('Ticker', backref=db.backref('trackedtickers', lazy=True))
-    ticker_id = db.Column(db.Integer, db.ForeignKey('ticker.id'))
+    ticker_id = db.Column(db.String(255), db.ForeignKey('ticker.id'))
     user = db.relationship('User', backref=db.backref('trackedtickers', lazy=True))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))

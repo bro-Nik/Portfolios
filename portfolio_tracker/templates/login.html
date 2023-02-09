@@ -55,15 +55,16 @@
                 <input type="password" class="form-control" id="floatingPassword" placeholder="Пароль" name="password">
             </div>
 
-            <div class="checkbox mb-3">
+            <div class="checkbox mb-3 ms-1 me-1 d-flex justify-content-between">
                 <label>
                     <input type="checkbox" value="True" name="remember-me" checked> Запомнить меня
                 </label>
-            <a href="{{ url_for('demo_user') }}">Demo</a>
+                <a href="{{ url_for('demo_user') }}">Demo</a>
             </div>
-            <button class="w-100 btn btn-sm btn-primary" type="submit">Войти</button>
-            <p class="mt-5 mb-3 text-muted">© Portfolios</p>
+            <button class="w-100 btn btn-sm btn-primary mb-5" type="submit">Войти</button>
+            <a class="text-decoration-none link-secondary" href="" data-bs-toggle="modal" data-bs-target="#About">$ Portfolios</a>
         </form>
     </main>
+{% include 'about.html' %}
 </body>
 </html>

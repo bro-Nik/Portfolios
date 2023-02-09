@@ -58,7 +58,7 @@
             {% endif %}
         {% endwith %}
         <div id="content">{% block content %}{% endblock %}
-            <!-- Modal Add or Change Transaction-->
+            <!-- Modal Alerts -->
             <div class="modal fade modal-lg" id="Alerts" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
@@ -72,11 +72,17 @@
                     </div>
                 </div>
             </div>
+            {% include 'about.html' %}
         </div>
     </div>
     <div id="footer">
-      {% block footer %}
-      {% endblock %}
+    {% block footer %}
+        <div class="container fixed-bottom text-center">
+            <footer class="my-3">
+                <a class="text-decoration-none link-secondary cursor-pointer" data-bs-toggle="modal" data-bs-target="#About">$  Portfolios</a>
+            </footer>
+        </div>
+    {% endblock %}
     </div>
 <script>
 // Обновление алертов без перезагрузки

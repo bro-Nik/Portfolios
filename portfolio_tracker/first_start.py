@@ -13,7 +13,7 @@ def create_app():
 
 app, db = create_app()
 
-from portfolio_tracker.models import Setting, Market, User
+from portfolio_tracker.models import Market, User
 from portfolio_tracker.defs import *
 
 with app.app_context():
