@@ -3,14 +3,11 @@
 <head>
     <meta charset="utf-8">
     <title>Login</title>
-
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}">
-
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jquery-3.5.1.js') }}"></script>
-
     <style>
         .form-signin {
             max-width: 330px;
@@ -29,8 +26,8 @@
     </style>
 </head>
 
-<body class="text-center">
-    <main class="form-signin w-100 m-auto">
+<body>
+    <main class="text-center form-signin w-100 m-auto">
         <form method="post">
             {% with messages = get_flashed_messages() %}
                 {% if messages %}

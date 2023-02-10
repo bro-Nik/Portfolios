@@ -1,3 +1,17 @@
+html, body {
+    height: 100%;
+}
+div#wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+div#content {
+    flex: 1 0 auto;
+}
+div#footer {
+    flex: 0 0 auto;
+}
 .small_text {
     font-size: .875em;
     font-weight: 300;

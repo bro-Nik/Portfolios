@@ -3,8 +3,19 @@
 {% block head %}
     {{ super() }}
 {% endblock %}
+{% block link %}
+    <button type="button" class="btn btn-light btn-sm" disabled>Портфели</button>
+    <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
+    <div class="dropdown">
+        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
+        </ul>
+    </div>
+{% endblock %}
 {% block content %}
 
-<h1>404</h1>
-
+<h1>ОЙ!, такой страницы нет</h1>
+<p>Код 404</p>
 {% endblock %}

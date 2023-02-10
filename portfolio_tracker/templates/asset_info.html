@@ -30,7 +30,7 @@
                 {% if asset.ticker.image %}
                     <img class="img-asset" src="{{ asset.ticker.image }}">
                 {% endif %}
-                <span class="fs-1 fw-semibold" id="asset-price"> $- </span>
+                <span class="fs-1 fw-semibold" id="asset-price"> ${{ price }} </span>
             </div>
             <div class="d-flex align-items-end">
                 <span class="badge text-bg-light fw-normal cursor-pointer text-muted me-1" data-bs-toggle="modal" data-bs-target="#Alert">
@@ -450,7 +450,7 @@ updateModal.addEventListener('show.bs.modal', function (event) {
   modalTitle.textContent = `${title}`
   modalButton.textContent = `${title}`
 
-if (transaction_class === "visually-hidden")
+if (transaction_class === "hidden")
     {modalTransaction_class.classList.add("visually-hidden");}
 else {modalTransaction_class.classList.remove("visually-hidden");}
 })

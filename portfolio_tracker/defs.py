@@ -17,7 +17,8 @@ date = datetime.now().date()
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(float(app.config['CRYPTO_UPDATE']), price_list_crypto_def.s())
-    sender.add_periodic_task(1800, price_list_stocks_def.s())
+    sender.add_periodic_task(300, price_list_stocks_def.s())
+    #sender.add_periodic_task(1800, price_list_stocks_def.s())
 
 def price_list_def():
     ''' Общая функция сбора цен '''
@@ -56,41 +57,46 @@ def price_list_crypto_def():
         price_list['update-crypto'] = str(datetime.now())
         redis.set('price_list_crypto', pickle.dumps(price_list))
 
-        print('Крипто прайс обновлен ' + str(price_list['update-crypto']))
-        alerts_update_def.delay(price_list)
+        print('Крипто прайс обновлен ' + price_list['update-crypto'])
+        alerts_update_def.delay()
 
 @celery.task
 def price_list_stocks_def():
     ''' Запрос цен у Polygon фондовый рынок '''
-    price_list = {}
-    day = 1
-    while price_list == {}:
-        date = datetime.now().date() - timedelta(days=day)
-        url = 'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/' + str(date) + '?adjusted=true&include_otc=false&apiKey=' + app.config['API_KEY_POLYGON']
-        response = requests.get(url)
-        data = response.json()
-        if data.get('results'):
-            for ticker in data['results']:
-                # вчерашняя цена закрытия, т.к. бесплатно
-                price_list[ticker['T'].lower()] = ticker['c']
-        else:
-            # если нет результата, делаем запрос еще на 1 день раньше (возможно праздники)
-            day += 1
-            k = day % 4
-            # задержка на бесплатном тарифе
-            if k == 0:
-                print('Задержка 1 мин. (загрузка прайса Акции)')
-                time.sleep(60)
+    price_list = pickle.loads(redis.get('price_list_stocks')) if redis.get('price_list_stocks') else {}
+    if price_list['update-stocks'] != str(datetime.now().date()):
 
-    if price_list:
-        price_list['update-stocks'] = datetime.now()
-        redis.set('price_list_stocks', pickle.dumps(price_list))
-        print('Фондовый прайс обновлен ', price_list['update-stocks'])
-        alerts_update_def.delay(price_list)
+        day = 1
+        while price_list == {}:
+            date = datetime.now().date() - timedelta(days=day)
+            url = 'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/' + str(date) + '?adjusted=true&include_otc=false&apiKey=' + app.config['API_KEY_POLYGON']
+            response = requests.get(url)
+            data = response.json()
+            if data.get('results'):
+                for ticker in data['results']:
+                    # вчерашняя цена закрытия, т.к. бесплатно
+                    price_list[ticker['T'].lower()] = ticker['c']
+            else:
+                # если нет результата, делаем запрос еще на 1 день раньше (возможно праздники)
+                day += 1
+                k = day % 4
+                # задержка на бесплатном тарифе
+                if k == 0:
+                    print('Задержка 1 мин. (загрузка прайса Акции)')
+                    time.sleep(60)
+
+        if price_list:
+            price_list['update-stocks'] = str(datetime.now().date())
+            redis.set('price_list_stocks', pickle.dumps(price_list))
+            print('Фондовый прайс обновлен ' + price_list['update-stocks'])
+            alerts_update_def.delay()
 
 @celery.task
-def alerts_update_def(price_list):
+def alerts_update_def():
     ''' Функция собирает уведомления и проверяет нет ли сработавших '''
+    price_list_crypto = pickle.loads(redis.get('price_list_crypto')) if redis.get('price_list_crypto') else {}
+    price_list_stocks = pickle.loads(redis.get('price_list_stocks')) if redis.get('price_list_stocks') else {}
+    price_list = {**price_list_crypto, **price_list_stocks}
     flag = False
     not_worked_alerts = redis.get('not_worked_alerts')
     # первый запрос уведомлений

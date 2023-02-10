@@ -1,0 +1,29 @@
+<!-- Modal Feedback -->
+<style>
+.modal-header {
+    border: none;
+}
+</style>
+<div class="modal fade" id="Feedback" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-3 w-100 text-center">Обратная связь</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form class=""  method="post" action="{{ url_for('feedback') }}">
+                    <input type="hidden" name="user_id" value="{{ current_user.id }}">
+                    <div class="row g-2">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <textarea class="form-control silver" placeholder="Опишите проблему или предложение" name="text"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="w-100 mb-2 btn rounded-3 btn-primary btn-title" type="submit">Отправить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

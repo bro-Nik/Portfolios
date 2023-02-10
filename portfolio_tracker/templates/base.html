@@ -17,73 +17,73 @@
     {% endblock %}
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <header class=" align-items-center py-3 mb-4 border-bottom">
-                <div class="hstack gap-2">
-                    {% block link %}{% endblock %}
-                    <div class="d-flex ms-auto">
-                        <a class="action-icon text-decoration-none position-relative" href="" data-bs-toggle="modal" data-bs-target="#Alerts">
-                            <i class="bi icon bi-bell"></i>
-                            <div class="" id="worked_alerts"></div>
+<div id="wrapper" class="container">
+    <div class="header">
+        <header class=" align-items-center py-3 mb-4 border-bottom">
+            <div class="hstack gap-2">
+                {% block link %}{% endblock %}
+                <div class="d-flex ms-auto">
+                    <a class="action-icon text-decoration-none position-relative" href="" data-bs-toggle="modal" data-bs-target="#Alerts">
+                        <i class="bi icon bi-bell"></i>
+                        <div class="" id="worked_alerts"></div>
+                    </a>
+                    <div class="ms-1 flex-shrink-0 dropdown">
+                        <a href="#" class="d-block link-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi icon bi-person-circle m-0"></i>
                         </a>
-                        <div class="ms-1 flex-shrink-0 dropdown">
-                            <a href="#" class="d-block link-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi icon bi-person-circle m-0"></i>
-                            </a>
-                            <ul class="dropdown-menu text-small shadow" style="">
-                                {% if current_user.email != 'demo' %}
-                                    <li><a class="dropdown-item" href="{{ url_for('settings') }}">Настройки</a></li>
-                                {% else %}
-                                    <li><span class="dropdown-item fw-semibold">Demo user</span></li>
-                                {% endif %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Выйти</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </header>
-        </div>
-    </div>
-    <div class="container">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-success alert-dismissible" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        <div id="content">{% block content %}{% endblock %}
-            <!-- Modal Alerts -->
-            <div class="modal fade modal-lg" id="Alerts" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h1 class="modal-title fs-3">Уведомления</h1>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body" id="list_alerts">
-                            <p class="text-center lead">Пока ничего нет...</p>
-                        </div>
+                        <ul class="dropdown-menu text-small shadow" style="">
+                            {% if current_user.email != 'demo' %}
+                                <li><a class="dropdown-item" href="{{ url_for('settings') }}">Настройки</a></li>
+                            {% else %}
+                                <li><span class="dropdown-item fw-semibold">Demo user</span></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Выйти</a></li>
+                        </ul>
                     </div>
                 </div>
             </div>
-            {% include 'about.html' %}
+        </header>
+    </div>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success alert-dismissible" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <div id="content">{% block content %}{% endblock %}
+        <!-- Modal Alerts -->
+        <div class="modal fade modal-lg" id="Alerts" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-3">Уведомления</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="list_alerts">
+                        <p class="text-center lead">Пока ничего нет...</p>
+                    </div>
+                </div>
+            </div>
         </div>
+        {% include 'about.html' %}
+        {% include 'feedback.html' %}
     </div>
     <div id="footer">
     {% block footer %}
-        <div class="container fixed-bottom text-center">
-            <footer class="my-3">
-                <a class="text-decoration-none link-secondary cursor-pointer" data-bs-toggle="modal" data-bs-target="#About">$  Portfolios</a>
+        <div class="text-center">
+            <footer class="mt-5 mb-3">
+                <a class="text-decoration-none link-secondary cursor-pointer" data-bs-toggle="modal" data-bs-target="#About">$ Portfolios</a>
+                <a class="text-decoration-none link-secondary cursor-pointer opacity-50 small_text" data-bs-toggle="modal" data-bs-target="#Feedback">Нашли ошибку?</a>
             </footer>
         </div>
     {% endblock %}
     </div>
+</div>
 <script>
 // Обновление алертов без перезагрузки
 

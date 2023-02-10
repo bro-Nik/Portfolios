@@ -7,7 +7,7 @@ from celery import Celery
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from portfolio_tracker.app import login_manager
-from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Ticker, Market, Alert, Setting, User, Trackedticker, otherAsset, otherAssetBody, otherAssetOperation
+from portfolio_tracker.models import *
 from portfolio_tracker.defs import *
 
 
@@ -16,6 +16,7 @@ from portfolio_tracker.defs import *
 def settings():
     ''' Страница настроек '''
     return render_template('settings.html')
+
 
 @app.route('/settings/update', methods=['POST'])
 def settings_update():
@@ -27,6 +28,7 @@ def settings_update():
 @login_required
 def portfolios():
     ''' Страница портфелей '''
+    session['last_url'] = request.url
     price_list = price_list_def()
     portfolios = tuple(db.session.execute(db.select(Portfolio).filter_by(user_id=current_user.id)).scalars())
     total_spent = cost_now = 0
@@ -390,8 +392,10 @@ def transaction_add(market_id, portfolio_url):
                 # изменяем уведомление
                 alert_in_base = db.session.execute(db.select(Alert).filter_by(asset_id=transaction.asset_id, price=transaction.price)).scalar()
                 alert_in_base.price = new_price
-                not_worked_alerts = pickle.loads(redis.get('not_worked_alerts'))
-                not_worked_alerts[alert_in_base.id]['price'] = new_price
+                # redis
+                not_worked_alerts = pickle.loads(redis.get('not_worked_alerts')) if redis.get('not_worked_alerts') else {}
+                if not_worked_alerts.get(alert_in_base.id):
+                    not_worked_alerts[alert_in_base.id]['price'] = new_price
                 redis.set('not_worked_alerts', pickle.dumps(not_worked_alerts))
             else:
                 transaction.asset.quantity += (new_quantity - transaction.quantity)
@@ -457,6 +461,7 @@ def order_to_transaction(market_id, portfolio_url):
 @login_required
 def wallets():
     ''' Страница кошельков, где хранятся активы '''
+    session['last_url'] = request.url
     price_list = price_list_def()
     user = db.session.execute(db.select(User).filter_by(id=current_user.id)).scalar()
     wallets = tuple(user.wallets)
@@ -536,6 +541,7 @@ def wallet_transfer():
 @login_required
 def wallet_info(wallet_name):
     ''' Страница кошелька '''
+    session['last_url'] = request.url
     price_list = price_list_def()
     user = db.session.execute(db.select(User).filter_by(id=current_user.id)).scalar()
     wallet = db.session.execute(db.select(Wallet).filter_by(name=wallet_name, user_id=current_user.id)).scalar()
@@ -714,6 +720,7 @@ def load_user(user_id):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    session['last_url'] = request.url
     email = request.form.get('email')
     password = request.form.get('password')
 
@@ -724,6 +731,7 @@ def login():
             if user and check_password_hash(user.password, password):
                 login_user(user, remember=request.form.get('remember-me'))
                 next_page = request.args.get('next') if request.args.get('next') else '/'
+                new_visit()
                 return redirect(next_page)
             else:
                 flash('Некорректные данные')
@@ -904,5 +912,32 @@ def other_asset_delete(market_id, portfolio_url):
         session['last_url'] = session['last_url'].replace(('/other/' + asset.url), '')
         db.session.delete(asset)
 
+    db.session.commit()
+    return redirect(session['last_url'])
+
+
+def new_visit():
+    if current_user.info:
+        current_user.last_visit = datetime.now()
+    else:
+        ip = request.headers.get('X-Real-IP')
+        url = 'http://ip-api.com/json/' + ip
+        response = requests.get(url).json()
+        if response.get('status') == 'success':
+            user_info = userInfo(
+                user_id=current_user.id,
+                first_visit=datetime.now(),
+                last_visit=datetime.now(),
+                country=response.get('country'),
+                city=response.get('city')
+            )
+            db.session.add(user_info)
+    db.session.commit()
+
+
+@app.route('/feedback', methods=['POST'])
+def feedback():
+    feedback = Feedback(user_id=request.form.get('user_id'), text=request.form.get('text'))
+    db.session.add(feedback)
     db.session.commit()
     return redirect(session['last_url'])
