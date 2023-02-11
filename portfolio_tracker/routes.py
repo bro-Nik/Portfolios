@@ -301,18 +301,13 @@ def asset_detail(asset_id):
 
     when_updated = when_updated_def(price_list[str('update-' + asset_in_base.portfolio.market_id)])
 
-    alerts = []
-    for alert in asset_in_base.alerts:
-        alerts.append({'id': alert.id, 'price': number_group(alert.price), 'worked': alert.worked})
-
     return {
         "price": number_group(smart_round(price)),
         "cost_now": '$' + str(number_group(int(round(cost_now)))) if asset_in_base.quantity > 0 else '-',
         "profit": profit,
         "profit_color": profit_color,
         "profit_procent": '(' + str(int(round(abs((cost_now - asset_in_base.total_spent) / asset_in_base.total_spent * 100)))) + '%)' if asset_in_base.total_spent > 0 else '',
-        "when_updated": when_updated,
-        "alerts": alerts
+        "when_updated": when_updated
     }
 
 @app.route('/<string:market_id>/<string:portfolio_url>/transaction_add', methods=['POST'])
@@ -602,8 +597,8 @@ def tracking_list_delete_ticker(ticker_id):
     if tracked_ticker_in_base:
         # удаляем уведомления
         if tracked_ticker_in_base.alerts != ():
-            not_worked_alerts = pickle.loads(redis.get('not_worked_alerts'))
-            worked_alerts = pickle.loads(redis.get('worked_alerts'))
+            not_worked_alerts = pickle.loads(redis.get('not_worked_alerts')) if redis.get('not_worked_alerts') else {}
+            worked_alerts = pickle.loads(redis.get('worked_alerts')) if redis.get('worked_alerts') else {}
 
             for alert in tracked_ticker_in_base.alerts:
                 not_worked_alerts.pop(alert.id, None)
@@ -666,7 +661,7 @@ def alert_add():
     db.session.commit()
 
     # добавление уведомления в список
-    not_worked_alerts = pickle.loads(redis.get('not_worked_alerts'))
+    not_worked_alerts = pickle.loads(redis.get('not_worked_alerts')) if redis.get('not_worked_alerts') else {}
     not_worked_alerts[alert.id] = {}
     not_worked_alerts[alert.id]['type'] = alert.type
     not_worked_alerts[alert.id]['price'] = alert.price
@@ -784,8 +779,8 @@ def redirect_to_signin(response):
 def user_delete():
     user = db.session.execute(db.select(User).filter_by(id=current_user.id)).scalar()
 
-    not_worked_alerts = pickle.loads(redis.get('not_worked_alerts'))
-    worked_alerts = pickle.loads(redis.get('worked_alerts'))
+    not_worked_alerts = pickle.loads(redis.get('not_worked_alerts')) if redis.get('not_worked_alerts') else {}
+    worked_alerts = pickle.loads(redis.get('worked_alerts')) if redis.get('worked_alerts') else {}
 
     # alerts
     for ticker in user.trackedtickers:
@@ -829,6 +824,12 @@ def user_delete():
 @app.route("/json/worked_alerts")
 def worked_alerts_detail():
     worked_alerts = pickle.loads(redis.get('worked_alerts')).get(current_user.id) if redis.get('worked_alerts') else {}
+    if worked_alerts != {}:
+        for alert in worked_alerts:
+            if alert['link']['source'] == 'portfolio':
+                alert['link'] = url_for('asset_info', market_id=alert['link']['market_id'], portfolio_url=alert['link']['portfolio_url'], asset_url=alert['link']['asset_url'])
+            elif alert['link']['source'] == 'tracking_list':
+                alert['link'] = url_for('tracked_ticker_info', market_id=alert['link']['market_id'], ticker_id=alert['link']['ticker_id'])
     return worked_alerts
 
 @app.route("/demo_user")
@@ -909,7 +910,7 @@ def other_asset_delete(market_id, portfolio_url):
         if asset.operations:
             for operation in asset.operations:
                 db.session.delete(operation)
-        session['last_url'] = session['last_url'].replace(('/other/' + asset.url), '')
+        session['last_url'] = session['last_url'].replace((asset.url), '')
         db.session.delete(asset)
 
     db.session.commit()
@@ -933,7 +934,6 @@ def new_visit():
             )
             db.session.add(user_info)
     db.session.commit()
-
 
 @app.route('/feedback', methods=['POST'])
 def feedback():

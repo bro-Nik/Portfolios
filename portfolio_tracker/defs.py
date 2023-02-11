@@ -64,7 +64,7 @@ def price_list_crypto_def():
 def price_list_stocks_def():
     ''' Запрос цен у Polygon фондовый рынок '''
     price_list = pickle.loads(redis.get('price_list_stocks')) if redis.get('price_list_stocks') else {}
-    if price_list['update-stocks'] != str(datetime.now().date()):
+    if price_list.get('update-stocks') != str(datetime.now().date()):
 
         day = 1
         while price_list == {}:
@@ -82,7 +82,6 @@ def price_list_stocks_def():
                 k = day % 4
                 # задержка на бесплатном тарифе
                 if k == 0:
-                    print('Задержка 1 мин. (загрузка прайса Акции)')
                     time.sleep(60)
 
         if price_list:
@@ -90,7 +89,6 @@ def price_list_stocks_def():
             redis.set('price_list_stocks', pickle.dumps(price_list))
             print('Фондовый прайс обновлен ' + price_list['update-stocks'])
             alerts_update_def.delay()
-
 @celery.task
 def alerts_update_def():
     ''' Функция собирает уведомления и проверяет нет ли сработавших '''
@@ -123,13 +121,15 @@ def alerts_update_def():
                     a['comment'] = alert.comment
                     a['ticker'] = alert.trackedticker.ticker.name
                     if alert.asset_id:
-                        a['link'] = 'http://localhost:5000/' + str(alert.asset.portfolio.url) + '/' + str(alert.trackedticker.ticker_id)
+                        a['link'] = {'source': 'portfolio', 'market_id': alert.asset.portfolio.market_id, 'portfolio_url': alert.asset.portfolio.url, 'asset_url': alert.trackedticker.ticker_id}
+                        #a['link'] = 'http://localhost:5000/' + str(alert.asset.portfolio.url) + '/' + str(alert.trackedticker.ticker_id)
                         #a['link'] = url_for('asset_info', ticker_id=alert.trackedticker.ticker_id, portfolio_url=alert.asset.portfolio.url)
                         a['link_for'] = alert.asset.portfolio.name
                     else:
-                        a['link'] = 'http://localhost:5000/tracking_list/' + str(alert.trackedticker.ticker.market_id) + '/' + str(alert.trackedticker.ticker_id)
+                        a['link'] = {'source': 'tracking_list', 'market_id': alert.trackedticker.ticker.market_id, 'ticker_id': alert.trackedticker.ticker_id}
+                        #a['link'] = 'http://localhost:5000/tracking_list/' + str(alert.trackedticker.ticker.market_id) + '/' + str(alert.trackedticker.ticker_id)
                         #a['link'] = url_for('alerts_ticker', ticker_id=alert.trackedticker.ticker_id, market_id=alert.ticker.market_id)
-                        alert['link_for'] = 'Список отслеживания'
+                        a['link_for'] = 'Список отслеживания'
 
                     worked_alerts[ticker.user_id].append(a)
                 # если это не сработавшее уведомление
@@ -168,13 +168,16 @@ def alerts_update_def():
                     a['order'] = True if a['comment'] == 'Ордер' else False
                     a['ticker'] = alert_in_base.trackedticker.ticker.name
                     if alert_in_base.asset_id:
-                        a['link'] = 'http://localhost:5000/' + str(alert_in_base.asset.portfolio.url) + '/' + str(alert_in_base.trackedticker.ticker_id)
+                        a['link'] = {'source': 'portfolio', 'market_id': alert_in_base.asset.portfolio.market_id, 'portfolio_url': alert_in_base.asset.portfolio.url, 'asset_url': alert_in_base.trackedticker.ticker_id}
+                        #a['link'] = 'http://localhost:5000/' + str(alert_in_base.asset.portfolio.url) + '/' + str(alert_in_base.trackedticker.ticker_id)
                         #a['link'] = url_for('asset_info', ticker_id=alert_in_base.trackedticker.ticker_id, portfolio_url=alert_in_base.asset.portfolio.url)
                         a['link_for'] = alert_in_base.asset.portfolio.name
                     else:
-                        a['link'] = 'http://localhost:5000/tracking_list/' + str(alert_in_base.trackedticker.ticker.market_id) + '/' + str(alert_in_base.trackedticker.ticker_id)
+                        a['link'] = {'source': 'tracking_list', 'market_id': alert_in_base.trackedticker.ticker.market_id,
+                                     'ticker_id': alert_in_base.trackedticker.ticker_id}
+                        #a['link'] = 'http://localhost:5000/tracking_list/' + str(alert_in_base.trackedticker.ticker.market_id) + '/' + str(alert_in_base.trackedticker.ticker_id)
                         #a['link'] = url_for('alerts_ticker', ticker_id=alert_in_base.trackedticker.ticker_id, market_id=alert_in_base.trackedticker.ticker.market_id)
-                        alert['link_for'] = 'Список отслеживания'
+                        a['link_for'] = 'Список отслеживания'
 
                     worked_alerts[user_id].append(a)
 
@@ -187,16 +190,19 @@ def alerts_update_def():
 def when_updated_def(when_updated):
     ''' Возвращает сколько прошло от входящей даты '''
     if type(when_updated) == str:
-        when_updated = datetime.strptime(when_updated, '%Y-%m-%d %H:%M:%S.%f')
+        try:
+            when_updated = datetime.strptime(when_updated, '%Y-%m-%d %H:%M:%S.%f')
+        except:
+            when_updated = datetime.strptime(when_updated + ' 20:00:00.000000', '%Y-%m-%d %H:%M:%S.%f')
 
     delta_time = datetime.now() - when_updated
     if date == datetime.date(when_updated):
         if delta_time.total_seconds() < 60:
             result = ''
             #result = 'менее минуты'
-        if 60 <= delta_time.total_seconds() < 3600:
+        elif 60 <= delta_time.total_seconds() < 3600:
             result = str(int(delta_time.total_seconds() / 60)) + ' мин.'
-        if 3600 <= delta_time.total_seconds() < 86400:
+        elif 3600 <= delta_time.total_seconds() < 86400:
             result = str(int(delta_time.total_seconds() / 3600)) + ' ч.'
     elif 0 < (date - datetime.date(when_updated)).days < 2:
         result = 'вчера'

@@ -22,7 +22,7 @@
         <div class="col-md-6">
             <h1 class="fs-6 text-muted m-0">{{ tracked_ticker.ticker.name }} ({{ tracked_ticker.ticker.symbol|upper }})
                 {% if tracked_ticker.ticker.market_cap_rank %}
-                    <span class="badge text-bg-light">#{{ tracked_ticker.ticker.market_cap_rank }}</span>
+                    <span class="badge text-bg-light text-muted">#{{ tracked_ticker.ticker.market_cap_rank }}</span>
                 {% endif %}
             </h1>
             <div class="hstack gap-2">
@@ -51,7 +51,7 @@
         <tbody>
         {% for alert in tracked_ticker.alerts|sort(reverse=true, attribute="price") %}
             {% if alert.worked == True %}
-                <tr class="table-success">
+                <tr class="table-green">
             {% else %}
                 <tr>
             {% endif %}
@@ -110,12 +110,7 @@
                 <table class="table table-sm align-middle table-borderless">
                     <tbody>
                         {% for alert in tracked_ticker.alerts|sort(reverse=true, attribute="price") %}
-                            <tr>
-                                <td class="col-md-1">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" role="switch" {{ '' if alert.worked == False else 'checked' }} {{ 'disabled' if alert.comment == 'Ордер' else '' }}>
-                                    </div>
-                                </td>
+                            <tr id="alertmodalId{{ alert.id }}">
                                 <td>
                                     {% if alert.type == 'down' %}
                                     <span class="text-red">Ниже</span>
@@ -126,7 +121,7 @@
                                     <p class="small_text">{{ alert.date }}</p>
                                 </td>
                                 <td>{{ alert.comment }}</td>
-                                <td>
+                                <td class="text-end">
                                     {% if alert.comment != 'Ордер' %}
                                     <form action="{{ url_for('alert_delete') }}" method="post">
                                         <input type="hidden" name="id" value="{{ alert.id }}">

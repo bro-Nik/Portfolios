@@ -168,8 +168,16 @@ thead > tr {
   background-color: #f9f9fd;
 }
 .table-green {
-    --bs-table-bg: #27d38326;
+    --bs-table-bg: #99d59821;
     }
 .fixed-height-1, .fixed-table-toolbar {
     height: 70px;
+}
+.market-cap-rank {
+    padding-left: 0.1875em;
+    padding-right: 0.1875em;
+    background-color: #e9ecef6b;
+    border-radius: 4px;
+    color: #6c757d87;
+    margin-left: 5px;
 }
