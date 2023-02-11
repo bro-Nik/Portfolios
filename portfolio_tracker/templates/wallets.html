@@ -116,16 +116,8 @@
         </table>
     </div>
 {% else %}
-    <div class="col-md-12 p-5 mb-3">
+    <div class="p-5 mb-3">
         <p class="text-center lead">Пока ничего нет...</p>
-    </div>
-{% endif %}
-{% if coins_zero_quantity %}
-    <div class="row">
-        <p class="small_text">Другие монеты</p>
-        {% for coin in coins_zero_quantity %}
-            <a href="{{ url_for('coin_info', coin_name=coin.name) }}"> {{ coin.name }} </a>
-        {% endfor %}
     </div>
 {% endif %}
 
@@ -175,7 +167,7 @@
             </div>
             <div class="modal-body">
                 <form class=""  method="post" action="{{ url_for('wallet_in_out') }}">
-                    <div class="btn-group silver col-md-12 mb-3" role="group" aria-label="Basic radio toggle button group">
+                    <div class="btn-group silver col-12 mb-3" role="group" aria-label="Basic radio toggle button group">
                         <input type="radio" class="btn-check" name="type" value="Ввод" id="btnradio1" autocomplete="off" checked>
                         <label class="btn btn-outline-active btn-sm" for="btnradio1">Ввод</label>
 
@@ -223,7 +215,7 @@
             </div>
             <div class="modal-body">
                 <form class=""  method="post" action="{{ url_for('wallet_transfer') }}">
-                    <div class="btn-group silver col-md-12 mb-3" role="group">
+                    <div class="btn-group silver col-12 mb-3" role="group">
                         <input type="button" class="btn-check" id="btnradio5" autocomplete="off" data-bs-toggle="modal" data-bs-target="#inputoutCash">
                         <label class="btn btn-outline-not_active btn-sm" for="btnradio5">Назад</label>
 

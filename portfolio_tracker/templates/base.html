@@ -59,7 +59,7 @@
     {% endwith %}
     <div id="content">{% block content %}{% endblock %}
         <!-- Modal Alerts -->
-        <div class="modal fade modal-lg" id="Alerts" tabindex="-1" aria-hidden="true">
+        <div class="modal fade modal" id="Alerts" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -138,7 +138,7 @@ async function updateAlerts() {
 }
 
 function getAlertsRequest() {
-   return fetch({{ url_for('worked_alerts_detail')|tojson }}, {
+   return fetch({{ url_for('worked_alerts_detail', user_id=current_user.id)|tojson }}, {
       method: 'GET',
       headers: {
          "Content-type": "application/json; charset=UTF-8"

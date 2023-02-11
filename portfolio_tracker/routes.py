@@ -821,8 +821,8 @@ def user_delete():
     return redirect(url_for('login'))
 
 
-@app.route("/json/worked_alerts")
-def worked_alerts_detail():
+@app.route("/json/<string:user_id>/worked_alerts")
+def worked_alerts_detail(user_id):
     worked_alerts = pickle.loads(redis.get('worked_alerts')).get(current_user.id) if redis.get('worked_alerts') else {}
     if worked_alerts != {}:
         for alert in worked_alerts:
