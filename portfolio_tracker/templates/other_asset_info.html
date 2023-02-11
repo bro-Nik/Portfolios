@@ -8,18 +8,16 @@
     <button onclick="document.location='{{ url_for('portfolio_info', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}'" type="button" class="btn btn-light btn-sm">{{ asset.portfolio.name }}</button>
     <button type="button" class="btn btn-light btn-sm" disabled>{{ asset.name }}</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
-    <div class="dropdown">
-        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
-        <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
-        </ul>
-    </div>
+    <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
+    </ul>
 {% endblock %}
 {% block content %}
-<div class="col-md-12 mb-5">
-    <div class="row">
-        <div class="col-md-6">
+<div class="mb-5">
+    <div class="row xs-mb-3">
+        <div class="col-auto">
             <h1 class="fs-6 text-muted m-0">{{ asset.name }}
                 <span class="small_text" title="Обновлено" id="when_updated"></span>
             </h1>
@@ -27,7 +25,7 @@
                 <span class="fs-1 fw-semibold" id="asset-price"> ${{ (asset.bodys|sum(attribute='cost_now') + asset.operations|sum(attribute='total_spent'))|round|int|number_group }}</span>
             </div>
         </div>
-        <div class="col-md-6 position-right">
+        <div class="col-auto ms-auto">
             <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#assetOperation" data-bs-date="{{ date }}" data-bs-title="Добавить операцию">Добавить операцию</button>
             <button class="btn btn-warning btn-sm ms-1" type="button" data-bs-toggle="modal" data-bs-target="#assetBody" data-bs-date="{{ date }}" data-bs-title="Добавить тело актива">Тело актива</button>
             <button type="button" class="btn btn-light dropdown-toggle btn-sm ms-1" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
@@ -38,20 +36,20 @@
     </div>
 </div>
 {% if  asset.bodys or asset.operations %}
-<div class="row mb-5">
-    <div class="col-md-auto">
+<div class="row mb-5 xs-mb-3">
+    <div class="col-auto">
         <p class="small_text">Средняя цена покупки</p>
         <span class="text-average">
                 ${{ asset.bodys|sum(attribute='total_spent')|round|int|number_group }}
         </span>
     </div>
-    <div class="col-md-auto">
+    <div class="col-auto">
         <p class="small_text">Стоимость сейчас</p>
         <span class="text-average">
             ${{ (asset.bodys|sum(attribute='cost_now') + asset.operations|sum(attribute='total_spent'))|round|int|number_group }}
         </span>
     </div>
-    <div class="col-md-auto">
+    <div class="col-auto">
         <p class="small_text">Прибыль / убыток</p>
         <span class="text-average" id="asset-profit">
             {% if ((asset.bodys|sum(attribute='cost_now') + asset.operations|sum(attribute='total_spent')) - asset.bodys|sum(attribute='total_spent'))|round|int == 0 %}
@@ -75,7 +73,7 @@
             {% endif %}
         </span>
     </div>
-    <div class="col-md-auto">
+    <div class="col-auto">
         <p class="small_text">% от портфеля</p>
         <span class="text-average">
             {% if portfolio_total_spent and asset.bodys %}
@@ -102,7 +100,7 @@
 <div class="tab-content" id="nav-tabContent">
     <div class="tab-pane fade" id="nav-asset" role="tabpanel" aria-labelledby="nav-asset-tab">
         {% if asset.bodys %}
-        <div class="pb-3">
+        <div class="big-table pb-3">
             <table class="table table-sm align-middle">
                 <thead>
                     <tr>
@@ -141,7 +139,7 @@
     </div>
     <div class="tab-pane fade active show" id="nav-operations" role="tabpanel" aria-labelledby="nav-operations-tab">
         {% if asset.operations %}
-        <div class="pb-3">
+        <div class="big-table pb-3">
             <table class="table table-sm align-middle">
                 <thead>
                     <tr>

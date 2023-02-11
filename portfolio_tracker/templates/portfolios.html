@@ -6,29 +6,27 @@
 {% block link %}
     <button type="button" class="btn btn-light btn-sm" disabled>Портфели</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
-    <div class="dropdown">
-        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
-        <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
-        </ul>
-    </div>
+    <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
+    </ul>
 {% endblock %}
 {% block content %}
-<div class="col-md-12 mb-5">
-    <div class="row">
-        <div class="col-md-6">
+<div class="mb-5">
+    <div class="row xs-mb-3">
+        <div class="col-auto">
             <h1>Портфели</h1>
         </div>
-        <div class="col-md-6 position-right">
+        <div class="col-auto ms-auto">
             <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#newPortfolio" data-bs-title="Добавить портфель">Добавить портфель</button>
         </div>
     </div>
 </div>
 {% if portfolios %}
     {% if total_spent %}
-        <div class="row">
-            <div class="col-md-auto">
+        <div class="row xs-mb-3">
+            <div class="col-auto">
                 <p class="small_text">Всего вложено / сейчас</p>
                 <span class="text-average">
                     ${{ total_spent|round|int|number_group }} /
@@ -45,7 +43,7 @@
                     {% endif %}
                 </span>
             </div>
-            <div class="col-md-auto">
+            <div class="col-auto">
                 <p class="small_text">Прибыль / убыток</p>
                 {% if cost_now - total_spent >= 0 %}
                     <span class="text-green text-average">
@@ -63,7 +61,7 @@
     {% endif %}
     <div class="fixed-height-1">
     </div>
-    <div>
+    <div class="big-table">
         <table class="table table-sm align-middle table-hover">
             <thead>
             <tr>

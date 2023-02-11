@@ -9,28 +9,26 @@
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
     <button type="button" class="btn btn-light btn-sm" disabled>{{ portfolio.name }}</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
-    <div class="dropdown">
-        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
-        <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
-        </ul>
-    </div>
+    <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
+    </ul>
 {% endblock %}
 {% block content %}
-<div class="col-md-12 mb-5">
-    <div class="row">
-        <div class="col-md-6">
+<div class="mb-5">
+    <div class="row xs-mb-3">
+        <div class="col-auto">
             <h1>{{ portfolio.name }}</h1>
         </div>
-        <div class="col-md-6 position-right">
+        <div class="col-auto ms-auto">
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#customAsset" data-bs-title="Добавить актив" title="Добавить актив">Добавить актив</button>
         </div>
     </div>
 </div>
 {% if portfolio.other_assets %}
-    <div class="row">
-        <div class="col-md-auto">
+    <div class="row xs-mb-3">
+        <div class="col-auto">
             <p class="small_text">Всего вложено / сейчас</p>
             <span class="text-average">
                 {% if portfolio_cost_now == 0 %}
@@ -45,7 +43,7 @@
                 {% endif %}
             </span>
         </div>
-        <div class="col-md-auto">
+        <div class="col-auto">
             <p class="small_text">Прибыль / убыток</p>
             {% if portfolio_cost_now == 0 %}
                 -
@@ -72,7 +70,7 @@
             {% endif %}
         </div>
     </div>
-    <div class="">
+    <div class="big-table">
         <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
             <thead>
                 <tr>

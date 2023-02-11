@@ -6,39 +6,37 @@
 {% block link %}
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
     <button type="button" class="btn btn-light btn-sm" disabled>Кошельки</button>
-    <div class="dropdown">
-        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
-        <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
-        </ul>
-    </div>
+    <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
+    </ul>
 {% endblock %}
 {% block content %}
-<div class="col-md-12 mb-5">
-    <div class="row">
-        <div class="col-md-6">
+<div class="mb-5">
+    <div class="row xs-mb-3">
+        <div class="col-auto">
             <h1>Кошельки</h1>
         </div>
-        <div class="col-md-6 position-right">
+        <div class="col-auto ms-auto">
             <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addWallet" data-bs-action="add" data-bs-title="Добавить кошелек">Добавить кошелек</button>
             <button class="btn btn-warning btn-sm ms-1" type="button" data-bs-toggle="modal" data-bs-target="#inputoutCash">Перевод</button>
         </div>
     </div>
 </div>
 {% if wallets|sum(attribute='id') %}
-    <div class="row">
-        <div class="col-md-auto">
+    <div class="row xs-mb-3">
+        <div class="col-auto">
             <p class="small_text">Всего вложено</p>
             <span class="text-average">${{ total_spent|round|int|number_group }}</span>
         </div>
-        <div class="col-md-auto">
+        <div class="col-auto">
             <p class="small_text">В ордерах</p>
             <span class="text-average">
                 ${{ wallets|sum(attribute='money_in_order')|round|int|number_group }}
             </span>
         </div>
-        <div class="col-md-auto">
+        <div class="col-auto">
             <p class="small_text">Свободные</p>
             <span class="text-average">
                 {% if wallets|sum(attribute='money_all') - wallets|sum(attribute='money_in_order') - total_spent == 0 %}
@@ -53,7 +51,7 @@
     </div>
     <div class="fixed-height-1">
     </div>
-    <div>
+    <div class="big-table">
         <table class="table table-sm align-middle table-hover">
             <thead>
                 <tr>

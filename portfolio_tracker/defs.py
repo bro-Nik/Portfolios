@@ -1,6 +1,3 @@
-from random import random
-
-from flask import session, Flask, url_for
 from pycoingecko import CoinGeckoAPI
 import os, json, requests, time
 from datetime import datetime, timedelta
@@ -18,7 +15,7 @@ date = datetime.now().date()
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(float(app.config['CRYPTO_UPDATE']), price_list_crypto_def.s())
     sender.add_periodic_task(300, price_list_stocks_def.s())
-    #sender.add_periodic_task(1800, price_list_stocks_def.s())
+
 
 def price_list_def():
     ''' Общая функция сбора цен '''
@@ -57,7 +54,6 @@ def price_list_crypto_def():
         price_list['update-crypto'] = str(datetime.now())
         redis.set('price_list_crypto', pickle.dumps(price_list))
 
-        print('Крипто прайс обновлен ' + price_list['update-crypto'])
         alerts_update_def.delay()
 
 @celery.task
@@ -87,7 +83,6 @@ def price_list_stocks_def():
         if price_list:
             price_list['update-stocks'] = str(datetime.now().date())
             redis.set('price_list_stocks', pickle.dumps(price_list))
-            print('Фондовый прайс обновлен ' + price_list['update-stocks'])
             alerts_update_def.delay()
 @celery.task
 def alerts_update_def():
@@ -122,13 +117,9 @@ def alerts_update_def():
                     a['ticker'] = alert.trackedticker.ticker.name
                     if alert.asset_id:
                         a['link'] = {'source': 'portfolio', 'market_id': alert.asset.portfolio.market_id, 'portfolio_url': alert.asset.portfolio.url, 'asset_url': alert.trackedticker.ticker_id}
-                        #a['link'] = 'http://localhost:5000/' + str(alert.asset.portfolio.url) + '/' + str(alert.trackedticker.ticker_id)
-                        #a['link'] = url_for('asset_info', ticker_id=alert.trackedticker.ticker_id, portfolio_url=alert.asset.portfolio.url)
                         a['link_for'] = alert.asset.portfolio.name
                     else:
                         a['link'] = {'source': 'tracking_list', 'market_id': alert.trackedticker.ticker.market_id, 'ticker_id': alert.trackedticker.ticker_id}
-                        #a['link'] = 'http://localhost:5000/tracking_list/' + str(alert.trackedticker.ticker.market_id) + '/' + str(alert.trackedticker.ticker_id)
-                        #a['link'] = url_for('alerts_ticker', ticker_id=alert.trackedticker.ticker_id, market_id=alert.ticker.market_id)
                         a['link_for'] = 'Список отслеживания'
 
                     worked_alerts[ticker.user_id].append(a)
@@ -169,14 +160,9 @@ def alerts_update_def():
                     a['ticker'] = alert_in_base.trackedticker.ticker.name
                     if alert_in_base.asset_id:
                         a['link'] = {'source': 'portfolio', 'market_id': alert_in_base.asset.portfolio.market_id, 'portfolio_url': alert_in_base.asset.portfolio.url, 'asset_url': alert_in_base.trackedticker.ticker_id}
-                        #a['link'] = 'http://localhost:5000/' + str(alert_in_base.asset.portfolio.url) + '/' + str(alert_in_base.trackedticker.ticker_id)
-                        #a['link'] = url_for('asset_info', ticker_id=alert_in_base.trackedticker.ticker_id, portfolio_url=alert_in_base.asset.portfolio.url)
                         a['link_for'] = alert_in_base.asset.portfolio.name
                     else:
-                        a['link'] = {'source': 'tracking_list', 'market_id': alert_in_base.trackedticker.ticker.market_id,
-                                     'ticker_id': alert_in_base.trackedticker.ticker_id}
-                        #a['link'] = 'http://localhost:5000/tracking_list/' + str(alert_in_base.trackedticker.ticker.market_id) + '/' + str(alert_in_base.trackedticker.ticker_id)
-                        #a['link'] = url_for('alerts_ticker', ticker_id=alert_in_base.trackedticker.ticker_id, market_id=alert_in_base.trackedticker.ticker.market_id)
+                        a['link'] = {'source': 'tracking_list', 'market_id': alert_in_base.trackedticker.ticker.market_id, 'ticker_id': alert_in_base.trackedticker.ticker_id}
                         a['link_for'] = 'Список отслеживания'
 
                     worked_alerts[user_id].append(a)

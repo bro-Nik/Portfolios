@@ -6,20 +6,18 @@
 {% block link %}
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
-    <div class="dropdown">
-        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
-        <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
-        </ul>
-    </div>
+    <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
+        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
+    </ul>
     <button onclick="document.location='{{ url_for('tracking_list', market_id=tracked_ticker.ticker.market_id) }}'" type="button" class="btn btn-light btn-sm">{{ tracked_ticker.ticker.market.name }}</button>
     <button type="button" class="btn btn-light btn-sm" disabled>{{ tracked_ticker.ticker.name }}</button>
 {% endblock %}
 {% block content %}
-<div class="col-md-12 mb-5">
-    <div class="row">
-        <div class="col-md-6">
+<div class="mb-5">
+    <div class="row xs-mb-3">
+        <div class="col-auto">
             <h1 class="fs-6 text-muted m-0">{{ tracked_ticker.ticker.name }} ({{ tracked_ticker.ticker.symbol|upper }})
                 {% if tracked_ticker.ticker.market_cap_rank %}
                     <span class="badge text-bg-light text-muted">#{{ tracked_ticker.ticker.market_cap_rank }}</span>
@@ -32,13 +30,13 @@
                 <span class="fs-1 fw-semibold">${{ price|smart_round|number_group }}</span>
             </div>
         </div>
-        <div class="col-md-6 position-right">
+        <div class="col-auto ms-auto">
             <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#Alert">Добавить уведомление</button>
         </div>
     </div>
 </div>
 {% if tracked_ticker.alerts[0] %}
-<div class="pt-3 pb-3">
+<div class="big-table pt-3 pb-3">
     <table class="table table-sm align-middle">
         <thead>
             <tr>

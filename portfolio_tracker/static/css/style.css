@@ -181,3 +181,19 @@ thead > tr {
     color: #6c757d87;
     margin-left: 5px;
 }
+.big-table {
+	overflow: auto;
+	position: relative;
+}
+.big-table table {
+    max-width: 100%;
+    white-space: nowrap;
+}
+.nav-bar-links > * {
+    margin-bottom: 5px;
+}
+@media (max-width: 767px){
+.xs-mb-3 > div {
+    margin-bottom: 20px;
+}
+}
