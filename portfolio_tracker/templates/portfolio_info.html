@@ -9,11 +9,7 @@
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
     <button type="button" class="btn btn-light btn-sm" disabled>{{ portfolio.name }}</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
-    <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
-    <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
-        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
-    </ul>
+    <button onclick="document.location='{{ url_for('tracking_list') }}'" type="button" class="btn btn-light btn-sm">Список отслеживания</button>
 {% endblock %}
 {% block content %}
 <div class="mb-5">
@@ -29,7 +25,8 @@
                         <input type="text" placeholder="Поиск.." id="myInput" onkeyup="filterFunction()" class="form-control">
                     </div>
                     <div>
-                    {% for ticker in tickers|sort(attribute="market_cap_rank") %}
+                    {#-- {% for ticker in tickers|sort(attribute="market_cap_rank") %} --#}
+                        {% for ticker in tickers %}
                         <a class="dropdown-item" href="{{ url_for('asset_add', market_id=portfolio.market_id, portfolio_id=portfolio.id, ticker_id=ticker.id) }}">
                             <span class="d-inline-block text-truncate text-average" style="{{ 'width:170px;' if ticker.market_cap_rank else 'width:210px;' }}">{{ ticker.name }}</span>
                             {% if ticker.market_cap_rank %} <span class="float-end market-cap-rank">#{{ ticker.market_cap_rank }}</span> {% endif %}
@@ -182,7 +179,7 @@
         </table>
     </div>
 {% else %}
-    <div class="col-md-12 p-5 mb-3">
+    <div class="p-5 mb-3">
         <p class="text-center lead">Пока ничего нет...</p>
     </div>
 {% endif %}

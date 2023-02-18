@@ -9,7 +9,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from portfolio_tracker.app import login_manager
 from portfolio_tracker.models import *
 from portfolio_tracker.defs import *
-
+import logging
 
 @app.route('/settings')
 @login_required
@@ -40,7 +40,7 @@ def portfolios():
             if portfolio.assets:
                 for asset in portfolio.assets:
                     total_spent += asset.total_spent
-                    cost_now += (asset.quantity * price_list[asset.ticker.id])
+                    cost_now += (asset.quantity * price_list[asset.ticker.id]) if price_list.get(asset.ticker.id) else 0
                     for transaction in asset.transactions:
                         if not transaction.order:
                             total_spent_list[portfolio.id] = float(total_spent_list.setdefault(portfolio.id, 0)) + float(transaction.total_spent)
@@ -105,6 +105,8 @@ def portfolio_delete():
     ''' Удаление портфеля '''
     portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(id=request.form.get('id'), user_id=current_user.id)).scalar()
     if portfolio_in_base:
+        not_worked_alerts = pickle.loads(redis.get('not_worked_alerts')) if redis.get('not_worked_alerts') else {}
+        worked_alerts = pickle.loads(redis.get('worked_alerts')) if redis.get('worked_alerts') else {}
         for asset in portfolio_in_base.assets:
             for alert in asset.alerts:
                 # удаляем уведомления
@@ -114,6 +116,15 @@ def portfolio_delete():
                 # отставляем уведомления
                 alert.asset_id = None
                 alert.comment = 'Портфель ' + str(asset.portfolio.name) + ' удален'
+                # redis
+                not_worked_alerts.pop(alert.id, None)
+                if worked_alerts != {}:
+                    for i in worked_alerts[current_user.id]:
+                        if i['id'] == alert.id:
+                            worked_alerts[current_user.id].remove(i)
+                            break
+        redis.set('worked_alerts', pickle.dumps(worked_alerts))
+        redis.set('not_worked_alerts', pickle.dumps(not_worked_alerts))
 
         db.session.delete(portfolio_in_base)
         db.session.commit()
@@ -125,7 +136,7 @@ def portfolio_info(market_id, portfolio_url):
     ''' Страница портфеля '''
     session['last_url'] = request.url
     price_list = price_list_def()
-    portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(url=portfolio_url, market_id=market_id, user_id=current_user.id)).scalar()
+    portfolio_in_base = db.one_or_404(db.select(Portfolio).filter_by(url=portfolio_url, market_id=market_id, user_id=current_user.id))
     if portfolio_in_base:
         if portfolio_in_base.market_id != 'other':
             tickers_in_base = db.session.execute(db.select(Ticker).filter_by(market=portfolio_in_base.market)).scalars()
@@ -264,7 +275,7 @@ def asset_info(market_id, portfolio_url, asset_url):
                         break
 
         price_list = price_list_def()
-        price = float(price_list[asset_in_base.ticker_id])
+        price = float(price_list[asset_in_base.ticker_id]) if price_list.get(asset_in_base.ticker_id) else '-'
 
         return render_template('asset_info.html', asset=asset_in_base, price=price, date=date, wallets=tuple(wallets))
 
@@ -284,7 +295,7 @@ def asset_info(market_id, portfolio_url, asset_url):
 def asset_detail(asset_id):
     asset_in_base = db.session.execute(db.select(Asset).filter_by(id=asset_id)).scalar()
     price_list = price_list_def()
-    price = price_list[asset_in_base.ticker_id]
+    price = price_list[asset_in_base.ticker_id] if price_list.get(asset_in_base.ticker_id) else '-'
     cost_now = price * asset_in_base.quantity
     profit = int(round(cost_now - asset_in_base.total_spent))
     profit_color = ''
@@ -299,7 +310,8 @@ def asset_detail(asset_id):
     else:
         profit = '$0'
 
-    when_updated = when_updated_def(price_list[str('update-' + asset_in_base.portfolio.market_id)])
+    #when_updated = when_updated_def(price_list[str('update-' + asset_in_base.portfolio.market_id)]) if price_list.get(str('update-' + asset_in_base.portfolio.market_id)) else ''
+    when_updated = ''
 
     return {
         "price": number_group(smart_round(price)),
@@ -560,12 +572,13 @@ def wallet_info(wallet_name):
     return render_template('wallet_info.html', wallet=wallet, assets_list=assets_list, price_list=price_list, wallet_cost_now=wallet_cost_now)
 
 
-@app.route('/tracking_list/<string:market_id>', methods=['GET'])
+@app.route('/tracking_list', methods=['GET'])
 @login_required
-def tracking_list(market_id):
+def tracking_list():
     ''' Страница списка отслеживания '''
     session['last_url'] = request.url
-    tickers_in_base = tuple(db.session.execute(db.select(Ticker).filter_by(market_id=market_id)).scalars())
+    tickers_in_base = tuple(db.session.execute(db.select(Ticker)).scalars())
+    #tickers_in_base = tuple(db.session.execute(db.select(Ticker).filter_by(market_id=market_id)).scalars())
     tracked_tickers = tuple(db.session.execute(db.select(Trackedticker).filter_by(user_id=current_user.id)).scalars())
 
     # для запрета удаления тикера, если есть ордер
@@ -620,7 +633,7 @@ def tracked_ticker_info(market_id, ticker_id):
     session['last_url'] = request.url
     tracked_ticker = db.session.execute(db.select(Trackedticker).filter_by(ticker_id=ticker_id, user_id=current_user.id)).scalar()
     price_list = price_list_def()
-    price = price_list[tracked_ticker.ticker_id]
+    price = price_list[tracked_ticker.ticker_id] if price_list.get(tracked_ticker.ticker_id) else '-'
     return render_template('tracked_ticker_info.html', tracked_ticker=tracked_ticker, price=price)
 
 
@@ -654,7 +667,7 @@ def alert_add():
 
 
     price_list = price_list_def()
-    price = price_list[ticker_id]
+    price = price_list[ticker_id] if price_list.get(ticker_id) else '-'
     alert.type = 'down' if float(price) > float(alert.price) else 'up'
 
     db.session.add(alert)
@@ -824,13 +837,13 @@ def user_delete():
 @app.route("/json/<string:user_id>/worked_alerts")
 def worked_alerts_detail(user_id):
     worked_alerts = pickle.loads(redis.get('worked_alerts')).get(current_user.id) if redis.get('worked_alerts') else {}
-    if worked_alerts != {}:
+    if worked_alerts:
         for alert in worked_alerts:
             if alert['link']['source'] == 'portfolio':
                 alert['link'] = url_for('asset_info', market_id=alert['link']['market_id'], portfolio_url=alert['link']['portfolio_url'], asset_url=alert['link']['asset_url'])
             elif alert['link']['source'] == 'tracking_list':
                 alert['link'] = url_for('tracked_ticker_info', market_id=alert['link']['market_id'], ticker_id=alert['link']['ticker_id'])
-    return worked_alerts
+    return worked_alerts if worked_alerts else {}
 
 @app.route("/demo_user")
 def demo_user():

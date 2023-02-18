@@ -1,6 +1,9 @@
 html, body {
     height: 100%;
 }
+.modal-header {
+    border: none;
+}
 div#wrapper {
     display: flex;
     flex-direction: column;
@@ -119,11 +122,12 @@ div#footer {
     display: none;
 }
 .dropdown-asset {
-    right: 0;
     width: 320px;
     padding-top: 0px;
     max-height: 250px;
     overflow-y: auto;
+    right: 0;
+    top: 40px;
 }
 .new-asset-link {
     position: absolute;
@@ -153,17 +157,17 @@ thead > tr {
     cursor: default;
 }
 
-#myDropdown::-webkit-scrollbar {
+#myDropdown::-webkit-scrollbar, #addCrypto::-webkit-scrollbar, #addStock::-webkit-scrollbar {
   width: 5px;
   background-color: #f9f9fd;
 }
 
-#myDropdown::-webkit-scrollbar-thumb {
+#myDropdown::-webkit-scrollbar-thumb, #addCrypto::-webkit-scrollbar-thumb, #addStock::-webkit-scrollbar-thumb {
   border-radius: 5px;
   background-color: #0d6efd;
 }
 
-#myDropdown::-webkit-scrollbar-track {
+#myDropdown::-webkit-scrollbar-track, #addCrypto::-webkit-scrollbar-track, #addStock::-webkit-scrollbar-track {
   -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
   background-color: #f9f9fd;
 }

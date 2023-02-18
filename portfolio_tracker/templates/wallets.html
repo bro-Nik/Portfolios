@@ -6,11 +6,7 @@
 {% block link %}
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
     <button type="button" class="btn btn-light btn-sm" disabled>Кошельки</button>
-    <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
-    <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
-        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
-    </ul>
+    <button onclick="document.location='{{ url_for('tracking_list') }}'" type="button" class="btn btn-light btn-sm">Список отслеживания</button>
 {% endblock %}
 {% block content %}
 <div class="mb-5">

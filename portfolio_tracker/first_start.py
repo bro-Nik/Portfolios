@@ -30,22 +30,25 @@ def first_start():
         return render_template('first_start.html')
 
     if request.method == 'POST':
-        # demo user
-        user = User(email='demo', password='demo')
-        db.session.add(user)
-        wallet = Wallet(name='Default', money_all=0, money_in_order=0, user_id=1)
-        db.session.add(wallet)
+        demo_user = db.session.execute(db.select(User).filter_by(email='demo')).scalar()
+        if not demo_user:
+            # demo user
+            user = User(email='demo', password='demo')
+            db.session.add(user)
+            wallet = Wallet(name='Default', money_all=0, money_in_order=0, user_id=1)
+            db.session.add(wallet)
 
-        # маркеты
-        other = Market(name='Other', id='other')
-        db.session.add(other)
-        crypto = Market(name='Crypto', id='crypto')
-        db.session.add(crypto)
-        stocks = Market(name='Stocks', id='stocks')
-        db.session.add(stocks)
+            # маркеты
+            other = Market(name='Other', id='other')
+            db.session.add(other)
+            crypto = Market(name='Crypto', id='crypto')
+            db.session.add(crypto)
+            stocks = Market(name='Stocks', id='stocks')
+            db.session.add(stocks)
+            db.session.commit()
 
         # загрузка тикеров
-        load_crypto_tickers(99 if request.form.get('test') else 1000, 'crypto')
-        load_stocks_tickers(99 if request.form.get('test') else 1000, 'stocks')
+        load_crypto_tickers.delay()
+        load_stocks_tickers.delay()
 
         return "<h1>Ready!</h1><p>Restart app</p>"

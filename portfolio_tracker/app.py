@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from celery import Celery
+from flask_admin import Admin
 import redis
 import pymysql
 
@@ -36,8 +37,10 @@ login_manager = LoginManager(app)
 
 from portfolio_tracker.defs import *
 
-with app.app_context():
-    price_list_def()
+#with app.app_context():
+#    price_list_crypto_def.delay()
+#    price_list_stocks_def.delay()
+
 
 if __name__ == '__main__':
     app.run()

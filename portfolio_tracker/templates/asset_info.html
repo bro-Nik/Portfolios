@@ -8,11 +8,7 @@
     <button onclick="document.location='{{ url_for('portfolio_info', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}'" type="button" class="btn btn-light btn-sm">{{ asset.portfolio.name }}</button>
     <button type="button" class="btn btn-light btn-sm" disabled>{{ asset.ticker.name }}</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
-    <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
-    <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
-        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
-    </ul>
+    <button onclick="document.location='{{ url_for('tracking_list') }}'" type="button" class="btn btn-light btn-sm">Список отслеживания</button>
 {% endblock %}
 {% block content %}
 <div class="mb-5">

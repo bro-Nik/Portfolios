@@ -58,10 +58,10 @@ class otherAssetBody(db.Model):
     comment = db.Column(db.String(1024))
 
 class Ticker(db.Model):
-    id = db.Column(db.String(255), primary_key=True)
-    name = db.Column(db.String(255))
-    symbol = db.Column(db.String(128))
-    image = db.Column(db.String(128))
+    id = db.Column(db.String(256), primary_key=True)
+    name = db.Column(db.String(1024))
+    symbol = db.Column(db.String(124))
+    image = db.Column(db.String(1024))
     market_cap_rank = db.Column(db.Integer)
     market = db.relationship('Market', backref=db.backref('tickers', lazy=True))
     market_id = db.Column(db.String(32), db.ForeignKey('market.id'))

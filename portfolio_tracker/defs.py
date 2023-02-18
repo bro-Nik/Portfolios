@@ -11,31 +11,30 @@ from portfolio_tracker.models import Transaction, Asset, Wallet, Portfolio, Tick
 cg = CoinGeckoAPI()
 date = datetime.now().date()
 
+
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(float(app.config['CRYPTO_UPDATE']), price_list_crypto_def.s())
+    price_list_crypto_def.delay()
+    #sender.add_periodic_task(float(app.config['CRYPTO_UPDATE']), price_list_crypto_def.s())
     sender.add_periodic_task(300, price_list_stocks_def.s())
+    pass
 
 
 def price_list_def():
     ''' Общая функция сбора цен '''
-    if not redis.get('price_list_crypto'):
-        price_list_crypto_def()
-    if not redis.get('price_list_stocks'):
-        price_list_stocks_def()
-
     price_list_crypto = pickle.loads(redis.get('price_list_crypto')) if redis.get('price_list_crypto') else {}
     price_list_stocks = pickle.loads(redis.get('price_list_stocks')) if redis.get('price_list_stocks') else {}
-    price_list = {**price_list_crypto, **price_list_stocks}
+    price_list = price_list_crypto | price_list_stocks
 
     return price_list
 
 
-@celery.task
+@celery.task(default_retry_delay=0, max_retries=None)
 def price_list_crypto_def():
     ''' Запрос цен у КоинГеко криптовалюта '''
-    price_list_crypto = pickle.loads(redis.get('price_list_crypto')) if redis.get('price_list_crypto') else {}
-    if price_list_crypto == {}:
+    start_time = time.time()
+    price_list = pickle.loads(redis.get('price_list_crypto')) if redis.get('price_list_crypto') else {}
+    if price_list == {}:
         market = db.session.execute(db.select(Market).filter_by(id='crypto')).scalar()
         ids = []
         for ticker in market.tickers:
@@ -43,25 +42,44 @@ def price_list_crypto_def():
                 ids.append(ticker.id)
     else:
         # берем id тикеров из прайса
-        ids = list(price_list_crypto.keys())
-        ids.remove('update-crypto') # удаляем ключ времени обновления
+        ids = list(price_list.keys())
+        if 'update-crypto' in ids:
+            ids.remove('update-crypto')
+    # Делаем запросы кусками
+    max = 1900
+    n = 0
+    while True:
+        str = ','.join(ids)
+        next_str = str[n:max + n]
+        poz = next_str.rfind(',')
+        if next_str != '' and poz == -1:
+            data = cg.get_price(vs_currencies='usd', ids=next_str)
+            break
+        elif next_str == '':
+            break
+        else:
+            data = cg.get_price(vs_currencies='usd', ids=next_str[0:poz])
+            n += poz + 1
+        if data:
+            for ticker in data:
+                data[ticker] = data[ticker].get('usd')
+        price_list = price_list | data
+        time.sleep(15)
 
-    price_list = cg.get_price(vs_currencies='usd', ids=ids)
     if price_list:
-        for ticker in ids:
-            price_list[ticker] = price_list[ticker]['usd']
-
-        price_list['update-crypto'] = str(datetime.now())
+        #price_list['update-crypto'] = str(datetime.now())
         redis.set('price_list_crypto', pickle.dumps(price_list))
+    print("Stop load crypto price, %s seconds" % (time.time() - start_time))
+    alerts_update_def.delay()
+    price_list_crypto_def.retry()
 
-        alerts_update_def.delay()
 
 @celery.task
 def price_list_stocks_def():
     ''' Запрос цен у Polygon фондовый рынок '''
     price_list = pickle.loads(redis.get('price_list_stocks')) if redis.get('price_list_stocks') else {}
     if price_list.get('update-stocks') != str(datetime.now().date()):
-
+        start_time = time.time()
         day = 1
         while price_list == {}:
             date = datetime.now().date() - timedelta(days=day)
@@ -84,6 +102,8 @@ def price_list_stocks_def():
             price_list['update-stocks'] = str(datetime.now().date())
             redis.set('price_list_stocks', pickle.dumps(price_list))
             alerts_update_def.delay()
+        print("Stop load stocks price, %s seconds" % (time.time() - start_time))
+
 @celery.task
 def alerts_update_def():
     ''' Функция собирает уведомления и проверяет нет ли сработавших '''
@@ -145,7 +165,7 @@ def alerts_update_def():
                     alert_in_base.worked = True
                     flag = True
                     # удаляем из несработавших
-                    not_worked_alerts.pop(alert)
+                    not_worked_alerts.pop(alert, None)
                     # добавляем в сработавшие
                     user_id = alert_in_base.trackedticker.user_id
                     if not worked_alerts.get(user_id):
@@ -198,58 +218,85 @@ def when_updated_def(when_updated):
         result = str(datetime.date(when_updated))
     return result
 
-
-def load_crypto_tickers(stop_load, market_id):
+@celery.task
+def load_crypto_tickers():
     ''' загрузка тикеров с https://www.coingecko.com/ru/api/ '''
-    market_cap_rank = 0
+    print('Load crypto tickers')
     page = 1
-    tickers_in_base = db.session.execute(db.select(Ticker).filter_by(market_id=market_id)).scalars()
-    tickers_list = []
-    if tickers_in_base != ():
-        for ticker in tickers_in_base:
-            tickers_list.append(ticker.id)
-    while int(stop_load) > int(market_cap_rank):
+    #tickers_in_base = db.session.execute(db.select(Ticker).filter_by(market_id='crypto')).scalars()
+
+    #tickers_list = []
+    #if tickers_in_base != ():
+    #    for ticker in tickers_in_base:
+    #        tickers_list.append(ticker.id)
+
+    coins_list_markets = True
+    while coins_list_markets != []:
         coins_list_markets = cg.get_coins_markets('usd', per_page='200', page=page)
-        page += 1
+        print(page)
+        try:
+            if coins_list_markets['status'].get('error_code'):
+                print('sleep 15 sec')
+                time.sleep(15)
+                continue
+        except:
+            pass
 
-        for coin in coins_list_markets:
-            if coin['id'].lower() not in tickers_list:
-                new_ticker = Ticker(
-                    id=coin['id'].lower(),
-                    name=coin['name'],
-                    symbol=coin['symbol'],
-                    market_cap_rank=coin['market_cap_rank'],
-                    market_id=market_id,
-                    image=coin['image']
-                )
-                db.session.add(new_ticker)
-            market_cap_rank += 1
-            if market_cap_rank >= int(stop_load):
-                break
-        db.session.commit()
+        if coins_list_markets != []:
+            for coin in coins_list_markets:
+                t_in_base = db.session.execute(db.select(Ticker).filter_by(id=coin['id'].lower())).scalar()
+                #if coin['id'].lower() not in tickers_list and not t:
+                if not t_in_base:
+                    new_ticker = Ticker(
+                        id=coin['id'].lower(),
+                        name=coin['name'],
+                        symbol=coin['symbol'],
+                        market_cap_rank=coin['market_cap_rank'],
+                        market_id='crypto',
+                        image=coin['image']
+                    )
+                    #tickers_list.append(new_ticker.id)
+                    db.session.add(new_ticker)
+            db.session.commit()
 
-def load_stocks_tickers(stop_load, market_id):
+            page += 1
+            time.sleep(10)
+    print('crypto end')
+
+
+@celery.task
+def load_stocks_tickers():
     ''' загрузка тикеров с https://polygon.io/ '''
-    market_cap_rank = 0
-    page = 1
-    tickers_in_base = db.session.execute(db.select(Ticker).filter_by(market_id=market_id)).scalars()
+    print('Load stocks tickers')
+    tickers_in_base = db.session.execute(db.select(Ticker).filter_by(market_id='stocks')).scalars()
     tickers_list = []
     if tickers_in_base != ():
         for ticker in tickers_in_base:
             tickers_list.append(ticker.id)
     url = 'https://api.polygon.io/v3/reference/tickers?market=stocks&date=2022-12-30&active=true&order=asc&apiKey=' + app.config['API_KEY_POLYGON']
-    response = requests.get(url)
-    data = response.json()
-    for ticker in data['results']:
-        if ticker['ticker'].lower() not in tickers_list:
-            new_ticker = Ticker(
-                id=ticker['ticker'].lower(),
-                name=ticker['name'],
-                symbol=ticker['ticker'],
-                market_id=market_id
-            )
-        db.session.add(new_ticker)
-    db.session.commit()
+    while url:
+        response = requests.get(url)
+        data = response.json()
+        if data.get('results'):
+            for ticker in data['results']:
+                t_in_base = db.session.execute(db.select(Ticker).filter_by(id=ticker['ticker'].lower())).scalar()
+                #if ticker['ticker'].lower() not in tickers_list:
+                if not t_in_base:
+                    new_ticker = Ticker(
+                        id=ticker['ticker'].lower(),
+                        name=ticker['name'],
+                        symbol=ticker['ticker'],
+                        market_id='stocks'
+                    )
+                    #tickers_list.append(new_ticker.id)
+                    db.session.add(new_ticker)
+            db.session.commit()
+            url = str(data.get('next_url')) + '&apiKey=' + str(app.config['API_KEY_POLYGON']) if data.get('next_url') else {}
+            print('Stocks next url')
+            time.sleep(15)
+        else:
+            print(data)
+    print('stocks end')
 
 
 def smart_round(number):

@@ -31,15 +31,6 @@
                 <div class="col-md-4 col-lg-4 form-body">
                     <h4 class="mb-3">Загрузка тикеров</h4>
                     <form method="post" action="{{ url_for('first_start') }}">
-                        <hr class="my-4">
-
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="test" name="test">
-                            <label class="form-check-label" for="test">Тестовая загрузка тикеров</label>
-                        </div>
-
-                        <hr class="my-4">
-
                         <button class="w-50 btn btn-primary btn-lg" type="submit" id="submit">Загрузить</button>
                         <button class="w-50 btn btn-primary btn-lg visually-hidden" type="button" id="spinner" disabled>
                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>

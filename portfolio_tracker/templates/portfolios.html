@@ -6,11 +6,7 @@
 {% block link %}
     <button type="button" class="btn btn-light btn-sm" disabled>Портфели</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
-    <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
-    <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
-        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
-    </ul>
+    <button onclick="document.location='{{ url_for('tracking_list') }}'" type="button" class="btn btn-light btn-sm">Список отслеживания</button>
 {% endblock %}
 {% block content %}
 <div class="mb-5">
@@ -123,7 +119,7 @@
         </table>
     </div>
 {% else %}
-    <div class="col-md-12 p-5 mb-3">
+    <div class="p-5 mb-3">
         <p class="text-center lead">Пока ничего нет...</p>
     </div>
 {% endif %}

@@ -8,34 +8,51 @@
 {% block link %}
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
-    <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Список отслеживания</button>
-    <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='crypto') }}">Crypto</a></li>
-        <li><a class="dropdown-item" href="{{ url_for('tracking_list', market_id='stocks') }}">Stocls</a></li>
-    </ul>
-    <button type="button" class="btn btn-light btn-sm" disabled>{{ tickers[0].market.name }}</button>
+    <button type="button" class="btn btn-light btn-sm" disabled>Список отслеживания</button>
 {% endblock %}
 {% block content %}
 <div class="mb-5">
     <div class="row xs-mb-3">
         <div class="col-auto">
-            <h1>{{ tickers[0].market.name }}</h1>
+            <h1>Список отслеживания</h1>
         </div>
         <div class="col-auto ms-auto">
-            <div class="dropdown">
-                <button onclick="myFunction()" class="btn btn-primary btn-sm dropdown-toggle" aria-expanded="false">Добавить актив</button>
-                <div id="myDropdown" class="dropdown-menu dropdown-asset">
+            <div class="btn-group">
+                <button onclick="cryptoFunction()" class="btn btn-primary btn-sm dropdown-toggle" aria-expanded="false">Добавить криптовалюту</button>
+                <div id="addCrypto" class="dropdown-menu dropdown-asset">
                     <div class="p-2 input-group-sm">
-                        <input type="text" placeholder="Поиск.." id="myInput" onkeyup="filterFunction()" class="form-control">
+                        <input type="text" placeholder="Поиск.." id="cryptoInput" onkeyup="filterFunction()" class="form-control">
                     </div>
                     <hr class="dropdown-divider">
                     <div>
-                    {% for ticker in tickers|sort(attribute="market_cap_rank") %}
-                        <a class="dropdown-item" href="{{ url_for('tracking_list_add_ticker', ticker_id=ticker.id) }}">
-                            <span class="d-inline-block text-truncate text-average" style="{{ 'width:170px;' if ticker.market_cap_rank else 'width:210px;' }}">{{ ticker.name }}</span>
-                            {% if ticker.market_cap_rank %} <span class="float-end market-cap-rank">#{{ ticker.market_cap_rank }}</span> {% endif %}
-                            <span class="align-top text-muted float-end">{{ ticker.symbol|upper }}</span>
-                        </a>
+                    {% for ticker in tickers %}
+                        {% if ticker.market_id == 'crypto' %}
+                            <a class="dropdown-item" href="{{ url_for('tracking_list_add_ticker', ticker_id=ticker.id) }}">
+                                <span class="d-inline-block text-truncate text-average" style="{{ 'width:170px;' if ticker.market_cap_rank else 'width:210px;' }}">{{ ticker.name }}</span>
+                                {% if ticker.market_cap_rank %} <span class="float-end market-cap-rank">#{{ ticker.market_cap_rank }}</span> {% endif %}
+                                <span class="align-top text-muted float-end">{{ ticker.symbol|upper }}</span>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button onclick="stocksFunction()" class="btn btn-primary btn-sm dropdown-toggle" aria-expanded="false">Добавить акцию</button>
+                <div id="addStock" class="dropdown-menu dropdown-asset">
+                    <div class="p-2 input-group-sm">
+                        <input type="text" placeholder="Поиск.." id="stocksInput" onkeyup="filter2Function()" class="form-control">
+                    </div>
+                    <hr class="dropdown-divider">
+                    <div>
+                    {% for ticker in tickers %}
+                        {% if ticker.market_id == 'stocks' %}
+                            <a class="dropdown-item" href="{{ url_for('tracking_list_add_ticker', ticker_id=ticker.id) }}">
+                                <span class="d-inline-block text-truncate text-average" style="{{ 'width:170px;' if ticker.market_cap_rank else 'width:210px;' }}">{{ ticker.name }}</span>
+                                {% if ticker.market_cap_rank %} <span class="float-end market-cap-rank">#{{ ticker.market_cap_rank }}</span> {% endif %}
+                                <span class="align-top text-muted float-end">{{ ticker.symbol|upper }}</span>
+                            </a>
+                        {% endif %}
                     {% endfor %}
                     </div>
                 </div>
@@ -44,9 +61,10 @@
     </div>
 </div>
 {% if tracked_tickers %}
-    <div class="big-table">
+    <div class="big-table mb-5">
         <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
             <thead>
+                <h4 class="position-absolute">Crypto</h4>
                 <tr>
                     <th scope="col" data-sortable="true">Наименование</th>
                     <th scope="col">Уведомления</th>
@@ -55,7 +73,7 @@
             </thead>
             <tbody>
             {% for item in tracked_tickers %}
-            {% if item.ticker.market_id == tickers[0].market_id %}
+            {% if item.ticker.market_id == 'crypto' %}
                 <tr>
                     <td class="text-average">
                         <a class="link-dark text-decoration-none" href="{{ url_for('tracked_ticker_info', market_id=item.ticker.market_id, ticker_id=item.ticker.id) }}">
@@ -91,22 +109,87 @@
             </tbody>
         </table>
     </div>
+    <div class="big-table">
+        <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
+            <thead>
+                <h4 class="position-absolute">Stocks</h4>
+                <tr>
+                    <th scope="col" data-sortable="true">Наименование</th>
+                    <th scope="col">Уведомления</th>
+                    <th scope="col" class="text-end">Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in tracked_tickers %}
+            {% if item.ticker.market_id == 'stocks' %}
+                <tr>
+                    <td class="text-average">
+                        <a class="link-dark text-decoration-none" href="{{ url_for('tracked_ticker_info', market_id=item.ticker.market_id, ticker_id=item.ticker.id) }}">
+                            {{ item.ticker.name }} <span class="text-muted">{{ item.ticker.symbol|upper }}</span>
+                        </a>
+                    </td>
+                    <td>
+                        {% for alert in item.alerts %}
+                            {% if alert.worked %}
+                                <span class="badge text-bg-success fw-normal none-cursor">${{ alert.price|number_group }}</span>
+                            {% elif alert.worked == None %}
+                                <span class="badge text-bg-light fw-normal none-cursor">${{ alert.price|number_group }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td class="text-end">
+                        {% if item.ticker_id not in orders %}
+                            <a class="action-icon text-decoration-none" href="{{ url_for('tracking_list_delete_ticker', ticker_id=item.id) }}" title="Удалить">
+                                <i class="bi icon bi-trash-fill"></i>
+                            </a>
+                        {% else %}
+                            <a class="action-icon text-decoration-none opacity-25" aria-disabled="true"  tabindex="-1" title="Невозможно удалить, стоит ордер">
+                                <i class="bi icon bi-trash-fill"></i>
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% else %}
-    <div class="col-md-12 p-5 mb-3">
+    <div class="p-5 mb-3">
         <p class="text-center lead">Пока ничего нет...</p>
     </div>
 {% endif %}
 <script>
 // поиск в выпадающем меню (источник: https://www.w3schools.com/howto/howto_js_filter_dropdown.asp)
-function myFunction() {
-  document.getElementById("myDropdown").classList.toggle("show");
+function cryptoFunction() {
+  document.getElementById("addCrypto").classList.toggle("show");
 }
 
 function filterFunction() {
   var input, filter, ul, li, a, i;
-  input = document.getElementById("myInput");
+  input = document.getElementById("cryptoInput");
   filter = input.value.toUpperCase();
-  div = document.getElementById("myDropdown");
+  div = document.getElementById("addCrypto");
+  a = div.getElementsByTagName("a");
+  for (i = 0; i < a.length; i++) {
+    txtValue = a[i].textContent || a[i].innerText;
+    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+      a[i].style.display = "";
+    } else {
+      a[i].style.display = "none";
+    }
+  }
+}
+
+function stocksFunction() {
+  document.getElementById("addStock").classList.toggle("show");
+}
+
+function filter2Function() {
+  var input, filter, ul, li, a, i;
+  input = document.getElementById("stocksInput");
+  filter = input.value.toUpperCase();
+  div = document.getElementById("addStock");
   a = div.getElementsByTagName("a");
   for (i = 0; i < a.length; i++) {
     txtValue = a[i].textContent || a[i].innerText;
