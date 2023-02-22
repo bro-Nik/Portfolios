@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %} Tickers / Admin {% endblock %}
+{% block head %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/bootstrap-table.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-table.css') }}">
+{% endblock %}
+{% block link %}
+    <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
+    <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
+    <button onclick="document.location='{{ url_for('tracking_list') }}'" type="button" class="btn btn-light btn-sm">Список отслеживания</button>
+    {% if current_user.type == 'admin' %}
+        <button type="button" class="btn btn-light btn-sm" disabled>Админ</button>
+    {% endif %}
+{% endblock %}
+{% block content %}
+<div class="mb-5">
+    <div class="row xs-mb-3">
+        <div class="col-auto">
+            <a class="fs-6 text-muted fw-semibold text-decoration-none m-2" href="{{ url_for('admin_index') }}">Главная</a>
+            <a class="fs-6 text-muted fw-semibold text-decoration-none m-2" href="{{ url_for('admin_users') }}">Пользователи</a>
+            <span class="fs-6 text-muted fw-semibold m-2">Тикеры</span>
+            <a class="fs-6 text-muted fw-semibold text-decoration-none m-2" href="{{ url_for('admin_feedback') }}">Обратная связь</a>
+            <a class="fs-6 text-muted fw-semibold text-decoration-none m-2" href="{{ url_for('admin_active_tasks') }}">Активные задачи</a>
+        </div>
+    </div>
+</div>
+<div class="pt-3 pb-3">
+    <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col" data-sortable="true">Symbol</th>
+                <th scope="col" data-sortable="true">Name</th>
+            </tr>
+        </thead>
+        <tbody class="col-12">
+            {% for ticker in tickers %}
+            <tr>
+                <td class="text-truncate" style="max-width: 150px;">{{ ticker.id }}</td>
+                <td class="text-truncate" style="max-width: 150px;">{{ ticker.symbol }}</td>
+                <td class="text-truncate" style="max-width: 150px;">{{ ticker.name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

@@ -6,7 +6,11 @@
 {% block link %}
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
-    <button type="button" class="btn btn-light btn-sm" disabled>Список отслеживания</button>
+    <button onclick="document.location='{{ url_for('tracking_list') }}'" type="button" class="btn btn-light btn-sm">Список отслеживания</button>
+    <button type="button" class="btn btn-light btn-sm" disabled>{{ tracked_ticker.ticker.name }}</button>
+    {% if current_user.type == 'admin' %}
+        <button onclick="document.location='{{ url_for('admin_index') }}'" type="button" class="btn btn-light btn-sm">Админ</button>
+    {% endif %}
 {% endblock %}
 {% block content %}
 <div class="mb-5">

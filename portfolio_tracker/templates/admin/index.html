@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %} Home / Admin {% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block link %}
+    <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
+    <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
+    <button onclick="document.location='{{ url_for('tracking_list') }}'" type="button" class="btn btn-light btn-sm">Список отслеживания</button>
+    {% if current_user.type == 'admin' %}
+        <button type="button" class="btn btn-light btn-sm" disabled>Админ</button>
+    {% endif %}
+{% endblock %}
+{% block content %}
+<div class="mb-5">
+    <div class="row xs-mb-3">
+        <div class="col-auto">
+            <span class="fs-6 text-muted fw-semibold m-2">Главная</span>
+            <a class="fs-6 text-muted fw-semibold text-decoration-none m-2" href="{{ url_for('admin_users') }}">Пользователи</a>
+            <a class="fs-6 text-muted fw-semibold text-decoration-none m-2" href="{{ url_for('admin_tickers') }}">Тикеры</a>
+            <a class="fs-6 text-muted fw-semibold text-decoration-none m-2" href="{{ url_for('admin_feedback') }}">Обратная связь</a>
+            <a class="fs-6 text-muted fw-semibold text-decoration-none m-2" href="{{ url_for('admin_active_tasks') }}">Активные задачи</a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-5 xs-mb-3">
+    <div class="col-12 mb-5">
+        <div class="mb-3">
+            <span class="text-average">Пользователи</span>
+        </div>
+        <span class="small_text me-3">Пользователи - <span id="users-count" class="text-average"></span></span>
+        <span class="small_text me-3">Администраторы - <span id="admins-count" class="text-average"></span></span>
+    </div>
+    <div class="col-12 mb-5">
+        <div class="mb-3">
+            <span class="text-average">Тикеры</span>
+            <div id="tickers-task-btn" class="d-inline ms-3"></div>
+        </div>
+        <span class="small_text me-3">Crypto - <span id="crypto-tickers-count" class="text-average"></span> <span id="crypto-tickers-task"></span></span>
+        <span class="small_text me-3">Stocks - <span id="stocks-tickers-count" class="text-average"></span> <span id="stocks-tickers-task"></span></span>
+    </div>
+    <div class="col-12 mb-5">
+        <div class="mb-3">
+            <span class="text-average">Обновление цен</span>
+            <div id="update-price-task-btn" class="d-inline ms-3"></div>
+        </div>
+        <span class="small_text me-3">Crypto - <span id="when-update-crypto" class="text-average"></span> <span id="crypto-price-task"></span></span>
+        <span class="small_text me-3">Stocks - <span id="when-update-stocks" class="text-average"></span> <span id="stocks-price-task"></span></span>
+        <br>
+    </div>
+</div>
+<script>
+// Обновление данных без перезагрузки
+const url = {{ url_for('admin_index_detail')|tojson }}
+const Admins = document.getElementById('admins-count');
+const Users = document.getElementById('users-count');
+const cryptoTickersCount = document.getElementById('crypto-tickers-count');
+const stocksTickersCount = document.getElementById('stocks-tickers-count');
+
+const cryptoTickersTask = document.getElementById('crypto-tickers-task');
+const stocksTickersTask = document.getElementById('stocks-tickers-task');
+const TickersTaskBtn = document.getElementById('tickers-task-btn');
+const UpdatePriceTaskBtn = document.getElementById('update-price-task-btn');
+
+const whenUpdateCrypto = document.getElementById('when-update-crypto');
+const whenUpdateStocks = document.getElementById('when-update-stocks');
+const cryptoPriceTask = document.getElementById('crypto-price-task');
+const stocksPriceTask = document.getElementById('stocks-price-task');
+
+var data = {}
+
+async function letsStart() {
+   await getDataRequest();
+   updatePage();
+   }
+
+function updatePage() {
+   Admins.innerHTML = `${data.admins_count}`;
+   Users.innerHTML = `${data.users_count}`;
+   cryptoTickersCount.innerHTML = `${data.crypto_tickers_count}`;
+   stocksTickersCount.innerHTML = `${data.stocks_tickers_count}`;
+
+   if (data.task_crypto_tickers_state != 'Остановлено' && data.task_stocks_tickers_state != 'Остановлено') {
+       cryptoTickersTask.innerHTML = `(${data.task_crypto_tickers_state})`;
+       stocksTickersTask.innerHTML = `(${data.task_stocks_tickers_state})`;
+   }
+
+    if ((data.task_crypto_tickers_id && data.task_crypto_tickers_state != 'Остановлено') || (data.task_stocks_tickers_id && data.task_stocks_tickers_state != 'Остановлено')) {
+    TickersTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{ url_for('admin_load_tickers_stop') }}">Остановить</a>`
+    }
+    else {
+    TickersTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{ url_for('admin_load_tickers') }}">Запустить</a>`
+    }
+
+    if ((data.task_crypto_tickers_id && data.task_crypto_tickers_state !== 'Остановлено') || (data.task_stocks_tickers_id && data.task_stocks_tickers_state !== 'Остановлено')) {
+    UpdatePriceTaskBtn.innerHTML = `<span class="small_text text-muted">Запустить</a>`
+    }
+    else {
+        if ((data.task_crypto_price_id && data.task_crypto_price_state !== 'Остановлено') || (data.task_stocks_price_id && data.task_stocks_price_state !== 'Остановлено')) {
+        UpdatePriceTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{url_for('admin_update_prices_stop') }}">Остановить</a>`
+        }
+        else {
+        UpdatePriceTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{url_for('admin_update_prices') }}">Запустить</a>`
+        }
+    }
+    whenUpdateCrypto.innerHTML = `${data.when_update_crypto}`;
+    whenUpdateStocks.innerHTML = `${data.when_update_stocks}`;
+    cryptoPriceTask.innerHTML = `(${data.task_crypto_price_state})`;
+    stocksPriceTask.innerHTML = `(${data.task_stocks_price_state})`;
+}
+
+function getDataRequest() {
+   return fetch(url, {
+      method: 'GET',
+      headers: {
+         "Content-type": "application/json; charset=UTF-8"
+      }
+   })
+   .then(res => res.json())
+   .then(data => window.data = data)
+}
+
+letsStart()
+setInterval(letsStart, 1000);
+</script>
+{% endblock %}

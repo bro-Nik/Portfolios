@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %} {{ tickers[0].market.name }} / Список отслеживания {% endblock %}
+{% block title %} Список отслеживания {% endblock %}
 {% block head %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/bootstrap-table.js') }}"></script>
@@ -9,6 +9,9 @@
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
     <button type="button" class="btn btn-light btn-sm" disabled>Список отслеживания</button>
+    {% if current_user.type == 'admin' %}
+        <button onclick="document.location='{{ url_for('admin_index') }}'" type="button" class="btn btn-light btn-sm">Админ</button>
+    {% endif %}
 {% endblock %}
 {% block content %}
 <div class="mb-5">
@@ -17,50 +20,18 @@
             <h1>Список отслеживания</h1>
         </div>
         <div class="col-auto ms-auto">
-            <div class="btn-group">
-                <button onclick="cryptoFunction()" class="btn btn-primary btn-sm dropdown-toggle" aria-expanded="false">Добавить криптовалюту</button>
-                <div id="addCrypto" class="dropdown-menu dropdown-asset">
-                    <div class="p-2 input-group-sm">
-                        <input type="text" placeholder="Поиск.." id="cryptoInput" onkeyup="filterFunction()" class="form-control">
-                    </div>
-                    <hr class="dropdown-divider">
-                    <div>
-                    {% for ticker in tickers %}
-                        {% if ticker.market_id == 'crypto' %}
-                            <a class="dropdown-item" href="{{ url_for('tracking_list_add_ticker', ticker_id=ticker.id) }}">
-                                <span class="d-inline-block text-truncate text-average" style="{{ 'width:170px;' if ticker.market_cap_rank else 'width:210px;' }}">{{ ticker.name }}</span>
-                                {% if ticker.market_cap_rank %} <span class="float-end market-cap-rank">#{{ ticker.market_cap_rank }}</span> {% endif %}
-                                <span class="align-top text-muted float-end">{{ ticker.symbol|upper }}</span>
-                            </a>
-                        {% endif %}
-                    {% endfor %}
-                    </div>
-                </div>
-            </div>
-            <div class="btn-group">
-                <button onclick="stocksFunction()" class="btn btn-primary btn-sm dropdown-toggle" aria-expanded="false">Добавить акцию</button>
-                <div id="addStock" class="dropdown-menu dropdown-asset">
-                    <div class="p-2 input-group-sm">
-                        <input type="text" placeholder="Поиск.." id="stocksInput" onkeyup="filter2Function()" class="form-control">
-                    </div>
-                    <hr class="dropdown-divider">
-                    <div>
-                    {% for ticker in tickers %}
-                        {% if ticker.market_id == 'stocks' %}
-                            <a class="dropdown-item" href="{{ url_for('tracking_list_add_ticker', ticker_id=ticker.id) }}">
-                                <span class="d-inline-block text-truncate text-average" style="{{ 'width:170px;' if ticker.market_cap_rank else 'width:210px;' }}">{{ ticker.name }}</span>
-                                {% if ticker.market_cap_rank %} <span class="float-end market-cap-rank">#{{ ticker.market_cap_rank }}</span> {% endif %}
-                                <span class="align-top text-muted float-end">{{ ticker.symbol|upper }}</span>
-                            </a>
-                        {% endif %}
-                    {% endfor %}
-                    </div>
-                </div>
+            <div class="dropdown">
+                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Добавить актив</button>
+                <ul class="dropdown-menu">
+                    <li><button data-bs-toggle="modal" data-bs-target="#addAssetCrypto"  class="dropdown-item" aria-expanded="false">Криптовалюта</button></li>
+                    <li><button data-bs-toggle="modal" data-bs-target="#addAssetStocks"  class="dropdown-item" aria-expanded="false">Акция</button></li>
+                </ul>
             </div>
         </div>
     </div>
 </div>
 {% if tracked_tickers %}
+{% if 'crypto' in markets %}
     <div class="big-table mb-5">
         <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
             <thead>
@@ -109,6 +80,8 @@
             </tbody>
         </table>
     </div>
+{% endif %}
+{% if 'stocks' in markets %}
     <div class="big-table">
         <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
             <thead>
@@ -154,51 +127,94 @@
             </tbody>
         </table>
     </div>
+{% endif %}
 {% else %}
     <div class="p-5 mb-3">
         <p class="text-center lead">Пока ничего нет...</p>
     </div>
 {% endif %}
+<!-- Modal Add Asset Crypto -->
+<div class="modal" id="addAssetCrypto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body add-asset-modal">
+                <table
+                    id="table"
+                    data-toggle="table"
+                    data-ajax="ajaxRequestCrypto"
+                    data-search="true"
+                    data-pagination="true"
+                    data-height="460"
+                    data-pagination-pre-text="<"
+                    data-pagination-next-text=">"
+                    class="tickers-tab">
+                    <thead class="visually-hidden">
+                        <tr>
+                            <th data-field="image" class="symbol-icon"></th>
+                            <th data-field="name" class="itemAsset cursor-pointer text-average" style="width:300px;"></th>
+                            <th data-field="market_cap_rank" class="float-end market-cap-rank"></th>
+                            <th data-field="symbol" class="text-muted float-end"></th>
+                            <th data-field="id" class="visually-hidden"></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal Add Asset Stocks -->
+<div class="modal" id="addAssetStocks" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body add-asset-modal">
+                <table
+                    id="table"
+                    data-toggle="table"
+                    data-ajax="ajaxRequestStocks"
+                    data-search="true"
+                    data-pagination="true"
+                    data-height="460"
+                    data-pagination-pre-text="<"
+                    data-pagination-next-text=">"
+                    class="tickers-tab">
+                    <thead class="visually-hidden">
+                        <tr>
+                            <th data-field="image" class="symbol-icon"></th>
+                            <th data-field="name" class="itemAsset cursor-pointer text-average" style="width:300px;"></th>
+                            <th data-field="market_cap_rank" class="float-end market-cap-rank"></th>
+                            <th data-field="symbol" class="text-muted float-end"></th>
+                            <th data-field="id" class="visually-hidden"></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
-// поиск в выпадающем меню (источник: https://www.w3schools.com/howto/howto_js_filter_dropdown.asp)
-function cryptoFunction() {
-  document.getElementById("addCrypto").classList.toggle("show");
-}
-
-function filterFunction() {
-  var input, filter, ul, li, a, i;
-  input = document.getElementById("cryptoInput");
-  filter = input.value.toUpperCase();
-  div = document.getElementById("addCrypto");
-  a = div.getElementsByTagName("a");
-  for (i = 0; i < a.length; i++) {
-    txtValue = a[i].textContent || a[i].innerText;
-    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-      a[i].style.display = "";
-    } else {
-      a[i].style.display = "none";
-    }
+// modal add asset crypto
+const urlCrypto = {{ url_for('tickers_detail', market_id='crypto')|tojson }}
+  function ajaxRequestCrypto(params) {
+    $.get(urlCrypto + '?' + $.param(params.data)).then(function (res) {
+      params.success(res)
+    })
   }
-}
-
-function stocksFunction() {
-  document.getElementById("addStock").classList.toggle("show");
-}
-
-function filter2Function() {
-  var input, filter, ul, li, a, i;
-  input = document.getElementById("stocksInput");
-  filter = input.value.toUpperCase();
-  div = document.getElementById("addStock");
-  a = div.getElementsByTagName("a");
-  for (i = 0; i < a.length; i++) {
-    txtValue = a[i].textContent || a[i].innerText;
-    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-      a[i].style.display = "";
-    } else {
-      a[i].style.display = "none";
-    }
+// modal add asset stocks
+const urlStocks = {{ url_for('tickers_detail', market_id='stocks')|tojson }}
+  function ajaxRequestStocks(params) {
+    $.get(urlStocks + '?' + $.param(params.data)).then(function (res) {
+      params.success(res)
+    })
   }
-}
+// click to add asset
+const url_add_asset = '{{ url_for('tracking_list_add_ticker', ticker_id='') }}';
+document.addEventListener("click", function(e) {
+  if (e.target.classList.contains("itemAsset")) {
+    var tr = e.target.closest('tr');
+    var asset_id = tr.cells[tr.cells.length-1].innerHTML;
+    console.log(url_add_asset + asset_id);
+    location.href = url_add_asset + asset_id;
+  }
+});
 </script>
 {% endblock %}

@@ -2,7 +2,6 @@ from flask_login import UserMixin
 
 from portfolio_tracker.app import db
 
-
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.String(32))
@@ -107,13 +106,14 @@ class Setting(db.Model):
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255))
+    #name = db.Column(db.String(255))
     email = db.Column(db.String(255), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
+    type = db.Column(db.String(255))
+    info = db.relationship('userInfo', backref=db.backref('user', lazy=True), uselist=False)
 
 class userInfo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user = db.relationship('User', backref=db.backref('info', lazy=True))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     first_visit = db.Column(db.String(255))
     last_visit = db.Column(db.String(255))
@@ -133,3 +133,4 @@ class Feedback(db.Model):
     text = db.Column(db.String(1024))
     user = db.relationship('User', backref=db.backref('feedbacks', lazy=True))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+

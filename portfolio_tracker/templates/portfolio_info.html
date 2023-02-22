@@ -10,6 +10,9 @@
     <button type="button" class="btn btn-light btn-sm" disabled>{{ portfolio.name }}</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
     <button onclick="document.location='{{ url_for('tracking_list') }}'" type="button" class="btn btn-light btn-sm">Список отслеживания</button>
+    {% if current_user.type == 'admin' %}
+        <button onclick="document.location='{{ url_for('admin_index') }}'" type="button" class="btn btn-light btn-sm">Админ</button>
+    {% endif %}
 {% endblock %}
 {% block content %}
 <div class="mb-5">
@@ -18,71 +21,48 @@
             <h1>{{ portfolio.name }}</h1>
         </div>
         <div class="col-auto ms-auto">
-            <div class="dropdown">
-                <button onclick="myFunction()" class="btn btn-primary btn-sm dropdown-toggle" aria-expanded="false">Добавить актив</button>
-                <div id="myDropdown" class="dropdown-menu dropdown-asset">
-                    <div class="p-2 input-group-sm">
-                        <input type="text" placeholder="Поиск.." id="myInput" onkeyup="filterFunction()" class="form-control">
-                    </div>
-                    <div>
-                    {#-- {% for ticker in tickers|sort(attribute="market_cap_rank") %} --#}
-                        {% for ticker in tickers %}
-                        <a class="dropdown-item" href="{{ url_for('asset_add', market_id=portfolio.market_id, portfolio_id=portfolio.id, ticker_id=ticker.id) }}">
-                            <span class="d-inline-block text-truncate text-average" style="{{ 'width:170px;' if ticker.market_cap_rank else 'width:210px;' }}">{{ ticker.name }}</span>
-                            {% if ticker.market_cap_rank %} <span class="float-end market-cap-rank">#{{ ticker.market_cap_rank }}</span> {% endif %}
-                            <span class="align-top text-muted float-end">{{ ticker.symbol|upper }}</span>
-                        </a>
-                    {% endfor %}
-                    </div>
-                </div>
-            </div>
+            <button data-bs-toggle="modal" data-bs-target="#addAsset"  class="btn btn-primary btn-sm" aria-expanded="false">Добавить актив</button>
         </div>
     </div>
 </div>
 {% if portfolio.assets %}
+{% if portfolio_cost_now != 0 %}
     <div class="row xs-mb-3">
         <div class="col-auto">
             <p class="small_text">Всего вложено / сейчас</p>
             <span class="text-average">
-                {% if portfolio_cost_now == 0 %}
-                    - / -
+                ${{ portfolio.assets|sum(attribute='total_spent')|round|int|number_group }} /
+                {% if portfolio_cost_now >= portfolio.assets|sum(attribute='total_spent') %}
+                    <span class="text-green">${{ portfolio_cost_now|round|int|number_group }}</span>
                 {% else %}
-                    ${{ portfolio.assets|sum(attribute='total_spent')|round|int|number_group }} /
-                    {% if portfolio_cost_now >= portfolio.assets|sum(attribute='total_spent') %}
-                        <span class="text-green">${{ portfolio_cost_now|round|int|number_group }}</span>
-                    {% else %}
-                        <span class="text-red">${{ portfolio_cost_now|round|int|number_group }}</span>
-                    {% endif %}
+                    <span class="text-red">${{ portfolio_cost_now|round|int|number_group }}</span>
                 {% endif %}
             </span>
         </div>
         <div class="col-auto">
             <p class="small_text">Прибыль / убыток</p>
-            {% if portfolio_cost_now == 0 %}
-                -
+            {% if (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int == 0 %}
+                <span class="text-average">$0</span>
+            {% elif portfolio_cost_now - portfolio.assets|sum(attribute='total_spent') > 0 %}
+                <span class="text-green text-average">
+                    +${{ (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int|number_group }}
+                    {% if portfolio.assets|sum(attribute='total_spent') > 0 %}
+                        ({{ ((portfolio_cost_now - portfolio.assets|sum(attribute='total_spent')) / portfolio.assets|sum(attribute='total_spent') * 100)|round|int }}%)
+                    {% endif %}
+                </span>
+            {% elif portfolio_cost_now - portfolio.assets|sum(attribute='total_spent') < 0 %}
+                <span class="text-red text-average">
+                    -${{ (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int|abs|number_group }}
+                    {% if portfolio.assets|sum(attribute='total_spent') != 0 %}
+                        ({{ ((portfolio_cost_now - portfolio.assets|sum(attribute='total_spent')) / portfolio.assets|sum(attribute='total_spent') * 100)|round|int|abs }}%)
+                    {% endif %}
+                </span>
             {% else %}
-                {% if (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int == 0 %}
-                    <span class="text-average">$0</span>
-                {% elif portfolio_cost_now - portfolio.assets|sum(attribute='total_spent') > 0 %}
-                    <span class="text-green text-average">
-                        +${{ (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int|number_group }}
-                        {% if portfolio.assets|sum(attribute='total_spent') > 0 %}
-                            ({{ ((portfolio_cost_now - portfolio.assets|sum(attribute='total_spent')) / portfolio.assets|sum(attribute='total_spent') * 100)|round|int }}%)
-                        {% endif %}
-                    </span>
-                {% elif portfolio_cost_now - portfolio.assets|sum(attribute='total_spent') < 0 %}
-                    <span class="text-red text-average">
-                        -${{ (portfolio_cost_now - portfolio.assets|sum(attribute='total_spent'))|round|int|abs|number_group }}
-                        {% if portfolio.assets|sum(attribute='total_spent') != 0 %}
-                            ({{ ((portfolio_cost_now - portfolio.assets|sum(attribute='total_spent')) / portfolio.assets|sum(attribute='total_spent') * 100)|round|int|abs }}%)
-                        {% endif %}
-                    </span>
-                {% else %}
-                    <span class="text-average">$0</span>
-                {% endif %}
+                <span class="text-average">$0</span>
             {% endif %}
         </div>
     </div>
+{% endif %}
     <div class="big-table">
         <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
             <thead>
@@ -162,9 +142,9 @@
                         {% endif %}
                     </td>
                     <td class="text-end">
-                        <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#customAsset" data-bs-id="{{ asset.id }}" data-bs-percent="{{ asset.percent if asset.percent > 0 }}" data-bs-comment="{{ asset.comment if asset.comment else '' }}" data-bs-title="Изменить актив" title="Изменить">
-                            <i class="bi icon bi-pencil-square"></i>
-                        </a>
+                            <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#customAsset" data-bs-id="{{ asset.id }}" data-bs-percent="{{ asset.percent if asset.percent > 0 }}" data-bs-comment="{{ asset.comment if asset.comment else '' }}" data-bs-title="Изменить актив" title="Изменить">
+                                <i class="bi icon bi-pencil-square"></i>
+                            </a>
                         <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#deleteAsset" data-bs-id="{{ asset.id }}" data-bs-title="Удалить {{ asset.ticker.name }}?" title="Удалить">
                             <i class="bi icon bi-trash-fill"></i>
                         </a>
@@ -183,7 +163,35 @@
         <p class="text-center lead">Пока ничего нет...</p>
     </div>
 {% endif %}
-
+<!-- Modal Add Asset -->
+<div class="modal" id="addAsset" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body add-asset-modal">
+                <table
+                    id="table"
+                    data-toggle="table"
+                    data-ajax="ajaxRequest"
+                    data-search="true"
+                    data-pagination="true"
+                    data-height="460"
+                    data-pagination-pre-text="<"
+                    data-pagination-next-text=">"
+                    class="tickers-tab">
+                    <thead class="visually-hidden">
+                        <tr>
+                            <th data-field="image" class="symbol-icon"></th>
+                            <th data-field="name" class="itemAsset cursor-pointer text-average" style="width:300px;"></th>
+                            <th data-field="market_cap_rank" class="float-end market-cap-rank"></th>
+                            <th data-field="symbol" class="text-muted float-end"></th>
+                            <th data-field="id" class="visually-hidden"></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Modal New or Change Asset -->
 <div class="modal fade" id="customAsset" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -237,6 +245,25 @@
     </div>
 </div>
 <script>
+// modal add asset
+const url = {{ url_for('tickers_detail', market_id=portfolio.market_id)|tojson }}
+  function ajaxRequest(params) {
+    $.get(url + '?' + $.param(params.data)).then(function (res) {
+      params.success(res)
+    })
+  }
+// click to add asset
+const url_add_asset = '{{ url_for('asset_add', market_id=portfolio.market_id, portfolio_id=portfolio.id, ticker_id='') }}';
+document.addEventListener("click", function(e) {
+  if (e.target.classList.contains("itemAsset")) {
+    var tr = e.target.closest('tr');
+    var asset_id = tr.cells[tr.cells.length-1].innerHTML;
+    console.log(url_add_asset + asset_id);
+    location.href = url_add_asset + asset_id;
+  }
+});
+
+
 
 // Отправка данных в форму изменения актива
 var updateModal = document.getElementById('customAsset')
@@ -272,26 +299,6 @@ updateModal.addEventListener('show.bs.modal', function (event) {
   modalId.value = id
   modalTitle.textContent = `${title}`
 })
-// поиск в выпадающем меню (источник: https://www.w3schools.com/howto/howto_js_filter_dropdown.asp)
-function myFunction() {
-  document.getElementById("myDropdown").classList.toggle("show");
-}
-
-function filterFunction() {
-  var input, filter, ul, li, a, i;
-  input = document.getElementById("myInput");
-  filter = input.value.toUpperCase();
-  div = document.getElementById("myDropdown");
-  a = div.getElementsByTagName("a");
-  for (i = 0; i < a.length; i++) {
-    txtValue = a[i].textContent || a[i].innerText;
-    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-      a[i].style.display = "";
-    } else {
-      a[i].style.display = "none";
-    }
-  }
-}
 
 </script>
 {% endblock %}

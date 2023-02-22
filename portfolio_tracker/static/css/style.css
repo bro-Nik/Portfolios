@@ -1,8 +1,8 @@
 html, body {
     height: 100%;
 }
-.modal-header {
-    border: none;
+.modal-header, .bootstrap-table .fixed-table-container.fixed-height .fixed-table-border {
+    border: none !important;
 }
 div#wrapper {
     display: flex;
@@ -121,19 +121,7 @@ div#footer {
 .hidden {
     display: none;
 }
-.dropdown-asset {
-    width: 320px;
-    padding-top: 0px;
-    max-height: 250px;
-    overflow-y: auto;
-    right: 0;
-    top: 40px;
-}
-.new-asset-link {
-    position: absolute;
-    top: 2px;
-    right: 0;
-}
+
 .table-bordered>:not(caption)>*>* {
     border-width: 0;
 }
@@ -141,9 +129,9 @@ thead > tr {
     border-style: none;
 }
 .img-asset-min {
-    width: 24px;
+    width: 20px;
     height: auto;
-    vertical-align: bottom;
+    vertical-align: text-bottom;
 }
 .img-asset {
     width: 40px;
@@ -157,17 +145,17 @@ thead > tr {
     cursor: default;
 }
 
-#myDropdown::-webkit-scrollbar, #addCrypto::-webkit-scrollbar, #addStock::-webkit-scrollbar {
+.fixed-table-body::-webkit-scrollbar {
   width: 5px;
   background-color: #f9f9fd;
 }
 
-#myDropdown::-webkit-scrollbar-thumb, #addCrypto::-webkit-scrollbar-thumb, #addStock::-webkit-scrollbar-thumb {
+.fixed-table-body::-webkit-scrollbar-thumb {
   border-radius: 5px;
   background-color: #0d6efd;
 }
 
-#myDropdown::-webkit-scrollbar-track, #addCrypto::-webkit-scrollbar-track, #addStock::-webkit-scrollbar-track {
+.fixed-table-body::-webkit-scrollbar-track {
   -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
   background-color: #f9f9fd;
 }
@@ -178,12 +166,7 @@ thead > tr {
     height: 70px;
 }
 .market-cap-rank {
-    padding-left: 0.1875em;
-    padding-right: 0.1875em;
-    background-color: #e9ecef6b;
-    border-radius: 4px;
     color: #6c757d87;
-    margin-left: 5px;
 }
 .big-table {
 	overflow: auto;
@@ -196,6 +179,31 @@ thead > tr {
 .nav-bar-links > * {
     margin-bottom: 5px;
 }
+td.symbol-icon {
+    padding-right: 0;
+    width: 20px;
+}
+td.symbol-icon:empty, td.market-cap-rank:empty {
+    padding: 0;
+    width: 0;
+}
+.tickers-tab tr:hover {
+    background-color: var(--bs-table-hover-bg);
+}
+.tickers-tab>:not(caption)>* {
+    border-width: 0 !important;
+}
+.float-left.pagination-detail {
+    display: none;
+}
+.page-item:not(.page-pre):not(.page-next) {
+    display: none;
+}
+.add-asset-modal .search {
+    width: 100%;
+}
+
+
 @media (max-width: 767px){
 .xs-mb-3 > div {
     margin-bottom: 20px;

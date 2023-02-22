@@ -2,7 +2,6 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from celery import Celery
-from flask_admin import Admin
 import redis
 import pymysql
 
@@ -35,11 +34,10 @@ redis = redis.StrictRedis('127.0.0.1', 6379)
 
 login_manager = LoginManager(app)
 
-from portfolio_tracker.defs import *
+from portfolio_tracker.admin import start_update_prices
 
-#with app.app_context():
-#    price_list_crypto_def.delay()
-#    price_list_stocks_def.delay()
+with app.app_context():
+    db.create_all()
 
 
 if __name__ == '__main__':

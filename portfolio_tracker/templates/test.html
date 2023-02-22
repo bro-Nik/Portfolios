@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}  / Портфели {% endblock %}
+{% block head %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/bootstrap-table.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-table.css') }}">
+{% endblock %}
+{% block content %}
+
+<button data-bs-toggle="modal" data-bs-target="#addAsset"  class="btn btn-primary btn-sm" aria-expanded="false">Добавить актив</button>
+
+
+<!-- Modal Add Asset -->
+<div class="modal" id="addAsset" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body add-asset-modal">
+                <span onclick="myTestFunction()">Test</span>
+                <table
+                    id="table"
+                    data-toggle="table"
+                    data-ajax="ajaxRequest"
+                    data-search="true"
+                    data-pagination="true"
+                    data-pagination-pre-text="<"
+                    data-pagination-next-text=">"
+                    class="tickers-tab">
+                    <thead class="visually-hidden">
+                        <tr>
+                            <th data-field="image" class="symbol-icon"></th>
+                            <th data-field="name" class="itemAsset text-truncate text-average" style="width:170px;"></th>
+                            <th data-field="market_cap_rank" class="float-end market-cap-rank"></th>
+                            <th data-field="symbol" class="text-muted float-end"></th>
+                            <th data-field="id" class="visually-hidden"></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+// modal add asset
+const url = {{ url_for('tickers_detail', market_id='crypto')|tojson }}
+  // your custom ajax request here
+  function ajaxRequest(params) {
+    $.get(url + '?' + $.param(params.data)).then(function (res) {
+      params.success(res)
+    })
+  }
+
+// click to add asset
+const market_id = 'crypto'
+portfolio_id = '01'
+
+const url_add_asset = '{{ url_for('asset_add', market_id='crypto', portfolio_id='1', ticker_id='') }}';
+document.addEventListener("click", function(e) {
+  if (e.target.classList.contains("itemAsset")) {
+    var tr = e.target.closest('tr');
+    var asset_id = tr.cells[tr.cells.length-1].innerHTML;
+    console.log(url_add_asset + asset_id);
+    location.href = url_add_asset + asset_id;
+
+
+
+   //ваши действия
+  }
+});
+
+
+
+
+
+
+
+
+</script>
+{% endblock %}

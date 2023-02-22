@@ -9,6 +9,9 @@
     <button type="button" class="btn btn-light btn-sm" disabled>{{ asset.ticker.name }}</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
     <button onclick="document.location='{{ url_for('tracking_list') }}'" type="button" class="btn btn-light btn-sm">Список отслеживания</button>
+    {% if current_user.type == 'admin' %}
+        <button onclick="document.location='{{ url_for('admin_index') }}'" type="button" class="btn btn-light btn-sm">Админ</button>
+    {% endif %}
 {% endblock %}
 {% block content %}
 <div class="mb-5">
@@ -18,7 +21,6 @@
                 {% if asset.ticker.market_cap_rank %}
                     <span class="badge text-bg-light text-muted">#{{ asset.ticker.market_cap_rank }}</span>
                 {% endif %}
-                <span class="small_text" title="Обновлено" id="when_updated"></span>
             </h1>
             <div class="hstack gap-2">
                 {% if asset.ticker.image %}
@@ -477,7 +479,6 @@ const url = {{ url_for('asset_detail', asset_id=asset.id)|tojson }}
 const Price = document.getElementById('asset-price');
 const costNow = document.getElementById('asset-cost_now');
 const Profit = document.getElementById('asset-profit');
-const whenUpdated = document.getElementById('when_updated');
 var data = {}
 
 async function letsStart() {
@@ -487,7 +488,6 @@ async function letsStart() {
 
 function updatePage() {
    Price.innerHTML = `$${data.price}`;
-   whenUpdated.innerHTML = `${data.when_updated}`;
 
    if (costNow) {
       costNow.innerHTML = `${data.cost_now}`;
