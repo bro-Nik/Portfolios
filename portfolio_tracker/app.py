@@ -34,11 +34,13 @@ redis = redis.StrictRedis('127.0.0.1', 6379)
 
 login_manager = LoginManager(app)
 
-from portfolio_tracker.admin import start_update_prices
+from portfolio_tracker.admin import delete_tasks
 
 with app.app_context():
     db.create_all()
+    delete_tasks()
 
 
 if __name__ == '__main__':
     app.run()
+

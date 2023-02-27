@@ -29,6 +29,8 @@ def register():
             # кошелек
             wallet = Wallet(name='Default', money_all=0, money_in_order=0, user_id=new_user.id)
             db.session.add(wallet)
+            first_visit = userInfo(user_id=new_user.id, first_visit=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M'))
+            db.session.add(first_visit)
             db.session.commit()
             return redirect(url_for('login'))
         return redirect(url_for('register'))
@@ -118,6 +120,10 @@ def user_delete():
                 db.session.delete(asset)
         db.session.delete(portfolio)
 
+    # user info
+    user_info = db.session.execute(db.select(userInfo).filter_by(user_id=user.id)).scalar()
+    user_info.user_id = None
+
     # user
     db.session.delete(user)
     db.session.commit()
@@ -126,23 +132,26 @@ def user_delete():
 
 
 def new_visit():
+    time_now = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M')
     if current_user.info:
-        current_user.last_visit = datetime.now()
+        current_user.last_visit = time_now
     else:
+        info = False
         ip = request.headers.get('X-Real-IP')
-        if not ip:
-            ip = '212.96.80.137'
-        url = 'http://ip-api.com/json/' + ip
-        response = requests.get(url).json()
-        if response.get('status') == 'success':
-            user_info = userInfo(
-                user_id=current_user.id,
-                first_visit=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M'),
-                last_visit=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M'),
-                country=response.get('country'),
-                city=response.get('city')
-            )
-            db.session.add(user_info)
+        if ip:
+            url = 'http://ip-api.com/json/' + ip
+            response = requests.get(url).json()
+            if response.get('status') == 'success':
+                info = True
+
+        user_info = userInfo(
+            user_id=current_user.id,
+            first_visit=time_now,
+            last_visit=time_now,
+            country=response.get('country') if info else None,
+            city=response.get('city') if info else None
+        )
+        db.session.add(user_info)
     db.session.commit()
 
 

@@ -81,6 +81,7 @@
             </thead>
             <tbody>
             {% for asset in portfolio.assets %}
+            {% set asset_price = price_list[asset.ticker.id] if price_list.get(asset.ticker.id) else 0 %}
                 <tr>
                     <td class="text-average">
                         <a class="link-dark text-decoration-none" href="{{ url_for('asset_info', market_id=portfolio.market_id, portfolio_url=portfolio.url, asset_url=asset.ticker.id) }}">
@@ -91,14 +92,14 @@
                         </a>
                     </td>
                     <td>
-                        ${{ price_list[asset.ticker.id]|smart_round|number_group }}
+                        ${{ asset_price|smart_round|number_group }}
                         {% if asset.total_spent > 0 %}
                             / ${{ (asset.total_spent / asset.quantity)|smart_round|number_group }}
                         {% endif %}
                     </td>
                     <td>
                         {% if asset.quantity > 0 %}
-                            ${{ (asset.quantity * price_list[asset.ticker.id])|round|int|number_group }}
+                            ${{ (asset.quantity * asset_price)|round|int|number_group }}
                             {% if asset.total_spent > 0 %}
                                  / ${{ asset.total_spent|round|int|number_group }}
                             {% endif %}
@@ -110,17 +111,17 @@
                     </td>
                     <td>
                         {% if asset.quantity > 0 %}
-                            {% if ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent)|round|int > 0 %}
+                            {% if ((asset.quantity * asset_price) - asset.total_spent)|round|int > 0 %}
                                 <span class="text-green text-average">
-                                    +${{ ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent)|round|int|number_group }}
+                                    +${{ ((asset.quantity * asset_price) - asset.total_spent)|round|int|number_group }}
                                     {% if asset.total_spent > 0 %}
-                                        ({{ ((asset.quantity * price_list[asset.ticker.id] - asset.total_spent) / asset.total_spent * 100 )|round|int }}%)
+                                        ({{ ((asset.quantity * asset_price - asset.total_spent) / asset.total_spent * 100 )|round|int }}%)
                                     {% endif %}
                                 </span>
-                            {% elif ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent)|round|int < 0 %}
+                            {% elif ((asset.quantity * asset_price) - asset.total_spent)|round|int < 0 %}
                                 <span class="text-red text-average">
-                                    -${{ ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent)|round|int|abs|number_group }}
-                                    ({{ ((asset.quantity * price_list[asset.ticker.id] - asset.total_spent) / asset.total_spent * 100)|round|int|abs }}%)
+                                    -${{ ((asset.quantity * asset_price) - asset.total_spent)|round|int|abs|number_group }}
+                                    ({{ ((asset.quantity * asset_price - asset.total_spent) / asset.total_spent * 100)|round|int|abs }}%)
                                 </span>
                             {% else %}
                                 $0
@@ -150,8 +151,8 @@
                         </a>
                     </td>
                     <!-- For sorting -->
-                    <td class="visually-hidden">{{ (asset.quantity * price_list[asset.ticker.id])|round|int }}</td>
-                    <td class="visually-hidden">{{ ((asset.quantity * price_list[asset.ticker.id]) - asset.total_spent)|round|int }}</td>
+                    <td class="visually-hidden">{{ (asset.quantity * asset_price)|round|int }}</td>
+                    <td class="visually-hidden">{{ ((asset.quantity * asset_price) - asset.total_spent)|round|int }}</td>
                     <td class="visually-hidden">{{ (asset.total_spent / portfolio.assets|sum(attribute='total_spent') * 100)|round(1, 'common') if portfolio.assets|sum(attribute='total_spent') else 0 }}</td>
                 </tr>
             {% endfor %}
@@ -175,6 +176,7 @@
                     data-search="true"
                     data-pagination="true"
                     data-height="460"
+                    data-virtual-scroll="true"
                     data-pagination-pre-text="<"
                     data-pagination-next-text=">"
                     class="tickers-tab">

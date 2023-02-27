@@ -1,3 +1,4 @@
+from celery.result import AsyncResult
 from flask import render_template, redirect, url_for, request, flash, session, jsonify, abort
 from flask_login import login_user, login_required, logout_user, current_user
 import os, json, requests, time
@@ -7,16 +8,12 @@ from celery.contrib.abortable import AbortableTask
 
 from portfolio_tracker.app import app, db, celery
 from portfolio_tracker.defs import *
-from portfolio_tracker.models import User, Ticker, userInfo, Feedback
-
-
-glob_crypto_price_task_id = ''
-glob_stocks_price_task_id = ''
-glob_crypto_tickers_task_id = ''
-glob_stocks_tickers_task_id = ''
+from portfolio_tracker.models import User, Ticker, userInfo, Feedback, Wallet
+from portfolio_tracker.wraps import admin_only
 
 
 @app.route('/admin/', methods=['GET'])
+@admin_only
 def admin_index():
     demo_user = db.session.execute(db.select(User).filter_by(email='demo')).scalar()
     if not demo_user:
@@ -35,73 +32,46 @@ def admin_index():
         db.session.add(stocks)
         db.session.commit()
 
-    user_is_admin()
-
-    return render_template('admin/index.html', crypto_count=0, stocks_count=0,
-                           users_count=0, admins_count=0)
-
-
-def user_is_admin():
-    admins_in_base = db.session.execute(db.select(User).filter_by(type='admin')).scalar()
-    if admins_in_base:
-        if current_user.type != 'admin':
-            abort(404)
-
-
-@app.route('/admin/users', methods=['GET'])
-def admin_users():
-    users = db.session.execute(db.select(User)).scalars()
-    return render_template('admin/users.html', users=users)
-
-
-@app.route('/admin/tickers', methods=['GET'])
-def admin_tickers():
-    tickers = db.session.execute(db.select(Ticker)).scalars()
-    return render_template('admin/tickers.html', tickers=tickers)
-
-
-@app.route('/admin/feedback', methods=['GET'])
-def admin_feedback():
-    messages = db.session.execute(db.select(Feedback)).scalars()
-    return render_template('admin/feedback.html', messages=messages)
-
-
-@app.route('/admin/load_tickers', methods=['GET'])
-def admin_load_tickers():
-    global glob_crypto_tickers_task_id, glob_stocks_tickers_task_id
-    glob_crypto_tickers_task_id = load_crypto_tickers.delay().id
-    glob_stocks_tickers_task_id = load_stocks_tickers.delay().id
-    admin_update_prices_stop()
-    return redirect(url_for('admin_index'))
+    return render_template('admin/index.html', crypto_count=0, stocks_count=0, users_count=0, admins_count=0)
 
 
 @app.route('/admin/index_detail', methods=['GET'])
+@admin_only
 def admin_index_detail():
     def state(task):
         if task.id:
-            if task.state in ['WORK', 'RETRY']:
+            if task.state in ['WORK']:
                 return 'Работает'
+            elif task.state in ['RETRY']:
+                return 'Ожидает'
             elif task.state == 'LOADING':
                 return 'Загрузка'
             elif task.state == 'REVOKED':
                 return 'Остановлено'
+            elif task.state == 'SUCCESS':
+                return 'Готово'
+            elif task.state == 'FAILURE':
+                return 'Ошибка'
             else:
                 return task.state
         else:
             return 'Остановлено'
 
-    crypto_tickers_count = db.session.execute(
-        db.select([func.count()]).select_from(Ticker).filter_by(market_id='crypto')).scalar()
+    crypto_tickers_count = db.session.execute(db.select(func.count()).select_from(Ticker).filter_by(market_id='crypto')).scalar()
     stocks_tickers_count = db.session.execute(
-        db.select([func.count()]).select_from(Ticker).filter_by(market_id='stocks')).scalar()
-    users_count = db.session.execute(db.select([func.count()]).select_from(User)).scalar()
-    admins_count = db.session.execute(db.select([func.count()]).select_from(User).filter_by(type='admin')).scalar()
+        db.select(func.count()).select_from(Ticker).filter_by(market_id='stocks')).scalar()
+    users_count = db.session.execute(db.select(func.count()).select_from(User)).scalar()
+    admins_count = db.session.execute(db.select(func.count()).select_from(User).filter_by(type='admin')).scalar()
 
-    task_crypto_tickers = load_crypto_tickers.AsyncResult(glob_crypto_tickers_task_id)
-    task_stocks_tickers = load_stocks_tickers.AsyncResult(glob_stocks_tickers_task_id)
+    crypto_tickers_task_id = redis.get('crypto_tickers_task_id').decode() if redis.get('crypto_tickers_task_id') else ''
+    stocks_tickers_task_id = redis.get('stocks_tickers_task_id').decode() if redis.get('stocks_tickers_task_id') else ''
+    task_crypto_tickers = AsyncResult(crypto_tickers_task_id)
+    task_stocks_tickers = AsyncResult(stocks_tickers_task_id)
 
-    task_crypto_price = price_list_crypto_def.AsyncResult(glob_crypto_price_task_id)
-    task_stocks_price = price_list_stocks_def.AsyncResult(glob_stocks_price_task_id)
+    crypto_price_task_id = redis.get('crypto_price_task_id').decode() if redis.get('crypto_price_task_id') else ''
+    stocks_price_task_id = redis.get('stocks_price_task_id').decode() if redis.get('stocks_price_task_id') else ''
+    task_crypto_price = AsyncResult(crypto_price_task_id)
+    task_stocks_price = AsyncResult(stocks_price_task_id)
 
     when_update_crypto = when_updated_def(redis.get('update-crypto').decode()) if redis.get('update-crypto') else '-'
     when_update_stocks = when_updated_def(redis.get('update-stocks').decode()) if redis.get('update-stocks') else '-'
@@ -126,51 +96,117 @@ def admin_index_detail():
         "when_update_stocks": when_update_stocks
     }
 
-def start_update_prices():
-    global glob_crypto_price_task_id, glob_stocks_price_task_id
-    glob_crypto_price_task_id = price_list_crypto_def.delay().id
-    glob_stocks_price_task_id = price_list_stocks_def.delay().id
 
-@app.route('/admin/load_tickers_stop', methods=['GET'])
-def admin_load_tickers_stop():
-    celery.control.revoke(glob_crypto_tickers_task_id, terminate=True)
-    celery.control.revoke(glob_stocks_tickers_task_id, terminate=True)
-    return redirect(url_for('admin_index'))
+@app.route('/admin/users', methods=['GET'])
+@admin_only
+def admin_users():
+    users = db.session.execute(db.select(User)).scalars()
+    return render_template('admin/users.html', users=users)
 
 
 @app.route('/admin/users/user_to_admin/<string:user_id>', methods=['GET'])
+@admin_only
 def user_to_admin(user_id):
-    user_is_admin()
     user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar()
     user.type = 'admin'
     db.session.commit()
-
     return redirect(url_for('admin_users'))
 
 
+@app.route('/admin/tickers', methods=['GET'])
+@admin_only
+def admin_tickers():
+    tickers = db.session.execute(db.select(Ticker)).scalars()
+    return render_template('admin/tickers.html', tickers=tickers)
+
+
+@app.route('/admin/load_tickers', methods=['GET'])
+@admin_only
+def admin_load_tickers():
+    redis.set('crypto_tickers_task_id', str(load_crypto_tickers.delay().id))
+    redis.set('stocks_tickers_task_id', str(load_stocks_tickers.delay().id))
+
+    stop_update_prices()
+    return redirect(url_for('admin_index'))
+
+
+@app.route('/admin/load_tickers_stop', methods=['GET'])
+@admin_only
+def admin_load_tickers_stop():
+    if redis.get('crypto_tickers_task_id'):
+        celery.control.revoke(redis.get('crypto_tickers_task_id').decode(), terminate=True)
+    if redis.get('stocks_tickers_task_id'):
+        celery.control.revoke(redis.get('stocks_tickers_task_id').decode(), terminate=True)
+
+    return redirect(url_for('admin_index'))
+
+
+@app.route('/admin/feedback', methods=['GET'])
+@admin_only
+def admin_feedback():
+    messages = db.session.execute(db.select(Feedback)).scalars()
+    return render_template('admin/feedback.html', messages=messages)
+
+
+@app.route('/admin/active_tasks', methods=['GET'])
+@admin_only
+def admin_active_tasks():
+    i = celery.control.inspect()
+    tasks_list = i.active()
+    scheduled = i.scheduled()
+
+    return render_template('admin/active_tasks.html', tasks_list=tasks_list, scheduled=scheduled)
+
+
+@app.route('/admin/del_tasks', methods=['GET'])
+@admin_only
+def admin_del_tasks():
+    delete_tasks()
+    return redirect(url_for('admin_index'))
+
+
 @app.route('/admin/update_prices', methods=['GET'])
+@admin_only
 def admin_update_prices():
     start_update_prices()
     return redirect(url_for('admin_index'))
 
 
 @app.route('/admin/stop', methods=['GET'])
+@admin_only
 def admin_update_prices_stop():
-    celery.control.revoke(glob_crypto_price_task_id, terminate=True)
-    celery.control.revoke(glob_stocks_price_task_id, terminate=True)
+    stop_update_prices()
     return redirect(url_for('admin_index'))
 
-@app.route('/admin/active_tasks', methods=['GET'])
-def admin_active_tasks():
-    i = celery.control.inspect()
-    i.active()
-    print(type(i.active()))
-    return render_template('admin/active_tasks.html', tasks_list=i.active())
 
-@celery.task(bind=True, default_retry_delay=0, max_retries=None)
-def test_task(self):
-    if self.is_aborted():
-        return
-    print('Test task')
-    time.sleep(5)
-    test_task.retry()
+def delete_tasks():
+    keys = ['crypto_price_task_id', 'stocks_price_task_id', 'alerts_task_id']
+    redis.delete(*keys)
+    k = redis.keys('celery-task-meta-*')
+    if k:
+        redis.delete(*k)
+
+
+def start_update_prices():
+    redis.set('crypto_price_task_id', str(price_list_crypto_def.delay().id))
+    redis.set('stocks_price_task_id', str(price_list_stocks_def.delay().id))
+    redis.set('alerts_task_id', str(alerts_update_def.delay().id))
+
+
+def stop_update_prices():
+    crypto_id = redis.get('crypto_price_task_id')
+    if crypto_id:
+        crypto_id = crypto_id.decode()
+        celery.control.revoke(crypto_id, terminate=True)
+
+    stocks_id = redis.get('stocks_price_task_id')
+    if stocks_id:
+        stocks_id = stocks_id.decode()
+        celery.control.revoke(stocks_id, terminate=True)
+
+    alerts_id = redis.get('alerts_task_id')
+    if alerts_id:
+        alerts_id = alerts_id.decode()
+        celery.control.revoke(alerts_id, terminate=True)
+
+    delete_tasks()

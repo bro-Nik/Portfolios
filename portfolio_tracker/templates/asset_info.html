@@ -26,7 +26,7 @@
                 {% if asset.ticker.image %}
                     <img class="img-asset" src="{{ asset.ticker.image }}">
                 {% endif %}
-                <span class="fs-1 fw-semibold" id="asset-price"> ${{ price }} </span>
+                <span class="fs-1 fw-semibold" id="asset-price"> ${{ price|smart_round|number_group }} </span>
             </div>
             <div class="d-flex align-items-end">
                 <span class="badge text-bg-light fw-normal cursor-pointer text-muted me-1" data-bs-toggle="modal" data-bs-target="#Alert">
@@ -48,8 +48,8 @@
             </div>
         </div>
         <div class="col-auto ms-auto">
-            <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="" data-bs-date="{{ date }}" data-bs-price="{{ price }}" data-bs-wallet="{{ wallets[0].id }}" data-bs-title="Добавить транзакцию">Добавить транзакцию</button>
-            <button class="btn btn-warning btn-sm ms-1" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="True" data-bs-date="{{ date }}" data-bs-price="{{ price }}" data-bs-wallet="{{ wallets[0].id }}" data-bs-title="Добавить ордер">Ордер</button>
+            <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="" data-bs-date="{{ date }}" data-bs-price="{{ price|long_number }}" data-bs-wallet="{{ wallets[0].id }}" data-bs-title="Добавить транзакцию">Добавить транзакцию</button>
+            <button class="btn btn-warning btn-sm ms-1" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="True" data-bs-date="{{ date }}" data-bs-price="{{ price|long_number }}" data-bs-wallet="{{ wallets[0].id }}" data-bs-title="Добавить ордер">Ордер</button>
             <button type="button" class="btn btn-light dropdown-toggle btn-sm ms-1" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
             <ul class="dropdown-menu" style="">
                 <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ asset.id }}" data-bs-action="{{ url_for('asset_delete', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}" data-bs-title="Удалить {{ asset.ticker.name }}?">Удалить {{ asset.ticker.name }}</a></li>
@@ -144,10 +144,10 @@
                             <i class="bi icon bi-check-square"></i>
                         </a>
                     {% endif %}
-                    <a class="action-icon text-decoration-none visually-hidden" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="change" data-bs-id="{{ transaction.id }}" data-bs-price="{{ transaction.price }}" data-bs-total_spent="{{ transaction.total_spent|abs }}" data-bs-date="{{ transaction.date }}" data-bs-wallet="{{ transaction.wallet.id }}" data-bs-comment="{{ transaction.comment }}" data-bs-class="hidden" data-bs-title="Изменить транзакцию" title="Перевод">
+                    <a class="action-icon text-decoration-none visually-hidden" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="change" data-bs-id="{{ transaction.id }}" data-bs-price="{{ transaction.price|long_number }}" data-bs-total_spent="{{ transaction.total_spent|abs }}" data-bs-date="{{ transaction.date }}" data-bs-wallet="{{ transaction.wallet.id }}" data-bs-comment="{{ transaction.comment }}" data-bs-class="hidden" data-bs-title="Изменить транзакцию" title="Перевод">
                         <i class="bi icon bi-reply-fill"></i>
                     </a>
-                    <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="change" data-bs-id="{{ transaction.id }}" data-bs-price="{{ transaction.price }}" data-bs-total_spent="{{ transaction.total_spent|abs }}" data-bs-date="{{ transaction.date }}" data-bs-wallet="{{ transaction.wallet.id }}" data-bs-comment="{{ transaction.comment }}" data-bs-class="hidden" data-bs-title="Изменить транзакцию" title="Изменить">
+                    <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="change" data-bs-id="{{ transaction.id }}" data-bs-price="{{ transaction.price|long_number }}" data-bs-total_spent="{{ transaction.total_spent|abs }}" data-bs-date="{{ transaction.date }}" data-bs-wallet="{{ transaction.wallet.id }}" data-bs-comment="{{ transaction.comment }}" data-bs-class="hidden" data-bs-title="Изменить транзакцию" title="Изменить">
                         <i class="bi icon bi-pencil-square"></i>
                     </a>
                     <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ transaction.id }}" data-bs-action="{{ url_for('transaction_delete', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}" data-bs-title="Удалить транзакцию?" title="Удалить">
@@ -390,7 +390,7 @@
                                 <label for="price" class="form-label h7">Цена</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="text" class="form-control rounded-3" id="price" value="{{ price }}" name="price" autocomplete="off" required>
+                                    <input type="text" class="form-control rounded-3" id="price" value="{{ price|long_number }}" name="price" autocomplete="off" required>
                                 </div>
                             </div>
                         </div>

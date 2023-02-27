@@ -49,6 +49,7 @@
         <span class="small_text me-3">Stocks - <span id="when-update-stocks" class="text-average"></span> <span id="stocks-price-task"></span></span>
         <br>
     </div>
+    <a class="small_text text-decoration-none" href="{{ url_for('admin_del_tasks') }}">Удалить все задачи</a>
 </div>
 <script>
 // Обновление данных без перезагрузки
@@ -69,6 +70,7 @@ const cryptoPriceTask = document.getElementById('crypto-price-task');
 const stocksPriceTask = document.getElementById('stocks-price-task');
 
 var data = {}
+var is_off = ['Остановлено', 'Готово', 'PENDING', 'FAILURE']
 
 async function letsStart() {
    await getDataRequest();
@@ -81,23 +83,22 @@ function updatePage() {
    cryptoTickersCount.innerHTML = `${data.crypto_tickers_count}`;
    stocksTickersCount.innerHTML = `${data.stocks_tickers_count}`;
 
-   if (data.task_crypto_tickers_state != 'Остановлено' && data.task_stocks_tickers_state != 'Остановлено') {
-       cryptoTickersTask.innerHTML = `(${data.task_crypto_tickers_state})`;
-       stocksTickersTask.innerHTML = `(${data.task_stocks_tickers_state})`;
-   }
 
-    if ((data.task_crypto_tickers_id && data.task_crypto_tickers_state != 'Остановлено') || (data.task_stocks_tickers_id && data.task_stocks_tickers_state != 'Остановлено')) {
+   cryptoTickersTask.innerHTML = `(${data.task_crypto_tickers_state})`;
+   stocksTickersTask.innerHTML = `(${data.task_stocks_tickers_state})`;
+
+    if ((data.task_crypto_tickers_id && !is_off.includes(data.task_crypto_tickers_state)) || (data.task_stocks_tickers_id && !is_off.includes(data.task_stocks_tickers_state))) {
     TickersTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{ url_for('admin_load_tickers_stop') }}">Остановить</a>`
     }
     else {
     TickersTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{ url_for('admin_load_tickers') }}">Запустить</a>`
     }
 
-    if ((data.task_crypto_tickers_id && data.task_crypto_tickers_state !== 'Остановлено') || (data.task_stocks_tickers_id && data.task_stocks_tickers_state !== 'Остановлено')) {
+    if ((data.task_crypto_tickers_id && !is_off.includes(data.task_crypto_tickers_state)) || (data.task_stocks_tickers_id && !is_off.includes(data.task_stocks_tickers_state))) {
     UpdatePriceTaskBtn.innerHTML = `<span class="small_text text-muted">Запустить</a>`
     }
     else {
-        if ((data.task_crypto_price_id && data.task_crypto_price_state !== 'Остановлено') || (data.task_stocks_price_id && data.task_stocks_price_state !== 'Остановлено')) {
+        if ((data.task_crypto_price_id && !is_off.includes(data.task_crypto_price_state)) || (data.task_stocks_price_id && !is_off.includes(data.task_stocks_price_state))) {
         UpdatePriceTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{url_for('admin_update_prices_stop') }}">Остановить</a>`
         }
         else {
@@ -122,6 +123,6 @@ function getDataRequest() {
 }
 
 letsStart()
-setInterval(letsStart, 1000);
+setInterval(letsStart, 3000);
 </script>
 {% endblock %}
