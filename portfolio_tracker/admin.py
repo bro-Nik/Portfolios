@@ -10,6 +10,7 @@ from portfolio_tracker.app import app, db, celery
 from portfolio_tracker.defs import *
 from portfolio_tracker.models import User, Ticker, userInfo, Feedback, Wallet
 from portfolio_tracker.wraps import admin_only
+from portfolio_tracker.users import user_delete_def
 
 
 @app.route('/admin/', methods=['GET'])
@@ -20,9 +21,12 @@ def admin_index():
         # demo user
         user = User(email='demo', password='demo')
         db.session.add(user)
-        wallet = Wallet(name='Default', money_all=0, money_in_order=0, user_id=1)
+        wallet = Wallet(name='Default', money_all=0, money_in_order=0, user_id=user.id)
         db.session.add(wallet)
+        db.session.commit()
 
+    markets = db.session.execute(db.select(Market)).scalar()
+    if not markets:
         # маркеты
         other = Market(name='Other', id='other')
         db.session.add(other)
@@ -110,6 +114,13 @@ def user_to_admin(user_id):
     user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar()
     user.type = 'admin'
     db.session.commit()
+    return redirect(url_for('admin_users'))
+
+
+@app.route('/user/delete/<string:user_id>')
+@admin_only
+def admin_user_delete(user_id):
+    user_delete_def(user_id)
     return redirect(url_for('admin_users'))
 
 

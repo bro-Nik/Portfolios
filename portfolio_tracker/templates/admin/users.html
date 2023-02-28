@@ -36,6 +36,7 @@
                 <th scope="col" data-sortable="true">Last visit</th>
                 <th scope="col" data-sortable="true">Country</th>
                 <th scope="col" data-sortable="true">City</th>
+                <th scope="col" class="text-end"></th>
             </tr>
         </thead>
         <tbody>
@@ -43,19 +44,21 @@
             <tr>
                 <td>{{ user.id }}</td>
                 <td>{{ user.email }}</td>
-                <td>
-                    {% if user.type == 'admin' %}
-                        <b title="Администратор">A</b>
-                    {% else %}
-                        <a class="action-icon text-decoration-none" href="{{url_for('user_to_admin', user_id=user.id)}}" title="Сделать администратором">
-                            <i class="bi icon bi-check-square"></i>
-                        </a>
-                    {% endif %}
-                </td>
+                <td>{% if user.type == 'admin' %}<b title="Администратор">A</b>{% endif %}</td>
                 <td>{{ user.info.first_visit }}</td>
                 <td>{{ user.info.last_visit }}</td>
                 <td>{{ user.info.country }}</td>
                 <td>{{ user.info.city }}</td>
+                <td>
+                    {% if user.type != 'admin' %}
+                        <a class="action-icon text-decoration-none" href="{{url_for('user_to_admin', user_id=user.id)}}" title="Сделать администратором">
+                            <i class="bi icon bi-check-square"></i>
+                        </a>
+                    {% endif %}
+                    <a class="action-icon text-decoration-none cursor-pointer" href="{{ url_for('admin_user_delete', user_id=user.id) }}" title="Удалить">
+                        <i class="bi icon bi-trash-fill"></i>
+                    </a>
+                </td>
             </tr>
             {% endfor %}
         </tbody>

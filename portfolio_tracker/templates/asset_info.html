@@ -6,7 +6,7 @@
 {% block link %}
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
     <button onclick="document.location='{{ url_for('portfolio_info', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}'" type="button" class="btn btn-light btn-sm">{{ asset.portfolio.name }}</button>
-    <button type="button" class="btn btn-light btn-sm" disabled>{{ asset.ticker.name }}</button>
+    <button type="button" class="btn btn-light btn-sm" disabled>{{ asset.ticker.symbol|upper }}</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
     <button onclick="document.location='{{ url_for('tracking_list') }}'" type="button" class="btn btn-light btn-sm">Список отслеживания</button>
     {% if current_user.type == 'admin' %}

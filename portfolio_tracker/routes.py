@@ -269,7 +269,7 @@ def asset_delete(market_id, portfolio_url):
     asset_in_base = db.session.execute(db.select(Asset).filter_by(id=request.form.get('id'))).scalar()
     if asset_in_base:
         for transaction in asset_in_base.transactions:
-            if transaction.order:
+            if transaction.order and transaction.type != 'Продажа':
                 wallet_in_base = db.session.execute(db.select(Wallet).filter_by(id=transaction.wallet_id)).scalar()
                 wallet_in_base.money_in_order -= float(transaction.total_spent)
             db.session.delete(transaction)
@@ -383,7 +383,8 @@ def transaction_add(market_id, portfolio_url):
 
         if transaction.order:
             price_list = price_list_def()
-            wallet_in_base.money_in_order += float(transaction.total_spent)
+            if transaction.type != 'Продажа':
+                wallet_in_base.money_in_order += float(transaction.total_spent)
             # Добавляем уведомление
             alert = Alert(
                 price=transaction.price,
@@ -446,11 +447,10 @@ def transaction_add(market_id, portfolio_url):
                 transaction.asset.quantity += (new_quantity - transaction.quantity)
                 transaction.asset.total_spent += (new_total_spent - float(transaction.total_spent))
             # кошельки
-            if transaction.order:
-                if transaction.wallet.name != wallet_in_base.name:
+            if transaction.order and transaction.type != 'Продажа':
+                if transaction.wallet.id != wallet_in_base.id:
                     transaction.wallet.money_in_order -= float(transaction.total_spent)
                     wallet_in_base.money_in_order += new_total_spent
-                    transaction.wallet.name = wallet_in_base.name
                 else:
                     transaction.wallet.money_in_order += (new_total_spent - float(transaction.total_spent))
             transaction.price = new_price
@@ -471,8 +471,9 @@ def transaction_delete(market_id, portfolio_url):
     transaction = db.session.execute(db.select(Transaction).filter_by(id=request.form['id'])).scalar()
     asset_in_base = db.session.execute(db.select(Asset).filter_by(id=transaction.asset_id)).scalar()
     if transaction.order:
-        wallet_in_base = db.session.execute(db.select(Wallet).filter_by(id=transaction.wallet_id)).scalar()
-        wallet_in_base.money_in_order -= float(transaction.total_spent)
+        if transaction.type != 'Продажа':
+            wallet_in_base = db.session.execute(db.select(Wallet).filter_by(id=transaction.wallet_id)).scalar()
+            wallet_in_base.money_in_order -= float(transaction.total_spent)
         # удаляем уведомление
         alert_in_base = db.session.execute(
             db.select(Alert).filter_by(asset_id=asset_in_base.id, price=transaction.price)).scalar()
@@ -497,7 +498,8 @@ def order_to_transaction(market_id, portfolio_url):
     transaction.date = request.form['date']
     transaction.asset.quantity += transaction.quantity
     transaction.asset.total_spent += float(transaction.total_spent)
-    transaction.wallet.money_in_order -= float(transaction.total_spent)
+    if transaction.type != 'Продажа':
+        transaction.wallet.money_in_order -= float(transaction.total_spent)
 
     # удаление уведомления
     alert_in_base = db.session.execute(db.select(Alert).filter_by(asset_id=transaction.asset_id,
@@ -614,13 +616,14 @@ def wallet_info(wallet_name):
     for portfolio in user.portfolios:
         for asset in portfolio.assets:
             for transaction in asset.transactions:
+                if transaction.order and transaction.type == 'Продажа':
+                    continue
                 if transaction.wallet == wallet:
                     if assets_list.get(transaction.asset.ticker_id):
                         if transaction.order:
-                            if transaction.total_spent > 0:
-                                assets_list[transaction.asset.ticker_id]['order'] = float(
-                                    assets_list[transaction.asset.ticker_id].setdefault('order', 0)) + float(
-                                    transaction.total_spent)
+                            assets_list[transaction.asset.ticker_id]['order'] = float(
+                                assets_list[transaction.asset.ticker_id].setdefault('order', 0)) + float(
+                                transaction.total_spent)
                         else:
                             assets_list[transaction.asset.ticker_id]['quantity'] = float(
                                 assets_list[transaction.asset.ticker_id].setdefault('quantity', 0)) + float(

@@ -27,6 +27,8 @@ def demo_user_change(f):
             if demo_not_can_change:
                 flash('Демо пользователь не может вносить изменения')
                 return redirect(session['last_url'])
+        else:
+            return f(*args, **kwargs)
     return decorated_function
 
 

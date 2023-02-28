@@ -82,8 +82,14 @@ def redirect_to_signin(response):
 
 
 @app.route('/user/delete')
+@login_required
 def user_delete():
-    user = db.session.execute(db.select(User).filter_by(id=current_user.id)).scalar()
+    user_delete_def(current_user.id)
+    return redirect(url_for('login'))
+
+
+def user_delete_def(user_id):
+    user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar()
 
     not_worked_alerts = pickle.loads(redis.get('not_worked_alerts')) if redis.get('not_worked_alerts') else {}
     worked_alerts = pickle.loads(redis.get('worked_alerts')) if redis.get('worked_alerts') else {}
@@ -122,13 +128,12 @@ def user_delete():
 
     # user info
     user_info = db.session.execute(db.select(userInfo).filter_by(user_id=user.id)).scalar()
-    user_info.user_id = None
+    if user_info:
+        user_info.user_id = None
 
     # user
     db.session.delete(user)
     db.session.commit()
-
-    return redirect(url_for('login'))
 
 
 def new_visit():

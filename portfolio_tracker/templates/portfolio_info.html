@@ -83,8 +83,8 @@
             {% for asset in portfolio.assets %}
             {% set asset_price = price_list[asset.ticker.id] if price_list.get(asset.ticker.id) else 0 %}
                 <tr>
-                    <td class="text-average">
-                        <a class="link-dark text-decoration-none" href="{{ url_for('asset_info', market_id=portfolio.market_id, portfolio_url=portfolio.url, asset_url=asset.ticker.id) }}">
+                    <td class="text-average text-truncate" style="max-width:300px;">
+                        <a class="link-dark text-decoration-none" href="{{ url_for('asset_info', market_id=portfolio.market_id, portfolio_url=portfolio.url, asset_url=asset.ticker.id) }}" title="{{ asset.ticker.name }}">
                             {% if asset.ticker.image %}
                                 <img class="img-asset-min" src="{{ asset.ticker.image }}">
                             {% endif %}
