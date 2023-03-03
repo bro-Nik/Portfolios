@@ -17,9 +17,7 @@
 <div class="mb-5">
     <div class="row xs-mb-3">
         <div class="col-auto">
-            <h1 class="fs-6 text-muted m-0">{{ asset.name }}
-                <span class="small_text" title="Обновлено" id="when_updated"></span>
-            </h1>
+            <h1 class="fs-6 text-muted m-0">{{ asset.name }}</h1>
             <div class="hstack gap-2">
                 <span class="fs-1 fw-semibold" id="asset-price"> ${{ (asset.bodys|sum(attribute='cost_now') + asset.operations|sum(attribute='total_spent'))|round|int|number_group }}</span>
             </div>
@@ -40,12 +38,6 @@
         <p class="small_text">Средняя цена покупки</p>
         <span class="text-average">
                 ${{ asset.bodys|sum(attribute='total_spent')|round|int|number_group }}
-        </span>
-    </div>
-    <div class="col-auto">
-        <p class="small_text">Стоимость сейчас</p>
-        <span class="text-average">
-            ${{ (asset.bodys|sum(attribute='cost_now') + asset.operations|sum(attribute='total_spent'))|round|int|number_group }}
         </span>
     </div>
     <div class="col-auto">
@@ -72,21 +64,22 @@
             {% endif %}
         </span>
     </div>
-    <div class="col-auto">
-        <p class="small_text">% от портфеля</p>
-        <span class="text-average">
-            {% if portfolio_total_spent and asset.bodys %}
-                {{ (asset.bodys|sum(attribute='total_spent') / portfolio_total_spent * 100)|round(1, 'common') }}% /
-            {% else %}
-                - /
-            {% endif %}
-            {% if asset.percent %}
-                {{ asset.percent }}%
-            {% else %}
-            -
-            {% endif %}
-        </span>
-    </div>
+    {% set asset_percent = (asset.bodys|sum(attribute='total_spent') / portfolio_total_spent * 100)|round(1, 'common') %}
+    {% if asset_percent and asset_percent != 100 %}
+        <div class="col-auto">
+            <p class="small_text">% от портфеля</p>
+            <span class="text-average">
+                {% if portfolio_total_spent and asset.bodys %}
+                    {{ asset_percent }}%
+                {% else %}
+                    -
+                {% endif %}
+                {% if asset.percent %}
+                    из {{ asset.percent }}%
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
 </div>
 {% endif %}
 
@@ -156,7 +149,7 @@
                             {% if operation.type == 'Прибыль' %}
                                 <span class="text-green text-average"> +${{ operation.total_spent|smart_round|number_group }} </span>
                             {% else %}
-                                <span class="text-red text-average"> -${{ operation.total_spent|smart_round|number_group }} </span>
+                                <span class="text-red text-average"> -${{ operation.total_spent|abs|smart_round|number_group }} </span>
                             {% endif %}
                         </td>
                         <td>{{ operation.comment if operation.comment else '--' }}</td>
@@ -262,7 +255,7 @@
                 <form class=""  method="post" action="{{ url_for('other_asset_operation_add', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}">
                     <input type="hidden" name="id" id="id">
                     <input type="hidden" name="asset_id" value="{{ asset.id }}">
-                    <div class="btn-group silver col-md-12 mb-3" role="group" id="typetransaction">
+                    <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
                         <input type="radio" class="btn-check" name="type" value="Прибыль" id="btnplus" autocomplete="off" checked>
                         <label class="btn btn-outline-active btn-sm" for="btnplus">Прибыль</label>
 

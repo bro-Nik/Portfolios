@@ -88,19 +88,22 @@
         <p class="small_text">Прибыль / убыток</p>
         <span class="text-average" id="asset-profit"> - </span>
     </div>
-    <div class="col-auto">
-        <p class="small_text">% от портфеля</p>
-        <span class="text-average">
-            {% if asset.portfolio.assets|sum(attribute='total_spent') and asset.total_spent > 0 %}
-                {{ (asset.total_spent / asset.portfolio.assets|sum(attribute='total_spent') * 100)|round(1, 'common') }}%
-            {% else %}
-            -
-            {% endif %}
-            {% if asset.percent %}
-                из {{ asset.percent }}%
-            {% endif %}
-        </span>
-    </div>
+    {% set asset_percent = (asset.total_spent / asset.portfolio.assets|sum(attribute='total_spent') * 100)|round(1, 'common') %}
+    {% if asset_percent and asset_percent != 100 %}
+        <div class="col-auto">
+            <p class="small_text">% от портфеля</p>
+            <span class="text-average">
+                {% if asset.portfolio.assets|sum(attribute='total_spent') and asset.total_spent > 0 %}
+                    {{ asset_percent }}%
+                {% else %}
+                -
+                {% endif %}
+                {% if asset.percent %}
+                    из {{ asset.percent }}%
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
 </div>
 <div class="big-table pt-3 pb-3">
     <table class="table table-sm align-middle">
@@ -390,7 +393,7 @@
                                 <label for="price" class="form-label h7">Цена</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="text" class="form-control rounded-3" id="price" value="{{ price|long_number }}" name="price" autocomplete="off" required>
+                                    <input type="number" step=any class="form-control rounded-3" id="price" value="{{ price|long_number }}" name="price" autocomplete="off" required>
                                 </div>
                             </div>
                         </div>

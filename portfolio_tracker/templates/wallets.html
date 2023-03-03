@@ -96,7 +96,7 @@
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#addWallet" data-bs-id="{{ wallet.id }}" data-bs-name="{{ wallet.name }}" data-bs-money_all="{{ wallet.money_all }}" data-bs-action="update" data-bs-title="Изменить кошелек" title="Изменить">
+                            <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#addWallet" data-bs-id="{{ wallet.id }}" data-bs-name="{{ wallet.name }}" data-bs-money_all="{{ wallet.money_all if wallet.money_all }}" data-bs-action="update" data-bs-title="Изменить кошелек" title="Изменить">
                                 <i class="bi icon bi-pencil-square"></i>
                             </a>
                             {% if wallet.money_all <= 0 and wallet.transactions|sum(attribute='total_spent') <= 0 %}
@@ -144,7 +144,7 @@
                                 <label for="money_all" class="form-label h7">Баланс</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="number" class="form-control rounded-3 money_all" id="money_all" placeholder="0,00" name="money_all" autocomplete="off">
+                                    <input type="number" step=any class="form-control rounded-3 money_all" id="money_all" placeholder="0,00" name="money_all" autocomplete="off">
                                 </div>
                             </div>
                         </div>
@@ -182,7 +182,7 @@
                                 <label for="transfer_amount" class="form-label h7">Сумма</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="number" class="form-control rounded-3" id="transfer_amount" placeholder="0,00" name="transfer_amount" autocomplete="off" required>
+                                    <input type="number" step=any class="form-control rounded-3" id="transfer_amount" placeholder="0,00" name="transfer_amount" autocomplete="off" required>
                                 </div>
                             </div>
                         </div>
@@ -227,7 +227,7 @@
                                 <label for="transfer_amount" class="form-label h7">Сумма</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="number" class="form-control rounded-3" id="transfer_amount" placeholder="0,00" name="transfer_amount" autocomplete="off" required>
+                                    <input type="number" step=any class="form-control rounded-3" id="transfer_amount" placeholder="0,00" name="transfer_amount" autocomplete="off" required>
                                 </div>
                             </div>
                         </div>

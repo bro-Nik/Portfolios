@@ -21,6 +21,7 @@ def admin_index():
         # demo user
         user = User(email='demo', password='demo')
         db.session.add(user)
+        db.session.commit()
         wallet = Wallet(name='Default', money_all=0, money_in_order=0, user_id=user.id)
         db.session.add(wallet)
         db.session.commit()

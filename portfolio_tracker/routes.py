@@ -321,7 +321,6 @@ def asset_info(market_id, portfolio_url, asset_url):
                     portfolio_total_spent += sum([body.total_spent for body in asset.bodys])
                     if asset.url == asset_url:
                         asset_in_base = asset
-                        break
 
         return render_template('other_asset_info.html', asset=asset_in_base, date=date,
                                portfolio_total_spent=portfolio_total_spent)
@@ -687,9 +686,13 @@ def tracking_list_delete_ticker(ticker_id):
             not_worked_alerts = pickle.loads(redis.get('not_worked_alerts')) if redis.get('not_worked_alerts') else {}
             worked_alerts = pickle.loads(redis.get('worked_alerts')) if redis.get('worked_alerts') else {}
 
+            for alert in worked_alerts[current_user.id]:
+                if alert['name'] == tracked_ticker_in_base.ticker.name:
+                    worked_alerts[current_user.id].remove(alert)
+
             for alert in tracked_ticker_in_base.alerts:
                 not_worked_alerts.pop(alert.id, None)
-                worked_alerts[current_user.id].pop(alert.id, None)
+
                 db.session.delete(alert)
 
             redis.set('not_worked_alerts', pickle.dumps(not_worked_alerts))
@@ -708,7 +711,7 @@ def tracked_ticker_info(market_id, ticker_id):
     tracked_ticker = db.session.execute(
         db.select(Trackedticker).filter_by(ticker_id=ticker_id, user_id=current_user.id)).scalar()
     price_list = price_list_def()
-    price = price_list[tracked_ticker.ticker_id] if price_list.get(tracked_ticker.ticker_id) else '-'
+    price = float(price_list[tracked_ticker.ticker_id]) if price_list.get(tracked_ticker.ticker_id) else '-'
     return render_template('tracked_ticker_info.html', tracked_ticker=tracked_ticker, price=price)
 
 
@@ -729,7 +732,7 @@ def alert_add():
         alert.trackedticker_id = tracked_ticker_in_base.id
         ticker_id = tracked_ticker_in_base.ticker_id
     # уведомление пришло из портфеля
-    if request.form.get('asset_id'):
+    elif request.form.get('asset_id'):
         asset_in_base = db.session.execute(db.select(Asset).filter_by(id=request.form.get('asset_id'))).scalar()
         alert.asset_id = asset_in_base.id
         ticker_id = asset_in_base.ticker_id
@@ -782,8 +785,8 @@ def alert_delete_def(id=None):
                 need_del_ticker = False
                 break
 
-        if not alert_in_base.asset_id:
-            session['last_url'] = session['last_url'].replace(('/' + alert_in_base.trackedticker.ticker_id), '')
+        if not alert_in_base.asset_id and need_del_ticker:
+            session['last_url'] = session['last_url'].replace(('/' + alert_in_base.trackedticker.ticker.market.id + '/' + alert_in_base.trackedticker.ticker_id), '')
         if need_del_ticker:
             db.session.delete(alert_in_base.trackedticker)
         db.session.delete(alert_in_base)
@@ -858,9 +861,11 @@ def other_asset_body_add(market_id, portfolio_url):
 def other_asset_operation_add(market_id, portfolio_url):
     ''' Добавление или изменение операции актива '''
     asset_in_base = db.session.execute(db.select(otherAsset).filter_by(id=request.form['asset_id'])).scalar()
+    total_spent = request.form['total_spent'].replace(',', '.')
+    total_spent = total_spent if request.form['type'] == 'Прибыль' else -1 * float(total_spent)
     new_operation = otherAssetOperation(
         asset_id=request.form['asset_id'],
-        total_spent=request.form['total_spent'].replace(',', '.'),
+        total_spent=total_spent,
         type=request.form['type'],
         comment=request.form['comment'],
         date=request.form['date']
@@ -888,11 +893,11 @@ def other_asset_delete(market_id, portfolio_url):
     if request.form.get('type') == 'asset_body':
         asset_body = db.session.execute(db.select(otherAssetBody).filter_by(id=request.form.get('id'))).scalar()
         db.session.delete(asset_body)
-    if request.form.get('type') == 'asset_operation':
+    elif request.form.get('type') == 'asset_operation':
         asset_operation = db.session.execute(
             db.select(otherAssetOperation).filter_by(id=request.form.get('id'))).scalar()
         db.session.delete(asset_operation)
-    if request.form.get('type') == 'asset':
+    elif request.form.get('type') == 'asset':
         asset = db.session.execute(db.select(otherAsset).filter_by(id=request.form.get('id'))).scalar()
         if asset.bodys:
             for body in asset.bodys:
