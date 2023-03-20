@@ -49,7 +49,30 @@
         <span class="small_text me-3">Stocks - <span id="when-update-stocks" class="text-average"></span> <span id="stocks-price-task"></span></span>
         <br>
     </div>
-    <a class="small_text text-decoration-none" href="{{ url_for('admin_del_tasks') }}">Удалить все задачи</a>
+    <div class="col-12 mb-5">
+        <div class="mb-3">
+            <span class="text-average">Redis</span>
+        </div>
+        <a class="small_text text-decoration-none" href="{{ url_for('admin_del_tasks') }}">
+            Удалить все задачи
+        </a><br>
+        <a class="small_text text-decoration-none" href="{{ url_for('admin_del_price_lists') }}">
+            Удалить прайс листы
+        </a><br>
+        <a class="small_text text-decoration-none" href="{{ url_for('admin_del_tickers') }}">
+            Удалить кеш тикеров
+        </a><br>
+        <a class="small_text text-decoration-none" href="{{ url_for('admin_del_alerts') }}">
+            Удалить уведомления
+        </a>
+        <a class="small_text text-decoration-none" href="{{ url_for('admin_del_all') }}">
+            Удалить все из Redis
+        </a><br>
+        <a class="small_text text-decoration-none" href="{{ url_for('admin_tickers_up') }}">
+            Перебрать тикеры
+        </a><br>
+        <br>
+    </div>
 </div>
 <script>
 // Обновление данных без перезагрузки

@@ -5,3 +5,5 @@ __pycache__/
 portfolio_tracker/__pycache__/
 .env
 celerybeat-schedule
+dump.rdb
+pyrightconfig.json

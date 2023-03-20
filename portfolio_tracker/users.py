@@ -138,17 +138,19 @@ def user_delete_def(user_id):
 
 def new_visit():
     time_now = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M')
-    if current_user.info:
-        current_user.last_visit = time_now
+    info = False
+    ip = request.headers.get('X-Real-IP')
+    if ip:
+        url = 'http://ip-api.com/json/' + ip
+        response = requests.get(url).json()
+        if response.get('status') == 'success':
+            info = True
+    if current_user.info != ():
+        current_user.info.last_visit = time_now
+        if info:
+            current_user.info.country = response.get('country')
+            current_user.info.city = response.get('city')
     else:
-        info = False
-        ip = request.headers.get('X-Real-IP')
-        if ip:
-            url = 'http://ip-api.com/json/' + ip
-            response = requests.get(url).json()
-            if response.get('status') == 'success':
-                info = True
-
         user_info = userInfo(
             user_id=current_user.id,
             first_visit=time_now,

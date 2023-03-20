@@ -1,14 +1,12 @@
 from celery.result import AsyncResult
-from flask import render_template, redirect, url_for, request, flash, session, jsonify, abort
-from flask_login import login_user, login_required, logout_user, current_user
-import os, json, requests, time
+from flask import render_template, redirect, url_for
 from sqlalchemy import func
-from celery.contrib.abortable import AbortableTask
-#from celery.result import AsyncResult
 
-from portfolio_tracker.app import app, db, celery
-from portfolio_tracker.defs import *
-from portfolio_tracker.models import User, Ticker, userInfo, Feedback, Wallet
+from portfolio_tracker.app import app, db, celery, redis
+from portfolio_tracker.defs import load_crypto_tickers, load_stocks_tickers, \
+    when_updated_def, price_list_crypto_def, price_list_stocks_def, \
+    alerts_update_def
+from portfolio_tracker.models import User, Ticker, Feedback, Wallet, Market
 from portfolio_tracker.wraps import admin_only
 from portfolio_tracker.users import user_delete_def
 
@@ -16,13 +14,15 @@ from portfolio_tracker.users import user_delete_def
 @app.route('/admin/', methods=['GET'])
 @admin_only
 def admin_index():
-    demo_user = db.session.execute(db.select(User).filter_by(email='demo')).scalar()
+    demo_user = db.session.execute(db.select(User).
+                                   filter_by(email='demo')).scalar()
     if not demo_user:
         # demo user
         user = User(email='demo', password='demo')
         db.session.add(user)
         db.session.commit()
-        wallet = Wallet(name='Default', money_all=0, money_in_order=0, user_id=user.id)
+        wallet = Wallet(name='Default', money_all=0, money_in_order=0,
+                        user_id=user.id)
         db.session.add(wallet)
         db.session.commit()
 
@@ -37,7 +37,8 @@ def admin_index():
         db.session.add(stocks)
         db.session.commit()
 
-    return render_template('admin/index.html', crypto_count=0, stocks_count=0, users_count=0, admins_count=0)
+    return render_template('admin/index.html', crypto_count=0, stocks_count=0,
+                           users_count=0, admins_count=0)
 
 
 @app.route('/admin/index_detail', methods=['GET'])
@@ -62,24 +63,45 @@ def admin_index_detail():
         else:
             return 'Остановлено'
 
-    crypto_tickers_count = db.session.execute(db.select(func.count()).select_from(Ticker).filter_by(market_id='crypto')).scalar()
-    stocks_tickers_count = db.session.execute(
-        db.select(func.count()).select_from(Ticker).filter_by(market_id='stocks')).scalar()
-    users_count = db.session.execute(db.select(func.count()).select_from(User)).scalar()
-    admins_count = db.session.execute(db.select(func.count()).select_from(User).filter_by(type='admin')).scalar()
+    crypto_tickers_count = db.session.execute(
+        db.select(func.count()).select_from(Ticker).
+        filter_by(market_id='crypto')).scalar()
 
-    crypto_tickers_task_id = redis.get('crypto_tickers_task_id').decode() if redis.get('crypto_tickers_task_id') else ''
-    stocks_tickers_task_id = redis.get('stocks_tickers_task_id').decode() if redis.get('stocks_tickers_task_id') else ''
+    stocks_tickers_count = db.session.execute(
+        db.select(func.count()).select_from(Ticker).
+        filter_by(market_id='stocks')).scalar()
+
+    users_count = db.session.execute(db.select(func.count()).
+                                     select_from(User)).scalar()
+
+    admins_count = db.session.execute(db.select(func.count()).
+                                      select_from(User).
+                                      filter_by(type='admin')).scalar()
+
+    c_t_redis = redis.get('crypto_tickers_task_id')
+    crypto_tickers_task_id = c_t_redis.decode() if c_t_redis else ''
+
+    s_t_redis = redis.get('stocks_tickers_task_id')
+    stocks_tickers_task_id = s_t_redis.decode() if s_t_redis else ''
+
     task_crypto_tickers = AsyncResult(crypto_tickers_task_id)
     task_stocks_tickers = AsyncResult(stocks_tickers_task_id)
 
-    crypto_price_task_id = redis.get('crypto_price_task_id').decode() if redis.get('crypto_price_task_id') else ''
-    stocks_price_task_id = redis.get('stocks_price_task_id').decode() if redis.get('stocks_price_task_id') else ''
+    c_p_redis = redis.get('crypto_price_task_id')
+    crypto_price_task_id = c_p_redis.decode() if c_p_redis else ''
+
+    s_p_redis = redis.get('stocks_price_task_id')
+    stocks_price_task_id = s_p_redis.decode() if s_p_redis else ''
+
     task_crypto_price = AsyncResult(crypto_price_task_id)
     task_stocks_price = AsyncResult(stocks_price_task_id)
 
-    when_update_crypto = when_updated_def(redis.get('update-crypto').decode()) if redis.get('update-crypto') else '-'
-    when_update_stocks = when_updated_def(redis.get('update-stocks').decode()) if redis.get('update-stocks') else '-'
+    c_up_redis = redis.get('update-crypto')
+    when_update_crypto = when_updated_def(
+            c_up_redis.decode()) if c_up_redis else '-'
+    s_up_redis = redis.get('update-stocks')
+    when_update_stocks = when_updated_def(
+            s_up_redis.decode()) if s_up_redis else '-'
 
     return {
         "crypto_tickers_count": crypto_tickers_count,
@@ -135,20 +157,24 @@ def admin_tickers():
 @app.route('/admin/load_tickers', methods=['GET'])
 @admin_only
 def admin_load_tickers():
+    stop_update_prices()
     redis.set('crypto_tickers_task_id', str(load_crypto_tickers.delay().id))
     redis.set('stocks_tickers_task_id', str(load_stocks_tickers.delay().id))
 
-    stop_update_prices()
     return redirect(url_for('admin_index'))
 
 
 @app.route('/admin/load_tickers_stop', methods=['GET'])
 @admin_only
 def admin_load_tickers_stop():
-    if redis.get('crypto_tickers_task_id'):
-        celery.control.revoke(redis.get('crypto_tickers_task_id').decode(), terminate=True)
-    if redis.get('stocks_tickers_task_id'):
-        celery.control.revoke(redis.get('stocks_tickers_task_id').decode(), terminate=True)
+    c_t_redis = redis.get('crypto_tickers_task_id')
+    if c_t_redis:
+        celery.control.revoke(c_t_redis.decode(), terminate=True)
+
+    s_t_redis = redis.get('stocks_tickers_task_id')
+    if s_t_redis:
+        celery.control.revoke(s_t_redis.decode(), terminate=True)
+    delete_tasks()
 
     return redirect(url_for('admin_index'))
 
@@ -167,13 +193,43 @@ def admin_active_tasks():
     tasks_list = i.active()
     scheduled = i.scheduled()
 
-    return render_template('admin/active_tasks.html', tasks_list=tasks_list, scheduled=scheduled)
+    return render_template('admin/active_tasks.html',
+                           tasks_list=tasks_list,
+                           scheduled=scheduled)
 
 
 @app.route('/admin/del_tasks', methods=['GET'])
 @admin_only
 def admin_del_tasks():
     delete_tasks()
+    return redirect(url_for('admin_index'))
+
+
+@app.route('/admin/del_price_lists', methods=['GET'])
+@admin_only
+def admin_del_price_lists():
+    delete_price_lists()
+    return redirect(url_for('admin_index'))
+
+
+@app.route('/admin/del_tickers', methods=['GET'])
+@admin_only
+def admin_del_tickers():
+    delete_tickers()
+    return redirect(url_for('admin_index'))
+
+
+@app.route('/admin/del_alerts', methods=['GET'])
+@admin_only
+def admin_del_alerts():
+    delete_alerts()
+    return redirect(url_for('admin_index'))
+
+
+@app.route('/admin/del_all', methods=['GET'])
+@admin_only
+def admin_del_all():
+    delete_all_redis()
     return redirect(url_for('admin_index'))
 
 
@@ -192,11 +248,33 @@ def admin_update_prices_stop():
 
 
 def delete_tasks():
-    keys = ['crypto_price_task_id', 'stocks_price_task_id', 'alerts_task_id']
+    keys = ['crypto_price_task_id', 'stocks_price_task_id', 'alerts_task_id',
+            'crypto_tickers_task_id', 'stocks_tickers_task_id']
     redis.delete(*keys)
     k = redis.keys('celery-task-meta-*')
     if k:
         redis.delete(*k)
+
+
+def delete_price_lists():
+    keys = ['price_list_crypto', 'price_list_stocks', 'update-crypto',
+            'update-stocks']
+    redis.delete(*keys)
+
+
+def delete_tickers():
+    keys = ['tickers-crypto', 'tickers-stocks']
+    redis.delete(*keys)
+
+
+def delete_alerts():
+    keys = ['worked_alerts', 'not_worked_alerts']
+    redis.delete(*keys)
+
+
+def delete_all_redis():
+    keys = redis.keys('*')
+    redis.delete(*keys)
 
 
 def start_update_prices():
@@ -222,3 +300,15 @@ def stop_update_prices():
         celery.control.revoke(alerts_id, terminate=True)
 
     delete_tasks()
+
+
+@app.route('/admin/ticker_up', methods=['GET'])
+def admin_tickers_up():
+    tickers = db.session.execute(db.select(Ticker)).scalars()
+    for ticker in tickers:
+        if ticker.market_id == 'crypto':
+            ticker.id = 'c-' + str(ticker.id)
+        elif ticker.market_id == 'stocks':
+            ticker.id = 's-' + str(ticker.id)
+    db.session.commit()
+    return 'OK'

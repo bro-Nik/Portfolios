@@ -1,16 +1,14 @@
 import json
-
-from flask import render_template, redirect, url_for, request, flash, session, jsonify, abort
-from flask_login import login_user, login_required, logout_user, current_user
+import pickle
+from flask import render_template, redirect, url_for, request, session, abort
+from flask_login import login_required, current_user
 from transliterate import slugify
-import os
-import requests
-from celery import Celery
-from werkzeug.security import check_password_hash, generate_password_hash
 
-from portfolio_tracker.app import login_manager, celery
-from portfolio_tracker.models import *
-from portfolio_tracker.defs import *
+from portfolio_tracker.app import app, db, redis
+from portfolio_tracker.models import Portfolio, Asset, Ticker, otherAsset, \
+        otherAssetOperation, otherAssetBody, Wallet, Transaction, Alert, \
+        User, Trackedticker, Feedback
+from portfolio_tracker.defs import price_list_def, date, tickers_to_redis, number_group, smart_round
 from portfolio_tracker.wraps import demo_user_change
 
 
@@ -42,27 +40,46 @@ def portfolios():
                         cost_now += asset.quantity * asset_price
                         for transaction in asset.transactions:
                             if not transaction.order:
-                                total_spent_list[portfolio.id] = float(total_spent_list.setdefault(portfolio.id, 0)) + \
-                                                                 float(transaction.total_spent)
-                                cost_now_list[portfolio.id] = float(cost_now_list.setdefault(portfolio.id, 0)) + \
-                                                              float(transaction.quantity) * float(asset_price)
+                                total_spent_list[portfolio.id] = \
+                                    (float(total_spent_list.
+                                     setdefault(portfolio.id, 0))
+                                     + float(transaction.total_spent))
+
+                                cost_now_list[portfolio.id] = \
+                                    (float(cost_now_list.
+                                     setdefault(portfolio.id, 0))
+                                     + float(transaction.quantity)
+                                     * float(asset_price))
                             else:
                                 orders_in_portfolio.append(portfolio.id)
 
             else:
                 for asset in portfolio.other_assets:
-                    total_spent += sum([body.total_spent for body in asset.bodys])
-                    cost_now += sum([body.cost_now for body in asset.bodys]) + \
-                                sum([operation.total_spent for operation in asset.operations])
+                    total_spent += \
+                        sum([body.total_spent for body in asset.bodys])
+                    cost_now += \
+                        (sum([body.cost_now for body in asset.bodys])
+                         + sum([operation.total_spent
+                                for operation in asset.operations]))
 
-                    total_spent_list[portfolio.id] = float(total_spent_list.setdefault(portfolio.id, 0)) + \
-                                                     float(sum([body.total_spent for body in asset.bodys]))
-                    cost_now_list[portfolio.id] = float(cost_now_list.setdefault(portfolio.id, 0)) + \
-                                                  float(sum([body.cost_now for body in asset.bodys]) +
-                                                        sum([operation.total_spent for operation in asset.operations]))
+                    total_spent_list[portfolio.id] = \
+                        (float(total_spent_list.
+                         setdefault(portfolio.id, 0))
+                         + float(sum([body.total_spent
+                                      for body in asset.bodys])))
+                    cost_now_list[portfolio.id] = \
+                        (float(cost_now_list.
+                         setdefault(portfolio.id, 0))
+                         + float(sum([body.cost_now for body in asset.bodys])
+                         + sum([operation.total_spent
+                                for operation in asset.operations])))
 
-    return render_template('portfolios.html', portfolios=portfolios, total_spent=total_spent, cost_now=cost_now,
-                           total_spent_list=total_spent_list, cost_now_list=cost_now_list,
+    return render_template('portfolios.html',
+                           portfolios=portfolios,
+                           total_spent=total_spent,
+                           cost_now=cost_now,
+                           total_spent_list=total_spent_list,
+                           cost_now_list=cost_now_list,
                            orders_in_portfolio=orders_in_portfolio)
 
 
@@ -78,7 +95,8 @@ def page_not_found(e):
 def portfolio_add():
     ''' Добавление и изменение портфеля '''
     def create_url():
-        return slugify(str(portfolio.name)) if slugify(str(portfolio.name)) else portfolio.name
+        url = slugify(str(portfolio.name))
+        return url if url else portfolio.name
 
     portfolio = Portfolio(
         name=request.form['name'],
@@ -88,27 +106,35 @@ def portfolio_add():
     )
 
     if request.form.get('id'):
-        portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(id=request.form.get('id'),
-                                                                              user_id=current_user.id)).scalar()
+        portfolio_in_base = db.session.execute(
+                db.select(Portfolio).
+                filter_by(id=request.form.get('id'),
+                          user_id=current_user.id)).scalar()
         portfolio_in_base.name = portfolio.name
         portfolio_in_base.url = create_url()
         portfolio_in_base.comment = portfolio.comment
         db.session.commit()
 
     else:
-        portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(name=portfolio.name,
-                                                                              market_id=portfolio.market_id,
-                                                                              user_id=current_user.id)).scalar()
+        portfolio_in_base = db.session.execute(
+                db.select(Portfolio).
+                filter_by(name=portfolio.name,
+                          market_id=portfolio.market_id,
+                          user_id=current_user.id)).scalar()
         if portfolio_in_base:
             n = 2
-            while portfolio.name in [i.name for i in current_user.portfolios if i.market_id == portfolio.market_id]:
+            p = current_user.portfolios
+            names = [i.name for i in p if i.market_id == portfolio.market_id]
+            while portfolio.name in names:
                 portfolio.name = str(portfolio_in_base.name) + str(n)
                 n += 1
 
         portfolio.url = create_url()
         db.session.add(portfolio)
         db.session.commit()
-        return redirect(url_for('portfolio_info', market_id=portfolio.market_id, portfolio_url=portfolio.url))
+        return redirect(url_for('portfolio_info',
+                                market_id=portfolio.market_id,
+                                portfolio_url=portfolio.url))
 
     return redirect(url_for('portfolios'))
 
@@ -118,16 +144,21 @@ def portfolio_add():
 @demo_user_change
 def portfolio_delete():
     ''' Удаление портфеля '''
-    portfolio_in_base = db.session.execute(db.select(Portfolio).filter_by(id=request.form.get('id'),
-                                                                          user_id=current_user.id)).scalar()
+    portfolio_in_base = db.session.execute(
+            db.select(Portfolio).
+            filter_by(id=request.form.get('id'),
+                      user_id=current_user.id)).scalar()
     if portfolio_in_base:
-        not_worked_alerts = pickle.loads(redis.get('not_worked_alerts')) if redis.get('not_worked_alerts') else {}
-        worked_alerts = pickle.loads(redis.get('worked_alerts')) if redis.get('worked_alerts') else {}
+        nw_a_redis = redis.get('not_worked_alerts')
+        not_worked_alerts = pickle.loads(nw_a_redis) if nw_a_redis else {}
+        w_a_redis = redis.get('worked_alerts')
+        worked_alerts = pickle.loads(w_a_redis) if w_a_redis else {}
         for asset in portfolio_in_base.assets:
             for alert in asset.alerts:
                 # отставляем уведомления
                 alert.asset_id = None
-                alert.comment = 'Портфель ' + str(asset.portfolio.name) + ' удален'
+                alert.comment = ('Портфель ' + str(asset.portfolio.name)
+                                             + ' удален')
                 # redis
                 not_worked_alerts.pop(alert.id, None)
                 if worked_alerts != {}:
@@ -149,35 +180,49 @@ def portfolio_info(market_id, portfolio_url):
     ''' Страница портфеля '''
     session['last_url'] = request.url
     price_list = price_list_def()
-    portfolio_in_base = db.one_or_404(db.select(Portfolio).filter_by(url=portfolio_url, market_id=market_id,
-                                                                     user_id=current_user.id))
+    portfolio_in_base = db.one_or_404(db.select(Portfolio).
+                                      filter_by(url=portfolio_url,
+                                                market_id=market_id,
+                                                user_id=current_user.id))
     if portfolio_in_base:
         # crypto or stocks
         if portfolio_in_base.market_id != 'other':
-            tickers_in_base = db.session.execute(db.select(Ticker).filter_by(market=portfolio_in_base.market)).scalars()
+            tickers_in_base = db.session.execute(
+                    db.select(Ticker).
+                    filter_by(market=portfolio_in_base.market)).scalars()
             portfolio_cost_now = 0
             for asset in portfolio_in_base.assets:
                 asset_price = price_list.get(asset.ticker.id)
                 if asset_price:
                     portfolio_cost_now += (asset.quantity * asset_price)
-            return render_template('portfolio_info.html', portfolio=portfolio_in_base, price_list=price_list,
-                                   portfolio_cost_now=portfolio_cost_now, tickers=tickers_in_base)
+            return render_template('portfolio_info.html',
+                                   portfolio=portfolio_in_base,
+                                   price_list=price_list,
+                                   portfolio_cost_now=portfolio_cost_now,
+                                   tickers=tickers_in_base)
         # other assets
         else:
             portfolio_cost_now = 0
             portfolio_total_spent = 0
             for asset in portfolio_in_base.other_assets:
-                portfolio_total_spent += sum([body.total_spent for body in asset.bodys])
-                portfolio_cost_now += sum([body.cost_now for body in asset.bodys])
-                portfolio_cost_now += sum([operation.total_spent for operation in asset.operations])
-            return render_template('other_portfolio_info.html', portfolio=portfolio_in_base, price_list=price_list,
-                                   portfolio_cost_now=portfolio_cost_now, portfolio_total_spent=portfolio_total_spent,
+                portfolio_total_spent += sum([body.total_spent
+                                              for body in asset.bodys])
+                portfolio_cost_now += sum([body.cost_now
+                                           for body in asset.bodys])
+                portfolio_cost_now += sum([operation.total_spent
+                                           for operation in asset.operations])
+            return render_template('other_portfolio_info.html',
+                                   portfolio=portfolio_in_base,
+                                   price_list=price_list,
+                                   portfolio_cost_now=portfolio_cost_now,
+                                   portfolio_total_spent=portfolio_total_spent,
                                    tickers={})
     else:
         return redirect(url_for('portfolios'))
 
 
-@app.route('/<string:market_id>/<string:portfolio_id>/add/<string:ticker_id>', methods=['GET'])
+@app.route('/<string:market_id>/<string:portfolio_id>/add/<string:ticker_id>',
+           methods=['GET'])
 @login_required
 @demo_user_change
 def asset_add(market_id, portfolio_id, ticker_id):
@@ -187,9 +232,11 @@ def asset_add(market_id, portfolio_id, ticker_id):
         total_spent=0,
         quantity=0
     )
-    ticker_in_base = db.session.execute(db.select(Ticker).filter_by(id=ticker_id)).scalar()
+    ticker_in_base = db.session.execute(db.select(Ticker).
+                                        filter_by(id=ticker_id)).scalar()
     portfolio_in_base = db.session.execute(
-        db.select(Portfolio).filter_by(id=portfolio_id, user_id=current_user.id)).scalar()
+        db.select(Portfolio).filter_by(id=portfolio_id,
+                                       user_id=current_user.id)).scalar()
     if ticker_in_base and portfolio_in_base:
         asset_in_portfolio = False
         for asset in portfolio_in_base.assets:
@@ -204,7 +251,10 @@ def asset_add(market_id, portfolio_id, ticker_id):
             db.session.commit()
 
     return redirect(
-        url_for('asset_info', market_id=market_id, portfolio_url=portfolio_in_base.url, asset_url=ticker_id))
+        url_for('asset_info',
+                market_id=market_id,
+                portfolio_url=portfolio_in_base.url,
+                asset_url=ticker_id))
 
 
 @app.route('/<string:market_id>/<string:portfolio_url>/other_asset_add', methods=['POST'])
@@ -299,32 +349,34 @@ def asset_delete(market_id, portfolio_url):
 def asset_info(market_id, portfolio_url, asset_url):
     ''' Страница актива в портфеле '''
     session['last_url'] = request.url
+    asset_in_base = False
     if market_id != 'other':
         wallets = current_user.wallets
         for portfolio in current_user.portfolios:
             if portfolio.url == portfolio_url:
                 for asset in portfolio.assets:
-                    if asset.ticker_id == asset_url:
+                    if asset.ticker_id == asset_url and asset.ticker.market_id == market_id:
                         asset_in_base = asset
                         break
+        if asset_in_base:
+            price_list = price_list_def()
+            price = float(price_list[asset_in_base.ticker_id]) if price_list.get(asset_in_base.ticker_id) else 0.0
 
-        price_list = price_list_def()
-        price = float(price_list[asset_in_base.ticker_id]) if price_list.get(asset_in_base.ticker_id) else '-'
-
-        return render_template('asset_info.html', asset=asset_in_base, price=price, date=date, wallets=tuple(wallets))
+            return render_template('asset_info.html', asset=asset_in_base, price=price, date=date, wallets=tuple(wallets))
 
     if market_id == 'other':
-        portfolio_total_spent = 0
+        portfolio_total_spent = 2
         for portfolio in current_user.portfolios:
             if portfolio.url == portfolio_url:
                 for asset in portfolio.other_assets:
                     portfolio_total_spent += sum([body.total_spent for body in asset.bodys])
                     if asset.url == asset_url:
                         asset_in_base = asset
-
-        return render_template('other_asset_info.html', asset=asset_in_base, date=date,
+        if asset_in_base:
+            return render_template('other_asset_info.html', asset=asset_in_base, date=date,
                                portfolio_total_spent=portfolio_total_spent)
-
+    if not asset_in_base:
+        abort(404)
 
 @app.route("/json/asset_info/<string:asset_id>")
 def asset_detail(asset_id):
@@ -525,11 +577,18 @@ def wallets():
         for asset in portfolio.assets:
             for transaction in asset.transactions:
                 if not transaction.order:
-                    holder_list[transaction.wallet.name] = float(holder_list.setdefault(transaction.wallet.name, 0)) +\
-                                                           float(transaction.quantity) * float(price_list[transaction.asset.ticker.id])
+                    price = price_list.get(transaction.asset.ticker.id)
+                    price = price if price else 0
+                    holder_list[transaction.wallet.name] = \
+                        (float(holder_list.
+                               setdefault(transaction.wallet.name, 0))
+                         + float(transaction.quantity) * price)
                     total_spent += transaction.total_spent
 
-    return render_template('wallets.html', wallets=tuple(wallets), holder_list=holder_list, total_spent=total_spent)
+    return render_template('wallets.html',
+                           wallets=tuple(wallets),
+                           holder_list=holder_list,
+                           total_spent=total_spent)
 
 
 @app.route('/wallets/add', methods=['POST'])
@@ -607,35 +666,51 @@ def wallet_info(wallet_name):
     ''' Страница кошелька '''
     session['last_url'] = request.url
     price_list = price_list_def()
-    user = db.session.execute(db.select(User).filter_by(id=current_user.id)).scalar()
-    wallet = db.session.execute(db.select(Wallet).filter_by(name=wallet_name, user_id=current_user.id)).scalar()
+    wallet = db.session.execute(db.select(Wallet).
+                                filter_by(name=wallet_name,
+                                          user_id=current_user.id)).scalar()
     assets_list = {}
     wallet_cost_now = 0.0
 
-    for portfolio in user.portfolios:
+    for portfolio in current_user.portfolios:
         for asset in portfolio.assets:
             for transaction in asset.transactions:
                 if transaction.order and transaction.type == 'Продажа':
                     continue
                 if transaction.wallet == wallet:
-                    if assets_list.get(transaction.asset.ticker_id):
+                    ticker = transaction.asset.ticker_id
+                    if assets_list.get(ticker):
                         if transaction.order:
-                            assets_list[transaction.asset.ticker_id]['order'] = float(
-                                assets_list[transaction.asset.ticker_id].setdefault('order', 0)) + float(
-                                transaction.total_spent)
+                            assets_list[ticker]['order'] = \
+                                    (float(assets_list[ticker].
+                                           setdefault('order', 0))
+                                     + float(transaction.total_spent))
                         else:
-                            assets_list[transaction.asset.ticker_id]['quantity'] = float(
-                                assets_list[transaction.asset.ticker_id].setdefault('quantity', 0)) + float(
-                                transaction.quantity)
+                            assets_list[ticker]['quantity'] = \
+                                    (float(assets_list[ticker].
+                                           setdefault('quantity', 0))
+                                     + float(transaction.quantity))
                     else:
-                        assets_list[transaction.asset.ticker_id] = dict(order=float(transaction.total_spent),
-                                                                        quantity=0.0) if transaction.order else dict(
-                            quantity=float(transaction.quantity), order=0.0)
-                        assets_list[transaction.asset.ticker_id]['name'] = transaction.asset.ticker.name
-                        assets_list[transaction.asset.ticker_id]['symbol'] = transaction.asset.ticker.symbol
-                    wallet_cost_now += float(transaction.quantity) * price_list[transaction.asset.ticker_id]
+                        if transaction.order:
+                            assets_list[ticker] = \
+                                dict(order=float(transaction.total_spent),
+                                     quantity=0.0)
+                        else:
+                            assets_list[ticker] = \
+                                dict(quantity=float(transaction.quantity),
+                                     order=0.0)
+                        assets_list[ticker]['name'] = transaction.asset.ticker.name
+                        assets_list[ticker]['symbol'] = transaction.asset.ticker.symbol
+                    price = price_list.get(ticker)
+                    if not price:
+                        price = 0
+                        price_list[ticker] = 0
+                    wallet_cost_now += float(transaction.quantity) * price
 
-    return render_template('wallet_info.html', wallet=wallet, assets_list=assets_list, price_list=price_list,
+    return render_template('wallet_info.html',
+                           wallet=wallet,
+                           assets_list=assets_list,
+                           price_list=price_list,
                            wallet_cost_now=wallet_cost_now)
 
 
@@ -711,7 +786,7 @@ def tracked_ticker_info(market_id, ticker_id):
     tracked_ticker = db.session.execute(
         db.select(Trackedticker).filter_by(ticker_id=ticker_id, user_id=current_user.id)).scalar()
     price_list = price_list_def()
-    price = float(price_list[tracked_ticker.ticker_id]) if price_list.get(tracked_ticker.ticker_id) else '-'
+    price = float(price_list[tracked_ticker.ticker_id]) if price_list.get(tracked_ticker.ticker_id) else 0
     return render_template('tracked_ticker_info.html', tracked_ticker=tracked_ticker, price=price)
 
 

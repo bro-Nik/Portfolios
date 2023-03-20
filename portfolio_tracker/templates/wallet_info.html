@@ -4,6 +4,7 @@
     {{ super() }}
 {% endblock %}
 {% block link %}
+    user = current_user
     <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
     <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
     <button type="button" class="btn btn-light btn-sm" disabled>{{ wallet.name }}</button>

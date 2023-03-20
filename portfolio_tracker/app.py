@@ -3,7 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from celery import Celery
 import redis
-import pymysql
+
+
 
 def create_app():
     app = Flask(__name__)
@@ -14,7 +15,9 @@ def create_app():
 
     return app, db
 
+
 app, db = create_app()
+
 
 def make_celery(app):
     celery = Celery(app.name)
@@ -28,14 +31,13 @@ def make_celery(app):
     celery.Task = ContextTask
     return celery
 
+
 celery = make_celery(app)
-
 redis = redis.StrictRedis('127.0.0.1', 6379)
-
 login_manager = LoginManager(app)
 
-from portfolio_tracker.admin import delete_tasks
 
+from portfolio_tracker.admin import delete_tasks
 with app.app_context():
     db.create_all()
     delete_tasks()
@@ -43,4 +45,3 @@ with app.app_context():
 
 if __name__ == '__main__':
     app.run()
-
