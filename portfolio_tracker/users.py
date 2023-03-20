@@ -127,8 +127,10 @@ def user_delete_def(user_id):
         db.session.delete(portfolio)
 
     # user info
-    user_info = db.session.execute(db.select(userInfo).filter_by(user_id=user.id)).scalar()
+    user_info = db.session.execute(db.select(userInfo).
+                                   filter_by(user_id=user.id)).scalar()
     db.session.delete(user_info)
+    db.session.commit()
     # user
     db.session.delete(user)
     db.session.commit()
