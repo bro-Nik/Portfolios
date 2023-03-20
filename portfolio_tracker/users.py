@@ -128,9 +128,7 @@ def user_delete_def(user_id):
 
     # user info
     user_info = db.session.execute(db.select(userInfo).filter_by(user_id=user.id)).scalar()
-    if user_info:
-        user_info.user_id = None
-
+    db.session.delete(user_info)
     # user
     db.session.delete(user)
     db.session.commit()
