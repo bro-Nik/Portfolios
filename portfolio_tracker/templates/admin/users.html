@@ -32,6 +32,9 @@
                 <th scope="col" data-sortable="true">ID</th>
                 <th scope="col" data-sortable="true">Email</th>
                 <th scope="col" data-sortable="true" title="Администратор">A</th>
+                <th scope="col" data-sortable="true">П</th>
+                <th scope="col" data-sortable="true">A</th>
+                <th scope="col" data-sortable="true">Total</th>
                 <th scope="col" data-sortable="true">First visit</th>
                 <th scope="col" data-sortable="true">Last visit</th>
                 <th scope="col" data-sortable="true">Country</th>
@@ -45,6 +48,9 @@
                 <td>{{ user.id }}</td>
                 <td>{{ user.email }}</td>
                 <td>{% if user.type == 'admin' %}<b title="Администратор">A</b>{% endif %}</td>
+                <td>{{ user.portfolios|length }}</td>
+                <td>{{ user.assets|length }}</td>
+
                 <td>{{ user.info.first_visit }}</td>
                 <td>{{ user.info.last_visit }}</td>
                 <td>{{ user.info.country }}</td>
