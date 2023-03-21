@@ -486,6 +486,7 @@ def reid_tickers():
             for trackedticker in ticker.trackedtickers:
                 old_trackedtickers[trackedticker.id] = 'c-' + str(trackedticker.ticker_id)
                 trackedticker.ticker_id = None
+            db.session.commit()
             ticker.id = 'c-' + str(ticker.id)
 
         elif ticker.market_id == 'stocks':
@@ -495,6 +496,7 @@ def reid_tickers():
             for trackedticker in ticker.trackedtickers:
                 old_trackedtickers[trackedticker.id] = 's-' + str(trackedticker.ticker_id)
                 trackedticker.ticker_id = None
+            db.session.commit()
             ticker.id = 's-' + str(ticker.id)
     db.session.commit()
     print('Assets')
