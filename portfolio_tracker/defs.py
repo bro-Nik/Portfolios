@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import pickle
 
 from portfolio_tracker.app import app, db, celery, redis
-from portfolio_tracker.models import Ticker, Market, Alert, Trackedticker
+from portfolio_tracker.models import Ticker, Market, Alert, Trackedticker, Asset
 
 
 cg = CoinGeckoAPI()
@@ -465,3 +465,50 @@ def long_number(number):
 
 
 app.add_template_filter(long_number)
+
+
+@celery.task()
+def reid_tickers():
+    ''' загрузка тикеров с https://polygon.io/ '''
+    tickers = db.session.execute(db.select(Ticker)).scalars()
+    old_assets = {}
+    old_trackedtickers = {}
+    n = 0
+    print('Tickers')
+    for ticker in tickers:
+        n += 1
+        if n % 1000 == 0:
+            print(n)
+        if ticker.market_id == 'crypto':
+            for asset in ticker.assets:
+                old_assets[asset.id] = 'c-' + str(asset.ticker_id)
+                asset.ticker_id = None
+            for trackedticker in ticker.trackedtickers:
+                old_trackedtickers[trackedticker.id] = 'c-' + str(trackedticker.ticker_id)
+                trackedticker.ticker_id = None
+            ticker.id = 'c-' + str(ticker.id)
+
+        elif ticker.market_id == 'stocks':
+            for asset in ticker.assets:
+                old_assets[asset.id] = 's-' + str(asset.ticker_id)
+                asset.ticker_id = None
+            for trackedticker in ticker.trackedtickers:
+                old_trackedtickers[trackedticker.id] = 's-' + str(trackedticker.ticker_id)
+                trackedticker.ticker_id = None
+            ticker.id = 's-' + str(ticker.id)
+    db.session.commit()
+    print('Assets')
+    assets = db.session.execute(db.select(Asset)).scalars()
+    for asset in assets:
+        new_id = old_assets.get(asset.id)
+        if new_id:
+            asset.ticker_id = new_id
+    print('Trackedtickers')
+    trackedtickers = db.session.execute(db.select(Trackedticker)).scalars()
+    for trackedticker in trackedtickers:
+        new_id = old_trackedtickers.get(trackedticker.id)
+        if new_id:
+            trackedticker.ticker_id = new_id
+
+    db.session.commit()
+    print('End')
