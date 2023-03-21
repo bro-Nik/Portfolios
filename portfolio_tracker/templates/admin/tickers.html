@@ -26,12 +26,20 @@
     </div>
 </div>
 <div class="pt-3 pb-3">
-    <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
+    <table
+        class="table table-sm align-middle table-hover"
+        id="Table"
+        data-toggle="table"
+        data-pagination="true"
+        data-search="true">
         <thead>
             <tr>
                 <th scope="col">ID</th>
                 <th scope="col" data-sortable="true">Symbol</th>
                 <th scope="col" data-sortable="true">Name</th>
+                <th scope="col" data-sortable="true">Price</th>
+                <th scope="col" data-sortable="true">Market</th>
+                <th scope="col" data-sortable="true">Market Cap</th>
             </tr>
         </thead>
         <tbody class="col-12">
@@ -40,6 +48,13 @@
                 <td class="text-truncate" style="max-width: 150px;">{{ ticker.id }}</td>
                 <td class="text-truncate" style="max-width: 150px;">{{ ticker.symbol }}</td>
                 <td class="text-truncate" style="max-width: 150px;">{{ ticker.name }}</td>
+                <td class="text-truncate" style="max-width: 150px;">
+                    {% if price_list.get(ticker.id) %}
+                    ${{ price_list.get(ticker.id)|number_group }}
+                    {% endif %}
+                </td>
+                <td class="text-truncate" style="max-width: 150px;">{{ ticker.market_id }}</td>
+                <td class="text-truncate" style="max-width: 100px;">{{ ticker.market_cap_rank if ticker.market_cap_rank else '' }}</td>
             </tr>
             {% endfor %}
         </tbody>

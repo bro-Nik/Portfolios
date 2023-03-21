@@ -3,7 +3,7 @@ from flask import render_template, redirect, url_for
 from sqlalchemy import func
 
 from portfolio_tracker.app import app, db, celery, redis
-from portfolio_tracker.defs import load_crypto_tickers, load_stocks_tickers, \
+from portfolio_tracker.defs import load_crypto_tickers, load_stocks_tickers, price_list_def, \
     when_updated_def, price_list_crypto_def, price_list_stocks_def, \
     alerts_update_def, reid_tickers
 from portfolio_tracker.models import Trackedticker, User, Ticker, Feedback, Wallet, Market, Asset
@@ -151,7 +151,10 @@ def admin_user_delete(user_id):
 @admin_only
 def admin_tickers():
     tickers = db.session.execute(db.select(Ticker)).scalars()
-    return render_template('admin/tickers.html', tickers=tickers)
+    price_list = price_list_def()
+    return render_template('admin/tickers.html',
+                           tickers=tickers,
+                           price_list=price_list)
 
 
 @app.route('/admin/load_tickers', methods=['GET'])
