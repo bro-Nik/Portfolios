@@ -8,7 +8,8 @@ from portfolio_tracker.app import app, db, redis
 from portfolio_tracker.models import Portfolio, Asset, Ticker, otherAsset, \
         otherAssetOperation, otherAssetBody, Wallet, Transaction, Alert, \
         User, Trackedticker, Feedback
-from portfolio_tracker.defs import price_list_def, date, tickers_to_redis, number_group, smart_round
+from portfolio_tracker.defs import price_list_def, date, tickers_to_redis, \
+        number_group, smart_round
 from portfolio_tracker.wraps import demo_user_change
 
 
