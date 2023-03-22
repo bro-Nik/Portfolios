@@ -1,6 +1,6 @@
 import json
 import pickle
-from flask import render_template, redirect, url_for, request, session, abort
+from flask import render_template, redirect, url_for, request, session, abort, g
 from flask_login import login_required, current_user
 from transliterate import slugify
 
@@ -883,20 +883,23 @@ def update_alerts_redis(alert_id):
         redis.set('worked_alerts', pickle.dumps(worked_alerts))
 
 
-@app.route("/json/<string:user_id>/worked_alerts")
+@app.route("/json/<int:user_id>/worked_alerts")
 @login_required
 def worked_alerts_detail(user_id):
-    worked_alerts = pickle.loads(redis.get('worked_alerts')).get(current_user.id) if redis.get('worked_alerts') else {}
+    alerts = redis.get('worked_alerts')
+    worked_alerts = pickle.loads(alerts).get(user_id) if alerts else {}
     if worked_alerts:
         for alert in worked_alerts:
             if alert['link']['source'] == 'portfolio':
-                alert['link'] = url_for('asset_info', market_id=alert['link']['market_id'],
+                alert['link'] = url_for('asset_info',
+                                        market_id=alert['link']['market_id'],
                                         portfolio_url=alert['link']['portfolio_url'],
                                         asset_url=alert['link']['asset_url'])
             elif alert['link']['source'] == 'tracking_list':
-                alert['link'] = url_for('tracked_ticker_info', market_id=alert['link']['market_id'],
+                alert['link'] = url_for('tracked_ticker_info',
+                                        market_id=alert['link']['market_id'],
                                         ticker_id=alert['link']['ticker_id'])
-    return worked_alerts if worked_alerts else {}
+    return worked_alerts
 
 
 @app.route('/<string:market_id>/<string:portfolio_url>/other_asset_body_add', methods=['POST'])

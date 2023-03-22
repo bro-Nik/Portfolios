@@ -339,11 +339,7 @@ def load_crypto_tickers(self):
 
         if coins_list_markets != []:
             for coin in coins_list_markets:
-                # t_in_base = db.session.execute(
-                #        db.select(Ticker).
-                #        filter_by(id='c-' + coin['id'].lower())).scalar()
                 if 'c-' + coin['id'].lower() not in tickers_list:
-                #if not t_in_base:
                     new_ticker = Ticker(
                         id='c-' + coin['id'].lower(),
                         name=coin['name'],
@@ -393,10 +389,7 @@ def load_stocks_tickers(self):
         data = response.json()
         if data.get('results'):
             for ticker in data['results']:
-                # t_in_base = db.session.execute(db.select(Ticker).filter_by(
-                #        id='s-' + ticker['ticker'].lower())).scalar()
                 if 's-' + ticker['ticker'].lower() not in tickers_list:
-                #if not t_in_base:
                     new_ticker = Ticker(
                         id='s-' + ticker['ticker'].lower(),
                         name=ticker['name'],
@@ -465,52 +458,3 @@ def long_number(number):
 
 
 app.add_template_filter(long_number)
-
-
-@celery.task()
-def reid_tickers():
-    ''' загрузка тикеров с https://polygon.io/ '''
-    tickers = db.session.execute(db.select(Ticker)).scalars()
-    old_assets = {}
-    old_trackedtickers = {}
-    n = 0
-    print('Tickers')
-    for ticker in tickers:
-        n += 1
-        if n % 1000 == 0:
-            print(n)
-        if ticker.market_id == 'crypto':
-            for asset in ticker.assets:
-                old_assets[asset.id] = 'c-' + str(asset.ticker_id)
-                asset.ticker_id = None
-            for trackedticker in ticker.trackedtickers:
-                old_trackedtickers[trackedticker.id] = 'c-' + str(trackedticker.ticker_id)
-                trackedticker.ticker_id = None
-            db.session.commit()
-            ticker.id = 'c-' + str(ticker.id)
-
-        elif ticker.market_id == 'stocks':
-            for asset in ticker.assets:
-                old_assets[asset.id] = 's-' + str(asset.ticker_id)
-                asset.ticker_id = None
-            for trackedticker in ticker.trackedtickers:
-                old_trackedtickers[trackedticker.id] = 's-' + str(trackedticker.ticker_id)
-                trackedticker.ticker_id = None
-            db.session.commit()
-            ticker.id = 's-' + str(ticker.id)
-    db.session.commit()
-    print('Assets')
-    assets = db.session.execute(db.select(Asset)).scalars()
-    for asset in assets:
-        new_id = old_assets.get(asset.id)
-        if new_id:
-            asset.ticker_id = new_id
-    print('Trackedtickers')
-    trackedtickers = db.session.execute(db.select(Trackedticker)).scalars()
-    for trackedticker in trackedtickers:
-        new_id = old_trackedtickers.get(trackedticker.id)
-        if new_id:
-            trackedticker.ticker_id = new_id
-
-    db.session.commit()
-    print('End')

@@ -5,8 +5,8 @@ from sqlalchemy import func
 from portfolio_tracker.app import app, db, celery, redis
 from portfolio_tracker.defs import load_crypto_tickers, load_stocks_tickers, price_list_def, \
     when_updated_def, price_list_crypto_def, price_list_stocks_def, \
-    alerts_update_def, reid_tickers
-from portfolio_tracker.models import Trackedticker, User, Ticker, Feedback, Wallet, Market, Asset
+    alerts_update_def
+from portfolio_tracker.models import Trackedticker, User, Ticker, Feedback, Wallet, Market
 from portfolio_tracker.wraps import admin_only
 from portfolio_tracker.users import user_delete_def
 
@@ -303,11 +303,3 @@ def stop_update_prices():
         celery.control.revoke(alerts_id, terminate=True)
 
     delete_tasks()
-
-
-@app.route('/admin/ticker_up', methods=['GET'])
-def admin_tickers_up():
-    reid_tickers.delay()
-    return 'OK'
-
-
