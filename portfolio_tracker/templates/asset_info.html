@@ -28,7 +28,7 @@
                 {% endif %}
                 <span class="fs-1 fw-semibold" id="asset-price"> ${{ price|smart_round|number_group }} </span>
             </div>
-            <div class="d-flex align-items-end">
+            <div class="d-flex align-items-end" onclick="focusIn('alert')">
                 <span class="badge text-bg-light fw-normal cursor-pointer text-muted me-1" data-bs-toggle="modal" data-bs-target="#Alert">
                     <a class="action-icon cursor-pointer text-decoration-none" data-bs-toggle="modal" data-bs-target="#Alert" title="Уведомления">
                         <i class="bi icon bi-bell"></i>
@@ -48,8 +48,8 @@
             </div>
         </div>
         <div class="col-auto ms-auto">
-            <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="" data-bs-date="{{ date }}" data-bs-price="{{ price|long_number }}" data-bs-wallet="{{ wallets[0].id }}" data-bs-title="Добавить транзакцию">Добавить транзакцию</button>
-            <button class="btn btn-warning btn-sm ms-1" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="True" data-bs-date="{{ date }}" data-bs-price="{{ price|long_number }}" data-bs-wallet="{{ wallets[0].id }}" data-bs-title="Добавить ордер">Ордер</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="focusIn('transaction')" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="" data-bs-date="{{ date }}" data-bs-price="{{ price|long_number }}" data-bs-wallet="{{ wallets[0].id }}" data-bs-title="Добавить транзакцию">Добавить транзакцию</button>
+            <button class="btn btn-warning btn-sm ms-1" type="button" onclick="focusIn('transaction')" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="add" data-bs-order="True" data-bs-date="{{ date }}" data-bs-price="{{ price|long_number }}" data-bs-wallet="{{ wallets[0].id }}" data-bs-title="Добавить ордер">Ордер</button>
             <button type="button" class="btn btn-light dropdown-toggle btn-sm ms-1" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
             <ul class="dropdown-menu" style="">
                 <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ asset.id }}" data-bs-action="{{ url_for('asset_delete', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}" data-bs-title="Удалить {{ asset.ticker.name }}?">Удалить {{ asset.ticker.name }}</a></li>
@@ -150,7 +150,7 @@
                     <a class="action-icon text-decoration-none visually-hidden" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="change" data-bs-id="{{ transaction.id }}" data-bs-price="{{ transaction.price|long_number }}" data-bs-total_spent="{{ transaction.total_spent|abs }}" data-bs-date="{{ transaction.date }}" data-bs-wallet="{{ transaction.wallet.id }}" data-bs-comment="{{ transaction.comment }}" data-bs-class="hidden" data-bs-title="Изменить транзакцию" title="Перевод">
                         <i class="bi icon bi-reply-fill"></i>
                     </a>
-                    <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="change" data-bs-id="{{ transaction.id }}" data-bs-price="{{ transaction.price|long_number }}" data-bs-total_spent="{{ transaction.total_spent|abs }}" data-bs-date="{{ transaction.date }}" data-bs-wallet="{{ transaction.wallet.id }}" data-bs-comment="{{ transaction.comment }}" data-bs-class="hidden" data-bs-title="Изменить транзакцию" title="Изменить">
+                    <a class="action-icon text-decoration-none" onclick="focusIn('transaction')" data-bs-toggle="modal" data-bs-target="#Transaction" data-bs-add_or_change="change" data-bs-id="{{ transaction.id }}" data-bs-price="{{ transaction.price|long_number }}" data-bs-total_spent="{{ transaction.total_spent|abs }}" data-bs-date="{{ transaction.date }}" data-bs-wallet="{{ transaction.wallet.id }}" data-bs-comment="{{ transaction.comment }}" data-bs-class="hidden" data-bs-title="Изменить транзакцию" title="Изменить">
                         <i class="bi icon bi-pencil-square"></i>
                     </a>
                     <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#deleteTransaction" data-bs-id="{{ transaction.id }}" data-bs-action="{{ url_for('transaction_delete', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) }}" data-bs-title="Удалить транзакцию?" title="Удалить">
@@ -199,10 +199,6 @@
 
                         <input type="radio" class="btn-check" name="type" value="Продажа" id="btnradio2" autocomplete="off">
                         <label class="btn btn-outline-not_active btn-sm" for="btnradio2">Продажа</label>
-
-                    {#--<input type="button" class="btn-check" id="btnradio3" autocomplete="off" data-bs-toggle="modal" data-bs-target="#transferTransaction">
-                        <label class="btn btn-outline-not_active btn-sm" for="btnradio3">Перевод</label>
-                    --#}
                     </div>
                     <div class="row g-2">
                         <div class="col-md-6">
@@ -210,14 +206,14 @@
                                 <label for="price" class="form-label h7">Цена</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="number" step=any class="form-control rounded-3" id="price" placeholder="0,00" name="price" autocomplete="off" required>
+                                    <input type="number" step="any" class="form-control rounded-3 focus" id="price" placeholder="0,00" name="price" autocomplete="off" required>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-1">
                                 <label for="total_spent" class="form-label h7">На сумму</label>
-                                <input type="number" step=any class="form-control rounded-3" id="total_spent" placeholder="0,00" name="total_spent" autocomplete="off" required>
+                                <input type="number" step="any" class="form-control rounded-3" id="total_spent" placeholder="0,00" name="total_spent" autocomplete="off" required>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -232,65 +228,6 @@
                                 <select class="form-select" id="wallet_id" name="wallet_id" required>
                                     {% for wallet in wallets %}
                                         <option value="{{ wallet.id }}">{{ wallet.name }}</option>
-                                    {% endfor %}
-                                 </select>
-                            </div>
-                        </div>
-                        <div class="col-md-12">
-                            <div class="mb-3">
-                                <label for="comment" class="form-label h7">Комментарий</label>
-                                <textarea class="form-control silver" placeholder="Что можете сказать?" id="comment" name="comment"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="w-100 mb-2 btn rounded-3 btn-primary btn-title" type="submit">Добавить транзакцию</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Modal Transfer Transaction-->
-<div class="modal fade" id="transferTransaction" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-3">Перевод</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form class=""  method="post" action="">
-                    <input type="hidden" name="id" id="id">
-                    <input type="hidden" name="asset_id" value="{{ asset.id }}">
-                    <input type="hidden" name="order" id="order">
-                    <input type="hidden" name="add_or_change" id="add_or_change">
-                    <div class="row g-2">
-                        <div class="col-md-6">
-                            <div class="mb-1">
-                                <label for="price" class="form-label h7">Цена</label>
-                                <div class="input-group">
-                                    <span class="input-prefix">$</span>
-                                    <input type="text" class="form-control rounded-3" id="price" placeholder="0,00" name="price" autocomplete="off" required>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-1">
-                                <label for="total_spent" class="form-label h7">На сумму</label>
-                                <input type="text" class="form-control rounded-3" id="total_spent" placeholder="0,00" name="total_spent" autocomplete="off" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-1">
-                                <label for="date" class="form-label h7">Дата</label>
-                                <input class="form-control silver" id="date" name="date" type="date" value="">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-1">
-                                <label for="wallet" class="form-label h7">Кошелек</label>
-                                <select class="form-select" id="wallet" name="wallet" required>
-                                    {% for wallet in wallets %}
-                                        <option>{{ wallet.name }}</option>
                                     {% endfor %}
                                  </select>
                             </div>
@@ -393,7 +330,7 @@
                                 <label for="price" class="form-label h7">Цена</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="number" step=any class="form-control rounded-3" id="price" value="{{ price|long_number }}" name="price" autocomplete="off" required>
+                                    <input type="number" step="any" class="form-control rounded-3 focus" id="price" value="{{ price|long_number }}" name="price" autocomplete="off" required>
                                 </div>
                             </div>
                         </div>
@@ -476,6 +413,20 @@ updateModal.addEventListener('show.bs.modal', function (event) {
   var modalId = ordertoTransaction.querySelector('.modal-body #id')
   modalId.value = id
 })
+
+// Фокус на поле ввода
+function focusIn(btn) {
+  if (btn === 'transaction') {
+    var focusInput = document.querySelector('#Transaction .focus');
+  }
+  else if (btn === 'alert') {
+    var focusInput = document.querySelector('#Alert .focus');
+  }
+
+  setTimeout(function () {
+    focusInput.focus();
+  }, 500)
+}
 // Обновление ценовых данных без перезагрузки
 const url = {{ url_for('asset_detail', asset_id=asset.id)|tojson }}
 const Price = document.getElementById('asset-price');

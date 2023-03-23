@@ -3,10 +3,10 @@ from flask import render_template, redirect, url_for
 from sqlalchemy import func
 
 from portfolio_tracker.app import app, db, celery, redis
-from portfolio_tracker.defs import load_crypto_tickers, load_stocks_tickers, price_list_def, \
-    when_updated_def, price_list_crypto_def, price_list_stocks_def, \
-    alerts_update_def
-from portfolio_tracker.models import Trackedticker, User, Ticker, Feedback, Wallet, Market
+from portfolio_tracker.defs import load_crypto_tickers, load_stocks_tickers, \
+        price_list_def, when_updated_def, price_list_crypto_def, \
+        price_list_stocks_def, alerts_update_def
+from portfolio_tracker.models import User, Ticker, Feedback, Wallet, Market
 from portfolio_tracker.wraps import admin_only
 from portfolio_tracker.users import user_delete_def
 

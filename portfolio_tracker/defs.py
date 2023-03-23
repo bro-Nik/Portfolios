@@ -10,7 +10,6 @@ from portfolio_tracker.models import Ticker, Market, Alert, Trackedticker, Asset
 
 
 cg = CoinGeckoAPI()
-date = datetime.now().date()
 
 
 # @celery.on_after_configure.connect
@@ -257,6 +256,7 @@ def when_updated_def(when_updated):
                 when_updated + ' 20:00:00.000000', '%Y-%m-%d %H:%M:%S.%f')
 
     delta_time = datetime.now() - when_updated
+    date = datetime.now().date()
     if date == datetime.date(when_updated):
         if delta_time.total_seconds() < 60:
             result = 'менее минуты'
@@ -380,6 +380,7 @@ def load_stocks_tickers(self):
         for ticker in tickers_in_base:
             tickers_list.append(ticker.id)
 
+    date = datetime.now().date()
     url = 'https://api.polygon.io/v3/reference/tickers?market=stocks&date=' + \
         str(date) + '&active=true&order=asc&limit=1000&apiKey=' + \
         app.config['API_KEY_POLYGON']

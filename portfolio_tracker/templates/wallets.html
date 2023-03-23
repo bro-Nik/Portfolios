@@ -18,8 +18,8 @@
             <h1>Кошельки</h1>
         </div>
         <div class="col-auto ms-auto">
-            <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addWallet" data-bs-action="add" data-bs-title="Добавить кошелек">Добавить кошелек</button>
-            <button class="btn btn-warning btn-sm ms-1" type="button" data-bs-toggle="modal" data-bs-target="#inputoutCash">Перевод</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="focusIn('add')" data-bs-toggle="modal" data-bs-target="#addWallet" data-bs-action="add" data-bs-title="Добавить кошелек">Добавить кошелек</button>
+            <button class="btn btn-warning btn-sm ms-1" type="button" onclick="focusIn('in-out')" data-bs-toggle="modal" data-bs-target="#inputoutCash">Перевод</button>
         </div>
     </div>
 </div>
@@ -96,15 +96,32 @@
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#addWallet" data-bs-id="{{ wallet.id }}" data-bs-name="{{ wallet.name }}" data-bs-money_all="{{ wallet.money_all if wallet.money_all }}" data-bs-action="update" data-bs-title="Изменить кошелек" title="Изменить">
+                            <a class="action-icon text-decoration-none cursor-pointer"
+                                onclick="focusIn('add')"
+                                data-bs-toggle="modal"
+                                data-bs-target="#addWallet"
+                                data-bs-id="{{ wallet.id }}"
+                                data-bs-name="{{ wallet.name }}"
+                                data-bs-money_all="{{ wallet.money_all if wallet.money_all }}"
+                                data-bs-action="update"
+                                data-bs-title="Изменить кошелек"
+                                title="Изменить">
                                 <i class="bi icon bi-pencil-square"></i>
                             </a>
                             {% if wallet.money_all <= 0 and wallet.transactions|sum(attribute='total_spent') <= 0 %}
-                                <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#deleteWallet" data-bs-id="{{ wallet.id }}" data-bs-title="Удалить кошелек {{ wallet.name }}?" title="Удалить">
+                                <a class="action-icon text-decoration-none cursor-pointer"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteWallet"
+                                    data-bs-id="{{ wallet.id }}"
+                                    data-bs-title="Удалить кошелек {{ wallet.name }}?"
+                                    title="Удалить">
                                     <i class="bi icon bi-trash-fill"></i>
                                 </a>
                             {% else %}
-                                <a class="action-icon text-decoration-none cursor-pointer opacity-25" aria-disabled="true"  tabindex="-1" title="Невозможно удалить, есть остатки или транзакции">
+                                <a class="action-icon text-decoration-none cursor-pointer opacity-25"
+                                    aria-disabled="true"
+                                    tabindex="-1"
+                                    title="Невозможно удалить, есть остатки или транзакции">
                                     <i class="bi icon bi-trash-fill"></i>
                                 </a>
                             {% endif %}
@@ -144,7 +161,7 @@
                                 <label for="money_all" class="form-label h7">Баланс</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="number" step=any class="form-control rounded-3 money_all" id="money_all" placeholder="0,00" name="money_all" autocomplete="off">
+                                    <input type="number" step="any" class="form-control rounded-3 money_all" id="money_all" placeholder="0,00" name="money_all" autocomplete="off">
                                 </div>
                             </div>
                         </div>
@@ -173,7 +190,7 @@
                         <input type="radio" class="btn-check" name="type" value="Вывод" id="btnradio2" autocomplete="off">
                         <label class="btn btn-outline-not_active btn-sm" for="btnradio2">Вывод</label>
 
-                        <input type="button" class="btn-check" id="btnradio3" autocomplete="off" data-bs-toggle="modal" data-bs-target="#transferCash">
+                        <input type="button" class="btn-check" id="btnradio3" onclick="focusIn('transfer')" autocomplete="off" data-bs-toggle="modal" data-bs-target="#transferCash">
                         <label class="btn btn-outline-not_active btn-sm" for="btnradio3">Перевод</label>
                     </div>
                     <div class="row g-2">
@@ -182,7 +199,7 @@
                                 <label for="transfer_amount" class="form-label h7">Сумма</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="number" step=any class="form-control rounded-3" id="transfer_amount" placeholder="0,00" name="transfer_amount" autocomplete="off" required>
+                                    <input type="number" step="any" class="form-control rounded-3 focus" id="transfer_amount" placeholder="0,00" name="transfer_amount" autocomplete="off" required>
                                 </div>
                             </div>
                         </div>
@@ -227,7 +244,7 @@
                                 <label for="transfer_amount" class="form-label h7">Сумма</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="number" step=any class="form-control rounded-3" id="transfer_amount" placeholder="0,00" name="transfer_amount" autocomplete="off" required>
+                                    <input type="number" step="any" class="form-control rounded-3 focus" id="transfer_amount" placeholder="0,00" name="transfer_amount" autocomplete="off" required>
                                 </div>
                             </div>
                         </div>
@@ -315,5 +332,22 @@ updateModal.addEventListener('show.bs.modal', function (event) {
   modalId.value = id
   modalTitle.textContent = `${title}`
 })
+
+// Фокус на поле ввода
+function focusIn(btn) {
+  if (btn === 'add') {
+    var focusInput = document.querySelector('#addWallet .name')
+  }
+  else if (btn === 'in-out') {
+    var focusInput = document.querySelector('#inputoutCash .focus')
+  }
+  else if (btn === 'transfer') {
+    var focusInput = document.querySelector('#transferCash .focus')
+  }
+
+  setTimeout(function () {
+    focusInput.focus();
+  }, 500)
+}
 </script>
 {% endblock %}

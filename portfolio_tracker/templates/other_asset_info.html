@@ -23,8 +23,8 @@
             </div>
         </div>
         <div class="col-auto ms-auto">
-            <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#assetOperation" data-bs-date="{{ date }}" data-bs-title="Добавить операцию">Добавить операцию</button>
-            <button class="btn btn-warning btn-sm ms-1" type="button" data-bs-toggle="modal" data-bs-target="#assetBody" data-bs-date="{{ date }}" data-bs-title="Добавить тело актива">Тело актива</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="focusIn('operation')" data-bs-toggle="modal" data-bs-target="#assetOperation" data-bs-date="{{ date }}" data-bs-title="Добавить операцию">Добавить операцию</button>
+            <button class="btn btn-warning btn-sm ms-1" type="button" onclick="focusIn('body')" data-bs-toggle="modal" data-bs-target="#assetBody" data-bs-date="{{ date }}" data-bs-title="Добавить тело актива">Тело актива</button>
             <button type="button" class="btn btn-light dropdown-toggle btn-sm ms-1" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
             <ul class="dropdown-menu" style="">
                 <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#Delete" data-bs-id="{{ asset.id }}" data-bs-type="asset" data-bs-title="Удалить {{ asset.name }}?">Удалить {{ asset.name }}</a></li>
@@ -64,7 +64,7 @@
             {% endif %}
         </span>
     </div>
-    {% set asset_percent = (asset.bodys|sum(attribute='total_spent') / portfolio_total_spent * 100)|round(1, 'common') %}
+    {% set asset_percent = (asset.bodys|sum(attribute='total_spent') / portfolio_total_spent * 100)|round(1, 'common') if portfolio_total_spent != 0 else 0 %}
     {% if asset_percent and asset_percent != 100 %}
         <div class="col-auto">
             <p class="small_text">% от портфеля</p>
@@ -111,10 +111,27 @@
                         <td>${{ asset_body.cost_now|round|int|number_group }}</td>
                         <td>{{ asset_body.comment if asset_body.comment else '--' }}</td>
                         <td class="text-end">
-                            <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#assetBody" data-bs-name="{{ asset_body.name }}" data-bs-id="{{ asset_body.id }}" data-bs-total_spent="{{ asset_body.total_spent }}" data-bs-cost_now="{{ asset_body.cost_now }}" data-bs-date="{{ asset_body.date }}" data-bs-comment="{{ asset_body.comment }}" data-bs-title="Изменить тело актива" title="Изменить тело актива">
+                            <a class="action-icon text-decoration-none"
+                                onclick="focusIn('body')"
+                                data-bs-toggle="modal"
+                                data-bs-target="#assetBody"
+                                data-bs-name="{{ asset_body.name }}"
+                                data-bs-id="{{ asset_body.id }}"
+                                data-bs-total_spent="{{ asset_body.total_spent }}"
+                                data-bs-cost_now="{{ asset_body.cost_now }}"
+                                data-bs-date="{{ asset_body.date }}"
+                                data-bs-comment="{{ asset_body.comment }}"
+                                data-bs-title="Изменить тело актива"
+                                title="Изменить тело актива">
                                 <i class="bi icon bi-pencil-square"></i>
                             </a>
-                            <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#Delete" data-bs-id="{{ asset_body.id }}" data-bs-type="asset_body" data-bs-title="Удалить {{ asset_body.name }}?" title="Удалить">
+                            <a class="action-icon text-decoration-none"
+                                data-bs-toggle="modal"
+                                data-bs-target="#Delete"
+                                data-bs-id="{{ asset_body.id }}"
+                                data-bs-type="asset_body"
+                                data-bs-title="Удалить {{ asset_body.name }}?"
+                                title="Удалить">
                                 <i class="bi icon bi-trash-fill"></i>
                             </a>
                         </td>
@@ -154,10 +171,26 @@
                         </td>
                         <td>{{ operation.comment if operation.comment else '--' }}</td>
                         <td class="text-end">
-                            <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#assetOperation" data-bs-id="{{ operation.id }}" data-bs-total_spent="{{ operation.total_spent }}" data-bs-date="{{ operation.date }}" data-bs-comment="{{ operation.comment }}" data-bs-type="{{ operation.type }}" data-bs-title="Изменить транзакцию" title="Изменить">
+                            <a class="action-icon text-decoration-none"
+                                onclick="focusIn('operation')"
+                                data-bs-toggle="modal"
+                                data-bs-target="#assetOperation"
+                                data-bs-id="{{ operation.id }}"
+                                data-bs-total_spent="{{ operation.total_spent }}"
+                                data-bs-date="{{ operation.date }}"
+                                data-bs-comment="{{ operation.comment }}"
+                                data-bs-type="{{ operation.type }}"
+                                data-bs-title="Изменить транзакцию"
+                                title="Изменить">
                                 <i class="bi icon bi-pencil-square"></i>
                             </a>
-                            <a class="action-icon text-decoration-none" data-bs-toggle="modal" data-bs-target="#Delete" data-bs-id="{{ operation.id }}" data-bs-type="asset_operation" data-bs-title="Удалить операцию?" title="Удалить">
+                            <a class="action-icon text-decoration-none"
+                                data-bs-toggle="modal"
+                                data-bs-target="#Delete"
+                                data-bs-id="{{ operation.id }}"
+                                data-bs-type="asset_operation"
+                                data-bs-title="Удалить операцию?"
+                                title="Удалить">
                                 <i class="bi icon bi-trash-fill"></i>
                             </a>
                         </td>
@@ -203,7 +236,7 @@
                         <div class="col-md-12">
                             <div class="mb-1">
                                 <label for="name" class="form-label h7">Название</label>
-                                <input type="text" class="form-control rounded-3" id="name" placeholder="" name="name" autocomplete="off" required>
+                                <input type="text" class="form-control rounded-3 focus" id="name" placeholder="" name="name" autocomplete="off" required>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -211,7 +244,7 @@
                                 <label for="total_spent" class="form-label h7">На сумму</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="number" step=any class="form-control rounded-3" id="total_spent" placeholder="0,00" name="total_spent" autocomplete="off" required>
+                                    <input type="number" step="any" class="form-control rounded-3" id="total_spent" placeholder="0,00" name="total_spent" autocomplete="off" required>
                                 </div>
                             </div>
                         </div>
@@ -220,7 +253,7 @@
                                 <label for="cost_now" class="form-label h7">Стоимость сейчас</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="number" step=any class="form-control rounded-3" id="cost_now" placeholder="0,00" name="cost_now" autocomplete="off">
+                                    <input type="number" step="any" class="form-control rounded-3" id="cost_now" placeholder="0,00" name="cost_now" autocomplete="off">
                                 </div>
                             </div>
                         </div>
@@ -268,7 +301,7 @@
                                 <label for="total_spent" class="form-label h7">На сумму</label>
                                 <div class="input-group">
                                     <span class="input-prefix">$</span>
-                                    <input type="number" step=any class="form-control rounded-3" id="total_spent" placeholder="0,00" name="total_spent" autocomplete="off" required>
+                                    <input type="number" step="any" class="form-control rounded-3 focus" id="total_spent" placeholder="0,00" name="total_spent" autocomplete="off" required>
                                 </div>
                             </div>
                         </div>
@@ -372,6 +405,20 @@ btnminus.checked = true}
 else {
 btnplus.checked = true}
 })
+
+// Фокус на поле ввода
+function focusIn(btn) {
+  if (btn === 'operation') {
+    var focusInput = document.querySelector('#assetOperation .focus')
+  }
+  else if (btn === 'body') {
+    var focusInput = document.querySelector('#assetBody .focus')
+  }
+
+  setTimeout(function () {
+    focusInput.focus();
+  }, 500)
+}
 
 // Отправка данных в форму удаления транзакции или актива
 var updateModal = document.getElementById('Delete')

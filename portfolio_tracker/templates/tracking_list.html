@@ -23,8 +23,8 @@
             <div class="dropdown">
                 <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Добавить актив</button>
                 <ul class="dropdown-menu">
-                    <li><button data-bs-toggle="modal" data-bs-target="#addAssetCrypto"  class="dropdown-item" aria-expanded="false">Криптовалюта</button></li>
-                    <li><button data-bs-toggle="modal" data-bs-target="#addAssetStocks"  class="dropdown-item" aria-expanded="false">Акция</button></li>
+                    <li><button data-bs-toggle="modal" onclick="focusIn('crypto')" data-bs-target="#addAssetCrypto"  class="dropdown-item btn-crypto" aria-expanded="false">Криптовалюта</button></li>
+                    <li><button data-bs-toggle="modal" onclick="focusIn('stocks')" data-bs-target="#addAssetStocks"  class="dropdown-item" aria-expanded="false">Акция</button></li>
                 </ul>
             </div>
         </div>
@@ -216,5 +216,19 @@ document.addEventListener("click", function(e) {
     location.href = url_add_asset + asset_id;
   }
 });
+
+// Фокус на поле ввода
+function focusIn(btn) {
+  if (btn === 'crypto') {
+    var focusInput = document.querySelector('#addAssetCrypto .search-input')
+  }
+  else if (btn === 'stocks') {
+    var focusInput = document.querySelector('#addAssetStocks .search-input')
+  }
+
+  setTimeout(function () {
+    focusInput.focus();
+  }, 100)
+}
 </script>
 {% endblock %}

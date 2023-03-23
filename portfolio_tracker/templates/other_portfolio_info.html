@@ -21,7 +21,7 @@
             <h1>{{ portfolio.name }}</h1>
         </div>
         <div class="col-auto ms-auto">
-            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#customAsset" data-bs-title="Добавить актив" title="Добавить актив">Добавить актив</button>
+            <button class="btn btn-primary btn-sm" onclick="focusIn('add')" data-bs-toggle="modal" data-bs-target="#customAsset" data-bs-title="Добавить актив" title="Добавить актив">Добавить актив</button>
         </div>
     </div>
 </div>
@@ -129,7 +129,7 @@
                         {% endif %}
                     </td>
                     <td class="text-end">
-                        <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#customAsset" data-bs-name="{{ asset.name }}" data-bs-id="{{ asset.id }}" data-bs-percent="{{ asset.percent if asset.percent }}" data-bs-comment="{{ asset.comment }}" data-bs-title="Изменить актив" title="Изменить">
+                        <a class="action-icon text-decoration-none cursor-pointer" onclick="focusIn('add')" data-bs-toggle="modal" data-bs-target="#customAsset" data-bs-name="{{ asset.name }}" data-bs-id="{{ asset.id }}" data-bs-percent="{{ asset.percent if asset.percent }}" data-bs-comment="{{ asset.comment }}" data-bs-title="Изменить актив" title="Изменить">
                             <i class="bi icon bi-pencil-square"></i>
                         </a>
                         <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#deleteAsset" data-bs-id="{{ asset.id }}" data-bs-type="asset" data-bs-title="Удалить {{ asset.name }}?" title="Удалить">
@@ -167,7 +167,7 @@
                             <div class="mb-1">
                                 <label for="name" class="form-label h7">Название</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control rounded-3" id="name" placeholder="" name="name" autocomplete="off">
+                                    <input type="text" class="form-control rounded-3 focus" id="name" placeholder="" name="name" autocomplete="off">
                                 </div>
                             </div>
                         </div>
@@ -176,7 +176,7 @@
                                 <label for="percent" class="form-label h7">Планируемый % портфеля</label>
                                 <div class="input-group">
                                     <span class="input-prefix">%</span>
-                                    <input type="number" step=any class="form-control rounded-3" id="percent" placeholder="0,00" name="percent" autocomplete="off">
+                                    <input type="number" step="any" class="form-control rounded-3" id="percent" placeholder="0,00" name="percent" autocomplete="off">
                                 </div>
                             </div>
                         </div>
@@ -257,6 +257,17 @@ updateModal.addEventListener('show.bs.modal', function (event) {
 // поиск в выпадающем меню (источник: https://www.w3schools.com/howto/howto_js_filter_dropdown.asp)
 function myFunction() {
   document.getElementById("myDropdown").classList.toggle("show");
+}
+
+// Фокус на поле ввода
+function focusIn(btn) {
+  if (btn === 'add') {
+    var focusInput = document.querySelector('#customAsset .focus')
+  }
+
+  setTimeout(function () {
+    focusInput.focus();
+  }, 500)
 }
 
 function filterFunction() {

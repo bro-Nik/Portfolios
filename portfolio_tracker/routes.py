@@ -1,6 +1,7 @@
 import json
 import pickle
-from flask import render_template, redirect, url_for, request, session, abort, g
+from datetime import datetime
+from flask import render_template, redirect, url_for, request, session, abort
 from flask_login import login_required, current_user
 from transliterate import slugify
 
@@ -8,7 +9,7 @@ from portfolio_tracker.app import app, db, redis
 from portfolio_tracker.models import Portfolio, Asset, Ticker, otherAsset, \
         otherAssetOperation, otherAssetBody, Wallet, Transaction, Alert, \
         User, Trackedticker, Feedback
-from portfolio_tracker.defs import price_list_def, date, tickers_to_redis, \
+from portfolio_tracker.defs import price_list_def, tickers_to_redis, \
         number_group, smart_round
 from portfolio_tracker.wraps import demo_user_change
 
@@ -361,21 +362,29 @@ def asset_info(market_id, portfolio_url, asset_url):
                         break
         if asset_in_base:
             price_list = price_list_def()
-            price = float(price_list[asset_in_base.ticker_id]) if price_list.get(asset_in_base.ticker_id) else 0.0
+            price = price_list.get(asset_in_base.ticker_id)
+            price = float(price) if price else 0.0
 
-            return render_template('asset_info.html', asset=asset_in_base, price=price, date=date, wallets=tuple(wallets))
+            return render_template('asset_info.html',
+                                   asset=asset_in_base,
+                                   price=price,
+                                   date=datetime.now().date(),
+                                   wallets=tuple(wallets))
 
     if market_id == 'other':
-        portfolio_total_spent = 2
+        portfolio_total_spent = 0
         for portfolio in current_user.portfolios:
             if portfolio.url == portfolio_url:
                 for asset in portfolio.other_assets:
-                    portfolio_total_spent += sum([body.total_spent for body in asset.bodys])
+                    portfolio_total_spent += sum([body.total_spent
+                                                  for body in asset.bodys])
                     if asset.url == asset_url:
                         asset_in_base = asset
         if asset_in_base:
-            return render_template('other_asset_info.html', asset=asset_in_base, date=date,
-                               portfolio_total_spent=portfolio_total_spent)
+            return render_template('other_asset_info.html',
+                                   asset=asset_in_base,
+                                   date=datetime.now().date(),
+                                   portfolio_total_spent=portfolio_total_spent)
     if not asset_in_base:
         abort(404)
 
@@ -798,7 +807,7 @@ def alert_add():
     ''' Добавление уведомления '''
     alert = Alert(
         price=request.form['price'].replace(',', '.'),
-        date=date,
+        date=datetime.now().date(),
         comment=request.form['comment']
     )
     # уведомление пришло из списка отслеживания

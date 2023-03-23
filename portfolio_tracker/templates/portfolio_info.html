@@ -21,7 +21,7 @@
             <h1>{{ portfolio.name }}</h1>
         </div>
         <div class="col-auto ms-auto">
-            <button data-bs-toggle="modal" data-bs-target="#addAsset"  class="btn btn-primary btn-sm" aria-expanded="false">Добавить актив</button>
+            <button data-bs-toggle="modal" onclick="focusIn('add')" data-bs-target="#addAsset"  class="btn btn-primary btn-sm" aria-expanded="false">Добавить актив</button>
         </div>
     </div>
 </div>
@@ -143,7 +143,7 @@
                         {% endif %}
                     </td>
                     <td class="text-end">
-                            <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#customAsset" data-bs-id="{{ asset.id }}" data-bs-percent="{{ asset.percent if asset.percent > 0 }}" data-bs-comment="{{ asset.comment if asset.comment else '' }}" data-bs-title="Изменить актив" title="Изменить">
+                            <a class="action-icon text-decoration-none cursor-pointer" onclick="focusIn('change')" data-bs-toggle="modal" data-bs-target="#customAsset" data-bs-id="{{ asset.id }}" data-bs-percent="{{ asset.percent if asset.percent > 0 }}" data-bs-comment="{{ asset.comment if asset.comment else '' }}" data-bs-title="Изменить актив" title="Изменить">
                                 <i class="bi icon bi-pencil-square"></i>
                             </a>
                         <a class="action-icon text-decoration-none cursor-pointer" data-bs-toggle="modal" data-bs-target="#deleteAsset" data-bs-id="{{ asset.id }}" data-bs-title="Удалить {{ asset.ticker.name }}?" title="Удалить">
@@ -197,7 +197,7 @@
         </div>
     </div>
 </div>
-<!-- Modal New or Change Asset -->
+<!-- Modal Change Asset -->
 <div class="modal fade" id="customAsset" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -214,7 +214,7 @@
                                 <label for="percent" class="form-label h7">Планируемый % портфеля</label>
                                 <div class="input-group">
                                     <span class="input-prefix">%</span>
-                                    <input type="number" step=any class="form-control rounded-3" id="percent" placeholder="0,00" name="percent" autocomplete="off">
+                                    <input type="number" step="any" class="form-control rounded-3 focus" id="percent" placeholder="0,00" name="percent" autocomplete="off">
                                 </div>
                             </div>
                         </div>
@@ -268,8 +268,19 @@ document.addEventListener("click", function(e) {
   }
 });
 
+// Фокус на поле ввода
+function focusIn(btn) {
+  if (btn === 'add') {
+    var focusInput = document.querySelector('#addAsset .search-input')
+  }
+  else if (btn === 'change') {
+    var focusInput = document.querySelector('#customAsset .focus')
+  }
 
-
+  setTimeout(function () {
+    focusInput.focus();
+  }, 500)
+}
 // Отправка данных в форму изменения актива
 var updateModal = document.getElementById('customAsset')
 updateModal.addEventListener('show.bs.modal', function (event) {
