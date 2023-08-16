@@ -1,0 +1,36 @@
+{% if not load_only_content %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = False %}
+{% endif %}
+
+{% set modal_title = 'Изменить портфель' if portfolio else 'Добавить портфель' %}
+
+{% block content %}
+<form method="post" action="{{ url_for('.portfolio_update', portfolio_id=portfolio.id if portfolio else None) }}">
+  <div class="row g-2">
+
+    <div class="col-md-6">
+      <div class="mb-1">
+        <label class="form-label h7">Название</label>
+        <input type="text" class="form-control rounded-3 focus" name="name" value="{{ portfolio.name if portfolio }}" required>
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-1" id="market-class">
+      <label class="form-label h7">Рынок</label>
+      <select class="form-select" name="market_id" value="{{ portfolio.market_id if portfolio }}" required>
+        <option {{ 'selected' if portfolio.market_id == 'crypto' }} value="crypto">Криптовалюта</option>
+        <option {{ 'selected' if portfolio.market_id == 'stocks' }} value="stocks">Акции</option>
+        <option {{ 'selected' if portfolio.market_id == 'other' }} value="other">Другое</option>
+      </select>
+    </div>
+    <div class="col-md-12">
+      <div class="mb-3">
+        <label class="form-label h7">Комментарий</label>
+        <textarea class="form-control" name="comment">{{ portfolio.comment if portfolio }}</textarea>
+      </div>
+    </div>
+  </div>
+  <button class="w-100 btn btn rounded-3 btn-primary" type="submit">{{ modal_title }}</button>
+</form>
+{% endblock %}

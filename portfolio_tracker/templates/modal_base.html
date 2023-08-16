@@ -1,0 +1,17 @@
+<div class="modal-dialog {{ 'modal-fullscreen' if modal_fullscreen else 'modal-dialog-centered' }}" role="document">
+  <div class="modal-content">
+    {% if modal_fullscreen %}
+      <div class="modal-close-label">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+    {% else %}
+      <div class="modal-header">
+        <h1 class="modal-title fs-3">{{ modal_title }}</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+    {% endif %}
+    <div class="modal-body {{ 'd-flex flex-column p-5' if modal_fullscreen }}">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>

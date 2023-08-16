@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %} Кошельки {% endblock %}
+
+{% block content %}
+<div class="mb-5">
+  <div class="row xs-mb-3">
+    <div class="col-auto">
+      <h1>Кошельки</h1>
+    </div>
+    <div class="col-auto ms-auto">
+      <button class="btn btn-primary wallet-settings" type="button">Добавить</button>
+      <button class="btn btn-warning ms-1" type="button" data-bs-toggle="modal" data-bs-target="#inputoutCash">Перевод</button>
+    </div>
+  </div>
+</div>
+
+{% if current_user.wallets %}
+  <div class="row xs-mb-3">
+
+    <div class="col-auto">
+      <p class="small_text">Всего вложено</p>
+      <span class="text-average">${{ total_spent|int|number_group }}</span>
+    </div>
+
+    <div class="col-auto">
+      <p class="small_text">В ордерах</p>
+      <span class="text-average">
+        ${{ wallets|sum(attribute='money_in_order')|int|number_group }}
+      </span>
+    </div>
+
+    <div class="col-auto">
+      <p class="small_text">Свободные</p>
+      <span class="text-average">
+        {% set wallets_free_money = (wallets|sum(attribute='money_all') - wallets|sum(attribute='money_in_order') - total_spent)|int %}
+        {{ '-' if wallets_free_money < 0 }}${{ wallets_free_money|abs|number_group }}
+      </span>
+    </div>
+  </div>
+
+  <div class="fixed-height-1"></div>
+
+  <div class="big-table">
+    <form id="WalletsForm" action="{{ url_for('.wallets_action') }}">
+      <table class="table table-sm align-middle table-hover">
+        <thead>
+          <tr>
+            <th scope="col">Наименование</th>
+            <th scope="col">Вложено / сейчас</th>
+            <th scope="col">В ордерах</th>
+            <th scope="col">Свободные</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for wallet in current_user.wallets %}
+            <tr>
+              <td class="text-average">
+                <a class="link-dark text-decoration-none open-wallet" href="#" data-url="{{ url_for('.wallet_info', wallet_id=wallet.id) }}">
+                  {{ wallet.name }}
+                </a>
+              </td>
+
+              <td>
+                {% set wallet_total_spent = wallet.transactions|sum(attribute='total_spent') %}
+                {{ '$' + (wallet_total_spent - wallet.money_in_order)|int|number_group + ' /' if wallet_total_spent else '- /' }}
+
+                {% set wallet_cost_now = holder_list.get(wallet.name) %}
+                {{ '$' + wallet_cost_now|int|number_group if wallet_cost_now else '-' }}
+              </td>
+
+              <td>
+                {{ '$' + wallet.money_in_order|int|number_group if wallet.money_in_order else '-' }}
+              </td>
+
+              <td>
+                {% set wallet_free_money = wallet.money_all - wallet_total_spent %}
+                {% if not (wallet_free_money == 0 and wallet_total_spent == 0) %}
+                  {{ '-' if wallet_free_money < 0 }}${{ wallet_free_money|int|abs|number_group }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td class="align-middle text-end">
+                <div class="dropdown dropstart">
+                  <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi icon bi-three-dots-vertical"></i>
+                  </a>
+                  <div class="dropdown-menu">
+                    <a href="#" class="dropdown-item wallet-settings" data-id="{{ wallet.id }}">
+                      Изменить
+                    </a>
+
+                    <a href="#" class="dropdown-item link-danger {{ 'action-confirmation' if wallet.money_all <= 0 and not wallet.transactions else 'opacity-50 disabled' }}" data-title="Удалить {{ wallet.name }}?"
+                      data-id="{{ wallet.id }}"> Удалить
+                    </a>
+
+                  </div>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
+  </div>
+  
+{% else %}
+  <div class="nothing-box">Пока ничего нет...</div>
+{% endif %}
+
+{% include 'wallet/modals.html' %}
+
+<script>
+  // Open Modal Wallet
+  $('.open-wallet').on("click", function () {
+    var modal_id = 'WalletInfoModal',
+      url = $(this).attr('data-url');
+    LoadToModal(modal_id, url);
+  })
+
+  // Open Modal Wallet Settings
+  $('.wallet-settings').on('click', function () {
+    var modal_id = "WalletSettingsModal",
+      url = "{{ url_for('.wallet_settings') }}",
+      wallet_id = $(this).attr('data-id');
+
+    if (wallet_id) { url += "?wallet_id=" + wallet_id; }
+    LoadToModal(modal_id, url);
+  })
+
+
+</script>
+
+{% endblock %}

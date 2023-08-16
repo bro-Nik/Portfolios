@@ -20,9 +20,9 @@ class Asset(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ticker = db.relationship('Ticker', backref=db.backref('assets', lazy=True))
     ticker_id = db.Column(db.String(255), db.ForeignKey('ticker.id'))
-    quantity = db.Column(db.Float)
-    total_spent = db.Column(db.Float)
-    percent = db.Column(db.Float)
+    quantity = db.Column(db.Float, default=0)
+    total_spent = db.Column(db.Float, default=0)
+    percent = db.Column(db.Float, default=0)
     comment = db.Column(db.String(1024))
     portfolio = db.relationship('Portfolio', backref=db.backref('assets', lazy=True))
     portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
@@ -30,10 +30,10 @@ class Asset(db.Model):
 class otherAsset(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
-    url = db.Column(db.String(32))
-    total_spent = db.Column(db.Float)
-    percent = db.Column(db.Float)
-    comment = db.Column(db.String(1024))
+    url = db.Column(db.String(32), default='')
+    total_spent = db.Column(db.Float, default=0)
+    percent = db.Column(db.Float, default=0)
+    comment = db.Column(db.String(1024), default='')
     portfolio = db.relationship('Portfolio', backref=db.backref('other_assets', lazy=True))
     portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
 
@@ -72,8 +72,8 @@ class Market(db.Model):
 class Wallet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
-    money_all = db.Column(db.Float)
-    money_in_order = db.Column(db.Float)
+    money_all = db.Column(db.Float, default=0)
+    money_in_order = db.Column(db.Float, default=0)
     user = db.relationship('User', backref=db.backref('wallets', lazy=True))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 

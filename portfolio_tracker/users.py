@@ -50,7 +50,7 @@ def login():
 
             if user and check_password_hash(user.password, password):
                 login_user(user, remember=request.form.get('remember-me'))
-                next_page = request.args.get('next') if request.args.get('next') else '/'
+                next_page = request.args.get('next') if request.args.get('next') else url_for('portfolio.portfolios')
                 new_visit()
                 return redirect(next_page)
             else:

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %} Tasks / Admin {% endblock %}
+{% block content %}
+
+{% include 'admin/menu.html' %}
+
+<div class="row mb-5 xs-mb-3">
+    {% for server in tasks_list %}
+        {% for task in tasks_list[server] %}
+        <span class="text-average">Task:</span>
+        <span class="small_text">Name: {{ task['name'] }}</span>
+        <span class="small_text">ID: {{ task['id'] }}</span>
+        {% endfor %}
+    {% endfor %}
+
+    {% for server in scheduled %}
+        {% for task in scheduled[server] %}
+        <span class="text-average">Task:</span>
+        <span class="small_text">Name: {{ task['request']['name'] }}</span>
+        <span class="small_text">ID: {{ task['request']['id'] }}</span>
+        {% endfor %}
+    {% endfor %}
+
+</div>
+{% endblock %}

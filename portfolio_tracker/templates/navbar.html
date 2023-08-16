@@ -1,0 +1,67 @@
+<div class="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary" style="width: 250px;">
+  <div class="d-flex">
+    <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">
+      <img class="mb-0 me-2" src="{{ url_for('static', filename='favicon.png') }}" alt="" width="32" height="32">
+      <span class="fs-4">Portfolios</span>
+    </a>
+    <a class="action-icon text-decoration-none position-relative" href="" data-bs-toggle="modal"
+      data-bs-target="#Alerts">
+      <i class="bi icon bi-bell"></i>
+      <div class="" id="worked_alerts"></div>
+    </a>
+  </div>
+  <hr>
+  <ul class="nav nav-pills flex-column mb-auto">
+    <li class="nav-item">
+      <a href="{{ url_for('portfolio.portfolios') }}"
+        class="nav-link {{ 'active' if request.blueprint == 'portfolio' else 'link-body-emphasis' }}"
+        aria-current="page">
+        <i class="bi bi-briefcase me-2"></i>
+        Портфели
+      </a>
+    </li>
+    <li>
+      <a href="{{ url_for('wallet.wallets') }}"
+        class="nav-link {{ 'active' if request.blueprint == 'wallet' else 'link-body-emphasis' }}">
+        <i class="bi bi-wallet me-2"></i>
+        Кошельки
+      </a>
+    </li>
+    <li>
+      <a href="{{ url_for('tracking.tracking_list', market_id='crypto') }}"
+        class="nav-link {{ 'active' if request.blueprint == 'tracking' else 'link-body-emphasis' }}">
+        <i class="bi bi-list-check me-2"></i>
+        Whitelist
+      </a>
+    </li>
+    <li>
+      {% if current_user.type == 'admin' %}
+      <a href="{{ url_for('admin.admin_index') }}"
+        class="nav-link {{ 'active' if request.blueprint == 'admin' else 'link-body-emphasis' }}">
+        <i class="bi bi-grid me-2"></i>
+        Админ
+      </a>
+      {% endif %}
+    </li>
+  </ul>
+  <hr>
+  <div class="dropdown">
+    <a href="#" class="d-flex align-items-center link-body-emphasis text-decoration-none dropdown-toggle"
+      data-bs-toggle="dropdown" aria-expanded="false">
+      <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle me-2">
+      <strong>mdo</strong>
+    </a>
+    <ul class="dropdown-menu text-small shadow" style="">
+      {% if current_user.email != 'demo' %}
+      <li><a class="dropdown-item" href="{{ url_for('settings') }}">Настройки</a></li>
+      {% else %}
+      <li><span class="dropdown-item fw-semibold">Demo user</span></li>
+      {% endif %}
+      <li>
+        <hr class="dropdown-divider">
+      </li>
+      <li><a class="dropdown-item" href="{{ url_for('logout') }}">Выйти</a></li>
+
+    </ul>
+  </div>
+</div>

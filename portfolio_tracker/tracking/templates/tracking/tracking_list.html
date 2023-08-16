@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %} Список отслеживания {% endblock %}
+{% block content %}
+<div class="mb-5">
+  <div class="row xs-mb-3">
+    <div class="col-auto">
+      <h1>Список отслеживания</h1>
+    </div>
+    <div class="col-auto ms-auto">
+      <div class="dropdown">
+        <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Добавить актив</button>
+        <ul class="dropdown-menu">
+          <li><button data-bs-toggle="modal" data-bs-target="#addAssetCrypto"  class="dropdown-item btn-crypto" aria-expanded="false">Криптовалюта</button></li>
+          <li><button data-bs-toggle="modal" data-bs-target="#addAssetStocks"  class="dropdown-item" aria-expanded="false">Акция</button></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<nav class="nav nav-underline">
+  <a class="nav-link {{ 'active disabled' if market_id == 'crypto' }}" href="{{ url_for('.tracking_list', market_id='crypto') }}">Crypto</a>
+  <a class="nav-link {{ 'active disabled' if market_id == 'stocks' }}" href="{{ url_for('.tracking_list', market_id='stocks') }}">Stocks</a>
+</nav>
+
+{% if tracked_tickers %}
+  <div class="big-table">
+    <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
+      <thead>
+        <tr>
+          <th scope="col" data-sortable="true">Наименование</th>
+          <th scope="col">Уведомления</th>
+          <th scope="col" class="text-end">Действие</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for tracked_ticker in tracked_tickers %}
+          <tr>
+            <td class="text-average">
+              <a class="link-dark text-decoration-none" href="{{ url_for('tracked_ticker_info', market_id=tracked_ticker.ticker.market_id, ticker_id=tracked_ticker.ticker_id) }}">
+                {% if tracked_ticker.ticker.image %}
+                  <img class="img-asset-min" src="{{ tracked_ticker.ticker.image }}">
+                {% endif %}
+
+                {{ tracked_ticker.ticker.name }} <span class="text-muted">{{ tracked_ticker.ticker.symbol|upper }}</span>
+              </a>
+            </td>
+            <td>
+              {% for alert in tracked_ticker.alerts %}
+                <span class="badge {{ 'text-bg-success' if alert.worked else 'text-bg-light' }} fw-normal none-cursor">
+                  ${{ alert.price|number_group }}
+                </span>
+              {% endfor %}
+            </td>
+            <td class="text-end">
+              {% if tracked_ticker.ticker_id not in orders %}
+                <a class="action-icon text-decoration-none" href="{{ url_for('tracking_list_delete_ticker', ticker_id=tracked_ticker.id) }}" title="Удалить">
+                  <i class="bi icon bi-trash-fill"></i>
+                </a>
+              {% else %}
+                <a class="action-icon text-decoration-none opacity-25" aria-disabled="true"  tabindex="-1" title="Невозможно удалить, стоит ордер">
+                  <i class="bi icon bi-trash-fill"></i>
+                </a>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% else %}
+  <div class="nothing-box">Пока ничего нет...</div>
+{% endif %}
+
+{% endblock %}

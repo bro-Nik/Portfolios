@@ -1,28 +1,8 @@
 {% extends "base.html" %}
 {% block title %} Home / Admin {% endblock %}
-{% block head %}
-    {{ super() }}
-{% endblock %}
-{% block link %}
-    <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
-    <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
-    <button onclick="document.location='{{ url_for('tracking_list') }}'" type="button" class="btn btn-light btn-sm">Список отслеживания</button>
-    {% if current_user.type == 'admin' %}
-        <button type="button" class="btn btn-light btn-sm" disabled>Админ</button>
-    {% endif %}
-{% endblock %}
 {% block content %}
-<div class="mb-5">
-    <div class="row xs-mb-3">
-        <div class="col-auto">
-            <span class="fs-6 text-muted fw-semibold m-2">Главная</span>
-            <a class="fs-6 text-muted fw-semibold text-decoration-none m-2" href="{{ url_for('admin_users') }}">Пользователи</a>
-            <a class="fs-6 text-muted fw-semibold text-decoration-none m-2" href="{{ url_for('admin_tickers') }}">Тикеры</a>
-            <a class="fs-6 text-muted fw-semibold text-decoration-none m-2" href="{{ url_for('admin_feedback') }}">Обратная связь</a>
-            <a class="fs-6 text-muted fw-semibold text-decoration-none m-2" href="{{ url_for('admin_active_tasks') }}">Активные задачи</a>
-        </div>
-    </div>
-</div>
+
+{% include 'admin/menu.html' %}
 
 <div class="row mb-5 xs-mb-3">
     <div class="col-12 mb-5">
@@ -53,26 +33,23 @@
         <div class="mb-3">
             <span class="text-average">Redis</span>
         </div>
-        <a class="small_text text-decoration-none" href="{{ url_for('admin_del_tasks') }}">
+        <a class="small_text text-decoration-none" href="{{ url_for('.admin_del_tasks') }}">
             Удалить все задачи
         </a><br>
-        <a class="small_text text-decoration-none" href="{{ url_for('admin_del_price_lists') }}">
+        <a class="small_text text-decoration-none" href="{{ url_for('.admin_del_price_lists') }}">
             Удалить прайс листы
         </a><br>
-        <a class="small_text text-decoration-none" href="{{ url_for('admin_del_tickers') }}">
-            Удалить кеш тикеров
-        </a><br>
-        <a class="small_text text-decoration-none" href="{{ url_for('admin_del_alerts') }}">
+        <a class="small_text text-decoration-none" href="{{ url_for('.admin_del_alerts') }}">
             Удалить уведомления
-        </a>
-        <a class="small_text text-decoration-none" href="{{ url_for('admin_del_all') }}">
+        </a><br>
+        <a class="small_text text-decoration-none" href="{{ url_for('.admin_del_all') }}">
             Удалить все из Redis
         </a><br>
     </div>
 </div>
 <script>
 // Обновление данных без перезагрузки
-const url = {{ url_for('admin_index_detail')|tojson }}
+const url = {{ url_for('.admin_index_detail')|tojson }}
 const Admins = document.getElementById('admins-count');
 const Users = document.getElementById('users-count');
 const cryptoTickersCount = document.getElementById('crypto-tickers-count');
@@ -118,10 +95,10 @@ function updatePage() {
     }
     else {
         if ((data.task_crypto_price_id && !is_off.includes(data.task_crypto_price_state)) || (data.task_stocks_price_id && !is_off.includes(data.task_stocks_price_state))) {
-        UpdatePriceTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{url_for('admin_update_prices_stop') }}">Остановить</a>`
+        UpdatePriceTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{url_for('.admin_update_prices_stop') }}">Остановить</a>`
         }
         else {
-        UpdatePriceTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{url_for('admin_update_prices') }}">Запустить</a>`
+        UpdatePriceTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{url_for('.admin_update_prices') }}">Запустить</a>`
         }
     }
     whenUpdateCrypto.innerHTML = `${data.when_update_crypto}`;

@@ -1,0 +1,230 @@
+{% if not load_only_content %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
+
+{% block content %}
+<div class="mb-5">
+  <div class="row xs-mb-3">
+    <div class="col-auto">
+      <h1>{{ portfolio.name }}</h1>
+    </div>
+    <div class="col-auto ms-auto">
+      <!-- <select id="TickersSelect" data-placeholder="Добавить актив"></select> -->
+      <select id="TickersSelect"></select>
+    </div>
+  </div>
+</div>
+
+{% if portfolio.assets %}
+  <div class="row xs-mb-3">
+
+    {% set total_spent = portfolio.assets|sum(attribute='total_spent') %}
+    {% set profit = cost_now - total_spent %}
+
+    <div class="col-auto">
+      <p class="small_text">Всего вложено / сейчас</p>
+      <span class="text-average">${{ total_spent|int|number_group }} /</span>
+      <span class="text-average {{ 'text-green' if profit > 0 }} {{ 'text-red' if profit < 0 }}">
+        ${{ cost_now|int|number_group }}
+      </span>
+    </div>
+
+    <div class="col-auto">
+      <p class="small_text">Прибыль / убыток</p>
+      <span class="text-average {{ 'text-green' if profit > 0 }} {{ 'text-red' if profit < 0 }}">
+        {{ '-' if profit < 0 }}${{ profit|int|abs|number_group }}
+        {% if total_spent %}
+          ({{ (profit / total_spent * 100)|round|int|abs }}%)
+        {% endif %}
+      </span>
+    </div>
+  </div>
+
+  <div class="fixed-height-1"></div>
+  <div class="big-table">
+    <form id="AssetsForm" action="{{ url_for('.asset_action', market_id=portfolio.market_id) }}">
+      <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
+        <thead>
+          <tr>
+            <th scope="col" data-sortable="true">Наименование</th>
+            <th scope="col">Цена / Ср. цена покупки</th>
+            <th scope="col" data-sortable="true" data-sort-name="cost">Активы</th>
+            <th scope="col" data-sortable="true" data-sort-name="profit">Прибыль / убыток</th>
+            <th scope="col" data-sortable="true" data-sort-name="procent">% портфеля</th>
+            <th scope="col"></th>
+            <!-- For sorting -->
+            <th scope="col" class="visually-hidden" data-sortable="true" data-field="cost">Стоит сейчас</th>
+            <th scope="col" class="visually-hidden" data-sortable="true" data-field="profit">Профит</th>
+            <th scope="col" class="visually-hidden" data-sortable="true" data-field="procent">% портфеля</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for asset in portfolio.assets %}
+            {% set asset_price = price_list[asset.ticker.id] if price_list.get(asset.ticker.id) else 0 %}
+            <tr>
+              <td class="text-average text-truncate" style="max-width:300px;">
+                <a class="link-dark text-decoration-none open-asset" href="#" 
+                  data-url="{{ url_for('.asset_info', market_id=portfolio.market_id, asset_id=asset.id) }}">
+
+                  {% if asset.ticker.image %}<img class="img-asset-min" src="{{ asset.ticker.image }}">{% endif %}
+                  {{ asset.ticker.name }}
+                  <span class="text-muted">{{ asset.ticker.symbol|upper }}</span>
+                </a>
+              </td>
+
+              <td>
+                ${{ asset_price|smart_round|number_group }}
+                {% if asset.total_spent > 0 %}
+                  / ${{ (asset.total_spent / asset.quantity)|smart_round|number_group }}
+                {% endif %}
+              </td>
+
+              <td>
+                {% set asset_cost_now = asset.quantity * asset_price %}
+                {% set asset_profit = asset_cost_now - asset.total_spent %}
+
+                {% if asset.quantity > 0 %}
+                  ${{ asset_cost_now|int|number_group }}
+                  {{ '/ $' + asset.total_spent|int|number_group if asset.total_spent > 0 }}
+                  <br>
+                  <span class="text-average small_text">
+                    {{ asset.quantity|smart_round|number_group }}
+                    {{ asset.ticker.symbol|upper }}
+                  </span>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td>
+                {% if asset.quantity > 0 %}
+                  <span class="text-average {{ 'text-green' if asset_profit > 0 }} {{ 'text-red' if asset_profit < 0 }}">
+                    {{ '-' if asset_profit < 0 }}${{ asset_profit|int|abs|number_group }}
+
+                    {% if asset.total_spent > 0 %}
+                      ({{ (asset_profit / asset.total_spent * 100)|int }}%)
+                    {% endif %}
+                  </span>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td>
+                {% if total_spent and asset.total_spent %}
+                  {{ (asset.total_spent / total_spent * 100)|round(1, 'common') }}% /
+                {% else %}
+                  - /
+                {% endif %}
+                {{ asset.percent + '%' if asset.percent else '-' }}
+              </td>
+
+              <td class="align-middle text-end">
+                <div class="dropdown dropstart">
+                  <a href="#" role="button" id="dropdownAction"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="bi icon bi-three-dots-vertical"></i>
+                  </a>
+                  <div class="dropdown-menu" aria-labelledby="dropdownAction">
+                    <a class="dropdown-item action-confirmation link-danger" data-title="Удалить {{ asset.ticker.name }}?"
+                      data-id="{{ asset.id }}">
+                      Удалить
+                    </a>
+                  </div>
+                </div>
+              </td>
+
+              <!-- For sorting -->
+              <td class="visually-hidden">{{ asset_cost_now|int }}</td>
+              <td class="visually-hidden">{{ asset_profit|int }}</td>
+              <td class="visually-hidden">{{ (asset.total_spent / total_spent * 100)|round(1, 'common') if total_spent else 0 }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
+  </div>
+  <div class="mt-5 small_text text-muted">
+    Активов: {{ portfolio.assets|length}}
+  </div>
+{% else %}
+  <div class="nothing-box">Пока ничего нет...</div>
+{% endif %}
+
+<script>
+  // Open Modal Asset
+  $('.open-asset').on("click", function (e) {
+    var modal_id = 'AssetInfoModal',
+      url = $(this).attr('data-url');
+    LoadToModal(modal_id, url);
+  })
+
+
+  $('#TickersSelect').on('select change', function (evt, config) {
+    var data = $(this).select2('data')[0],
+      url = "{{ url_for('.asset_add', portfolio_id=portfolio.id) }}";
+    url += "?ticker_id=" + data.id;
+
+
+    new Promise(function (resolve) {
+      LoadToModal('AssetInfoModal', url);
+	    setTimeout(function () {
+	      resolve(1);
+	    }, 1000)
+    }).then(function () {
+      // Update Portfolio Info
+      LoadToModal('PortfolioInfoModal', "{{ url_for('.portfolio_info', portfolio_id=portfolio.id) }}");
+    });
+    
+  });
+
+
+  // Tickers Select
+  $('#TickersSelect').select2({
+    theme: "bootstrap-5",
+    // width: '400px',
+    dropdownAutoWidth: true,
+    dropdownParent: $('#TickersSelect').closest('.modal'),
+    templateResult: formatTickersSelect,
+    selectionCssClass: 'add-crypto-asset',
+    placeholder: 'Добавить актив',
+    "language": {
+      "noResults": function () {
+        return "Ничего не найдено";
+      }
+    },
+    ajax: {
+      delay: 250,
+      url: "{{ url_for('.ajax_tickers', market_id=portfolio.market_id) }}",
+      dataType: 'json',
+      data: function (params) {
+        var query = {
+          search: params.term,
+          page: params.page || 1
+        }
+        return query;
+      }
+    }
+  })
+
+  function formatTickersSelect(ticker) {
+    var $ticker = '<div class="asset-ticker-line">';
+    $ticker += '<div class="asset-ticker">';
+    if (ticker.image) {
+      $ticker += '<img class="img-asset-min" src="' + ticker.image + '">';
+    }
+
+    $ticker += ticker.name;
+    $ticker += '<span class="asset-ticker-symbol">' + ticker.symbol + '</span>';
+    $ticker += '</div>';
+    if (ticker.cap_rank) {
+      $ticker += '<span class="asset-ticker-rank">' + ticker.cap_rank + '</span>';
+    }
+    $ticker += '</div>';
+
+    return $($ticker);
+  };
+
+</script>
+{% endblock %}

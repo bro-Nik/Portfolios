@@ -1,0 +1,38 @@
+<div class="modal-dialog modal-dialog-centered">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h1 class="modal-title fs-3">Добавить актив</h1>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+      <form class="" method="post" action="">
+        <input type="hidden" name="id" id="id">
+        <div class="row g-2">
+          <div class="col-12">
+            <div class="mb-1">
+              <label for="name" class="form-label h7">Название</label>
+              <input type="text" class="form-control rounded-3 focus" name="name" autocomplete="off">
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="mb-1">
+              <label class="form-label h7">Планируемый % портфеля</label>
+              <div class="input-group">
+                <span class="input-prefix">%</span>
+                <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="percent"
+                  autocomplete="off">
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="mb-3">
+              <label class="form-label h7">Комментарий</label>
+              <textarea class="form-control silver" name="comment"></textarea>
+            </div>
+          </div>
+        </div>
+        <button class="w-100 mb-2 btn btn rounded-3 btn-primary" type="submit">Добавить актив</button>
+      </form>
+    </div>
+  </div>
+</div>

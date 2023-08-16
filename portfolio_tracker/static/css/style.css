@@ -132,6 +132,11 @@ thead > tr {
     width: 20px;
     height: auto;
     vertical-align: text-bottom;
+    height: 20px;
+    width: 20px;
+    border-radius: 10px;
+    margin-inline-end: 8px;
+    flex: 0 0 auto;
 }
 .img-asset {
     width: 40px;
@@ -205,7 +210,84 @@ td.symbol-icon:empty, td.market-cap-rank:empty {
 
 
 @media (max-width: 767px){
-.xs-mb-3 > div {
-    margin-bottom: 20px;
+    .xs-mb-3 > div {
+        margin-bottom: 20px;
+    }
 }
+
+.modal-fullscreen {
+    width: calc(100% - 250px);
+    float: right;
+}
+.modal-close-label {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    left: 0;
+    top: 17px;
+    transform: translateX(-100%);
+    transition: all 300ms ease;
+    min-width: 37px;
+    height: 38px;
+    margin-bottom: 10px;
+    background: #fff;
+    border-top-left-radius: 19px;
+    border-bottom-left-radius: 19px;
+    white-space: nowrap;
+    overflow: hidden;
+    box-shadow: inset -6px 0 8px -10px rgba(0,0,0,0.95), rgba(0, 0, 0, 0.3) -5px 0px 22px -5px;
+    z-index: 1;
+    cursor: pointer;
+    justify-content: center;
+}
+.modal-close-label .btn-close {
+    width: 100%;
+}
+.main-tab-checkbox {
+    width: 1.5rem;
+    padding-right: 0 !important;
+    margin: 0;
+    vertical-align: middle;
+    /* border: none; */
+}
+.asset-ticker-line {
+    display: flex;
+    -webkit-box-align: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    justify-content: space-between;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 8px;
+    min-height: 36px;
+    background-color: transparent;
+}
+.modal-fullscreen {
+    box-shadow: rgba(0, 0, 0, 0.3) -5px 0px 22px -5px;
+}
+.nothing-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 0 auto;
+    font-size: 1.25rem;
+    font-weight: 300;
+}
+.sticky-bottom {
+    position: fixed;
+    bottom: 0;
+    width: -webkit-fill-available;
+    transform: translateY(130%);
+    transition: all 300ms ease;
+    box-sizing: border-box;
+    box-shadow: 0 -2px 4px 0 rgba(0,0,0,.05);
+    text-align: center;
+    z-index: 10;
+    margin-left: -3rem;
+  }
+.sticky-bottom.active {
+    transform: translateY(0);
+  }
+.sticky-bottom-box {
+  position: relative;
 }

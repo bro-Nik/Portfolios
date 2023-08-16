@@ -1,0 +1,27 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+{% set modal_title = 'Изменить кошелек' if wallet else 'Добавить кошелек' %}
+
+{% block content %}
+<form method="post" action="{{ url_for('.wallet_update', wallet_id=wallet.id if wallet) }}">
+  <div class="row g-2">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <label class="form-label h7">Название</label>
+        <input type="text" class="form-control rounded-3" name="name" value="{{ wallet.name if wallet }}" autocomplete="off" required>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <label class="form-label h7">Баланс</label>
+        <div class="input-group">
+          <span class="input-prefix">$</span>
+          <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="money_all"
+            value="{{ wallet.money_all if wallet }}" autocomplete="off">
+        </div>
+      </div>
+    </div>
+  </div>
+  <button class="w-100 btn btn rounded-3 btn-primary" type="submit">{{ modal_title }}</button>
+</form>
+{% endblock %}

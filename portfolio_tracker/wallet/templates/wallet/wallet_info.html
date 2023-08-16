@@ -1,0 +1,73 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = True %}
+
+{% block content %}
+
+<div class="mb-5">
+  <div class="row xs-mb-3">
+    <div class="col-auto">
+      <h1>{{ wallet.name }}</h1>
+    </div>
+  </div>
+</div>
+<div class="row xs-mb-3">
+
+  <div class="col-auto">
+    <p class="small_text">Всего вложено / сейчас</p>
+    <span class="text-average">
+      {% set wallet_total_spent = wallet.transactions|sum(attribute='total_spent') %}
+      ${{ (wallet_total_spent - wallet.money_in_order)|int|number_group }} /
+      ${{ wallet_cost_now|int|number_group }}
+    </span>
+  </div>
+
+  <div class="col-auto">
+    <p class="small_text">В ордереах</p>
+    <span class="text-average">${{ wallet.money_in_order|int|number_group }}</span>
+  </div>
+
+  <div class="col-auto">
+    <p class="small_text">Свободные средства</p>
+    <span class="text-average">
+      {{ '-' if (wallet.money_all - wallet_total_spent) < 0 }}${{ (wallet.money_all -
+        wallet_total_spent)|int|abs|number_group }}</span>
+  </div>
+</div>
+
+{% if wallet.transactions %}
+<div class="fixed-height-1"></div>
+<div class="big-table">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th scope="col">Наименование</th>
+        <th scope="col">Количество</th>
+        <th scope="col">Стоимость сейчас</th>
+        <th scope="col">В ордере</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for asset_id in assets_list %}
+      {% set asset = assets_list[asset_id] %}
+      <tr>
+        <td class="text-average">
+          {{ asset['name'] }}
+          <span class="text-muted">{{ asset['symbol']|upper }}</span>
+        </td>
+        <td>
+          <span class="text-average small_text">
+            {{ asset['quantity']|smart_round|number_group }}
+            {{ asset['symbol']|upper }}
+          </span>
+        </td>
+        <td>${{ (asset['quantity'] * price_list[asset_id])|int|number_group }}</td>
+        <td>${{ asset['order']|int|number_group }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="nothing-box">Пока ничего нет...</div>
+{% endif %}
+{% endblock %}

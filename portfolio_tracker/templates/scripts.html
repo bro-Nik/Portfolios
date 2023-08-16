@@ -1,0 +1,458 @@
+<script>
+  // Checkboxes
+
+  // Check All
+  $('body').on("change", '.check-all', function () {
+    var $table = $(this).closest('table');
+    $table.find('.to-check').prop('checked', $(this).is(':checked'));
+    $table.find('.to-check').trigger('change');
+  })
+
+  // Check Group
+  $('body').on("change", '.check-group', function () {
+    var $table = $(this).closest('table');
+    $table.find('.' + this.id).prop('checked', $(this).is(':checked'));
+    $table.find('.to-check').trigger('change');
+  })
+
+  // Check Count
+  $('body').on("change", '.to-check', function () {
+    var $table = $(this).closest('table'),
+      $modal = $table.closest('.modal'),
+      checked_count = $table.find('.to-check:checked').length,
+      all_count = $table.find('.to-check').length;
+
+    // if ($modal.length) {
+    //   var $box_actions = $table.closest('div[id]');
+    //
+    //   var $btns = $box_actions.find('.actions .btn')
+    //   $btns.prop('disabled', !checked_count > 0);
+    // } else {
+    var $box_actions = $('.sticky-bottom.actions');
+    if (checked_count > 0) {
+      $box_actions.addClass('active');
+    } else {
+      $box_actions.removeClass('active');
+    }
+    // }
+    $box_actions.find('.checks-count').text(checked_count + ' / ' + all_count);
+    $($table).find('.check-all').prop('checked', checked_count > 0);
+  })
+
+  // Actions
+
+  // Open modal to confirm
+  $('body').on("click", '.action-confirmation', function () {
+    var $modal = $('#ModalConfirmation'),
+      $btn = $(this),
+      title = $btn.attr('data-title'),
+      action = $btn.attr('data-action'),
+      id = $btn.attr('data-id') || "";
+
+    if ($btn.attr('data-form')) {
+      $modal.find('.action').attr('data-form', $btn.attr('data-form'));
+    } else {
+      $modal.find('.action').attr('data-form', '#' + $btn.closest('form').attr('id'));
+    }
+
+    // if modal then update
+    if ($btn.closest('.modal').length) {
+      var modalToApply = $btn.closest('.modal').attr('id');
+      $modal.find('.action').attr('data-modal-id', modalToApply);
+    }
+
+    $modal.find('.modal-title').text(title);
+    $modal.find('.action').attr('data-action', action);
+    $modal.find('.action').attr('data-id', id);
+    $modal.modal({backdrop: false}).modal('show');
+  })
+
+  // 
+  $('body').on("click", '.action', function () {
+    var $btn = $(this),
+      checked = [];
+
+    // $btn.closest('.modal').modal('hide');
+
+    // If button not in form
+    if ($btn.attr('data-form')) {
+      var $form = $($btn.attr('data-form'));
+    } else {
+      var $form = $btn.closest('form');
+    }
+
+    // If info not in main form
+    if ($btn.attr('data-form-info')) {
+      var info = $($btn.attr('data-form-info')).serializeArray();
+    } else {
+      var info = $form.serializeArray();
+    }
+
+    if ($btn.attr('data-id')) {
+      checked.push($btn.attr('data-id'));
+    } else {
+      $form.find('.to-check:checked').each(function () {
+        checked.push($(this).val());
+      });
+    }
+
+    var data = {
+      action: $btn.attr('data-action'),
+      info: info,
+      ids: checked
+    }
+    SendingData(data, $btn, $form)
+  })
+
+  // Simple form
+  $(document).on("click", ".simple-form-submit", function () {
+    var $btn = $(this),
+      $form = $btn.closest("form"),
+      is_valid = $form.get(0).checkValidity();
+
+    $form.addClass('was-validated')
+    if (!is_valid) {return false;}
+
+    var posting = $.post($form.attr('action'), $form.serialize()),
+      $modal = $form.closest('.modal');
+
+    $modal.modal('hide');
+    posting.done(function (data) {
+      PageUpdate($btn)
+    });
+  });
+
+
+
+  function SendingData(data, $btn, $form) {
+    $.ajax({
+      type: "POST",
+      url: $form.attr('action'),
+      data: JSON.stringify(data),
+      contentType: 'application/json; charset=utf-8',
+      //dataType: 'json',
+      // success: PageUpdate($btn)
+    }).done(PageUpdate($btn));
+  };
+
+  function PageUpdate($btn) {
+    var modal_id = $btn.attr('data-modal-id');
+    if (modal_id) {
+      LoadToModal(modal_id, $('#' + modal_id).attr('data-url'));
+    } else {
+      $('.modal.show').each(function () {
+        $(this).modal('hide');
+      })
+      setTimeout("location.reload()", 1000);
+    }
+  }
+
+  // Selects
+  var defaultSelectClass = ''
+
+
+  // General Select
+  function UpdateGeneralSelects($element = $('body')) {
+
+    $element.find('.general-select').each(function () {
+      $(this).select2({
+        theme: "bootstrap-5",
+        width: $(this).data('width') || '100%',
+        dropdownAutoWidth: true,
+        minimumResultsForSearch: 10,
+        selectionCssClass: $(this).data('class') || defaultSelectClass,
+      })
+    })
+  }
+  UpdateGeneralSelects();
+
+  // Ajax Selects
+  function UpdateAjaxSelects($element = $('body')) {
+    $element.find('.ajax-select').each(function () {
+      $(this).select2({
+        theme: "bootstrap-5",
+        width: $(this).data('width') || '100%',
+        dropdownAutoWidth: true,
+        dropdownParent: $(this).closest('.modal'),
+        selectionCssClass: $(this).data('class') || defaultSelectClass,
+        "language": {
+          "noResults": function () {
+            return "Ничего не найдено";
+          }
+        },
+        ajax: {
+          delay: 250,
+          url: $(this).data('url'),
+          dataType: 'json',
+          data: function (params) {
+            var query = {
+              search: params.term,
+              page: params.page || 1
+            }
+            return query;
+          }
+        }
+      });
+    });
+  }
+  UpdateAjaxSelects();
+
+  // Multiple Select Names > Count
+  function UpdateMultipleSelectCount($element = $('body')) {
+    $element.find('select.show-count-selected').each(function () {
+      MultipleSelectCount($(this));
+    });
+  }
+  UpdateMultipleSelectCount();
+
+  $(document).on('change', '.show-count-selected', function (e) {
+    MultipleSelectCount($(this))
+  })
+
+  function MultipleSelectCount($select) {
+    var count = $select.val().length;
+
+    if (count > 0) {
+      $select.parent().find('.select2-selection__rendered').remove();
+      var $count_span = $select.parent().find('.multiple-count');
+      if ($count_span.length) {
+        $count_span.html('+ ' + count);
+      } else {
+        $select.parent().find('.select2-selection.select2-selection--multiple').append($(`<span class="multiple-count" >+ ${count}</span>`))
+      }
+    }
+  }
+
+  // Select Open Focus
+  $(document).on('select select2:open', function () {
+    $(this).attr('data-test', 'test')
+    var single = $(this).parent().find('.select2-selection--single')
+    if (single.length) {
+      alert('single')
+      var $search = $('.select2-search.select2-search--dropdown').find('.select2-search__field');
+    } else {
+      document.querySelector('.select2-search__field').focus();
+      // $(document).find('.select2-search__field').focus();
+    }
+    // $search.focus();
+  });
+
+
+  // Modals
+
+  function LoadToModal(modal_id, url) {
+    var $modal = $('#' + modal_id);
+
+    if ($modal.length) { // load only content
+      var $loadIn = $modal.find('.modal-body').empty();
+      url += ((url.indexOf('?') > 0) ? '&' : '?') + 'load_only_content=true';
+    } else { // create and load full modal
+      $('body').find('#content').append('<div class="modal fade" id="' + modal_id + '" tabindex="-1" aria-hidden="true"></div>');
+      var $loadIn = $modal = $('body').find('#' + modal_id);
+      // var $loadIn = $modal;
+    }
+    $loadIn.load(url, function () {
+      UpdateScripts($modal);
+      $modal.modal({
+        backdrop: false,
+        keyboard: true
+      })
+      $modal.attr('data-url', url)
+      if (!$modal.hasClass('show')) {
+        $modal.modal('show');
+        $modal.focus();
+      }
+    })
+  }
+
+  $(document).click(function (e) {
+    if ($(e.target).is('.modal')) {
+      $(e.target).modal('hide')
+    }
+  });
+
+  // Open Modal
+  // $('.modal').on('show.bs.modal', function () {
+  $(document).on('show.bs.modal', '.modal', function () {
+    var $modal = $(this);
+
+    $modal.css('height', $(window).height())
+
+    var $active_modals = $('body').find('.modal.show');
+    // if ($active_modals.length === 0) {
+    //   return true;
+    // }
+    var z_index = parseInt($modal.css('z-index'));
+
+    $active_modals.each(function () {
+      if ($(this).index() !== $modal.index()) {
+        var this_z_index = parseInt($(this).css('z-index'));
+        if (this_z_index => z_index) {
+          z_index = this_z_index + 1;
+        }
+        if ($modal.find('.modal-fullscreen').length) {
+          $(this).find('.modal-close-label').css('top', '+=60');
+        }
+      }
+    });
+    $modal.css('z-index', z_index);
+
+    // Fade
+    if (!$modal.find('.modal-fullscreen').length) {
+      $('body').append('<div class="modal-backdrop fade show" style="z-index: ' + (z_index - 1) + ';"></div>')
+    }
+  })
+
+  $('.modal').on('shown.bs.modal', function () {
+    var $modal = $(this);
+    $('body .modal-backdrop').css('z-index', parseInt($modal.css('z-index')) - 1);
+    $modal.focus();
+  })
+
+  // Close Modal
+  $(document).on('hide.bs.modal', '.modal', function () {
+    var $modal = $(this);
+
+    if (!$('.modal.show').length > 1) {
+      return false;
+    }
+
+    var z_index = parseInt($modal.css('z-index'));
+    var max_z_index = 0;
+
+    $('body').find('.modal.show').each(function () {
+      var this_z_index = parseInt($(this).css('z-index'));
+      if (this_z_index !== z_index && this_z_index > max_z_index) {
+        max_z_index = this_z_index;
+      }
+    });
+
+    if ($modal.find('.modal-fullscreen').length) {
+      $('body').find('.modal.show').each(function () {
+        if ($(this).index() !== $modal.index()) {
+          $(this).find('.modal-close-label').css('top', '-=60');
+        }
+      });
+    }
+  })
+
+  $(document).on('hidden.bs.modal', '.modal', function () {
+    var $modal = $(this);
+    // Fade
+    if (!$modal.find('.modal-fullscreen').length) {
+      $('body .modal-backdrop').remove();
+    }
+  })
+
+
+  // Update Page
+
+  // Update Page After Change
+  $(document).on('change', '.update-after-change select', function (e) {
+    var $form = $(this).closest('form'),
+      $modal_body = $(this).closest('.modal-body');
+
+    // if modal
+    if ($modal_body.length) {
+      var posting = $.post($form.attr('action'), $form.serialize());
+
+      posting.done(function (data) {
+        var content = $(data);
+        $modal_body.html(content);
+        UpdateScripts($modal_body);
+      });
+
+      // if page
+    } else {
+      $form.submit();
+    }
+  })
+
+  // Update Page After Click Pagination
+  $(document).on("click", '.pagination a', function (e) {
+    var $modal_body = $(this).closest('.modal-body'),
+      url = $(this).attr('href');
+
+    // if modal
+    if ($modal_body.length) {
+      e.preventDefault();
+      $modal_body.empty().load(url, function () {
+        UpdateScripts($modal_body);
+      })
+    }
+  })
+
+  function UpdateScripts($element) {
+    UpdateGeneralSelects($element);
+    UpdateAjaxSelects($element);
+    UpdateMultipleSelectCount($element);
+  }
+
+  // Full Height
+  var $table = $('.table-responsive.full-height'),
+    $tabParent = $($table.attr('data-parent')),
+    tableHeight = $(window).height();
+
+  tableHeight -= $('#page-content .header').height();
+  tableHeight -= parseInt($tabParent.css('margin-top')) * 2;
+  tableHeight -= $tabParent.height() - $table.height();
+
+  //$tabParent.children().each(function () {
+  //if ($(this).find('.table-responsive').length) {
+  //return false;
+  //}
+  //tableHeight -= $(this).outerHeight(true);
+  //alert($(this).outerHeight(true))
+  //})
+  $table.height(tableHeight)
+
+  // Фокус на поле ввода
+  $(document).find('.modal').on('shown.bs.modal', function () {
+    $(this).find('.focus').focus();
+  })
+
+  // Convert Input
+
+  $(document).on('click', '.convert-text', function () {
+    var $box = $(this),
+      url = $box.attr('data-send-url'),
+      convertTo = $box.attr('data-convert-to');
+    if ($box.hasClass('active')) {
+      return true;
+    }
+
+    var newTextBox = '';
+    if (convertTo == 'textarea') {
+      newTextBox += '<textarea class="form-control convert-data" name="' + $box.attr('data-name') + '">'
+      newTextBox += $box.find('.convert-data').text();
+      newTextBox += '</textarea>';
+    }
+
+    $box.addClass('active').empty();
+
+    if (url) {
+      $box.append('<form></form>');
+      $box = $box.find('form');
+    }
+    $box.append(newTextBox)
+
+    if (url) {
+      var $btn = '<div class="position-right"><button class="btn btn-primary btn-sm submit" type="button">Сохранить</button></div>'
+      $box.append($btn)
+    }
+  })
+
+  $('.convert-text').on('click', '.submit', function () {
+    var $box = $(this).closest('.convert-text'),
+      $form = $box.find('form'),
+      url = $box.attr('data-send-url'),
+      posting = $.post(url, $form.serialize());
+
+    posting.done(function (data) {
+      var convertData = '<span class="convert-data">';
+      convertData += $form.find('.convert-data').val(),
+        convertData += '</span>',
+        $box.empty().append(convertData);
+    });
+  })
+</script>
