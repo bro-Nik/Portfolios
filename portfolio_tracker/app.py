@@ -40,8 +40,8 @@ from portfolio_tracker.portfolio.portfolio import portfolio
 app.register_blueprint(portfolio, url_prefix='/portfolios')
 from portfolio_tracker.wallet.wallet import wallet
 app.register_blueprint(wallet, url_prefix='/wallet')
-from portfolio_tracker.tracking.tracking import tracking
-app.register_blueprint(tracking, url_prefix='/tracking')
+from portfolio_tracker.whitelist.whitelist import whitelist
+app.register_blueprint(whitelist, url_prefix='/whitelist')
 from portfolio_tracker.admin.admin import admin
 app.register_blueprint(admin, url_prefix='/admin')
 

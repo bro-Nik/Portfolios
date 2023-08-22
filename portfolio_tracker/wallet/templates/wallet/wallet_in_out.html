@@ -1,0 +1,35 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+
+{% set modal_title = 'Ввод-вывод' %}
+
+{% block content %}
+  <form method="post" action="{{ url_for('.wallet_in_out') }}">
+    <div class="btn-group silver col-12 mb-3" role="group">
+      <input type="radio" class="btn-check" name="type" value="Ввод" id="btnradio1" autocomplete="off" checked>
+      <label class="btn btn-outline-active btn-sm" for="btnradio1">Ввод</label>
+
+      <input type="radio" class="btn-check" name="type" value="Вывод" id="btnradio2" autocomplete="off">
+      <label class="btn btn-outline-not_active btn-sm" for="btnradio2">Вывод</label>
+    </div>
+    <div class="row g-2">
+      <div class="col-md-6">
+        <div class="mb-3">
+          <label class="form-label h7">Сумма</label>
+          <div class="input-group">
+            <span class="input-prefix">$</span>
+            <input type="number" step="any" class="form-control rounded-3 focus" placeholder="0,00"
+              name="transfer_amount" autocomplete="off" required>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="mb-3">
+          <label class="form-label h7">Кошелек</label>
+          <select class="ajax-select" name="wallet_id" data-url="{{ url_for('.get_all_user_wallets') }}"></select>
+        </div>
+      </div>
+    </div>
+    <button class="w-100 btn btn rounded-3 btn-primary" type="submit">Готово</button>
+  </form>
+{% endblock %}

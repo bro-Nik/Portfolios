@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %} Список отслеживания {% endblock %}
+
+{% block content %}
+<div class="mb-5">
+  <div class="row xs-mb-3">
+    <div class="col-auto">
+      <h1>Список отслеживания</h1>
+    </div>
+    <div class="col-auto ms-auto">
+      <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_new', market_id=market_id) }}">Добавить актив</button>
+    </div>
+  </div>
+</div>
+<nav class="nav nav-underline">
+  <a class="nav-link {{ 'active disabled' if market_id == 'crypto' }}" href="{{ url_for('.whitelist_tickers', market_id='crypto') }}">Crypto</a>
+  <a class="nav-link {{ 'active disabled' if market_id == 'stocks' }}" href="{{ url_for('.whitelist_tickers', market_id='stocks') }}">Stocks</a>
+</nav>
+
+{% if tickers %}
+  <div class="big-table">
+    <form id="WhitelistForm" action="{{ url_for('.whitelist_action') }}">
+      <table class="table table-sm align-middle table-hover bootstrap-table" data-search="true">
+        <thead>
+          <tr>
+            <th class="main-tab-checkbox">
+              <input class="form-check-input check-all" type="checkbox">
+            </th>
+            <th data-sortable="true">Наименование</th>
+            <th>Уведомления</th>
+            <th>Комментарий</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for whitelist_ticker in tickers %}
+            {% set ticker = whitelist_ticker.ticker %}
+            <tr>
+              <td>
+                <input class="form-check-input to-check" type="checkbox" value="{{ ticker.id }}">
+              </td>
+
+              <td class="text-average">
+                <a class="link-dark text-decoration-none open-modal" href="#" data-modal-id="TrackedTickerInfoModal" data-url="{{ url_for('.ticker_info', ticker_id=ticker.id) }}">
+                  {% if ticker.image %}
+                    <img class="img-asset-min" src="{{ ticker.image }}">
+                  {% endif %}
+
+                  {{ ticker.name }} <span class="text-muted">{{ ticker.symbol|upper }}</span>
+                </a>
+              </td>
+
+              <td>
+                {% for alert in whitelist_ticker.alerts %}
+                  <span class="badge {{ 'text-bg-success' if alert.worked else 'text-bg-light' }} fw-normal none-cursor">
+                    ${{ alert.price|number_group }}
+                  </span>
+                {% endfor %}
+              </td>
+
+              <td>
+                {{ whitelist_ticker.comment if whitelist_ticker.comment }}
+              </td>
+              
+              <td class="align-middle text-end">
+	              <div class="dropdown dropstart">
+	                <a href="#" class="link-secondary" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+                  </a>
+                  <div class="dropdown-menu" aria-labelledby="dropdownAction">
+                    <a class="dropdown-item link-danger {{ 'open-modal-confirmation' if True else 'opacity-25 disabled' }}" data-action="delete" data-title="Удалить актив {{ ticker.name }}?" data-id="{{ ticker.id }}">
+                      Удалить
+                    </a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Actions buttons -->
+      <div class="sticky-bottom-buttons">
+        <a class="open-modal-confirmation" data-action="delete" data-title="Удалить активы?">Удалить</a>
+      </div>
+
+    </form>
+  </div>
+
+{% else %}
+  <div class="nothing-box">Пока ничего нет...</div>
+{% endif %}
+
+<script>
+
+  // Add New Asset
+  $(document).on("click", '.select-asset', function () {
+    var $modal = $(this).closest('.modal'),
+      url = "{{ url_for('.add_ticker') }}";
+
+    $modal.modal('hide');
+    url += "?ticker_id=" + $(this).attr('data-ticker-id');
+
+    pageNeedUpdate = true;
+
+    new Promise(function (resolve) {
+      LoadToModal('TrackedTickerInfoModal', url);
+	    setTimeout(function () {
+	      resolve(1);
+	    }, 1000)
+    }).then(function () {
+      // Update Whitelist
+      //LoadToModal('PortfolioInfoModal', " url_for('.portfolio_info', portfolio_id=portfolio.id) ");
+    });
+  });
+
+  var pageNeedUpdate = false;
+  $(document).on('hide.bs.modal', '#TrackedTickerInfoModal', function () {
+    if (pageNeedUpdate) {
+      location.reload();
+    }
+  })
+</script>
+{% endblock %}

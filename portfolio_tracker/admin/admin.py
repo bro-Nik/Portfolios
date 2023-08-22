@@ -25,18 +25,20 @@ def admin_index():
                                    filter_by(email='demo')).scalar()
     if not demo_user:
         # demo user
-        user = User(email='demo', password='demo')
-        wallet = Wallet(name='Default', user_id=user.id)
-        db.session.add(user, wallet)
+        demo_user = User(email='demo', password='demo')
+        db.session.add(demo_user)
+        wallet = Wallet(name='Default', user_id=demo_user.id)
+        db.session.add(wallet)
         db.session.commit()
 
     markets = db.session.execute(db.select(Market)).scalar()
     if not markets:
         # маркеты
-        crypto = Market(name='Crypto', id='crypto')
-        stocks = Market(name='Stocks', id='stocks')
-        other = Market(name='Other', id='other')
-        db.session.add(crypto, stocks, other)
+        db.session.add_all([
+           Market(name='Crypto', id='crypto'),
+           Market(name='Stocks', id='stocks'),
+           Market(name='Other', id='other')
+        ])
         db.session.commit()
 
     return render_template('admin/index.html', crypto_count=0, stocks_count=0,
@@ -139,9 +141,9 @@ def admin_tickers():
                            )
 
 
-@app.route('/load_tickers', methods=['GET'])
+@admin.route('/load_tickers', methods=['GET'])
 @admin_only
-def admin_load_tickers():
+def load_tickers_start():
     stop_update_prices()
     redis.set('crypto_tickers_task_id', str(load_crypto_tickers.delay().id))
     redis.set('stocks_tickers_task_id', str(load_stocks_tickers.delay().id))
@@ -149,9 +151,9 @@ def admin_load_tickers():
     return redirect(url_for('.admin_index'))
 
 
-@app.route('/load_tickers_stop', methods=['GET'])
+@admin.route('/load_tickers_stop', methods=['GET'])
 @admin_only
-def admin_load_tickers_stop():
+def load_tickers_stop():
     c_t_redis = redis.get('crypto_tickers_task_id')
     if c_t_redis:
         celery.control.revoke(c_t_redis.decode(), terminate=True)

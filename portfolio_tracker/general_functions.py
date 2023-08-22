@@ -1,6 +1,7 @@
 import pickle
 from datetime import datetime, timedelta
-from portfolio_tracker.app import redis
+from portfolio_tracker.app import redis, db
+from portfolio_tracker.models import Ticker
 
 
 def dict_get_or_other(dict, key, default=None):
@@ -54,3 +55,9 @@ def when_updated_def(when_updated, default=''):
     else:
         result = str(datetime.strftime(when_updated, '%Y-%m-%d %H:%M'))
     return result
+
+
+def get_ticker(id):
+    if not id:
+        return None
+    return db.session.execute(db.select(Ticker).filter_by(id=id)).scalar()

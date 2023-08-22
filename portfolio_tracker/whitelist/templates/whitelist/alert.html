@@ -1,0 +1,48 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+
+{% set modal_title = 'Уведомление' %}
+
+{% block content %}
+{% set asset_id = request.args.get('asset_id') %}
+<form id="Alert" method="post" action="{{ url_for('whitelist.alert_update', whitelist_ticker_id=whitelist_ticker_id if whitelist_ticker_id, ticker_id=ticker_id, asset_id=asset_id if asset_id) }}">
+  <div class="row g-2">
+
+    <div class="col-md-12">
+      <div id="alertPrice" class="mb-1">
+        <label class="form-label h7">Цена</label>
+        <div class="input-group">
+          <span class="input-prefix">$</span>
+          <input type="number" step="any" class="form-control rounded-3 focus" value="{{ price }}" name="price" required>
+          <input type="hidden" name="type" value="down">
+        </div>
+        <span class="alert-price-info">Когда цена ниже {{ price }}$</span>
+      </div>
+    </div>
+
+    <div class="col-md-12">
+      <div class="mb-3">
+        <label class="form-label h7">Комментарий</label>
+        <textarea class="form-control silver" name="comment"></textarea>
+      </div>
+    </div>
+
+  </div>
+  <button class="w-100 btn rounded-3 btn-primary simple-form-submit" type="button" data-modal-id="TrackedTickerInfoModal">Добавить уведомление</button>
+</form>
+
+<script>
+  $('#alertPrice').on('input', 'input[name=price]', function () {
+    var price_now = +{{ price }},
+      alert_price = $(this).val();
+    if (alert_price > price_now) {
+      $('#alertPrice .alert-price-info').text('Когда цена выше ' + alert_price + '$');
+      $('#alertPrice').find('input[name=type]').val('up');
+    } else {
+      $('#alertPrice .alert-price-info').text('Когда цена ниже ' + alert_price + '$');
+      $('#alertPrice').find('input[name=type]').val('down');
+    }
+  })
+
+</script>
+{% endblock %}

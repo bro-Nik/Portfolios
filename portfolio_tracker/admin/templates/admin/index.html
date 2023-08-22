@@ -84,10 +84,10 @@ function updatePage() {
    stocksTickersTask.innerHTML = `(${data.task_stocks_tickers_state})`;
 
     if ((data.task_crypto_tickers_id && !is_off.includes(data.task_crypto_tickers_state)) || (data.task_stocks_tickers_id && !is_off.includes(data.task_stocks_tickers_state))) {
-    TickersTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{ url_for('admin_load_tickers_stop') }}">Остановить</a>`
+    TickersTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{ url_for('.load_tickers_stop') }}">Остановить</a>`
     }
     else {
-    TickersTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{ url_for('admin_load_tickers') }}">Запустить</a>`
+    TickersTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{ url_for('.load_tickers_start') }}">Запустить</a>`
     }
 
     if ((data.task_crypto_tickers_id && !is_off.includes(data.task_crypto_tickers_state)) || (data.task_stocks_tickers_id && !is_off.includes(data.task_stocks_tickers_state))) {

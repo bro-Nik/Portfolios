@@ -8,7 +8,7 @@
     <div class="col-md-6">
       <div class="mb-3">
         <label class="form-label h7">Название</label>
-        <input type="text" class="form-control rounded-3" name="name" value="{{ wallet.name if wallet }}" autocomplete="off" required>
+        <input type="text" class="form-control rounded-3 focus" name="name" value="{{ wallet.name if wallet }}" autocomplete="off" required>
       </div>
     </div>
     <div class="col-md-6">
@@ -17,7 +17,7 @@
         <div class="input-group">
           <span class="input-prefix">$</span>
           <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="money_all"
-            value="{{ wallet.money_all if wallet }}" autocomplete="off">
+            value="{{ wallet.money_all if wallet.money_all }}" autocomplete="off">
         </div>
       </div>
     </div>

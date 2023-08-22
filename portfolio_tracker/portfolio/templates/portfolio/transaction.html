@@ -1,7 +1,5 @@
-{% if not load_only_content %}
-  {% extends "modal_base.html" %}
-  {% set modal_fullscreen = False %}
-{% endif %}
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
 
 {% set modal_title = 'Изменить транзакцию' if transaction else 'Добавить транзакцию' %}
 

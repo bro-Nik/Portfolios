@@ -27,7 +27,7 @@ def register():
             db.session.add(new_user)
             db.session.commit()
             # кошелек
-            wallet = Wallet(name='Default', money_all=0, money_in_order=0, user_id=new_user.id)
+            wallet = Wallet(name='Default', user_id=new_user.id)
             db.session.add(wallet)
             first_visit = userInfo(user_id=new_user.id, first_visit=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M'))
             db.session.add(first_visit)

@@ -1,5 +1,7 @@
-{% extends "modal_base.html" %}
-{% set modal_fullscreen = True %}
+{% if not request.args.get('load_only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
 
 {% block content %}
 
@@ -13,61 +15,77 @@
 <div class="row xs-mb-3">
 
   <div class="col-auto">
-    <p class="small_text">Всего вложено / сейчас</p>
-    <span class="text-average">
-      {% set wallet_total_spent = wallet.transactions|sum(attribute='total_spent') %}
-      ${{ (wallet_total_spent - wallet.money_in_order)|int|number_group }} /
-      ${{ wallet_cost_now|int|number_group }}
+    <p class="small_text">Вложено / сейчас</p>
+    <span class="text-average">${{ wallet.total_spent|int|number_group }} /
+      <span class="{{ 'text-green' if wallet.profit|int > 0 }} {{ 'text-red' if wallet.profit|int < 0 }}">
+        ${{ wallet.cost_now|int|number_group }}
+      </span>
     </span>
   </div>
 
   <div class="col-auto">
     <p class="small_text">В ордереах</p>
-    <span class="text-average">${{ wallet.money_in_order|int|number_group }}</span>
+    <span class="text-average">${{ wallet.in_orders|int|number_group }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small_text">Свободные средства</p>
     <span class="text-average">
-      {{ '-' if (wallet.money_all - wallet_total_spent) < 0 }}${{ (wallet.money_all -
-        wallet_total_spent)|int|abs|number_group }}</span>
+      {{ '-' if wallet.free|int < 0 }}${{ wallet.free|int|abs|number_group }}</span>
   </div>
 </div>
 
-{% if wallet.transactions %}
-<div class="fixed-height-1"></div>
-<div class="big-table">
-  <table class="table table-sm align-middle">
-    <thead>
-      <tr>
-        <th scope="col">Наименование</th>
-        <th scope="col">Количество</th>
-        <th scope="col">Стоимость сейчас</th>
-        <th scope="col">В ордере</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for asset_id in assets_list %}
-      {% set asset = assets_list[asset_id] %}
-      <tr>
-        <td class="text-average">
-          {{ asset['name'] }}
-          <span class="text-muted">{{ asset['symbol']|upper }}</span>
-        </td>
-        <td>
-          <span class="text-average small_text">
-            {{ asset['quantity']|smart_round|number_group }}
-            {{ asset['symbol']|upper }}
-          </span>
-        </td>
-        <td>${{ (asset['quantity'] * price_list[asset_id])|int|number_group }}</td>
-        <td>${{ asset['order']|int|number_group }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+{% if assets_list %}
+  <div class="big-table">
+    <table class="table table-sm align-middle bootstrap-table" data-search="true">
+      <thead>
+        <tr>
+          <th data-sortable="true">Наименование</th>
+          <th>Количество</th>
+          <th data-sortable="true" data-sort-name="total_spent">Вложено</th>
+          <th data-sortable="true" data-sort-name="cost_now">Стоимость сейчас</th>
+          <th data-sortable="true" data-sort-name="in_orders">В ордерах</th>
+
+          <!-- For sorting -->
+          <th class="visually-hidden" data-sortable="true" data-field="total_spent">Вложено</th>
+          <th class="visually-hidden" data-sortable="true" data-field="cost_now">Стоимость сейчас</th>
+          <th class="visually-hidden" data-sortable="true" data-field="in_orders">В ордерах</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticker in assets_list %}
+          {% set asset = assets_list[ticker] %}
+          <tr>
+            <td class="text-average">
+              {% if asset.image %}<img class="img-asset-min" src="{{ asset.image }}">{% endif %}
+              {{ asset.name }}
+              <span class="text-muted">{{ asset.symbol|upper }}</span>
+            </td>
+
+            <td>
+              <span class="text-average small_text">
+                {{ asset.quantity|smart_round|number_group }}
+                {{ asset.symbol|upper }}
+              </span>
+            </td>
+
+            <td>${{ asset.total_spent|int|number_group }}</td>
+
+            <td>${{ asset.cost_now|int|number_group }}</td>
+
+            <td>${{ asset.in_orders|int|number_group }}</td>
+
+            <!-- For sorting -->
+            <td class="visually-hidden">{{ asset.total_spent }}</td>
+            <td class="visually-hidden">{{ asset.cost_now }}</td>
+            <td class="visually-hidden">{{ asset.in_orders }}</td>
+ 
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% else %}
-<div class="nothing-box">Пока ничего нет...</div>
+  <div class="nothing-box">Пока ничего нет...</div>
 {% endif %}
 {% endblock %}

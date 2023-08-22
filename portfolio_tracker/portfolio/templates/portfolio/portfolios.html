@@ -8,81 +8,86 @@
       <h1>Портфели</h1>
     </div>
     <div class="col-auto ms-auto">
-      <button class="btn btn-primary portfolio-settings" type="button" >Добавить</button>
+      <button class="btn btn-primary open-modal" type="button" data-modal-id="PortfolioSettingsModal" data-url="{{ url_for('.portfolio_settings') }}">Добавить портфель</button>
     </div>
   </div>
 </div>
 
-{% if current_user.portfolios %}
-  {% if total_spent %}
+{% if portfolio_list %}
+  {% if all.total_spent %}
     <div class="row xs-mb-3">
 
       <div class="col-auto">
         <p class="small_text">Вложено / сейчас</p>
         <span class="text-average">
-          ${{ total_spent|int|number_group }} / 
+          ${{ all.total_spent|int|number_group }} / 
 
-          {% set profit = cost_now|int - total_spent|int %}
-          <span class="{{ 'text-green' if profit > 0 }} {{ 'text-red' if profit < 0 }}">
-            ${{ cost_now|int|number_group }}
+          <span class="{{ 'text-green' if all.profit > 0 }} {{ 'text-red' if all.profit < 0 }}">
+            ${{ all.cost_now|int|number_group }}
           </span>
         </span>
       </div>
 
       <div class="col-auto">
         <p class="small_text">Прибыль / убыток</p>
-          <span class="text-average {{ 'text-green' if profit > 0 }} {{ 'text-red' if profit < 0 }}">
-            {{ '-' if profit < 0 }}${{ profit|number_group }}
-            ({{ (profit / total_spent * 100)|int|abs }}%)
+          <span class="text-average {{ 'text-green' if all.profit > 0 }} {{ 'text-red' if all.profit < 0 }}">
+            {{ '-' if all.profit < 0 }}${{ all.profit|int|abs|number_group }}
+            {% if all.profit and all.total_spent %}
+              ({{ (all.profit / all.total_spent * 100)|int|abs }}%)
+            {% endif %}
           </span>
       </div>
 
     </div>
   {% endif %}
 
-  <div class="fixed-height-1"></div>
   <div class="big-table">
-    <form id="PortfoliosForm" action="{{ url_for('.portfolio_action') }}">
-      <table class="table table-sm align-middle table-hover">
+    <form id="PortfoliosForm" action="{{ url_for('.portfolios_action') }}">
+      <table class="table table-sm align-middle table-hover bootstrap-table" data-search="true">
         <thead>
           <tr>
             <th class="main-tab-checkbox">
               <input class="form-check-input check-all" type="checkbox">
             </th>
-            <th scope="col">Наименование</th>
-            <th scope="col">Активы</th>
-            <th scope="col">Прибыль / убыток</th>
-            <th scope="col">% от всех инвестиций</th>
-            <th scope="col">Комментарий</th>
-            <th scope="col"></th>
+            <th data-sortable="true" data-sort-name="name">Наименование</th>
+            <th data-sortable="true" data-sort-name="total_spent">Вложено</th>
+            <th data-sortable="true" data-sort-name="cost_now">Стоимость сейчас</th>
+            <th data-sortable="true" data-sort-name="profit">Прибыль / убыток</th>
+            <th data-sortable="true" data-sort-name="percent">% от всех инвестиций</th>
+            <th>Комментарий</th>
+            <th></th>
+            <!-- For sorting -->
+            <th class="visually-hidden" data-sortable="true" data-field="name">Наименование</th>
+            <th class="visually-hidden" data-sortable="true" data-field="total_spent">Вложено</th>
+            <th class="visually-hidden" data-sortable="true" data-field="cost_now">Стоимость сейчас</th>
+            <th class="visually-hidden" data-sortable="true" data-field="profit">Прибыль</th>
+            <th class="visually-hidden" data-sortable="true" data-field="percent">%</th>
           </tr>
         </thead>
 
         <tbody>
-          {% for portfolio in current_user.portfolios %}
-            {% set portfolio_cost_now = cost_now_list[portfolio.id] if cost_now_list[portfolio.id] else 0 %}
-            {% set portfolio_total_spent = total_spent_list[portfolio.id] if total_spent_list[portfolio.id] else 0 %}
-            {% set portfolio_profit = (portfolio_cost_now - portfolio_total_spent)|int %}
+          {% for portfolio in portfolio_list %}
             <tr>
               <td>
                 <input class="form-check-input to-check" type="checkbox" value="{{ portfolio.id }}">
               </td>
+
+
               <td class="text-average">
-                <a class="link-dark text-decoration-none open-portfolio" href="#" data-url="{{ url_for('.portfolio_info', portfolio_id=portfolio.id) }}">
+                <div class="open-modal d-grid" data-modal-id="PortfolioInfoModal" data-url="{{ url_for('.portfolio_info', portfolio_id=portfolio.id) }}">
                   {{ portfolio.name }}
-                </a>
-                <span class="text-muted small_text">{{ portfolio.market.name }}</span>
+                  <span class="text-muted small_text">{{ portfolio.market }}</span>
+                </div>
               </td>
 
-              <td>
-                {{ "${}".format(portfolio_total_spent|int|number_group) if portfolio_total_spent else '-' }} /
-                {{ "${}".format(portfolio_cost_now|int|number_group) if portfolio_cost_now else '-' }}
-              </td>
+              <td>{{ '$' + portfolio.total_spent|int|number_group if portfolio.total_spent else '-' }}</td>
+
+              <td>{{ '$' + portfolio.cost_now|int|number_group if portfolio.cost_now else '-' }}</td>
 
               <td>
-                {% if portfolio_cost_now %}
-                  <span class="text-average {{ 'text-green' if portfolio_profit > 0 }} {{ 'text-red' if portfolio_profit < 0 }}">
-                    {{ '-' if portfolio_profit < 0 }}${{ portfolio_profit|abs|number_group }}
+                {% if portfolio.cost_now %}
+                  <span class="{{ 'text-green' if portfolio.profit > 0 }} {{ 'text-red' if portfolio.profit < 0 }}">
+                    {{ '-' if portfolio.profit < 0 }}${{ portfolio.profit|int|abs|number_group }}
                   </span>
                 {% else %}
                   -
@@ -90,53 +95,44 @@
               </td>
               
               <td>
-                {% if portfolio_cost_now %}
-                  {{ (portfolio_cost_now / cost_now * 100)|round(1, 'common') }}%
+                {% if portfolio.cost_now %}
+                  {{ (portfolio.cost_now / all.cost_now * 100)|round(1, 'common') }}%
                 {% else %}
                 -
                 {% endif %}
               </td>
 
-              <td>
-                <span class="portfolio-comment">{{ portfolio.comment if portfolio.comment }}</span>
-              </td>
+              <td>{{ portfolio.comment if portfolio.comment }}</td>
 
               <td class="align-middle text-end">
 	              <div class="dropdown dropstart">
-	                <a href="#" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="bi icon bi-three-dots-vertical"></i>
+	                <a href="#" class="link-secondary" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
                   </a>
                   <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                    <a class="dropdown-item portfolio-settings" data-id="{{ portfolio.id }}">Изменить</a>
-                    {% set can_delete = False if portfolio_cost_now or portfolio_total_spent or portfolio.id in orders_in_portfolio else True %}
-                    <a class="dropdown-item link-danger {{ 'action-confirmation' if can_delete else 'opacity-25 disabled' }}" data-action="delete" data-title="Удалить портфель {{ portfolio.name }}?" data-id="{{ portfolio.id }}">
+                    <a class="dropdown-item open-modal" data-modal-id="PortfolioSettingsModal" data-url="{{ url_for('.portfolio_settings', portfolio_id=portfolio.id) }}">Изменить</a>
+                    <a class="dropdown-item link-danger {{ 'open-modal-confirmation' if portfolio.can_delete else 'opacity-25 disabled' }}" data-action="delete" data-title="Удалить портфель {{ portfolio.name }}?" data-id="{{ portfolio.id }}">
                       Удалить
                     </a>
                   </div>
                 </div>
               </td>
+
+              <!-- For sorting -->
+              <td class="visually-hidden">{{ portfolio.name }}</td>
+              <td class="visually-hidden">{{ portfolio.total_spent }}</td>
+              <td class="visually-hidden">{{ portfolio.cost_now }}</td>
+              <td class="visually-hidden">{{ portfolio.profit }}</td>
+              <td class="visually-hidden">{{ (portfolio.cost_now / all.cost_now * 100) if all.cost_now }}</td>
+
             </tr>
           {% endfor %}
         </tbody>
       </table>
 
       <!-- Actions buttons -->
-      <div class="sticky-bottom actions">
-        <div class="col-12">
-          <div class="bg-white h-100 d-flex gap-2 align-items-center">
-            <div class="m-1  ms-5">
-              <span class="">Отмеченно: </span>
-              <span class="checks-count"></span>
-              <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
-            </div>
-            <div class="vr my-3"></div>
-            <div class="my-1">
-              <button class="btn btn-sm rounded-3 action-confirmation" type="button" data-action="delete" data-title="Удалить портфели?">
-                <i data-feather="trash" class="icon-xs"></i>Удалить
-              </button>
-            </div>
-          </div>
-        </div>
+      <div class="sticky-bottom-buttons">
+        <a class="open-modal-confirmation" data-action="delete" data-title="Удалить портфели?">Удалить</a>
       </div>
 
     </form>
@@ -145,23 +141,4 @@
   <div class="nothing-box">Пока ничего нет...</div>
 {% endif %}
 
-
-<script>
-  // Open Modal Portfolio
-  $('.open-portfolio').on("click", function () {
-    var modal_id = 'PortfolioInfoModal',
-      url = $(this).attr('data-url');
-    LoadToModal(modal_id, url);
-  })
-
-  // Open Modal Portfolio Settings
-  $('.portfolio-settings').on("click", function () {
-    var modal_id = 'PortfolioSettings',
-      portfolio_id = $(this).attr('data-id'),
-      url = "{{ url_for('.portfolio_settings') }}" + "?portfolio_id=" + (portfolio_id || "");
-
-    LoadToModal(modal_id, url);
-  })
-
-</script>
 {% endblock %}

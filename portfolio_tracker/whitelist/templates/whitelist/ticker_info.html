@@ -1,0 +1,114 @@
+{% if not request.args.get('load_only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
+
+{% block content %}
+
+{% set ticker = whitelist_ticker.ticker if whitelist_ticker else ticker %}
+{% set asset_id = request.args.get('asset_id') %}
+
+<div class="mb-5">
+  <div class="row xs-mb-3">
+    <div class="col-auto">
+      <h1 class="fs-6 text-muted m-0">{{ ticker.name }} ({{ ticker.symbol|upper }})
+        {% if ticker.market_cap_rank %}
+          <span class="badge text-bg-light text-muted">#{{ ticker.market_cap_rank }}</span>
+        {% endif %}
+      </h1>
+      <div class="hstack gap-2">
+        {% if ticker.image %}
+          <img class="img-asset" src="{{ ticker.image }}">
+        {% endif %}
+        <span class="fs-1 fw-semibold">${{ price|smart_round|number_group }}</span>
+      </div>
+    </div>
+    <div class="col-auto ms-auto">
+      <button class="btn btn-primary open-modal" data-modal-id="AlertModal" type="button" data-url="{{ url_for('.alert', whitelist_ticker_id=whitelist_ticker.id if whitelist_ticker else None,
+        ticker_id=ticker.id, asset_id=asset_id) }}">
+        Добавить уведомление</button>
+    </div>
+  </div>
+</div>
+{% if whitelist_ticker.alerts %}
+<div class="big-table pt-3 pb-3">
+  <form id="WhitelistTickerForm" action="{{ url_for('.alerts_action') }}">
+    <table class="table table-sm align-middle">
+      <thead>
+        <tr>
+          <th class="main-tab-checkbox">
+            <input class="form-check-input check-all" type="checkbox">
+          </th>
+          <th scope="col">Цена</th>
+          <th scope="col">Откуда</th>
+          <th scope="col">Комментарий</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for alert in whitelist_ticker.alerts|sort(reverse=true, attribute="price") %}
+          <tr class="{{ 'table-green' if alert.worked == True }}">
+            <td>
+              <input class="form-check-input to-check" type="checkbox" value="{{ alert.id }}">
+            </td>
+
+            <td>
+              <div class="open-modal" data-modal-id="AlertModal" data-url="{{ url_for('.alert', whitelist_ticker_id=whitelist_ticker.id, ticker_id=ticker.id, asset_id=asset_id) }}">
+                {% if alert.type == 'down' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-red" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V4.5z"/></svg>
+                {% else %}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-green" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 0 0 8a8 8 0 0 0 16 0zm-7.5 3.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V11.5z"/></svg>
+                {% endif %}
+
+                {{ 'Ниже' if alert.type == 'down' else 'Выше' }}
+                ${{ alert.price|smart_round|number_group }} {{ '(Ордер)' if alert.order }}<br>
+                <span class="small_text">{{ alert.date }}</span>
+              </div>
+            </td>
+              
+            <td>
+              {% if alert.asset_id %}
+                <span class="link-secondary open-modal" data-url=" url_for('asset_info', market_id=alert.asset.portfolio.market_id, portfolio_url=alert.asset.portfolio.url, asset_url=tracked_ticker.ticker_id) ">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0zM1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5z"/></svg>
+                  {{ alert.asset.portfolio.name }}
+                </a>
+              {% else %}
+                <span class="link-secondary">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z"/><path d="M2.242 2.194a.27.27 0 0 1 .516 0l.162.53c.035.115.14.194.258.194h.551c.259 0 .37.333.164.493l-.468.363a.277.277 0 0 0-.094.3l.173.569c.078.256-.213.462-.423.3l-.417-.324a.267.267 0 0 0-.328 0l-.417.323c-.21.163-.5-.043-.423-.299l.173-.57a.277.277 0 0 0-.094-.299l-.468-.363c-.206-.16-.095-.493.164-.493h.55a.271.271 0 0 0 .259-.194l.162-.53zm0 4a.27.27 0 0 1 .516 0l.162.53c.035.115.14.194.258.194h.551c.259 0 .37.333.164.493l-.468.363a.277.277 0 0 0-.094.3l.173.569c.078.255-.213.462-.423.3l-.417-.324a.267.267 0 0 0-.328 0l-.417.323c-.21.163-.5-.043-.423-.299l.173-.57a.277.277 0 0 0-.094-.299l-.468-.363c-.206-.16-.095-.493.164-.493h.55a.271.271 0 0 0 .259-.194l.162-.53zm0 4a.27.27 0 0 1 .516 0l.162.53c.035.115.14.194.258.194h.551c.259 0 .37.333.164.493l-.468.363a.277.277 0 0 0-.094.3l.173.569c.078.255-.213.462-.423.3l-.417-.324a.267.267 0 0 0-.328 0l-.417.323c-.21.163-.5-.043-.423-.299l.173-.57a.277.277 0 0 0-.094-.299l-.468-.363c-.206-.16-.095-.493.164-.493h.55a.271.271 0 0 0 .259-.194l.162-.53z"/></svg>
+                  Whitelist
+                </span>
+              {% endif %}
+            </td>
+
+            <td>{{ alert.comment }}</td>
+
+            <td class="text-end">
+              {% if not alert.order %}
+                <span class="link-secondary open-modal-confirmation" data-action="delete" data-title="Удалить уведомление?" data-id="{{ alert.id }}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Actions buttons -->
+    <div class="sticky-bottom-buttons">
+      <a class="open-modal-confirmation" data-action="delete" data-title="Удалить уведомления?">Удалить</a>
+    </div>
+
+  </form>
+</div>
+{% else %}
+  <div class="nothing-box">Пока ничего нет...</div>
+{% endif %}
+
+<div class="convert-text" data-convert-to="textarea" data-name="comment"
+  data-send-url="{{ url_for('.whitelist_ticker_update', ticker_id=ticker.id) }}">
+  <span class="convert-data">{{ whitelist_ticker.comment if whitelist_ticker.comment }}</span>
+  <span>{{ 'Добавить комментарий' if not whitelist_ticker.comment }}</span>
+</div>
+
+{% endblock %}

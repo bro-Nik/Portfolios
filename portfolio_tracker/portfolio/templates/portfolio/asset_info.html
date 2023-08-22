@@ -1,4 +1,4 @@
-{% if not load_only_content %}
+{% if not request.args.get('load_only_content') %}
   {% extends "modal_base.html" %}
   {% set modal_fullscreen = True %}
 {% endif %}
@@ -21,35 +21,30 @@
         <span class="fs-1 fw-semibold" id="AssetPrice">${{ price|smart_round|number_group }}</span>
       </div>
 
-      <div class="d-flex align-items-end open-alerts">
-        <span class="badge text-bg-light fw-normal cursor-pointer text-muted me-1">
-          <a class="action-icon cursor-pointer text-decoration-none" title="Уведомления">
-            <i class="bi icon bi-bell"></i>
-          </a>
-          {{ 'Добавить уведомление' if asset.alerts == [] }}
+      <div class="d-flex gap-1 align-items-end open-modal" data-modal-id="WhitelistTickerInfoModal" data-url="{{ url_for('whitelist.ticker_info', ticker_id=asset.ticker_id, asset_id=asset.id) }}">
+        <span class="badge text-bg-light fw-normal text-muted">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/></svg>
+          {{ 'Добавить уведомление' if not asset.alerts }}
         </span>
 
         <div id="asset-alerts">
           {% for alert in asset.alerts %}
-            <span id="alertId{{ alert.id }}" class="badge fw-normal cursor-pointer {{ 'text-bg-success' if alert.worked else 'text-bg-light text-muted' }}" 
-                >${{ alert.price|number_group }}</span>
+            <span class="badge fw-normal cursor-pointer {{ 'text-bg-success' if alert.worked else 'text-bg-light text-muted' }}" >
+              ${{ alert.price|number_group }}</span>
           {% endfor %}
         </div>
       </div>
     </div>
 
     <div class="col-auto ms-auto hstack gap-1">
-      <button class="btn btn-primary btn-sm open-transaction" type="button">Транзакция</button>
-      <!-- <button class="btn btn-warning btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#Transaction" -->
-      <!--   data-bs-add_or_change="add" data-bs-order="True" data-bs-date="{{ date }}" -->
-      <!--   data-bs-price="{{ price|long_number }}" data-bs-wallet="" data-bs-title="Добавить ордер">Ордер</button> -->
-      <button type="button" class="btn btn-light dropdown-toggle btn-sm" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
-      <ul class="dropdown-menu">
-        <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deleteTransaction"
-            data-bs-id="{{ asset.id }}"
-            data-bs-action=" url_for('.asset_delete', market_id=asset.portfolio.market_id, portfolio_url=asset.portfolio.url) "
-            data-bs-title="Удалить {{ asset.ticker.name }}?">Удалить {{ asset.ticker.name }}</a></li>
-      </ul>
+      <button class="btn btn-primary open-modal" type="button" data-modal-id="TransactionModal"
+        data-url="{{ url_for('.transaction', market_id=asset.portfolio.market_id, asset_id=asset.id, ticker=asset.ticker.id) }}">Добавить транзакцию</button>
+      <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
+      <div class="dropdown-menu">
+        <form id="AssetActions" action="{{ url_for('.assets_action') }}">
+          <button class="dropdown-item open-modal-confirmation" type="button" data-form="#AssetActions" data-id="{{ asset.id }}" data-apply-modal-id="PortfolioInfoModal" data-title="Удалить {{ asset.ticker.name }}?">Удалить {{ asset.ticker.name }}</button>
+        </form>
+      </div>
     </div>
   </div>
 </div>
@@ -128,6 +123,7 @@
           <td>
             <input class="form-check-input to-check" type="checkbox" value="{{ transaction.id }}">
           </td>
+
           <td>
             {{ transaction.type }} {{ '(Ордер)' if transaction.order }}
             <br>
@@ -145,41 +141,38 @@
           </td>
 
           <td>
-            <a class="link-dark text-decoration-none open-wallet" href="#" data-url="{{ url_for('wallet.wallet_info', wallet_id=transaction.wallet_id) }}">
+            <a class="link-dark text-decoration-none open-modal" href="#" data-modal-id="WalletInfoModal" data-url="{{ url_for('wallet.wallet_info', wallet_id=transaction.wallet_id) }}">
               {{ transaction.wallet.name }}
             </a>
           </td>
 
-          <td>{{ transaction.comment if transaction.comment else '-' }}</td>
+          <td>{{ transaction.comment if transaction.comment }}</td>
 
           <td class="align-middle text-end">
             <div class="d-flex justify-content-end">
               {% if transaction.order %}
-                <a class="action-icon action-confirmation" data-id="{{ transaction.id }}" data-title="Ордер сработал?" data-action="convert_to_transaction" title="Ордер сработал">
-                  <i class="bi icon bi-check-square"></i>
+                <a class="link-secondary open-modal-confirmation" data-id="{{ transaction.id }}" data-title="Ордер сработал?" data-action="convert_to_transaction" title="Ордер сработал">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.235.235 0 0 1 .02-.022z"/></svg>
                 </a>
               {% endif %}
               <div class="dropdown dropstart">
-                <a href="#" role="button" id="dropdownAction"
+                <a href="#" class="link-secondary" role="button" id="dropdownAction"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="bi icon bi-three-dots-vertical"></i>
+	                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
                 </a>
                 <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                  <a class="dropdown-item open-transaction"
-                    data-id="{{ transaction.id }}">
+                  <a class="dropdown-item open-modal" data-modal-id="TransactionModal"
+                    data-url="{{ url_for('.transaction', market_id=asset.portfolio.market_id, asset_id=asset.id, ticker=asset.ticker.id, transaction_id=transaction.id) }}">
                     Изменить
                   </a>
-                  <a class="dropdown-item link-danger action-confirmation" 
+                  <a class="dropdown-item link-danger open-modal-confirmation" 
                     data-action="delete"
                     data-id="{{ transaction.id }}" data-title="Удалить транзакцию?">
                     Удалить
                   </a>
-
                 </div>
               </div>
             </div>
-          </td>
-          <td class="text-end">
           </td>
         </tr>
         {% endfor %}
@@ -187,22 +180,8 @@
     </table>
 
     <!-- Actions buttons -->
-    <div class="sticky-bottom actions">
-      <div class="col-12">
-        <div class="bg-white h-100 d-flex gap-2 align-items-center">
-          <div class="m-1  ms-5">
-            <span class="">Отмеченно: </span>
-            <span class="checks-count"></span>
-            <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
-          </div>
-          <div class="vr my-3"></div>
-          <div class="my-1">
-            <button class="btn btn-sm rounded-3 action-confirmation" type="button" data-action="delete" data-title="Удалить транзакции?">
-              <i data-feather="trash" class="icon-xs"></i>Удалить
-            </button>
-          </div>
-        </div>
-      </div>
+    <div class="sticky-bottom-buttons">
+      <a class="open-modal-confirmation" data-action="delete" data-title="Удалить транзакции?">Удалить</a>
     </div>
 
   </form>
@@ -228,38 +207,18 @@
     var request = $.get(url);
     request.done(function(data) {
       var text_class = 'text-average text-' + data.profit_color;
-      assetPrice.html(data.price);
+      assetPrice.html('$' + data.price);
       assetCostNow.html(data.cost_now).attr('class', text_class);
       assetProfit.html(data.profit + ' ' + data.profit_procent).attr('class', text_class);
+    })
+    request.fail(function(data) {
+      clearTimeout(assetUpdateTimerId);
     })
   }
 
   AssetDetailsUpdate();
   clearTimeout(assetUpdateTimerId);
   var assetUpdateTimerId = setInterval(AssetDetailsUpdate, 10000);
-
-  // Open Modal Transaction
-  $('.open-transaction').on('click', function () {
-    var modal_id = "TransactionModal",
-      url = "{{ url_for('.transaction', market_id=asset.portfolio.market_id, asset_id=asset.id, ticker=asset.ticker.id) }}",
-      transaction_id = $(this).attr('data-id');
-
-    if (transaction_id) { url += "&transaction_id=" + transaction_id; }
-    LoadToModal(modal_id, url);
-  })
-
-  // Open Modal Alerts
-  $('.open-alerts').on('click', function () {
-    var modal_id = "AlertModal",
-      url = "{{ url_for('.asset_alerts', market_id=asset.portfolio.market_id, asset_id=asset.id) }}";
-
-    LoadToModal(modal_id, url);
-  })
-
-  // Open Modal Wallet
-  $('.open-wallet').on("click", function () {
-    LoadToModal('WalletInfoModal', $(this).attr('data-url'));
-  })
 
 </script>
 {% endblock %}

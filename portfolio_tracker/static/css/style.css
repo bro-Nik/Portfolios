@@ -4,15 +4,17 @@ html, body {
 .modal-header, .bootstrap-table .fixed-table-container.fixed-height .fixed-table-border {
     border: none !important;
 }
-div#wrapper {
+#wrapper {
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: calc(100% - 250px);
+    overflow-x: hidden;
 }
-div#content {
+#content {
     flex: 1 0 auto;
 }
-div#footer {
+#footer {
     flex: 0 0 auto;
 }
 .small_text {
@@ -71,10 +73,6 @@ div#footer {
 .text-average {
     font-weight: 500;
 }
-.icon {
-    color: rgb(124 124 124);
-    margin-right: 5px;
-}
 .btn-delete {
     --bs-btn-color: #fff;
     --bs-btn-bg: #dc3545;
@@ -118,10 +116,6 @@ div#footer {
 .disabled {
     pointer-events: none
 }
-.hidden {
-    display: none;
-}
-
 .table-bordered>:not(caption)>*>* {
     border-width: 0;
 }
@@ -129,13 +123,10 @@ thead > tr {
     border-style: none;
 }
 .img-asset-min {
-    width: 20px;
-    height: auto;
-    vertical-align: text-bottom;
-    height: 20px;
-    width: 20px;
+    vertical-align: text-top;
+    height: 24px;
+    width: 24px;
     border-radius: 10px;
-    margin-inline-end: 8px;
     flex: 0 0 auto;
 }
 .img-asset {
@@ -149,37 +140,42 @@ thead > tr {
 .none-cursor {
     cursor: default;
 }
-
-.fixed-table-body::-webkit-scrollbar {
+.tickers-list::-webkit-scrollbar, .fixed-table-body::-webkit-scrollbar {
   width: 5px;
+  height: 10px;
   background-color: #f9f9fd;
 }
-
-.fixed-table-body::-webkit-scrollbar-thumb {
+.tickers-list::-webkit-scrollbar-thumb, .fixed-table-body::-webkit-scrollbar-thumb {
   border-radius: 5px;
-  background-color: #0d6efd;
+  background-color: #ccc;
+  height: 1px;
 }
-
-.fixed-table-body::-webkit-scrollbar-track {
+.tickers-list::-webkit-scrollbar-track, .fixed-table-body::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
+  background-color: #f9f9fd;
+}
+.modal-body::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: #f9f9fd;
+}
+.modal-body::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background-color: #ccc;
+  height: 1px;
+}
+.modal-body::-webkit-scrollbar-track {
   -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
   background-color: #f9f9fd;
 }
 .table-green {
     --bs-table-bg: #99d59821;
     }
-.fixed-height-1, .fixed-table-toolbar {
-    height: 70px;
-}
+/* .fixed-height-1, .fixed-table-toolbar { */
+/*     height: 70px; */
+/* } */
 .market-cap-rank {
     color: #6c757d87;
-}
-.big-table {
-	overflow: auto;
-	position: relative;
-}
-.big-table table {
-    max-width: 100%;
-    white-space: nowrap;
 }
 .nav-bar-links > * {
     margin-bottom: 5px;
@@ -207,8 +203,6 @@ td.symbol-icon:empty, td.market-cap-rank:empty {
 .add-asset-modal .search {
     width: 100%;
 }
-
-
 @media (max-width: 767px){
     .xs-mb-3 > div {
         margin-bottom: 20px;
@@ -218,6 +212,10 @@ td.symbol-icon:empty, td.market-cap-rank:empty {
 .modal-fullscreen {
     width: calc(100% - 250px);
     float: right;
+    box-shadow: rgba(0, 0, 0, 0.3) -5px 0px 22px -5px;
+}
+.modal-fullscreen .modal-body {
+    overflow-x: hidden;
 }
 .modal-close-label {
     display: flex;
@@ -262,9 +260,6 @@ td.symbol-icon:empty, td.market-cap-rank:empty {
     min-height: 36px;
     background-color: transparent;
 }
-.modal-fullscreen {
-    box-shadow: rgba(0, 0, 0, 0.3) -5px 0px 22px -5px;
-}
 .nothing-box {
     display: flex;
     align-items: center;
@@ -290,4 +285,48 @@ td.symbol-icon:empty, td.market-cap-rank:empty {
   }
 .sticky-bottom-box {
   position: relative;
+}
+form {
+    margin-block-end: 0;
+}
+.add-tickers-box {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 450px;
+}
+.add-tickers-box .search input {
+    background-color: #eff2f5;
+    border-color: #cfd6e4;
+    height: 32px;
+    font-size: 12px;
+}
+.hover-child-color div:hover {
+    background-color: rgb(0 0 0 / 3%);
+    border-radius: 0.5rem;
+}
+.open-modal, .open-modal-confirmation, .convert-text {
+    cursor: pointer;
+}
+.bootstrap-table .fixed-table-container .fixed-table-body {
+    height: auto !important;
+}
+.sticky-bottom.actions a {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    color: RGBA(108,117,125,0.9);
+    text-decoration: none;
+    cursor: pointer;
+}
+.sticky-bottom.actions a:hover {
+    color: black;
+}
+.convert-text {
+    margin-top: 2rem;
+}
+.convert-text form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
