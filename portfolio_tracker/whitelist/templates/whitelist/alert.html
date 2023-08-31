@@ -1,11 +1,11 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = 'Уведомление' %}
+{% set modal_title = 'Изменить уведомление' if alert else 'Добавить уведомление' %}
 
 {% block content %}
 {% set asset_id = request.args.get('asset_id') %}
-<form id="Alert" method="post" action="{{ url_for('whitelist.alert_update', whitelist_ticker_id=whitelist_ticker_id if whitelist_ticker_id, ticker_id=ticker_id, asset_id=asset_id if asset_id) }}">
+<form data-url="{{ url_for('whitelist.alert_update', whitelist_ticker_id=whitelist_ticker_id if whitelist_ticker_id, ticker_id=ticker_id, asset_id=asset_id if asset_id, alert_id=alert.id if alert) }}">
   <div class="row g-2">
 
     <div class="col-md-12">
@@ -13,22 +13,22 @@
         <label class="form-label h7">Цена</label>
         <div class="input-group">
           <span class="input-prefix">$</span>
-          <input type="number" step="any" class="form-control rounded-3 focus" value="{{ price }}" name="price" required>
-          <input type="hidden" name="type" value="down">
+          <input type="number" step="any" class="form-control rounded-3 focus" value="{{ alert.price if alert else price }}" name="price" required>
+          <input type="hidden" name="type" value="{{ alert.type if alert else 'down' }}">
         </div>
-        <span class="alert-price-info">Когда цена ниже {{ price }}$</span>
+        <span class="alert-price-info">Когда цена {{ ('выше' if alert.type == 'up' else 'ниже') if alert else 'ниже' }} {{ alert.price if alert else price }}$</span>
       </div>
     </div>
 
     <div class="col-md-12">
       <div class="mb-3">
         <label class="form-label h7">Комментарий</label>
-        <textarea class="form-control silver" name="comment"></textarea>
+        <textarea class="form-control silver" name="comment">{{ alert.comment if alert }}</textarea>
       </div>
     </div>
 
   </div>
-  <button class="w-100 btn rounded-3 btn-primary simple-form-submit" type="button" data-modal-id="TrackedTickerInfoModal">Добавить уведомление</button>
+  <button class="btn btn-primary rounded-3 w-100" type="submit" data-modal-id="WhitelistTickerInfoModal">{{ modal_title }}</button>
 </form>
 
 <script>
@@ -43,6 +43,5 @@
       $('#alertPrice').find('input[name=type]').val('down');
     }
   })
-
 </script>
 {% endblock %}

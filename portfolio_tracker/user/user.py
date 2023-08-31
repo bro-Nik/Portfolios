@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, request, flash, session
+from flask import render_template, redirect, url_for, request, flash, session, Blueprint
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
@@ -9,11 +9,18 @@ from portfolio_tracker.app import app, db, login_manager, redis
 from portfolio_tracker.models import User, userInfo, Wallet
 
 
-@app.route('/register', methods=['GET', 'POST'])
+user = Blueprint('user',
+                  __name__,
+                  template_folder='templates',
+                  static_folder='static')
+
+
+@user.route('/register', methods=['GET', 'POST'])
 def register():
     email = request.form.get('email')
     password = request.form.get('password')
     password2 = request.form.get('password2')
+
     if request.method == 'POST':
         if not (email and password and password2):
             flash('Пожалуйста заполните все поля')
@@ -26,19 +33,24 @@ def register():
             new_user = User(email=email, password=hash_password)
             db.session.add(new_user)
             db.session.commit()
+
             # кошелек
             wallet = Wallet(name='Default', user_id=new_user.id)
             db.session.add(wallet)
+
             first_visit = userInfo(user_id=new_user.id, first_visit=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M'))
             db.session.add(first_visit)
             db.session.commit()
-            return redirect(url_for('login'))
-        return redirect(url_for('register'))
+
+            return redirect(url_for('.login'))
+
+        return redirect(url_for('.register'))
+
     else:
-        return render_template('register.html')
+        return render_template('user/register.html')
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@user.route('/login', methods=['GET', 'POST'])
 def login():
     session['last_url'] = request.url
     email = request.form.get('email')
@@ -58,7 +70,7 @@ def login():
         else:
             flash('Введите данные')
 
-    return render_template('login.html')
+    return render_template('user/login.html')
 
 
 @login_manager.user_loader
@@ -66,45 +78,36 @@ def load_user(user_id):
     return db.session.execute(db.select(User).filter_by(id=user_id)).scalar()
 
 
-@app.route('/logout', methods=['GET', 'POST'])
+@user.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('login'))
+    return redirect(url_for('.login'))
 
 
-@app.after_request
+@user.after_request
 def redirect_to_signin(response):
     if response.status_code == 401:
-        return redirect(url_for('login') + '?next=' + request.url)
+        return redirect(url_for('.login') + '?next=' + request.url)
 
     return response
 
 
-@app.route('/user/delete')
+@user.route('/user/delete')
 @login_required
 def user_delete():
     user_delete_def(current_user.id)
-    return redirect(url_for('login'))
+    return redirect(url_for('.login'))
 
 
 def user_delete_def(user_id):
     user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar()
 
-    not_worked_alerts = pickle.loads(redis.get('not_worked_alerts')) if redis.get('not_worked_alerts') else {}
-    worked_alerts = pickle.loads(redis.get('worked_alerts')) if redis.get('worked_alerts') else {}
-
     # alerts
-    for ticker in user.trackedtickers:
+    for ticker in user.whitelist_tickers:
         for alert in ticker.alerts:
-            not_worked_alerts.pop(alert.id, None)
             db.session.delete(alert)
         db.session.delete(ticker)
-    worked_alerts.pop(user.id, None)
-
-    # commit redis
-    redis.set('not_worked_alerts', pickle.dumps(not_worked_alerts))
-    redis.set('worked_alerts', pickle.dumps(worked_alerts))
 
     # wallets
     for walllet in user.wallets:
@@ -162,8 +165,8 @@ def new_visit():
     db.session.commit()
 
 
-@app.route("/demo_user")
+@user.route("/demo_user")
 def demo_user():
     user = db.session.execute(db.select(User).filter_by(email='demo')).scalar()
     login_user(user)
-    return redirect(url_for('portfolios'))
+    return redirect(url_for('.portfolios'))

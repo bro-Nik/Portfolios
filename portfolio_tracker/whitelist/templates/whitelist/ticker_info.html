@@ -1,4 +1,4 @@
-{% if not request.args.get('load_only_content') %}
+{% if not request.args.get('only_content') %}
   {% extends "modal_base.html" %}
   {% set modal_fullscreen = True %}
 {% endif %}
@@ -24,7 +24,7 @@
       </div>
     </div>
     <div class="col-auto ms-auto">
-      <button class="btn btn-primary open-modal" data-modal-id="AlertModal" type="button" data-url="{{ url_for('.alert', whitelist_ticker_id=whitelist_ticker.id if whitelist_ticker else None,
+      <button class="btn btn-primary open-modal focus" data-modal-id="AlertModal" type="button" data-url="{{ url_for('.alert', market_id=market_id, whitelist_ticker_id=whitelist_ticker.id if whitelist_ticker else None,
         ticker_id=ticker.id, asset_id=asset_id) }}">
         Добавить уведомление</button>
     </div>
@@ -39,21 +39,21 @@
           <th class="main-tab-checkbox">
             <input class="form-check-input check-all" type="checkbox">
           </th>
-          <th scope="col">Цена</th>
-          <th scope="col">Откуда</th>
-          <th scope="col">Комментарий</th>
-          <th scope="col"></th>
+          <th>Цена</th>
+          <th>Откуда</th>
+          <th>Комментарий</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
         {% for alert in whitelist_ticker.alerts|sort(reverse=true, attribute="price") %}
-          <tr class="{{ 'table-green' if alert.worked == True }}">
+        <tr class="{{ 'table-green' if alert.status == 'worked' }} {{ 'opacity-50' if alert.status == 'off' }}">
             <td>
               <input class="form-check-input to-check" type="checkbox" value="{{ alert.id }}">
             </td>
 
             <td>
-              <div class="open-modal" data-modal-id="AlertModal" data-url="{{ url_for('.alert', whitelist_ticker_id=whitelist_ticker.id, ticker_id=ticker.id, asset_id=asset_id) }}">
+              <div class="open-modal" data-modal-id="AlertModal" data-url="{{ url_for('.alert', market_id=market_id, whitelist_ticker_id=whitelist_ticker.id, ticker_id=ticker.id, asset_id=asset_id, alert_id=alert.id) }}">
                 {% if alert.type == 'down' %}
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-red" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V4.5z"/></svg>
                 {% else %}
@@ -61,7 +61,8 @@
                 {% endif %}
 
                 {{ 'Ниже' if alert.type == 'down' else 'Выше' }}
-                ${{ alert.price|smart_round|number_group }} {{ '(Ордер)' if alert.order }}<br>
+                ${{ alert.price|smart_round|number_group }}  
+                <br>
                 <span class="small_text">{{ alert.date }}</span>
               </div>
             </td>
@@ -71,23 +72,38 @@
                 <span class="link-secondary open-modal" data-url=" url_for('asset_info', market_id=alert.asset.portfolio.market_id, portfolio_url=alert.asset.portfolio.url, asset_url=tracked_ticker.ticker_id) ">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0zM1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5z"/></svg>
                   {{ alert.asset.portfolio.name }}
-                </a>
+                </span>
               {% else %}
                 <span class="link-secondary">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z"/><path d="M2.242 2.194a.27.27 0 0 1 .516 0l.162.53c.035.115.14.194.258.194h.551c.259 0 .37.333.164.493l-.468.363a.277.277 0 0 0-.094.3l.173.569c.078.256-.213.462-.423.3l-.417-.324a.267.267 0 0 0-.328 0l-.417.323c-.21.163-.5-.043-.423-.299l.173-.57a.277.277 0 0 0-.094-.299l-.468-.363c-.206-.16-.095-.493.164-.493h.55a.271.271 0 0 0 .259-.194l.162-.53zm0 4a.27.27 0 0 1 .516 0l.162.53c.035.115.14.194.258.194h.551c.259 0 .37.333.164.493l-.468.363a.277.277 0 0 0-.094.3l.173.569c.078.255-.213.462-.423.3l-.417-.324a.267.267 0 0 0-.328 0l-.417.323c-.21.163-.5-.043-.423-.299l.173-.57a.277.277 0 0 0-.094-.299l-.468-.363c-.206-.16-.095-.493.164-.493h.55a.271.271 0 0 0 .259-.194l.162-.53zm0 4a.27.27 0 0 1 .516 0l.162.53c.035.115.14.194.258.194h.551c.259 0 .37.333.164.493l-.468.363a.277.277 0 0 0-.094.3l.173.569c.078.255-.213.462-.423.3l-.417-.324a.267.267 0 0 0-.328 0l-.417.323c-.21.163-.5-.043-.423-.299l.173-.57a.277.277 0 0 0-.094-.299l-.468-.363c-.206-.16-.095-.493.164-.493h.55a.271.271 0 0 0 .259-.194l.162-.53z"/></svg>
                   Whitelist
                 </span>
               {% endif %}
+
+              {% if alert.transaction_id and alert.transaction_id != 0 %}
+                <span class="badge text-bg-secondary">Ордер</span>
+              {% endif %}
             </td>
 
             <td>{{ alert.comment }}</td>
 
-            <td class="text-end">
-              {% if not alert.order %}
-                <span class="link-secondary open-modal-confirmation" data-action="delete" data-title="Удалить уведомление?" data-id="{{ alert.id }}">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </span>
+            <td>
+              <div class="d-flex align-items-center justify-content-end">
+                {% if alert.transaction_id and alert.status != 'off' %}
+                  <a class="link-secondary open-modal-confirmation" data-id="{{ alert.id }}" data-title="Ордер сработал?" data-action="convert_to_transaction" title="Ордер сработал">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>
+                  </a>
+                {% else %}
+
+                  <div class="form-check form-switch m-0">
+                    <input class="form-check-input action" data-action="turn_{{ 'on' if alert.status == 'off' else 'off' }}" type="checkbox" role="switch" {{ 'checked' if alert.status != 'off' }} data-modal-id="WhitelistTickerInfoModal" data-id="{{ alert.id }}">
+                  </div>
+
+                  <span class="link-secondary open-modal-confirmation" data-action="delete" data-title="Удалить уведомление?" data-id="{{ alert.id }}" title="Удалить">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                  </span>
               {% endif %}
+              </div>
             </td>
           </tr>
         {% endfor %}
@@ -96,11 +112,14 @@
 
     <!-- Actions buttons -->
     <div class="sticky-bottom-buttons">
+      <a class="open-modal-confirmation" data-action="turn_on" data-title="Включить уведомления?">Включить</a>
+      <a class="open-modal-confirmation" data-action="turn_off" data-title="Отключить уведомления?">Отключить</a>
       <a class="open-modal-confirmation" data-action="delete" data-title="Удалить уведомления?">Удалить</a>
     </div>
 
   </form>
 </div>
+
 {% else %}
   <div class="nothing-box">Пока ничего нет...</div>
 {% endif %}

@@ -1,5 +1,9 @@
-{% extends "base.html" %}
-{% block title %} Портфели {% endblock %}
+{% set only_content = request.args.get('only_content') %}
+
+{% if not only_content %}
+  {% extends "base.html" %}
+  {% block title %} Портфели {% endblock %}
+{% endif %}
 
 {% block content %}
 <div class="mb-5">

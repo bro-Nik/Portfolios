@@ -1,319 +1,317 @@
+{# jinja #}
 <script>
   // Checkboxes
 
   // Check All
-  $('body').on('change', '.check-all', function () {
-    var $table = $(this).closest('table');
-    $table.find('.to-check').prop('checked', $(this).is(':checked')).trigger('change');
-  })
-
+  $("body").on("change", ".check-all", function () {
+    var $table = $(this).closest("table");
+    $table.find(".to-check").prop("checked", $(this).is(":checked")).trigger("change");
+  });
 
   // Decheck All
-  $('body').on('click', '.decheck-all', function () {
-    var $form = $(this).closest('form');
-    $form.find('.to-check').prop('checked', false).trigger('change');
-  })
-
+  $("body").on("click", ".decheck-all", function () {
+    var $form = $(this).closest("form");
+    $form.find(".to-check").prop("checked", false).trigger("change");
+  });
 
   // Check Count
-  $('body').on("change", '.to-check', function () {
-    var $form = $(this).closest('form'),
-      checked_count = $form.find('.to-check:checked').length,
-      all_count = $form.find('.to-check').length,
-      $box_actions = $form.find('.sticky-bottom.actions');
+  $("body").on("change", ".to-check", function () {
+    var $form = $(this).closest("form"),
+      checked_count = $form.find(".to-check:checked").length,
+      all_count = $form.find(".to-check").length,
+      $box_actions = $form.find(".sticky-bottom.actions");
 
     if (checked_count > 0) {
-      $box_actions.addClass('active');
+      $box_actions.addClass("active");
     } else {
-      $box_actions.removeClass('active');
+      $box_actions.removeClass("active");
     }
-    $box_actions.find('.checks-count').text(checked_count + ' / ' + all_count);
-    $form.find('.check-all').prop('checked', checked_count > 0);
-  })
-
+    $box_actions.find(".checks-count").text(checked_count + " / " + all_count);
+    $form.find(".check-all").prop("checked", checked_count > 0);
+  });
 
   // Actions
 
   // Open modal to confirm
-  $('body').on("click", '.open-modal-confirmation', function () {
-    var $modal = $('#ModalConfirmation'),
+  $("body").on("click", ".open-modal-confirmation", function () {
+    var $modal = $("#ModalConfirmation"),
       $btn = $(this);
 
-    if ($btn.attr('data-form')) {
-      $modal.find('.action').attr('data-form', $btn.attr('data-form'));
+    if ($btn.attr("data-form")) {
+      $modal.find(".action").attr("data-form", $btn.attr("data-form"));
     } else {
-      $modal.find('.action').attr('data-form', '#' + $btn.closest('form').attr('id'));
+      $modal.find(".action").attr("data-form", "#" + $btn.closest("form").attr("id"));
     }
 
     // if modal then update
-    if ($btn.closest('.modal').length) {
-      var modalToApply = $btn.closest('.modal').attr('id');
-      $modal.find('.action').attr('data-modal-id', modalToApply);
+    if ($btn.closest(".modal").length) {
+      var modalToApply = $btn.closest(".modal").attr("id");
+      $modal.find(".action").attr("data-modal-id", modalToApply);
     }
 
     // to modal action
-    var title = $btn.attr('data-title'),
-      action = $btn.attr('data-action'),
-      id = $btn.attr('data-id') || "";
-    $modal.find('.modal-title').text(title);
-    $modal.find('.action').attr('data-action', action);
-    $modal.find('.action').attr('data-id', id);
-    $modal.modal({backdrop: false}).modal('show');
-  })
+    var title = $btn.attr("data-title"),
+      action = $btn.attr("data-action"),
+      id = $btn.attr("data-id") || "",
+      page_id = $btn.attr("data-page-id");
+    $modal.find(".modal-title").text(title);
+    $modal.find(".action").attr("data-action", action);
+    $modal.find(".action").attr("data-id", id);
+    $modal.find(".action").attr("data-page-id", page_id);
+    $modal.modal({backdrop: false}).modal("show");
+  });
 
-
-  // 
-  $('body').on("click", '.action', function () {
+  //
+  $("body").on("click", ".action", function () {
     var $btn = $(this),
       checked = [];
 
-    // $btn.closest('.modal').modal('hide');
-
     // If button not in form
-    if ($btn.attr('data-form')) {
-      var $form = $($btn.attr('data-form'));
+    if ($btn.attr("data-form")) {
+      var $form = $($btn.attr("data-form"));
     } else {
-      var $form = $btn.closest('form');
+      var $form = $btn.closest("form");
     }
 
     // If info not in main form
-    if ($btn.attr('data-form-info')) {
-      var info = $($btn.attr('data-form-info')).serializeArray();
+    if ($btn.attr("data-form-info")) {
+      var info = $($btn.attr("data-form-info")).serializeArray();
     } else {
       var info = $form.serializeArray();
     }
 
-    if ($btn.attr('data-id')) {
-      checked.push($btn.attr('data-id'));
+    if ($btn.attr("data-id")) {
+      checked.push($btn.attr("data-id"));
     } else {
-      $form.find('.to-check:checked').each(function () {
+      $form.find(".to-check:checked").each(function () {
         checked.push($(this).val());
       });
     }
 
     var data = {
-      action: $btn.attr('data-action'),
+      action: $btn.attr("data-action"),
       info: info,
-      ids: checked
-    }
-    SendingData(data, $btn, $form)
-  })
+      ids: checked,
+    };
+    SendingData(data, $btn, $form);
+  });
 
-
+  {#
   // Simple form
-  $('body').on("click", ".simple-form-submit", function () {
+  $("body").on("click", ".simple-form-submit", function () {
+    alert('simple form')
     var $btn = $(this),
       $form = $btn.closest("form"),
       is_valid = $form.get(0).checkValidity();
 
-    $form.addClass('was-validated')
-    if (!is_valid) {return false;}
+    $form.addClass("was-validated");
+    if (!is_valid) {
+      return false;
+    }
 
-    var posting = $.post($form.attr('action'), $form.serialize()),
-      $modal = $form.closest('.modal');
+    var posting = $.post($form.attr("data-url"), $form.serialize()),
+      $modal = $form.closest(".modal");
 
-    $modal.modal('hide');
+    $modal.modal("hide");
     posting.done(function (data) {
-      PageUpdate($btn)
+      PageUpdate($btn);
     });
   });
+  #}
 
 
   function SendingData(data, $btn, $form) {
     $.ajax({
       type: "POST",
-      url: $form.attr('action'),
+      url: $form.attr("action"),
       data: JSON.stringify(data),
-      contentType: 'application/json; charset=utf-8',
+      contentType: "application/json; charset=utf-8",
     }).done(PageUpdate($btn));
-  };
-
-
-  function PageUpdate($btn) {
-    var modal_id = $btn.attr('data-modal-id');
-    pageNeedUpdate = true;
-
-    if (modal_id) {
-      LoadToModal(modal_id, $('#' + modal_id).attr('data-url'));
-    } else {
-      $('.modal.show').each(function () {
-        $(this).modal('hide');
-      })
-      setTimeout("location.reload()", 1000);
-    }
   }
 
 
+  function PageUpdate($btn) {
+    var modal_id = $btn.attr("data-modal-id");
+    pageNeedUpdate = true;
+
+    if (modal_id) {
+      //LoadToModal(modal_id, $("#" + modal_id).attr("data-url"));
+      setTimeout(function () {
+        LoadToModal(modal_id, $("#" + modal_id).attr("data-url"))
+      }, 500);
+    } else {
+      LoadToPage();
+    }
+  }
+
   // Selects
-  var defaultSelectClass = ''
+  var defaultSelectClass = "";
 
   // General Select
-  function UpdateGeneralSelects($element = $('body')) {
-
-    $element.find('.general-select').each(function () {
+  function UpdateGeneralSelects($element = $("body")) {
+    $element.find(".general-select").each(function () {
       $(this).select2({
         theme: "bootstrap-5",
-        width: $(this).data('width') || '100%',
+        width: $(this).data("width") || "100%",
         dropdownAutoWidth: true,
-        dropdownParent: $(this).closest('.modal'),
+        dropdownParent: $(this).closest(".modal"),
         minimumResultsForSearch: 10,
-        selectionCssClass: $(this).data('class') || defaultSelectClass,
-      })
-    })
+        selectionCssClass: $(this).data("class") || defaultSelectClass,
+      });
+    });
   }
   UpdateGeneralSelects();
 
   // Ajax Selects
-  function UpdateAjaxSelects($element = $('body')) {
-    $element.find('.ajax-select').each(function () {
+  function UpdateAjaxSelects($element = $("body")) {
+    $element.find(".ajax-select").each(function () {
       $(this).select2({
         theme: "bootstrap-5",
-        width: $(this).data('width') || '100%',
+        width: $(this).data("width") || "100%",
         dropdownAutoWidth: true,
-        dropdownParent: $(this).closest('.modal'),
-        selectionCssClass: $(this).data('class') || defaultSelectClass,
-        "language": {
-          "noResults": function () {
+        dropdownParent: $(this).closest(".modal"),
+        selectionCssClass: $(this).data("class") || defaultSelectClass,
+        language: {
+          noResults: function () {
             return "Ничего не найдено";
-          }
+          },
         },
         ajax: {
           delay: 250,
-          url: $(this).data('url'),
-          dataType: 'json',
+          url: $(this).data("url"),
+          dataType: "json",
           data: function (params) {
             var query = {
               search: params.term,
-              page: params.page || 1
-            }
+              page: params.page || 1,
+            };
             return query;
-          }
-        }
+          },
+        },
       });
     });
   }
   UpdateAjaxSelects();
 
-
   // Modals
 
-  $('body').on('click', '.open-modal', function () {
-    LoadToModal($(this).attr('data-modal-id'), $(this).attr('data-url'));
-  })
-
+  $("body").on("click", ".open-modal", function () {
+    LoadToModal($(this).attr("data-modal-id"), $(this).attr("data-url"));
+  });
 
   // Load to Modal
   function LoadToModal(modal_id, url) {
-    var $modal = $('#' + modal_id);
+    var $modal = $("#" + modal_id);
 
-    if ($modal.length) { // load only content
-      if ($modal.find('.modal-fullscreen').length) {
-        var $loadIn = $modal.find('.modal-body').empty();
-        url += ((url.indexOf('?') > 0) ? '&' : '?') + 'load_only_content=true';
+    if ($modal.length) {
+      // load only content
+      if ($modal.find(".modal-fullscreen").length) {
+        var $loadIn = $modal.find(".modal-body").empty();
+        url += (url.indexOf("?") > 0 ? "&" : "?") + "only_content=true";
       } else {
         var $loadIn = $modal.empty();
       }
-    } else { // create and load full modal
-      $('body').find('#content').append('<div class="modal fade" id="' + modal_id + '" tabindex="-1" aria-hidden="true"></div>');
-      var $loadIn = $modal = $('body').find('#' + modal_id);
+    } else {
+      // create and load full modal
+      $("body").find("#modals").append(
+        '<div class="modal fade" id="' + modal_id + '" tabindex="-1" aria-hidden="true"></div>',
+        );
+      var $loadIn = $modal = $("body").find("#" + modal_id);
       // var $loadIn = $modal;
     }
     $loadIn.load(url, function () {
       UpdateScripts($modal);
       $modal.modal({
         backdrop: false,
-        keyboard: true
-      })
-      $modal.attr('data-url', url)
-      if (!$modal.hasClass('show')) {
-        $modal.modal('show');
-        $modal.focus();
+        keyboard: true,
+      });
+      $modal.attr("data-url", url);
+      if (!$modal.hasClass("show")) {
+        $modal.modal("show");
+      } else {
+        UpdateFocus($modal);
       }
-    })
+    });
   }
 
-  $('body').click(function (e) {
-    if ($(e.target).is('.modal')) {
-      $(e.target).modal('hide')
+  $("body").click(function (e) {
+    if ($(e.target).is(".modal")) {
+      $(e.target).modal("hide");
     }
   });
 
 
   // Open Modal
-  $('body').on('show.bs.modal', '.modal', function () {
+  $("body").on("show.bs.modal", ".modal", function () {
     var $modal = $(this);
 
-    $modal.css('height', $(window).height());
+    $modal.css("height", $(window).height());
 
-    var $active_modals = $('body').find('.modal.show');
-    // if ($active_modals.length === 0) {
-    //   return true;
-    // }
-    var z_index = parseInt($modal.css('z-index'));
+    var $active_modals = $("body").find(".modal.show"),
+      z_index = parseInt($modal.css("z-index"));
 
     $active_modals.each(function () {
       if ($(this).index() !== $modal.index()) {
-        var this_z_index = parseInt($(this).css('z-index'));
-        if (this_z_index => z_index) {
-          z_index = this_z_index + 1;
+        var this_z_index = parseInt($(this).css("z-index"));
+        if ($modal.find(".modal-fullscreen").length) {
+          $(this).find(".modal-close-label").css("top", "+=60");
         }
-        if ($modal.find('.modal-fullscreen').length) {
-          $(this).find('.modal-close-label').css('top', '+=60');
+        if ((this_z_index) => z_index) {
+          z_index = this_z_index + 1;
         }
       }
     });
-    $modal.css('z-index', z_index);
+    $modal.css("z-index", z_index);
 
     // Fade
-    if (!$modal.find('.modal-fullscreen').length) {
-      $('body').append('<div class="modal-backdrop fade show" style="z-index: ' + (z_index - 1) + ';"></div>');
+    if (!$modal.find(".modal-fullscreen").length) {
+      $("body").append(
+        '<div class="modal-backdrop fade show" style="z-index: ' + (z_index - 1) + ';"></div>'
+      );
     }
-  })
+  });
 
-
-  $('body').on('shown.bs.modal', function () {
+  $("body").on("shown.bs.modal", function () {
     var $modal = $(this);
-    $('body .modal-backdrop').css('z-index', parseInt($modal.css('z-index')) - 1);
-    $modal.find('.focus').focus(); // Фокус на поле ввода
-  })
-  
+    $("body .modal-backdrop").css("z-index", parseInt($modal.css("z-index")) - 1);
+
+    UpdateFocus($modal);
+  });
 
   // Close Modal
-  $('body').on('hide.bs.modal', '.modal', function () {
+  $("body").on("hide.bs.modal", ".modal", function () {
     var $modal = $(this);
 
-    if (!$('.modal.show').length > 1) {
+    if (!$(".modal.show").length > 1) {
       return false;
     }
 
-    var z_index = parseInt($modal.css('z-index'));
+    var z_index = parseInt($modal.css("z-index"));
     var max_z_index = 0;
 
-    $('body').find('.modal.show').each(function () {
-      var this_z_index = parseInt($(this).css('z-index'));
-      if (this_z_index !== z_index && this_z_index > max_z_index) {
-        max_z_index = this_z_index;
-      }
-    });
+    $("body").find(".modal.show").each(function () {
+        var this_z_index = parseInt($(this).css("z-index"));
+        if (this_z_index !== z_index && this_z_index > max_z_index) {
+          max_z_index = this_z_index;
+        }
+      });
 
-    if ($modal.find('.modal-fullscreen').length) {
-      $('body').find('.modal.show').each(function () {
+    if ($modal.find(".modal-fullscreen").length) {
+      $("body").find(".modal.show").each(function () {
         if ($(this).index() !== $modal.index()) {
-          $(this).find('.modal-close-label').css('top', '-=60');
+          $(this).find(".modal-close-label").css("top", "-=60");
         }
       });
     }
-  })
+  });
 
-
-  $('body').on('hidden.bs.modal', '.modal', function () {
+  $("body").on("hidden.bs.modal", ".modal", function () {
     var $modal = $(this);
     // Fade
-    if (!$modal.find('.modal-fullscreen').length) {
-      $('body .modal-backdrop').remove();
+    if (!$modal.find(".modal-fullscreen").length) {
+      $("body .modal-backdrop").remove();
     }
-  })
-
+  });
 
   // Update Page
   function UpdateScripts($element) {
@@ -324,85 +322,78 @@
   }
 
   // Full Height
-  var $table = $('.table-responsive.full-height'),
-    $tabParent = $($table.attr('data-parent')),
+  var $table = $(".table-responsive.full-height"),
+    $tabParent = $($table.attr("data-parent")),
     tableHeight = $(window).height();
 
-  tableHeight -= $('#page-content .header').height();
-  tableHeight -= parseInt($tabParent.css('margin-top')) * 2;
+  tableHeight -= $("#page-content .header").height();
+  tableHeight -= parseInt($tabParent.css("margin-top")) * 2;
   tableHeight -= $tabParent.height() - $table.height();
 
-  //$tabParent.children().each(function () {
-  //if ($(this).find('.table-responsive').length) {
-  //return false;
-  //}
-  //tableHeight -= $(this).outerHeight(true);
-  //alert($(this).outerHeight(true))
-  //})
-  $table.height(tableHeight)
+  $table.height(tableHeight);
 
 
   // Convert Input
 
-  $('body').on('click', '.convert-text', function () {
+  $("body").on("click", ".convert-text", function () {
     var $box = $(this),
-      url = $box.attr('data-send-url'),
-      convertTo = $box.attr('data-convert-to');
+      url = $box.attr("data-send-url"),
+      convertTo = $box.attr("data-convert-to");
 
-    if ($box.hasClass('active')) {
+    if ($box.hasClass("active")) {
       return true;
     }
 
-    var newTextBox = '';
-    if (convertTo == 'textarea') {
-      newTextBox += '<textarea class="form-control convert-data" name="' + $box.attr('data-name') + '">'
-      newTextBox += $box.find('.convert-data').text();
-      newTextBox += '</textarea>';
+    var newTextBox = "";
+    if (convertTo == "textarea") {
+      newTextBox += '<textarea class="form-control convert-data" name="' + $box.attr("data-name") + '">';
+      newTextBox += $box.find(".convert-data").text();
+      newTextBox += "</textarea>";
     }
 
-    $box.addClass('active').empty();
+    $box.addClass("active").empty();
 
     if (url) {
-      $box.append('<form></form>');
-      $box = $box.find('form');
+      $box.append("<form></form>");
+      $box = $box.find("form");
     }
-    $box.append(newTextBox)
+    $box.append(newTextBox);
 
     if (url) {
-      var $btn = '<div class="position-right"><button class="btn btn-primary btn-sm submit" type="button">Сохранить</button></div>'
-      $box.append($btn)
+      var $btn =
+        '<div class="position-right"><button class="btn btn-primary btn-sm submit" type="button">Сохранить</button></div>';
+      $box.append($btn);
     }
-  })
+  });
 
-  $('body').on('click', '.convert-text .submit', function () {
-    var $box = $(this).closest('.convert-text'),
-      $form = $box.find('form'),
-      url = $box.attr('data-send-url'),
+  $("body").on("click", ".convert-text .submit", function () {
+    var $box = $(this).closest(".convert-text"),
+      $form = $box.find("form"),
+      url = $box.attr("data-send-url"),
       posting = $.post(url, $form.serialize());
 
     posting.done(function (data) {
       var convertData = '<span class="convert-data">';
-      convertData += $form.find('.convert-data').val(),
-        convertData += '</span>',
-        $box.empty().append(convertData);
+      convertData += $form.find(".convert-data").val();
+      convertData += "</span>";
+      $box.empty().append(convertData);
     });
-  })
+  });
 
-  function UpdateTables($element = $('body')) {
-    $element.find('.bootstrap-table').bootstrapTable({
-      formatSearch () {
-        return 'Поиск'
+  function UpdateTables($element = $("body")) {
+    $element.find(".bootstrap-table").bootstrapTable({
+      formatSearch() {
+        return "Поиск";
       },
-      formatNoMatches () {
-        return 'Ничего не найдено'
-      }
-    })
+      formatNoMatches() {
+        return "Ничего не найдено";
+      },
+    });
   }
-    UpdateTables();
-
+  UpdateTables();
 
   // Sticky Bottom Actions
-  function StickyBottomActionsUpdate ($element = $('body')) {
+  function StickyBottomActionsUpdate($element = $("body")) {
     var $content = $(`
       <div class="sticky-bottom actions">
         <div class="col-12">
@@ -418,13 +409,94 @@
         </div>
       </div>
     `);
-    var stickyBottomButtons = $element.find('.sticky-bottom-buttons');
+    var stickyBottomButtons = $element.find(".sticky-bottom-buttons");
     if (stickyBottomButtons.length) {
-      $content.find('.buttons').append(stickyBottomButtons.children());
+      $content.find(".buttons").append(stickyBottomButtons.children());
       stickyBottomButtons.parent().append($content);
       stickyBottomButtons.remove();
     }
   }
   StickyBottomActionsUpdate();
 
+
+  $(document).on("click", ".load-page-or-modal", function () {
+    var modal_id = $(this).closest(".modal").attr("id"),
+      url = $(this).attr("data-url");
+
+    if (modal_id) {
+      LoadToModal(modal_id, url);
+    } else {
+      LoadToPage(url);
+    }
+
+  });
+
+  // Load to Page
+  function LoadToPage(url) {
+    alert('lazy')
+    if (!url) {
+      url = $(location).attr('href');
+      url += (url.indexOf("?") > 0 ? "&" : "?") + "only_content=true";
+    }
+    $('#content').load(url, function () {
+      UpdateScripts($('#content'));
+      UpdateFocus($('#content'));
+    });
+  }
+
+// Form
+$('body').on("submit", function(event) {
+  event.preventDefault();
+
+  var $form = $(event.target),
+    $btn = $form.find('[type=submit]');
+
+  var posting = $.post($form.attr("data-url"), $form.serialize()),
+    $modal = $form.closest(".modal");
+
+  $modal.modal("hide");
+  posting.done(function (data) {
+    PageUpdate($btn);
+  });
+});
+
+  // Focus
+  function UpdateFocus($element = $("body")) {
+    if ($element.find('.focus').length) {
+      $element.find('.focus').focus();
+    } else {
+      $element.find(".search-input").focus();
+    }
+  }
+  UpdateFocus();
+
+var NeedUpdate = [];
+
+$(document).on('hide.bs.modal', '.modal', function () {
+  var $modal = $(this);
+  var $active_modals = $("body").find(".modal.show");
+
+  if ($active_modals.length - 1) {
+    alert('update modal')
+
+    var modal_id = '',
+      max_z_index = 0;
+
+    $active_modals.each(function () {
+      var this_z_index = +$(this).css("z-index");
+      if (this_z_index >= max_z_index) {
+        max_z_index = this_z_index;
+        modal_id = $(this).attr('id');
+      }
+    });
+
+    if (NeedUpdate.includes(modal_id)) {
+      LoadToModal(modal_id, $("#" + modal_id).attr("data-url"));
+    }
+
+  } else if (NeedUpdate.includes('page')) {
+    alert('update page')
+    LoadToPage();
+  }
+})
 </script>

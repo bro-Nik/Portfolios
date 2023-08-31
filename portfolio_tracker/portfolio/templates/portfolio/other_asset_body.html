@@ -1,0 +1,55 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+{% set modal_title = 'Изменить тело актива' if body else 'Добавить тело актива' %}
+
+{% block content %}
+<form method="post"
+  action="{{ url_for('.other_asset_body_update', asset_id=asset_id, body_id=body.id if body else None) }}">
+  <div class="row g-2">
+    <div class="col-md-12">
+      <div class="mb-1">
+        <label class="form-label h7">Название</label>
+        <input type="text" class="form-control rounded-3 focus" name="name" autocomplete="off" value="{{ body.name if body}}" required>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="mb-1">
+        <label class="form-label h7">На сумму</label>
+        <div class="input-group">
+          <span class="input-prefix">$</span>
+          <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="total_spent" value="{{ body.total_spent if body }}" required>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="mb-1">
+        <label class="form-label h7">Стоимость сейчас</label>
+        <div class="input-group">
+          <span class="input-prefix">$</span>
+          <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="cost_now" value="{{ body.cost_now if body }}">
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="mb-1">
+        <label class="form-label h7">Дата</label>
+        <input class="form-control" name="date" type="date" value="{{ body.date if body else date }}">
+      </div>
+    </div>
+
+    <div class="col-md-12">
+      <div class="mb-3">
+        <label class="form-label h7">Комментарий</label>
+        <textarea class="form-control" name="comment">
+          {{ body.comment if body }}
+        </textarea>
+      </div>
+    </div>
+  </div>
+
+  <button class="w-100 btn rounded-3 btn-primary simple-form-submit" type="button" data-modal-id="AssetInfoModal">{{ modal_title }}</button>
+</form>
+{% endblock %}

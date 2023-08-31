@@ -4,63 +4,64 @@
 {% set modal_title = 'Изменить транзакцию' if transaction else 'Добавить транзакцию' %}
 
 {% block content %}
-    <form method="post"
-          action="{{ url_for('.transaction_update', market_id=market_id, asset_id=asset_id, id=transaction.id) }}">
+<form data-url="{{ url_for('.transaction_update', market_id=market_id, asset_id=asset_id, id=transaction.id) }}">
 
-        <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
-          <input type="radio" class="btn-check" name="type" value="Покупка" id="btnradio1" autocomplete="off" checked>
-          <label class="btn btn-outline-active btn-sm" for="btnradio1">Покупка</label>
+  <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
+    <input type="radio" class="btn-check" name="type" value="Покупка" id="btnradio1" autocomplete="off" checked>
+    <label class="btn btn-outline-active btn-sm" for="btnradio1">Покупка</label>
 
-          <input type="radio" class="btn-check" name="type" value="Продажа" id="btnradio2" autocomplete="off">
-          <label class="btn btn-outline-not_active btn-sm" for="btnradio2">Продажа</label>
+    <input type="radio" class="btn-check" name="type" value="Продажа" id="btnradio2" autocomplete="off">
+    <label class="btn btn-outline-not_active btn-sm" for="btnradio2">Продажа</label>
+  </div>
+
+  <div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" value="true" {{ 'checked' if transaction.order }} name="order">
+    <label class="form-check-label">Ордер</label>
+  </div>
+
+  <div class="row g-2">
+    <div class="col-md-6">
+      <div class="mb-1">
+        <label class="form-label h7">Цена</label>
+        <div class="input-group">
+          <span class="input-prefix">$</span>
+          <input type="number" step="any" class="form-control rounded-3 focus" placeholder="0,00" name="price"
+            autocomplete="off" value="{{ transaction.price|smart_int if transaction else price }}" required>
         </div>
-
-        <div class="form-check mb-3">
-          <input class="form-check-input" type="checkbox" value="true" {{ 'checked' if transaction.order }} name="order">
-          <label class="form-check-label">Ордер</label>
-        </div>
-
-        <div class="row g-2">
-          <div class="col-md-6">
-            <div class="mb-1">
-              <label class="form-label h7">Цена</label>
-              <div class="input-group">
-                <span class="input-prefix">$</span>
-                <input type="number" step="any" class="form-control rounded-3 focus" placeholder="0,00" name="price"
-                  autocomplete="off" value="{{ transaction.price|smart_int if transaction else price }}" required>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="mb-1">
-              <label class="form-label h7">На сумму</label>
-              <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="total_spent"
-                autocomplete="off" value="{{ transaction.total_spent|smart_int if transaction }}" required>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="mb-1">
-              <label class="form-label h7">Дата</label>
-              <input class="form-control" name="date" type="date" value="{{ transaction.date if transaction else date }}" required>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="mb-1">
-              <label class="form-label h7">Кошелек</label>
-              <select class="ajax-select" name="wallet_id" data-url="{{ url_for('wallet.get_all_user_wallets') }}" required>
-                {% if transaction %}
-                <option selected value="{{ transaction.wallet_id }}">{{ transaction.wallet.name }}</option>
-                {% endif %}
-              </select>
-            </div>
-          </div>
-          <div class="col-md-12">
-            <div class="mb-3">
-              <label class="form-label h7">Комментарий</label>
-              <textarea class="form-control" name="comment">{{ transaction.comment if transaction }}</textarea>
-            </div>
-          </div>
-        </div>
-        <button class="w-100 btn rounded-3 btn-primary simple-form-submit" type="button" data-modal-id="AssetInfoModal">{{ modal_title }}</button>
-      </form>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-1">
+        <label class="form-label h7">На сумму</label>
+        <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="total_spent"
+          autocomplete="off" value="{{ transaction.total_spent|smart_int if transaction }}" required>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-1">
+        <label class="form-label h7">Дата</label>
+        <input class="form-control" name="date" type="date" value="{{ transaction.date if transaction else date }}" required>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-1">
+        <label class="form-label h7">Кошелек</label>
+        <select class="ajax-select" name="wallet_id" data-url="{{ url_for('wallet.get_all_user_wallets') }}" required>
+          {% if transaction %}
+            <option selected value="{{ transaction.wallet_id }}">{{ transaction.wallet.name }}</option>
+          {% elif current_user.wallets|length == 1 %}
+          <option selected value="{{ current_user.wallets[0].id }}">{{ current_user.wallets[0].name }}</option>
+          {% endif %}
+        </select>
+      </div>
+    </div>
+    <div class="col-md-12">
+      <div class="mb-3">
+        <label class="form-label h7">Комментарий</label>
+        <textarea class="form-control" name="comment">{{ transaction.comment if transaction }}</textarea>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-primary rounded-3 w-100" type="submit" data-modal-id="AssetInfoModal">{{ modal_title }}</button>
+</form>
 {% endblock %}

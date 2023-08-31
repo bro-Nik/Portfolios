@@ -37,10 +37,11 @@
     {% endif %}
   {% endwith %}
 
-  <!-- <div id="content" class="d-flex flex-column p-5"> -->
   <div id="content" class="p-5">
     {% block content %}{% endblock %}
+  </div>
 
+  <div id="modals" class="p-5">
     <!-- Modal Confirmation -->
     <div class="modal fade" id="ModalConfirmation" tabindex="-1" role="dialog" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered" role="document">
@@ -59,22 +60,9 @@
       </div>
     </div>
 
-    <!-- Modal Alerts -->
-    <div class="modal fade modal" id="Alerts" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h1 class="modal-title fs-3">Уведомления</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body" id="list_alerts">
-            <p class="text-center lead">Пока ничего нет...</p>
-          </div>
-        </div>
-      </div>
-    </div>
     {% include 'about.html' %}
   </div>
+
   <div id="footer">
     {% block footer %}
       <div class="text-center">
@@ -87,87 +75,14 @@
 </div>
 {% include 'scripts.html' %}
 
+{% block after_scripts %}{% endblock %}
+
 <script>
-// Обновление алертов без перезагрузки
-    {#}
-const linkModal = document.getElementById('worked_alerts');
-const listAlerts = document.getElementById('list_alerts');
-
-const createAlert = (i, btn) =>
-`
-<div class="alert alert-warning alert-dismissible" role="alert">
-    <form action="{{ url_for('alert_delete') }}" class="alerts" method="post">
-        <input type="hidden" name="id" value="${alerts[i].id}">
-        <span class="fw-bold">${alerts[i].ticker}</span>
-        ${alerts[i].type}
-        $${alerts[i].price}
-        ${alerts[i].comment}
-
-        <a class="text-decoration-none link-secondary text-nowrap" href="${alerts[i].link}">
-            <i class="bi icon bi-briefcase"></i><span class="small_text">${alerts[i].link_for}</span>
-        </a>
-        ${btn}
-    </form>
-</div>
-`
-
-const fillAlertsList = (alerts) => {
-   listAlerts.innerHTML = "";
-    linkModal.innerHTML = `
-    <span class="position-absolute top-0 start-100 badge rounded-pill bg-danger items-count">
-        ${Object.keys(alerts).length}
-    </span>
-`
-        for (var i in alerts) {
-            if (alerts[i].order) {
-                var btn = `<button class="btn-close" title="Перейдите в портфль и нажмите галочку 'Ордер сработал'" disabled></button>`;
-            }
-            else {
-                var btn = `<button type="submit" class="btn-close"></button>`;
-            }
-            listAlerts.innerHTML += createAlert(i, btn);
-            whoWorked(i)
-          }
-
+function updateAlerts() {
+  $('#WorkedAlertsCount').load("{{ url_for('worked_alerts_count') }}");
 }
-
-async function updateAlerts() {
-   await getAlertsRequest();
-   if (window.alerts.length) {
-   fillAlertsList(window.alerts);
-   }
-}
-
-function getAlertsRequest() {
-   return fetch({{ url_for('worked_alerts_detail', user_id=current_user.id)|tojson }}, {
-      method: 'GET',
-      headers: {
-         "Content-type": "application/json; charset=UTF-8"
-      }
-   })
-   .then(res => res.json())
-   .then(alerts => window.alerts = alerts)
-}
-// выделение фоном сработавших уведомлений
-function whoWorked(i) {
-   let elem = document.getElementById(`alertId${alerts[i].id}`);
-   if (elem) {
-    if (elem.classList.contains('text-bg-light')) {
-        elem.classList.add('text-bg-success');
-        elem.classList.remove('text-bg-light', 'text-muted');
-        }
-    }
-    let elemModal = document.getElementById(`alertmodalId${alerts[i].id}`);
-   if (elemModal) {
-    if (!elemModal.classList.contains('table-green')) {
-        elemModal.classList.add('table-green');
-        }
-    }
-}
-
-updateAlerts()
+updateAlerts();
 setInterval(updateAlerts,10000);
-#}
 </script>
 </body>
 </html>

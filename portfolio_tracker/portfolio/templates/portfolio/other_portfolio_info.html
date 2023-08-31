@@ -1,204 +1,137 @@
+{% if not request.args.get('load_only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
+
 {% block content %}
-  <div class="modal-dialog modal-fullscreen" role="document">
-    <div class="modal-content">
-      <div class="modal-close-label">
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body d-flex flex-column p-5">
-        <div class="mb-5">
-          <div class="row xs-mb-3">
-            <div class="col-auto">
-              <h1>{{ portfolio.name }}</h1>
-            </div>
-            <div class="col-auto ms-auto">
-              <button class="btn btn-primary btn-sm asset-settings">Добавить актив</button>
-            </div>
-          </div>
-        </div>
+<div class="mb-5">
+  <div class="row xs-mb-3">
+    <div class="col-auto">
+      <h1>{{ portfolio.name }}</h1>
+    </div>
+    <div class="col-auto ms-auto">
+      <button class="btn btn-primary open-modal" type="button" data-modal-id="OtherAssetSettingsModal" data-url="{{ url_for('.other_asset_settings', portfolio_id=portfolio.id) }}">Добавить актив</button>
+    </div>
+  </div>
+</div>
 
-        {% if portfolio.other_assets %}
-          <div class="row xs-mb-3">
+{% if asset_list %}
+  <div class="row xs-mb-3">
 
-            {% set portfolio_profit = portfolio_cost_now - portfolio_total_spent %}
-            <div class="col-auto">
-              <p class="small_text">Всего вложено / сейчас</p>
-              <span class="text-average"> ${{ portfolio_total_spent|int|number_group }} /</span>
-              <span class="text-average {{ 'text-green' if portfolio_profit > 0 }} {{ 'text-red' if portfolio_profit < 0 }}">
-                ${{ portfolio_cost_now|int|number_group }}
-              </span>
-            </div>
+    <div class="col-auto">
+      <p class="small_text">Всего вложено / сейчас</p>
+      <span class="text-average"> ${{ portfolio.total_spent|int|number_group }} /</span>
+      <span class="text-average {{ 'text-green' if portfolio.profit|int > 0 }} {{ 'text-red' if portfolio.profit|int < 0 }}">
+        ${{ portfolio.cost_now|int|number_group }}
+      </span>
+    </div>
 
-            <div class="col-auto">
-              <p class="small_text">Прибыль / убыток</p>
-              <span class="text-average {{ 'text-green' if portfolio_profit > 0 }} {{ 'text-red' if portfolio_profit < 0 }}">
-                {{ '-' if portfolio_profit < 0 }}${{ portfolio_profit|int|number_group }}
-                {% if portfolio_total_spent > 0 %}
-                  ({{ (portfolio_profit / portfolio_total_spent * 100)|int }}%)
-                {% endif %}
-              </span>
-            </div>
-          </div>
-
-          <div class="fixed-height-1"></div>
-
-          <div class="big-table">
-            <form id="AssetsForm" action="{{ url_for('.other_asset_action', market_id=portfolio.market_id) }}">
-              <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
-                <thead>
-                  <tr>
-                    <th scope="col" data-sortable="true">Наименование</th>
-                    <th scope="col">Стоимость</th>
-                    <th scope="col" data-sortable="true" data-sort-name="cost">Стоимость сейчас</th>
-                    <th scope="col" data-sortable="true" data-sort-name="profit">Прибыль / убыток</th>
-                    <th scope="col" data-sortable="true" data-sort-name="procent">% портфеля</th>
-                    <th scope="col"></th>
-                    <!-- For sorting -->
-                    <th scope="col" class="visually-hidden" data-sortable="true" data-field="cost">Стоит сейчас</th>
-                    <th scope="col" class="visually-hidden" data-sortable="true" data-field="profit">Профит</th>
-                    <th scope="col" class="visually-hidden" data-sortable="true" data-field="procent">% портфеля</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for asset in portfolio.other_assets %}
-                    <tr>
-                      <td class="text-average">
-                        <a class="link-dark text-decoration-none open-asset" href="#" data-url="{{ url_for('.asset_info', market_id=portfolio.market_id, asset_id=asset.id) }}">
-                          {{ asset.name }}
-                        </a>
-                      </td>
-                      {% set bodys_cost_now = asset.bodys|sum(attribute='cost_now') %}
-                      {% set bodys_total_spent = asset.bodys|sum(attribute='total_spent') %}
-                      {% set operations_total_spent = asset.operations|sum(attribute='total_spent') %}
-                      {% set asset_profit = bodys_cost_now + operations_total_spent - bodys_total_spent %}
-
-                      <td>{{ '$' + bodys_total_spent|int|number_group if asset.bodys else '-' }}</td>
-                      <td>{{ '$' + (bodys_cost_now + operations_total_spent)|int|number_group if asset.bodys else '-' }}</td>
-                      <td>
-                        {% if asset.bodys %}
-                          <span class="text-average {{ 'text-green' if asset_profit > 0 }} {{ 'text-red' if asset_profit < 0 }}">
-                            {{ '-' if asset_profit < 0 }}${{ asset_profit|int|number_group }}
-                            {% if bodys_cost_now + operations_total_spent > 0 %}
-                              ({{ (asset_profit / bodys_total_spent * 100 )|int }}%)
-                            {% endif %}
-                          </span>
-                        {% else %}
-                          -
-                        {% endif %}
-                      </td>
-
-                      <td>
-                        {{ (bodys_total_spent / portfolio_total_spent * 100)|round(1, 'common') + '% /' if portfolio_total_spent and asset.bodys else '- / ' }}
-                        {{ asset.percent + '%' if asset.percent else '-' }}
-                      </td>
-
-                      <td class="align-middle text-end">
-                        <div class="dropdown dropstart">
-                          <a href="#" role="button" id="dropdownAction"
-                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="bi icon bi-three-dots-vertical"></i>
-                          </a>
-                          <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                            <a class="dropdown-item">Изменить</a>
-                            <a class="dropdown-item action-confirmation link-danger" data-title="Удалить {{ asset.name }}?"
-                              data-id="{{ asset.id }}">
-                              Удалить
-                            </a>
-                          </div>
-                        </div>
-                      </td>
-
-                      <!-- For sorting -->
-                      <td class="visually-hidden">{{ bodys_total_spent + operations_total_spent }}</td>
-                      <td class="visually-hidden">{{ asset_profit }}</td>
-                      <td class="visually-hidden">{{ (bodys_total_spent / portfolio_total_spent * 100) if portfolio_total_spent > 0 }}</td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </form>
-          </div>
-        {% else %}
-          <div class="nothing-box">Пока ничего нет...</div>
+    <div class="col-auto">
+      <p class="small_text">Прибыль / убыток</p>
+      <span class="text-average {{ 'text-green' if portfolio.profit|int > 0 }} {{ 'text-red' if portfolio.profit|int < 0 }}">
+        {{ '-' if portfolio.profit|int < 0 }}${{ portfolio.profit|int|number_group }}
+        {% if portfolio.total_spent > 0 %}
+          ({{ (portfolio.profit / portfolio.total_spent * 100)|int }}%)
         {% endif %}
-      </div>
+      </span>
     </div>
   </div>
 
+  <div class="big-table">
+    <form id="AssetsForm" action="{{ url_for('.other_asset_action', market_id=portfolio.market_id) }}">
+      <table class="table table-sm align-middle table-hover bootstrap-table" data-search="true">
+        <thead>
+          <tr>
+            <th class="main-tab-checkbox">
+              <input class="form-check-input check-all" type="checkbox">
+            </th>
+            <th data-sortable="true">Наименование</th>
+            <th>Стоимость</th>
+            <th data-sortable="true" data-sort-name="cost">Стоимость сейчас</th>
+            <th data-sortable="true" data-sort-name="profit">Прибыль / убыток</th>
+            <th data-sortable="true" data-sort-name="procent">% портфеля</th>
+            <th></th>
+            <!-- For sorting -->
+            <th class="visually-hidden" data-sortable="true" data-field="cost">Стоит сейчас</th>
+            <th class="visually-hidden" data-sortable="true" data-field="profit">Профит</th>
+            <th class="visually-hidden" data-sortable="true" data-field="procent">% портфеля</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for asset in asset_list %}
+            <tr>
+              <td>
+                <input class="form-check-input to-check" type="checkbox" value="{{ asset.id }}">
+              </td>
+
+              <td class="text-average">
+                <span class="open-modal" data-modal-id="AssetInfoModal" data-url="{{ url_for('.asset_info', market_id=portfolio.market_id, asset_id=asset.id) }}">
+                  {{ asset.name }}
+                </span>
+              </td>
+
+              <td>{{ '$' + asset.bodys_total_spent|int|number_group if asset.bodys_total_spent else '-' }}</td>
+              <td>{{ '$' + (asset.bodys_cost_now + asset.operations_total_spent)|int|number_group if asset.bodys_cost_now else '-' }}</td>
+              <td>
+                {% if asset.bodys_cost_now %}
+                  <span class="text-average {{ 'text-green' if asset.profit|int > 0 }} {{ 'text-red' if asset.profit|int < 0 }}">
+                    {{ '-' if asset.profit|int < 0 }}${{ asset.profit|int|number_group }}
+                    {% if asset.bodys_cost_now + asset.operations_total_spent > 0 %}
+                      ({{ (asset.profit / asset.bodys_total_spent * 100 )|int }}%)
+                    {% endif %}
+                  </span>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td>
+                {{ (asset.bodys_total_spent / portfolio.total_spent * 100)|round(1, 'common')|string + '% /' if portfolio.total_spent and asset.bodys_total_spent else '- / ' }}
+                {{ asset.percent|string + '%' if asset.percent else '-' }}
+              </td>
+
+              <td class="align-middle text-end">
+                <div class="dropdown dropstart">
+                  <a href="#" class="link-secondary" role="button" id="dropdownAction"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+                  </a>
+                  <div class="dropdown-menu" aria-labelledby="dropdownAction">
+                    <a class="dropdown-item open-modal" data-modal-id="OtherAssetSettingsModal" data-url="{{ url_for('.other_asset_settings', portfolio_id=portfolio.id, asset_id=asset.id) }}">Изменить</a>
+                    <a class="dropdown-item action-confirmation link-danger" data-title="Удалить {{ asset.name }}?"
+                      data-id="{{ asset.id }}">
+                      Удалить
+                    </a>
+                  </div>
+                </div>
+              </td>
+
+              <!-- For sorting -->
+              <td class="visually-hidden">{{ asset.bodys_total_spent + asset.operations_total_spent }}</td>
+              <td class="visually-hidden">{{ asset.profit }}</td>
+              <td class="visually-hidden">{{ (asset.bodys_total_spent / portfolio.total_spent * 100) if portfolio.total_spent > 0 }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Actions buttons -->
+      <div class="sticky-bottom-buttons">
+        <a class="open-modal-confirmation" data-action="delete" data-title="Удалить активы?">Удалить</a>
+      </div>
+
+    </form>
+  </div>
+{% else %}
+  <div class="nothing-box">Пока ничего нет...</div>
+{% endif %}
+
 <script>
 
-  {#
-// Отправка данных в форму изменения актива
-var updateModal = document.getElementById('customAsset')
-updateModal.addEventListener('show.bs.modal', function (event) {
-  var button = event.relatedTarget
-
-  var name = button.getAttribute('data-bs-name')
-  var modalName = customAsset.querySelector('.modal-body #name')
-  var id = button.getAttribute('data-bs-id')
-  var modalId = customAsset.querySelector('.modal-body #id')
-  var percent = button.getAttribute('data-bs-percent')
-  var modalPercent = customAsset.querySelector('.modal-body #percent')
-  var comment = button.getAttribute('data-bs-comment')
-  var modalComment = customAsset.querySelector('.modal-body #comment')
-  var title = button.getAttribute('data-bs-title')
-  var modalTitle = customAsset.querySelector('.modal-title')
-  var modalButton = customAsset.querySelector('.btn')
-
-  modalName.value = name
-  modalId.value = id
-  modalPercent.value = percent
-  modalComment.value = comment
-  modalTitle.textContent = `${title}`
-  modalButton.textContent = `${title}`
-})
-// Отправка данных в форму удаления актива
-var updateModal = document.getElementById('deleteAsset')
-updateModal.addEventListener('show.bs.modal', function (event) {
-  var button = event.relatedTarget
-
-  var id = button.getAttribute('data-bs-id')
-  var modalId = deleteAsset.querySelector('.modal-body #id')
-  var type = button.getAttribute('data-bs-type')
-  var modalType = deleteAsset.querySelector('.modal-body #type')
-  var title = button.getAttribute('data-bs-title')
-  var modalTitle = deleteAsset.querySelector('.modal-title')
-
-  modalId.value = id
-  modalType.value = type
-  modalTitle.textContent = `${title}`
-})
-// поиск в выпадающем меню (источник: https://www.w3schools.com/howto/howto_js_filter_dropdown.asp)
-function myFunction() {
-  document.getElementById("myDropdown").classList.toggle("show");
-}
-
-
-function filterFunction() {
-  var input, filter, ul, li, a, i;
-  input = document.getElementById("myInput");
-  filter = input.value.toUpperCase();
-  div = document.getElementById("myDropdown");
-  a = div.getElementsByTagName("a");
-  for (i = 0; i < a.length; i++) {
-    txtValue = a[i].textContent || a[i].innerText;
-    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-      a[i].style.display = "";
-    } else {
-      a[i].style.display = "none";
-    }
-  }
-}
-
-  #}
-  // Open Modal Asset
-  $('.open-asset').on("click", function (e) {
-    LoadToModal($('#AssetInfoModal'), $(this).attr('data-url'));
-  })
-
   // Open Modal Asset Settings
-  $('.asset-settings').on("click", function () {
+  $('.asset-settings2').on("click", function () {
     var modal_id = 'customAsset',
-      url = "{{ url_for('.other_asset_add', market_id=portfolio.market_id, portfolio_id=portfolio.id) }}",
+      url = "",
       asset_id = $(this).attr('data-id');
     if (asset_id) { url += '?asset_id=' + asset_id; }
     LoadToModal(modal_id, url);

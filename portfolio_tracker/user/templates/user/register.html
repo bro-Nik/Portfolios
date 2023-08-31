@@ -1,0 +1,80 @@
+{# Страница регистрации #}
+
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" />
+  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" />
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
+  <style>
+    .form-signin {
+      max-width: 330px;
+      padding: 15px;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      padding-top: 40px;
+      padding-bottom: 40px;
+      background-color: #f5f5f5;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="text-center form-signin w-100 m-auto">
+    <form method="post">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-success alert-dismissible" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <a href="/" class="d-flex align-items-center mb-5 justify-content-center link-body-emphasis text-decoration-none">
+        <img class="mb-0 me-2" src="{{ url_for('static', filename='favicon.png') }}" alt="" width="32" height="32" />
+        <span class="fs-4">Portfolios</span>
+      </a>
+
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <h1 class="h3 fw-normal">Регистрация</h1>
+        <a href="{{ url_for('.login') }}" class="ms-auto link-primary text-decoration-none">Вход</a>
+      </div>
+
+      <div class="mb-3">
+        <input type="email" class="form-control" placeholder="Email" name="email">
+      </div>
+
+      <div class="mb-1">
+        <input type="password" class="form-control" placeholder="Пароль" name="password">
+      </div>
+
+      <div class="mb-3">
+        <input type="password" class="form-control" placeholder="Пароль (повтор)" name="password2">
+      </div>
+
+      <button class="w-100 btn btn-sm btn-primary mb-5" type="submit">Зарегистрироваться</button>
+
+      <a class="text-decoration-none link-secondary" href="" data-bs-toggle="modal" data-bs-target="#About">$
+        Portfolios
+      </a>
+    </form>
+  </main>
+  {% include 'about.html' %}
+</body>
+
+</html>

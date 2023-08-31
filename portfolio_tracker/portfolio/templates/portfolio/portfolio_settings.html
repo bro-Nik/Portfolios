@@ -1,12 +1,10 @@
-{% if not load_only_content %}
-  {% extends "modal_base.html" %}
-  {% set modal_fullscreen = False %}
-{% endif %}
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
 
 {% set modal_title = 'Изменить портфель' if portfolio else 'Добавить портфель' %}
 
 {% block content %}
-<form method="post" action="{{ url_for('.portfolio_update', portfolio_id=portfolio.id if portfolio else None) }}">
+<form data-url="{{ url_for('.portfolio_update', portfolio_id=portfolio.id if portfolio else None) }}">
   <div class="row g-2">
 
     <div class="col-md-6">
@@ -31,6 +29,6 @@
       </div>
     </div>
   </div>
-  <button class="w-100 btn btn rounded-3 btn-primary" type="submit">{{ modal_title }}</button>
+  <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
 </form>
 {% endblock %}

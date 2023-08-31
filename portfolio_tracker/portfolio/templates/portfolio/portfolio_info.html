@@ -1,4 +1,4 @@
-{% if not request.args.get('load_only_content') %}
+{% if not request.args.get('only_content') %}
   {% extends "modal_base.html" %}
   {% set modal_fullscreen = True %}
 {% endif %}
@@ -29,7 +29,7 @@
     <div class="col-auto">
       <p class="small_text">Прибыль / убыток</p>
       <span class="text-average {{ 'text-green' if portfolio.profit > 0 }} {{ 'text-red' if portfolio.profit < 0 }}">
-        {{ '-' if portfolio['profit'] < 0 }}${{ portfolio.profit|int|abs|number_group }}
+        {{ '-' if portfolio.profit < 0 }}${{ portfolio.profit|int|abs|number_group }}
         {% if portfolio.total_spent and portfolio.profit %}
           ({{ (portfolio.profit / portfolio.total_spent * 100)|round|int|abs }}%)
         {% endif %}
@@ -154,7 +154,7 @@
 
       <!-- Actions buttons -->
       <div class="sticky-bottom-buttons">
-        <a class="open-modal-confirmation" data-action="delete" data-title="Удалить портфели?">Удалить</a>
+        <a class="open-modal-confirmation" data-action="delete" data-title="Удалить активы?">Удалить</a>
       </div>
 
     </form>
@@ -169,23 +169,33 @@
   <span>{{ 'Добавить комментарий' if not portfolio.comment }}</span>
 </div>
 
+{% if not request.args.get('only_content') %}
 <script>
   // Add New Asset
-  $(document).on("click", '.select-asset', function () {
+  $('body').on("click", '.select-asset', function () {
     var url = "{{ url_for('.asset_add', portfolio_id=portfolio.id) }}";
     url += "?ticker_id=" + $(this).attr('data-ticker-id');
 
     $(this).closest('.modal').modal('hide');
 
-    new Promise(function (resolve) {
-      LoadToModal('AssetInfoModal', url);
-	    setTimeout(function () {
-	      resolve(1);
-	    }, 1000)
-    }).then(function () {
+    //new Promise(function (resolve) {
+      //LoadToModal('AssetInfoModal', url);
+	    //setTimeout(function () {
+	      //resolve(1);
+	    //}, 1000)
+    //}).then(function () {
       // Update Portfolio Info
-      LoadToModal('PortfolioInfoModal', "{{ url_for('.portfolio_info', portfolio_id=portfolio.id) }}");
-    });
+      //$('#PortfolioInfoModal').attr('data-url', )
+      //LoadToModal('PortfolioInfoModal', "{{ url_for('.portfolio_info', portfolio_id=portfolio.id) }}"); });
+
+
+      geting = $.get(url);
+
+      geting.done(function (data) {
+        alert(data)
+        LoadToModal('AssetInfoModal', data);
+      })
   });
 </script>
+{% endif %}
 {% endblock %}

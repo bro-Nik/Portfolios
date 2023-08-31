@@ -4,7 +4,7 @@
 {% set modal_title = 'Перевод' %}
 
 {% block content %}
-  <form method="post" action="{{ url_for('.wallet_transfer') }}">
+  <form data-url="{{ url_for('.wallet_transfer') }}">
     <div class="row g-2">
       <div class="col-md-12">
         <div class="mb-1">
@@ -30,6 +30,6 @@
         </div>
       </div>
     </div>
-    <button class="w-100 btn rounded-3 btn-primary" type="submit">Готово</button>
+    <button class="btn btn-primary rounded-3 w-100" type="submit">Готово</button>
   </form>
 {% endblock %}

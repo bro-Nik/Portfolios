@@ -44,6 +44,8 @@ from portfolio_tracker.whitelist.whitelist import whitelist
 app.register_blueprint(whitelist, url_prefix='/whitelist')
 from portfolio_tracker.admin.admin import admin
 app.register_blueprint(admin, url_prefix='/admin')
+from portfolio_tracker.user.user import user
+app.register_blueprint(user, url_prefix='/user')
 
 
 from portfolio_tracker.admin.admin import delete_tasks

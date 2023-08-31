@@ -4,121 +4,121 @@
 
 {% include 'admin/menu.html' %}
 
-<div class="row mb-5 xs-mb-3">
-    <div class="col-12 mb-5">
-        <div class="mb-3">
-            <span class="text-average">Пользователи</span>
-        </div>
-        <span class="small_text me-3">Пользователи - <span id="users-count" class="text-average"></span></span>
-        <span class="small_text me-3">Администраторы - <span id="admins-count" class="text-average"></span></span>
+<div class="row gap-5">
+
+  <div>
+    <div class="mb-3">
+      <span class="text-average">Пользователи</span>
     </div>
-    <div class="col-12 mb-5">
-        <div class="mb-3">
-            <span class="text-average">Тикеры</span>
-            <div id="tickers-task-btn" class="d-inline ms-3"></div>
-        </div>
-        <span class="small_text me-3">Crypto - <span id="crypto-tickers-count" class="text-average"></span> <span id="crypto-tickers-task"></span></span>
-        <span class="small_text me-3">Stocks - <span id="stocks-tickers-count" class="text-average"></span> <span id="stocks-tickers-task"></span></span>
+    <div class="d-flex gap-3">
+      <span class="small_text">Пользователи - <span id="UsersCount" class="text-average"></span></span>
+      <span class="small_text">Администраторы - <span id="AdminsCount" class="text-average"></span></span>
     </div>
-    <div class="col-12 mb-5">
-        <div class="mb-3">
-            <span class="text-average">Обновление цен</span>
-            <div id="update-price-task-btn" class="d-inline ms-3"></div>
-        </div>
-        <span class="small_text me-3">Crypto - <span id="when-update-crypto" class="text-average"></span> <span id="crypto-price-task"></span></span>
-        <span class="small_text me-3">Stocks - <span id="when-update-stocks" class="text-average"></span> <span id="stocks-price-task"></span></span>
-        <br>
+  </div>
+
+  <div>
+    <div class="mb-3 d-flex gap-3">
+      <span class="text-average">Тикеры</span>
+      <div id="TickersTaskBtn"></div>
     </div>
-    <div class="col-12 mb-5">
-        <div class="mb-3">
-            <span class="text-average">Redis</span>
-        </div>
-        <a class="small_text text-decoration-none" href="{{ url_for('.admin_del_tasks') }}">
-            Удалить все задачи
-        </a><br>
-        <a class="small_text text-decoration-none" href="{{ url_for('.admin_del_price_lists') }}">
-            Удалить прайс листы
-        </a><br>
-        <a class="small_text text-decoration-none" href="{{ url_for('.admin_del_alerts') }}">
-            Удалить уведомления
-        </a><br>
-        <a class="small_text text-decoration-none" href="{{ url_for('.admin_del_all') }}">
-            Удалить все из Redis
-        </a><br>
+    <div class="d-flex gap-3">
+      <span class="small_text">Crypto - 
+        <span id="CryptoTickersCount" class="text-average"></span>
+        <span id="CryptoTickersTask"></span>
+      </span>
+      <span class="small_text">Stocks - 
+        <span id="StocksTickersCount" class="text-average"></span>
+        <span id="StocksTickersTask"></span>
+      </span>
     </div>
+  </div>
+
+  <div>
+    <div class="mb-3 d-flex gap-3">
+      <span class="text-average">Обновление цен</span>
+      <div id="UpdatePriceTaskBtn"></div>
+    </div>
+    <div class="d-flex gap-3">
+      <span class="small_text">Crypto - 
+        <span id="WhenUpdateCrypto" class="text-average"></span>
+        <span id="CryptoPriceTask"></span>
+      </span>
+      <span class="small_text">Stocks - 
+        <span id="WhenUpdateStocks" class="text-average"></span>
+        <span id="StocksPriceTask"></span>
+      </span>
+    </div>
+  </div>
+
+  <div>
+    <div class="mb-3">
+      <span class="text-average">Redis</span>
+    </div>
+    <div class="d-grid">
+      <a class="small_text text-decoration-none" href="{{ url_for('.del_tasks') }}">
+          Удалить все задачи
+      </a>
+      <a class="small_text text-decoration-none" href="{{ url_for('.del_price_lists') }}">
+          Удалить прайс листы
+      </a>
+      <a class="small_text text-decoration-none" href="{{ url_for('.del_all') }}">
+          Удалить все из Redis
+      </a>
+    </div>
+  </div>
 </div>
 <script>
 // Обновление данных без перезагрузки
-const url = {{ url_for('.admin_index_detail')|tojson }}
-const Admins = document.getElementById('admins-count');
-const Users = document.getElementById('users-count');
-const cryptoTickersCount = document.getElementById('crypto-tickers-count');
-const stocksTickersCount = document.getElementById('stocks-tickers-count');
 
-const cryptoTickersTask = document.getElementById('crypto-tickers-task');
-const stocksTickersTask = document.getElementById('stocks-tickers-task');
-const TickersTaskBtn = document.getElementById('tickers-task-btn');
-const UpdatePriceTaskBtn = document.getElementById('update-price-task-btn');
-
-const whenUpdateCrypto = document.getElementById('when-update-crypto');
-const whenUpdateStocks = document.getElementById('when-update-stocks');
-const cryptoPriceTask = document.getElementById('crypto-price-task');
-const stocksPriceTask = document.getElementById('stocks-price-task');
-
-var data = {}
-var is_off = ['Остановлено', 'Готово', 'PENDING', 'FAILURE']
-
-async function letsStart() {
-   await getDataRequest();
-   updatePage();
-   }
-
-function updatePage() {
-   Admins.innerHTML = `${data.admins_count}`;
-   Users.innerHTML = `${data.users_count}`;
-   cryptoTickersCount.innerHTML = `${data.crypto_tickers_count}`;
-   stocksTickersCount.innerHTML = `${data.stocks_tickers_count}`;
+  function AdminDetailsUpdate() {
+    var url = "{{ url_for('.index_detail') }}";
+    var is_off = ['Остановлено', 'Готово', 'PENDING', 'FAILURE']
+    var $tickersTaskBtn = $('#TickersTaskBtn'),
+      $updatePriceTaskBtn = $('#UpdatePriceTaskBtn');
 
 
-   cryptoTickersTask.innerHTML = `(${data.task_crypto_tickers_state})`;
-   stocksTickersTask.innerHTML = `(${data.task_stocks_tickers_state})`;
+    var request = $.get(url);
+    request.done(function(data) {
+      $('#AdminsCount').html(data.admins_count);
+      $('#UsersCount').html(data.users_count);
+      $('#CryptoTickersCount').html(data.crypto_tickers_count);
+      $('#StocksTickersCount').html(data.stocks_tickers_count);
 
-    if ((data.task_crypto_tickers_id && !is_off.includes(data.task_crypto_tickers_state)) || (data.task_stocks_tickers_id && !is_off.includes(data.task_stocks_tickers_state))) {
-    TickersTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{ url_for('.load_tickers_stop') }}">Остановить</a>`
-    }
-    else {
-    TickersTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{ url_for('.load_tickers_start') }}">Запустить</a>`
-    }
+      $('#CryptoTickersTask').html('(' + data.task_crypto_tickers_state + ')');
+      $('#StocksTickersTask').html('(' + data.task_stocks_tickers_state + ')');
+      $('#WhenUpdateCrypto').html(data.when_update_crypto);
+      $('#WhenUpdateStocks').html(data.when_update_stocks);
+      $('#CryptoPriceTask').html('(' + data.task_crypto_price_state + ')');
+      $('#StocksPriceTask').html('(' + data.task_stocks_price_state + ')');
 
-    if ((data.task_crypto_tickers_id && !is_off.includes(data.task_crypto_tickers_state)) || (data.task_stocks_tickers_id && !is_off.includes(data.task_stocks_tickers_state))) {
-    UpdatePriceTaskBtn.innerHTML = `<span class="small_text text-muted">Запустить</a>`
-    }
-    else {
-        if ((data.task_crypto_price_id && !is_off.includes(data.task_crypto_price_state)) || (data.task_stocks_price_id && !is_off.includes(data.task_stocks_price_state))) {
-        UpdatePriceTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{url_for('.admin_update_prices_stop') }}">Остановить</a>`
-        }
-        else {
-        UpdatePriceTaskBtn.innerHTML = `<a class="small_text text-decoration-none" href="{{url_for('.admin_update_prices') }}">Запустить</a>`
-        }
-    }
-    whenUpdateCrypto.innerHTML = `${data.when_update_crypto}`;
-    whenUpdateStocks.innerHTML = `${data.when_update_stocks}`;
-    cryptoPriceTask.innerHTML = `(${data.task_crypto_price_state})`;
-    stocksPriceTask.innerHTML = `(${data.task_stocks_price_state})`;
-}
-
-function getDataRequest() {
-   return fetch(url, {
-      method: 'GET',
-      headers: {
-         "Content-type": "application/json; charset=UTF-8"
+      if ((data.task_crypto_tickers_id && !is_off.includes(data.task_crypto_tickers_state)) || (data.task_stocks_tickers_id && !is_off.includes(data.task_stocks_tickers_state))) {
+        $tickersTaskBtn.html(`<a class="small_text text-decoration-none" href="{{ url_for('.load_tickers_stop') }}">Остановить</a>`);
       }
-   })
-   .then(res => res.json())
-   .then(data => window.data = data)
-}
+      else {
+        $tickersTaskBtn.html(`<a class="small_text text-decoration-none" href="{{ url_for('.load_tickers_start') }}">Запустить</a>`);
+      }
 
-letsStart()
-setInterval(letsStart, 3000);
+      if ((data.task_crypto_tickers_id && !is_off.includes(data.task_crypto_tickers_state)) || (data.task_stocks_tickers_id && !is_off.includes(data.task_stocks_tickers_state))) {
+        $updatePriceTaskBtn.html(`<span class="small_text text-muted">Запустить</a>`);
+      }
+      else {
+          if ((data.task_crypto_price_id && !is_off.includes(data.task_crypto_price_state)) || (data.task_stocks_price_id && !is_off.includes(data.task_stocks_price_state))) {
+            $updatePriceTaskBtn.html(`<a class="small_text text-decoration-none" href="{{url_for('.update_prices_stop') }}">Остановить</a>`);
+          }
+          else {
+            $updatePriceTaskBtn.html(`<a class="small_text text-decoration-none" href="{{url_for('.update_prices') }}">Запустить</a>`);
+          }
+      }
+
+    })
+
+    request.fail(function(data) {
+      clearTimeout(adminUpdateTimerId);
+    })
+  }
+
+  AdminDetailsUpdate();
+  clearTimeout(adminUpdateTimerId);
+  var adminUpdateTimerId = setInterval(AdminDetailsUpdate, 10000);
 </script>
 {% endblock %}

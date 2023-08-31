@@ -1,4 +1,4 @@
-{% if not request.args.get('load_only_content') %}
+{% if not request.args.get('only_content') %}
   {% extends "modal_base.html" %}
   {% set modal_fullscreen = True %}
 {% endif %}
@@ -21,7 +21,7 @@
         <span class="fs-1 fw-semibold" id="AssetPrice">${{ price|smart_round|number_group }}</span>
       </div>
 
-      <div class="d-flex gap-1 align-items-end open-modal" data-modal-id="WhitelistTickerInfoModal" data-url="{{ url_for('whitelist.ticker_info', ticker_id=asset.ticker_id, asset_id=asset.id) }}">
+      <div class="d-flex gap-1 align-items-end open-modal" data-modal-id="WhitelistTickerInfoModal" data-url="{{ url_for('whitelist.ticker_info', market_id=market_id, ticker_id=asset.ticker_id, asset_id=asset.id) }}">
         <span class="badge text-bg-light fw-normal text-muted">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/></svg>
           {{ 'Добавить уведомление' if not asset.alerts }}
@@ -37,7 +37,7 @@
     </div>
 
     <div class="col-auto ms-auto hstack gap-1">
-      <button class="btn btn-primary open-modal" type="button" data-modal-id="TransactionModal"
+      <button class="btn btn-primary open-modal focus" type="button" data-modal-id="TransactionModal"
         data-url="{{ url_for('.transaction', market_id=asset.portfolio.market_id, asset_id=asset.id, ticker=asset.ticker.id) }}">Добавить транзакцию</button>
       <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
       <div class="dropdown-menu">
@@ -108,12 +108,12 @@
           <th class="main-tab-checkbox">
             <input class="form-check-input check-all" type="checkbox">
           </th>
-          <th scope="col">Тип сделки</th>
-          <th scope="col">Цена</th>
-          <th scope="col">Количество</th>
-          <th scope="col">Кошелек</th>
-          <th scope="col">Комментарий</th>
-          <th scope="col"></th>
+          <th>Тип сделки</th>
+          <th>Цена</th>
+          <th>Количество</th>
+          <th>Кошелек</th>
+          <th>Комментарий</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -125,9 +125,12 @@
           </td>
 
           <td>
-            {{ transaction.type }} {{ '(Ордер)' if transaction.order }}
-            <br>
-            <span class="small_text">{{ transaction.date }}</span>
+            <div class="open-modal" data-modal-id="TransactionModal"
+              data-url="{{ url_for('.transaction', market_id=asset.portfolio.market_id, asset_id=asset.id, ticker=asset.ticker.id, transaction_id=transaction.id) }}">
+              {{ transaction.type }} {{ '(Ордер)' if transaction.order }}
+              <br>
+              <span class="small_text">{{ transaction.date }}</span>
+            </div>
           </td>
 
           <td>${{ transaction.price|smart_round|number_group }}</td>
@@ -209,7 +212,7 @@
       var text_class = 'text-average text-' + data.profit_color;
       assetPrice.html('$' + data.price);
       assetCostNow.html(data.cost_now).attr('class', text_class);
-      assetProfit.html(data.profit + ' ' + data.profit_procent).attr('class', text_class);
+      assetProfit.html(data.profit).attr('class', text_class);
     })
     request.fail(function(data) {
       clearTimeout(assetUpdateTimerId);

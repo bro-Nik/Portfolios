@@ -4,7 +4,7 @@
 {% set modal_title = 'Ввод-вывод' %}
 
 {% block content %}
-  <form method="post" action="{{ url_for('.wallet_in_out') }}">
+  <form data-url="{{ url_for('.wallet_in_out') }}">
     <div class="btn-group silver col-12 mb-3" role="group">
       <input type="radio" class="btn-check" name="type" value="Ввод" id="btnradio1" autocomplete="off" checked>
       <label class="btn btn-outline-active btn-sm" for="btnradio1">Ввод</label>
@@ -30,6 +30,6 @@
         </div>
       </div>
     </div>
-    <button class="w-100 btn btn rounded-3 btn-primary" type="submit">Готово</button>
+    <button class="btn btn-primary rounded-3 w-100" type="submit">Готово</button>
   </form>
 {% endblock %}

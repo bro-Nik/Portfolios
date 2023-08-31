@@ -13,11 +13,13 @@
   <div class="hover-child-color overflow-y-auto tickers-list">
     {% for ticker in tickers %}
       <div class="cursor-pointer py-2 d-flex w-100 select-asset" data-ticker-id="{{ ticker.id }}">
-        <img class="ms-2 img-asset-min" src="{{ ticker.image if ticker.image }}">
-        <span class="ms-2 text-average">{{ ticker.name }}</span>
-        <span class="ms-2 text-average text-muted">{{ ticker.symbol|upper }}</span>
+        {% if ticker.image %}
+          <img class="ms-2 img-asset-min" src="{{ ticker.image }}">
+        {% endif %}
+        <span class="ms-2 text-average text-truncate" title="{{ ticker.name }}">{{ ticker.name }}</span>
+        <span class="ms-2 me-2 text-average text-muted">{{ ticker.symbol|upper }}</span>
         {% if ticker.market_cap_rank %}
-        <span class="me-2 ms-auto text-average text-muted">{{ '#' + ticker.market_cap_rank|string }}</span>
+        <span class="me-2 ms-auto text-muted">{{ '#' + ticker.market_cap_rank|string }}</span>
         {% endif %}
       </div>
     {% endfor %}

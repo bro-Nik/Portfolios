@@ -3,13 +3,17 @@ from flask import flash, render_template, redirect, url_for, request, Blueprint
 from flask_login import login_required, current_user
 from datetime import datetime
 
-from portfolio_tracker.general_functions import dict_get_or_other, float_or_other, get_ticker, price_list_def
-from portfolio_tracker.models import Alert, Asset, Portfolio, Ticker, WhitelistTicker
+from portfolio_tracker.general_functions import float_or_other, get_ticker, \
+    get_price_list
+from portfolio_tracker.models import Alert, Ticker, WhitelistTicker
 from portfolio_tracker.wraps import demo_user_change
 from portfolio_tracker.app import db
 
 
-whitelist = Blueprint('whitelist', __name__, template_folder='templates', static_folder='static')
+whitelist = Blueprint('whitelist',
+                      __name__,
+                      template_folder='templates',
+                      static_folder='static')
 
 
 def get_whitelist_ticker(ticker_id, can_new=False):
@@ -24,49 +28,43 @@ def get_whitelist_ticker(ticker_id, can_new=False):
     return ticker
 
 
-def get_whitelist_tickers(market_id):
-    return db.session.execute(
-        db.select(WhitelistTicker).filter_by(user_id=current_user.id)
-        .join(WhitelistTicker.ticker)
-        .where(Ticker.market_id == market_id)).scalars()
-    # return db.session.execute(
-    #     db.select(Ticker).filter(Ticker.market_id == market_id)
-    #     .join(Ticker.alerts)
-    #     .join(Alert.asset)
-    #     .join(Asset.portfolio)
-    #     .where(Portfolio.user_id == current_user.id)).scalars()
-
-
-# def get_user_tracked_ticker(ticker_id):
-#     return db.session.execute(
-#         db.select(Ticker).filter_by(id=ticker_id)
-#         .join(Ticker.alerts)
-#         .join(Alert.asset)
-#         .join(Asset.portfolio)
-#         .where(Portfolio.user_id == current_user.id)).scalar()
-
-
 def get_user_alert(id):
-    return db.session.execute(db.select(Alert).filter_by(id=id)).scalar()
+    if id:
+        alert = db.session.execute(db.select(Alert).filter_by(id=id)).scalar()
+        if alert and alert.whitelist_ticker.user_id == current_user.id:
+            return alert
+    return None
 
 
 @whitelist.route('/<string:market_id>', methods=['GET'])
+@whitelist.route('', methods=['GET'])
 @login_required
-def whitelist_tickers(market_id):
-    """ Whitelist page """
-    tickers = tuple(get_whitelist_tickers(market_id))
-    orders = []
+def tickers(market_id=None):
+    market_id = market_id if market_id else 'crypto'
+    status = request.args.get('status')
 
-    return render_template('whitelist/whitelist.html',
-                           tickers=tickers,
-                           market_id=market_id,
-                           orders=orders)
+    select = (db.select(WhitelistTicker).distinct()
+        .filter_by(user_id=current_user.id))
+
+    if status:
+        select = (select.join(WhitelistTicker.alerts)
+            .filter(Alert.status == status))
+
+    select = (select.join(WhitelistTicker.ticker)
+        .where(Ticker.market_id == market_id))
+    
+    tickers = db.session.execute(select).scalars()
+
+    return render_template('whitelist/tickers.html',
+                           tickers=tuple(tickers),
+                           status=status,
+                           market_id=market_id)
 
 
-@whitelist.route('/ticker_<string:ticker_id>')
+@whitelist.route('/<string:market_id>/ticker_<string:ticker_id>')
 @login_required
-def ticker_info(ticker_id):
-    price_list = price_list_def()
+def ticker_info(market_id, ticker_id):
+    price_list = get_price_list(market_id)
     price = float_or_other(price_list.get(ticker_id), 0)
 
     whitelist_ticker = get_whitelist_ticker(ticker_id)
@@ -78,21 +76,24 @@ def ticker_info(ticker_id):
     return render_template('whitelist/ticker_info.html',
                            whitelist_ticker=whitelist_ticker,
                            ticker=ticker,
+                           market_id=market_id,
                            price=price)
 
 
-@whitelist.route('/whitelist_ticker/alert', methods=['GET'])
+@whitelist.route('/<string:market_id>/whitelist_ticker/alert', methods=['GET'])
 @login_required
-def alert():
+def alert(market_id):
     whitelist_ticker_id = request.args.get('whitelist_ticker_id')
     ticker_id = request.args.get('ticker_id')
+    alert = get_user_alert(request.args.get('alert_id'))
 
-    price_list = price_list_def()
+    price_list = get_price_list(market_id)
     price = float_or_other(price_list.get(ticker_id), 0)
 
     return render_template('whitelist/alert.html',
                            whitelist_ticker_id=whitelist_ticker_id,
                            ticker_id=ticker_id,
+                           alert=alert,
                            price=price)
 
 
@@ -122,16 +123,7 @@ def alert_update():
 
     db.session.commit()
 
-    # добавление уведомления в список
-    # alerts_redis = redis.get('not_worked_alerts')
-    # not_worked_alerts = pickle.loads(alerts_redis) if alerts_redis else {}
-    # not_worked_alerts[alert.id] = {}
-    # not_worked_alerts[alert.id]['type'] = alert.type
-    # not_worked_alerts[alert.id]['price'] = alert.price
-    # not_worked_alerts[alert.id]['ticker_id'] = ticker_id
-    # redis.set('not_worked_alerts', pickle.dumps(not_worked_alerts))
-    #
-    return ''
+    return 'OK'
 
 
 @whitelist.route('/add_ticker', methods=['GET'])
@@ -142,6 +134,7 @@ def add_ticker():
     whitelist_ticker = get_whitelist_ticker(ticker_id, True)
     load_only_content = request.args.get('load_only_content')
     return redirect(url_for('.ticker_info',
+                            market_id=whitelist_ticker.ticker.market_id,
                             ticker_id=whitelist_ticker.ticker_id,
                             load_only_content=load_only_content))
 
@@ -159,26 +152,8 @@ def whitelist_action():
             continue
 
         # удаляем уведомления
-        if whitelist_ticker.alerts:
-            # alerts_redis = redis.get('not_worked_alerts')
-            #
-            # not_worked_alerts = pickle.loads(
-            #         alerts_redis) if alerts_redis else {}
-            #
-            # alerts_redis = redis.get('worked_alerts')
-            # worked_alerts = pickle.loads(alerts_redis) if alerts_redis else {}
-            #
-            # for alert in worked_alerts[current_user.id]:
-            #     if alert['name'] == whitelist_ticker.ticker.name:
-            #         worked_alerts[current_user.id].remove(alert)
-
-            for alert in whitelist_ticker.alerts:
-                # not_worked_alerts.pop(alert.id, None)
-
-                db.session.delete(alert)
-
-            # redis.set('not_worked_alerts', pickle.dumps(not_worked_alerts))
-            # redis.set('worked_alerts', pickle.dumps(worked_alerts))
+        for alert in whitelist_ticker.alerts:
+            db.session.delete(alert)
 
         db.session.delete(whitelist_ticker)
 
@@ -207,36 +182,36 @@ def whitelist_ticker_update():
 def alerts_action():
     data = json.loads(request.data) if request.data else {}
     ids = data.get('ids')
+    action = data.get('action')
 
     for id in ids:
         alert = get_user_alert(id)
-        if not alert.order:
-            db.session.delete(alert)
+        if not alert:
+            continue
+
+        # Delete
+        if action == 'delete':
+            if not alert.transaction_id:
+                db.session.delete(alert)
+
+        # Convert to transaction
+        elif action == 'convert_to_transaction':
+            alert.transaction.order = 0
+            alert.transaction.date = datetime.now().date()
+            alert.status = 'off'
+
+        # Turn off
+        elif action == 'turn_off':
+            if not alert.transaction_id:
+                alert.status = 'off'
+
+        # Turn on
+        elif action == 'turn_on':
+            if alert.transaction_id and alert.status != 'on':
+                alert.transaction_id = None
+                alert.asset_id = None
+            alert.status = 'on'
 
     db.session.commit()
 
-    return ''
-
-# def alert_delete_def(id=None):
-#     alert_in_base = db.session.execute(
-#             db.select(Alert).filter_by(id=id)).scalar()
-    # update_alerts_redis(alert_in_base.id)
-    # if alert_in_base:
-    #     update_alerts_redis(alert_in_base.id)
-    #     need_del_ticker = True
-    #
-    #     for alert in alert_in_base.trackedticker.alerts:
-    #         if alert.id != alert_in_base.id:
-    #             need_del_ticker = False
-    #             break
-    #
-    #     if not alert_in_base.asset_id and need_del_ticker:
-    #         session['last_url'] = session['last_url'].\
-    #                     replace(('/'
-    #                             + alert_in_base.trackedticker.ticker.market.id
-    #                             + '/'
-    #                             + alert_in_base.trackedticker.ticker_id), '')
-    #     if need_del_ticker:
-    #         db.session.delete(alert_in_base.trackedticker)
-    #     db.session.delete(alert_in_base)
-    #     db.session.commit()
+    return 'OK'

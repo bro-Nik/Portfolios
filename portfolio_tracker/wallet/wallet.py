@@ -2,7 +2,7 @@ import json
 from flask import flash, render_template, redirect, url_for, request, Blueprint
 from flask_login import login_required, current_user
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import price_list_def
+from portfolio_tracker.general_functions import get_price_list
 from portfolio_tracker.general_functions import dict_get_or_other, float_or_other
 from portfolio_tracker.models import Wallet
 from portfolio_tracker.wraps import demo_user_change
@@ -26,8 +26,6 @@ def get_user_wallet(id):
 @login_required
 def wallets():
     """ Wallets page """
-    price_list = price_list_def()
-
     wallets = {}
     all = {'total_spent': 0,
            'in_orders': 0,
@@ -45,6 +43,8 @@ def wallets():
         all['money_all'] += user_wallet.money_all
 
     for portfolio in current_user.portfolios:
+        price_list = get_price_list(portfolio.market_id)
+
         for asset in portfolio.assets:
             for transaction in asset.transactions:
                 wallet = wallets[transaction.wallet.id]
@@ -92,7 +92,7 @@ def wallet_update():
 
     db.session.commit()
 
-    return redirect(url_for('.wallets'))
+    return ''
 
 
 @wallet.route('/action', methods=['POST'])
@@ -126,7 +126,6 @@ def wallets_action():
 @login_required
 def wallet_info(wallet_id):
     """ Wallet page """
-    price_list = price_list_def()
     user_wallet = get_user_wallet(wallet_id)
     if not user_wallet:
         return ''
@@ -159,6 +158,7 @@ def wallet_info(wallet_id):
             wallet['in_orders'] += transaction.total_spent
             continue
 
+        price_list = get_price_list(transaction.asset.ticker.market_id)
         price = float_or_other(price_list.get(ticker), 0)
         asset['quantity'] += transaction.quantity
         asset['cost_now'] += transaction.quantity * price

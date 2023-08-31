@@ -17,14 +17,19 @@ def redis_decode_or_other(key, default=''):
         return default
     return key.decode()
 
-def price_list_def():
-    ''' Общая функция сбора цен '''
-    crypto_redis = redis.get('price_list_crypto')
-    price_list_crypto = pickle.loads(crypto_redis) if crypto_redis else {}
-    stocks_redis = redis.get('price_list_stocks')
-    price_list_stocks = pickle.loads(stocks_redis) if stocks_redis else {}
 
-    return price_list_crypto | price_list_stocks
+def get_price_list(market=''):
+    ''' Общая функция сбора цен '''
+    def get_price_list_market(market):
+        price_list_key = 'price_list_' + market
+        price_list = redis.get(price_list_key)
+        return pickle.loads(price_list) if price_list else {}
+
+    if market:
+        return get_price_list_market(market)
+
+    return {'crypto': get_price_list_market('crypto'),
+            'stocks': get_price_list_market('stocks')}
 
 
 def when_updated_def(when_updated, default=''):

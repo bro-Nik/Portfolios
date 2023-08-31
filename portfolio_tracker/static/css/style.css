@@ -20,7 +20,7 @@ html, body {
 .small_text {
     font-size: .875em;
     font-weight: 300;
-    margin-bottom: 0;
+    /* margin-bottom: 0; */
 }
 .input-prefix {
     position: absolute;
@@ -264,7 +264,7 @@ td.symbol-icon:empty, td.market-cap-rank:empty {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 1 0 auto;
+    /* flex: 1 0 auto; */
     font-size: 1.25rem;
     font-weight: 300;
 }
@@ -329,4 +329,20 @@ form {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+#WorkedAlertsCount span {
+    background-color: rgba(220,53,69,1);
+    border-radius: 50rem;
+    right: -5;
+    top: -17;
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.55em;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    position: absolute;
 }

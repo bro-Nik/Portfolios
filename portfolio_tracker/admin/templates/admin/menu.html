@@ -1,10 +1,10 @@
 <nav class="nav nav-underline mb-5">
-  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.admin_index') }}"
-    href="{{ url_for('.admin_index') }}">Главная</a>
-  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.admin_users') }}"
-    href="{{ url_for('.admin_users') }}">Пользователи</a>
-  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.admin_tickers') }}"
-    href="{{ url_for('.admin_tickers') }}">Тикеры</a>
-  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.admin_active_tasks') }}"
-    href="{{ url_for('.admin_active_tasks') }}">Активные задачи</a>
+  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.index') }}"
+    href="{{ url_for('.index') }}">Главная</a>
+  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.users') }}"
+    href="{{ url_for('.users') }}">Пользователи</a>
+  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.tickers') }}"
+    href="{{ url_for('.tickers') }}">Тикеры</a>
+  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.active_tasks') }}"
+    href="{{ url_for('.active_tasks') }}">Активные задачи</a>
 </nav>

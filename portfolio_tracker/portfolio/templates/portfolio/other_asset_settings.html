@@ -1,0 +1,26 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+
+{% set modal_title = 'Изменить актив' if asset else 'Добавить актив' %}
+
+{% block content %}
+<form method="post" action="{{ url_for('.other_asset_settings_post', portfolio_id=portfolio_id)}}">
+  <div class="row g-2">
+
+    <div class="col-12">
+      <div class="mb-1">
+        <label class="form-label h7">Название</label>
+        <input type="text" class="form-control rounded-3 focus" name="name" value="{{ asset.name if asset }}" required>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="mb-3">
+        <label class="form-label h7">Комментарий</label>
+        <textarea class="form-control" name="comment">{{ asset.comment if asset }}</textarea>
+      </div>
+    </div>
+  </div>
+  <button class="w-100 btn btn rounded-3 btn-primary" type="submit">{{ modal_title }}</button>
+</form>
+{% endblock %}

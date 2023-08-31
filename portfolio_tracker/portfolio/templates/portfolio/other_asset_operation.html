@@ -1,0 +1,46 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+{% set modal_title = 'Изменить операцию' if operation else 'Добавить операцию' %}
+
+{% block content %}
+<form method="post" action="{{ url_for('.other_asset_operation_update', asset_id=asset_id, operation_id=operation.id if operation else None) }}">
+
+  <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
+    <input type="radio" class="btn-check" name="type" value="1" id="btnplus" {{ 'checked' if not operation or operation.type == 'Прибыль'}}>
+    <label class="btn btn-sm" for="btnplus">Прибыль</label>
+
+    <input type="radio" class="btn-check" name="type" value="-1" id="btnminus" {{ 'checked' if operation and operation.type == 'Убыток'}}>
+    <label class="btn btn-sm" for="btnminus">Убыток</label>
+  </div>
+
+  <div class="row g-2">
+    <div class="col-md-12">
+      <div class="col-12 mb-1">
+        <label class="form-label h7">На сумму</label>
+        <div class="input-group">
+          <span class="input-prefix">$</span>
+          <input type="number" step="any" class="form-control rounded-3 focus"
+                 placeholder="0,00" name="total_spent" value="{{ operation.total_spent|smart_int if operation }}" required>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="mb-1">
+        <label class="form-label h7">Дата</label>
+        <input class="form-control" name="date" type="date" value="{{ operation.date if operation else date }}" required>
+      </div>
+    </div>
+
+    <div class="col-md-12">
+      <div class="mb-3">
+        <label class="form-label h7">Комментарий</label>
+        <textarea class="form-control" name="comment">
+          {{ operation.comment if operation }}
+        </textarea>
+      </div>
+    </div>
+  </div>
+  <button class="w-100 btn rounded-3 btn-primary simple-form-submit" type="button" data-modal-id="AssetInfoModal">{{ modal_title }}</button>
+</form>
+{% endblock %}

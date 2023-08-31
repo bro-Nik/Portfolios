@@ -1,20 +1,40 @@
-{% extends "base.html" %}
-{% block title %} Список отслеживания {% endblock %}
+{% set only_content = request.args.get('only_content') %}
+{% set modal = request.args.get('modal') %}
+{% set status = request.args.get('status') %}
+
+{% if not only_content %}
+  {% if modal %}
+    {% extends "modal_base.html" %}
+    {% set modal_fullscreen = True %}
+  {% else %}
+    {% extends "base.html" %}
+    {% block title %} Whitelist {% endblock %}
+  {% endif %}
+{% endif %}
+
 
 {% block content %}
 <div class="mb-5">
   <div class="row xs-mb-3">
     <div class="col-auto">
-      <h1>Список отслеживания</h1>
+      <h1>
+        {% if status == 'worked' %}
+          Сработавшие уведомления
+        {% else %}
+          Whitelist
+        {% endif %}
+      </h1>
     </div>
-    <div class="col-auto ms-auto">
-      <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_new', market_id=market_id) }}">Добавить актив</button>
-    </div>
+    {% if not modal %}
+      <div class="col-auto ms-auto">
+        <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_new', market_id=market_id) }}">Добавить актив</button>
+      </div>
+    {% endif %}
   </div>
 </div>
-<nav class="nav nav-underline">
-  <a class="nav-link {{ 'active disabled' if market_id == 'crypto' }}" href="{{ url_for('.whitelist_tickers', market_id='crypto') }}">Crypto</a>
-  <a class="nav-link {{ 'active disabled' if market_id == 'stocks' }}" href="{{ url_for('.whitelist_tickers', market_id='stocks') }}">Stocks</a>
+<nav class="nav nav-underline market-menu">
+  <a class="nav-link {{ 'active disabled' if market_id == 'crypto' }} load-page-or-modal" href="#" data-url="{{ url_for('.tickers', market_id='crypto', only_content=True, status=status, modal=modal) }}">Crypto</a>
+  <a class="nav-link {{ 'active disabled' if market_id == 'stocks' }} load-page-or-modal" href="#" data-url="{{ url_for('.tickers', market_id='stocks', only_content=True, status=status, modal=modal) }}">Stocks</a>
 </nav>
 
 {% if tickers %}
@@ -34,26 +54,27 @@
         </thead>
 
         <tbody>
-          {% for whitelist_ticker in tickers %}
+          {% for whitelist_ticker in tickers|sort(attribute="ticker.name") %}
             {% set ticker = whitelist_ticker.ticker %}
+
             <tr>
               <td>
                 <input class="form-check-input to-check" type="checkbox" value="{{ ticker.id }}">
               </td>
 
-              <td class="text-average">
-                <a class="link-dark text-decoration-none open-modal" href="#" data-modal-id="TrackedTickerInfoModal" data-url="{{ url_for('.ticker_info', ticker_id=ticker.id) }}">
-                  {% if ticker.image %}
-                    <img class="img-asset-min" src="{{ ticker.image }}">
-                  {% endif %}
+              <td class="text-average text-truncate">
+                <div class="open-modal d-flex gap-2" data-modal-id="WhitelistTickerInfoModal" 
+                  data-url="{{ url_for('.ticker_info', market_id=ticker.market_id, ticker_id=ticker.id) }}">
 
-                  {{ ticker.name }} <span class="text-muted">{{ ticker.symbol|upper }}</span>
-                </a>
+                  {% if ticker.image %}<img class="img-asset-min" src="{{ ticker.image }}">{% endif %}
+                  {{ ticker.name }}
+                  <span class="text-muted">{{ ticker.symbol|upper }}</span>
+                </div>
               </td>
 
               <td>
-                {% for alert in whitelist_ticker.alerts %}
-                  <span class="badge {{ 'text-bg-success' if alert.worked else 'text-bg-light' }} fw-normal none-cursor">
+                {% for alert in whitelist_ticker.alerts if alert.status != 'off' %}
+                  <span class="badge {{ 'text-bg-success' if alert.status == 'worked' else 'text-bg-light' }} fw-normal none-cursor">
                     ${{ alert.price|number_group }}
                   </span>
                 {% endfor %}
@@ -94,32 +115,27 @@
 
 <script>
 
+{% if not modal and not only_content %}
   // Add New Asset
-  $(document).on("click", '.select-asset', function () {
+  $('body').on("click", '.select-asset', function () {
     var $modal = $(this).closest('.modal'),
-      url = "{{ url_for('.add_ticker') }}";
+      ticker_id = $(this).attr('data-ticker-id'),
+      url = "{{ url_for('.add_ticker') }}" + "?ticker_id=" + ticker_id;
 
     $modal.modal('hide');
-    url += "?ticker_id=" + $(this).attr('data-ticker-id');
 
-    pageNeedUpdate = true;
+    NeedUpdate.push('page');
+    LoadToModal('WhitelistTickerInfoModal', url);
 
-    new Promise(function (resolve) {
-      LoadToModal('TrackedTickerInfoModal', url);
-	    setTimeout(function () {
-	      resolve(1);
-	    }, 1000)
-    }).then(function () {
-      // Update Whitelist
-      //LoadToModal('PortfolioInfoModal', " url_for('.portfolio_info', portfolio_id=portfolio.id) ");
-    });
+    //new Promise(function (resolve) {
+      //LoadToModal('WhitelistTickerInfoModal', url);
+	    //setTimeout(function () {
+	      //resolve(1);
+	    //}, 1000)
+    //});
   });
 
-  var pageNeedUpdate = false;
-  $(document).on('hide.bs.modal', '#TrackedTickerInfoModal', function () {
-    if (pageNeedUpdate) {
-      location.reload();
-    }
-  })
+{% endif %}
+
 </script>
 {% endblock %}

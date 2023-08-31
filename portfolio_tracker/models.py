@@ -80,7 +80,9 @@ class Ticker(db.Model):
     symbol = db.Column(db.String(124))
     image = db.Column(db.String(1024))
     market_cap_rank = db.Column(db.Integer)
-    market_id = db.Column(db.String(32), db.ForeignKey('market.id'))
+    market_id = db.Column(db.String(32),
+                          db.ForeignKey('market.id'),
+                          primary_key=True)
     # Relationships
     market = db.relationship('Market',
                              backref=db.backref('tickers', lazy=True))
@@ -138,13 +140,16 @@ class Alert(db.Model):
     price = db.Column(db.Float)
     type = db.Column(db.String(24))
     comment = db.Column(db.String(1024))
-    worked = db.Column(db.Boolean)
-    order = db.Column(db.Boolean)
+    status = db.Column(db.String, default='on')
+    transaction_id = db.Column(db.Integer, db.ForeignKey('transaction.id'))
     # Relationships
     asset = db.relationship('Asset',
                             backref=db.backref('alerts', lazy=True))
     whitelist_ticker = db.relationship('WhitelistTicker',
                                        backref=db.backref('alerts', lazy=True))
+    transaction = db.relationship('Transaction',
+                             backref=db.backref('alert', lazy=True),
+                             uselist=False)
 
 
 class Setting(db.Model):

@@ -15,7 +15,7 @@ def admin_only(f):
                     abort(404)
             return f(*args, **kwargs)
         else:
-            return redirect(url_for('login') + '?next=' + request.url)
+            return redirect(url_for('user.login') + '?next=' + request.url)
     return decorated_function
 
 demo_not_can_change = False
@@ -26,7 +26,8 @@ def demo_user_change(f):
         if current_user.email == 'demo':
             if demo_not_can_change:
                 flash('Демо пользователь не может вносить изменения')
-                return redirect(session['last_url'])
+                return ''
+                # return redirect(session['last_url'])
         return f(*args, **kwargs)
     return decorated_function
 
