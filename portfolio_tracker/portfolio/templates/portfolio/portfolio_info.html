@@ -173,28 +173,16 @@
 <script>
   // Add New Asset
   $('body').on("click", '.select-asset', function () {
-    var url = "{{ url_for('.asset_add', portfolio_id=portfolio.id) }}";
-    url += "?ticker_id=" + $(this).attr('data-ticker-id');
+    var ticker_id = "?ticker_id=" + $(this).attr('data-ticker-id'),
+      url = "{{ url_for('.asset_add', portfolio_id=portfolio.id) }}" + ticker_id,
+      $modal = $(this).closest('.modal'),
+      pre_modal_id = $modal.attr('data-pre-modal-id');
 
-    $(this).closest('.modal').modal('hide');
+    $modal.modal('hide');
 
-    //new Promise(function (resolve) {
-      //LoadToModal('AssetInfoModal', url);
-	    //setTimeout(function () {
-	      //resolve(1);
-	    //}, 1000)
-    //}).then(function () {
-      // Update Portfolio Info
-      //$('#PortfolioInfoModal').attr('data-url', )
-      //LoadToModal('PortfolioInfoModal', "{{ url_for('.portfolio_info', portfolio_id=portfolio.id) }}"); });
-
-
-      geting = $.get(url);
-
-      geting.done(function (data) {
-        alert(data)
-        LoadToModal('AssetInfoModal', data);
-      })
+    $.get(url).done(function (data) {
+      LoadToModal('AssetInfoModal', data, true, pre_modal_id);
+    })
   });
 </script>
 {% endif %}

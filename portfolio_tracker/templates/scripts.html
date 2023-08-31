@@ -30,6 +30,7 @@
     $form.find(".check-all").prop("checked", checked_count > 0);
   });
 
+
   // Actions
 
   // Open modal to confirm
@@ -44,20 +45,18 @@
     }
 
     // if modal then update
-    if ($btn.closest(".modal").length) {
-      var modalToApply = $btn.closest(".modal").attr("id");
-      $modal.find(".action").attr("data-modal-id", modalToApply);
+    var pre_modal_id = $btn.closest(".modal").attr("id");
+    if (pre_modal_id) {
+      $modal.attr("data-pre-modal-id", pre_modal_id);
     }
 
     // to modal action
     var title = $btn.attr("data-title"),
       action = $btn.attr("data-action"),
-      id = $btn.attr("data-id") || "",
-      page_id = $btn.attr("data-page-id");
+      id = $btn.attr("data-id") || "";
     $modal.find(".modal-title").text(title);
     $modal.find(".action").attr("data-action", action);
     $modal.find(".action").attr("data-id", id);
-    $modal.find(".action").attr("data-page-id", page_id);
     $modal.modal({backdrop: false}).modal("show");
   });
 
@@ -93,56 +92,18 @@
       info: info,
       ids: checked,
     };
-    SendingData(data, $btn, $form);
-  });
 
-  {#
-  // Simple form
-  $("body").on("click", ".simple-form-submit", function () {
-    alert('simple form')
-    var $btn = $(this),
-      $form = $btn.closest("form"),
-      is_valid = $form.get(0).checkValidity();
+    var $modal = $btn.closest('.modal');
+    $modal.attr('data-pre-need-update', true);
 
-    $form.addClass("was-validated");
-    if (!is_valid) {
-      return false;
-    }
-
-    var posting = $.post($form.attr("data-url"), $form.serialize()),
-      $modal = $form.closest(".modal");
-
-    $modal.modal("hide");
-    posting.done(function (data) {
-      PageUpdate($btn);
-    });
-  });
-  #}
-
-
-  function SendingData(data, $btn, $form) {
     $.ajax({
       type: "POST",
       url: $form.attr("action"),
       data: JSON.stringify(data),
       contentType: "application/json; charset=utf-8",
-    }).done(PageUpdate($btn));
-  }
+    }).done(PageUpdate($modal));
+  });
 
-
-  function PageUpdate($btn) {
-    var modal_id = $btn.attr("data-modal-id");
-    pageNeedUpdate = true;
-
-    if (modal_id) {
-      //LoadToModal(modal_id, $("#" + modal_id).attr("data-url"));
-      setTimeout(function () {
-        LoadToModal(modal_id, $("#" + modal_id).attr("data-url"))
-      }, 500);
-    } else {
-      LoadToPage();
-    }
-  }
 
   // Selects
   var defaultSelectClass = "";
@@ -196,11 +157,14 @@
   // Modals
 
   $("body").on("click", ".open-modal", function () {
-    LoadToModal($(this).attr("data-modal-id"), $(this).attr("data-url"));
+    var modal_id = $(this).attr("data-modal-id"),
+      url = $(this).attr("data-url"),
+      pre_modal_id = $(this).closest('.modal').attr('id');
+    LoadToModal(modal_id, url, false, pre_modal_id);
   });
 
   // Load to Modal
-  function LoadToModal(modal_id, url) {
+  function LoadToModal(modal_id, url, pre_need_update, pre_modal_id) {
     var $modal = $("#" + modal_id);
 
     if ($modal.length) {
@@ -217,8 +181,13 @@
         '<div class="modal fade" id="' + modal_id + '" tabindex="-1" aria-hidden="true"></div>',
         );
       var $loadIn = $modal = $("body").find("#" + modal_id);
-      // var $loadIn = $modal;
     }
+    
+    $modal.attr("data-pre-need-update", pre_need_update || false);
+    if (pre_modal_id) {
+      $modal.attr("data-pre-modal-id", pre_modal_id);
+    }
+
     $loadIn.load(url, function () {
       UpdateScripts($modal);
       $modal.modal({
@@ -392,6 +361,7 @@
   }
   UpdateTables();
 
+
   // Sticky Bottom Actions
   function StickyBottomActionsUpdate($element = $("body")) {
     var $content = $(`
@@ -447,16 +417,16 @@
 // Form
 $('body').on("submit", function(event) {
   event.preventDefault();
+  alert('submit')
 
-  var $form = $(event.target),
-    $btn = $form.find('[type=submit]');
+  var $form = $(event.target);
 
   var posting = $.post($form.attr("data-url"), $form.serialize()),
     $modal = $form.closest(".modal");
 
-  $modal.modal("hide");
   posting.done(function (data) {
-    PageUpdate($btn);
+    $modal.attr('data-pre-need-update', true)
+    $modal.modal("hide");
   });
 });
 
@@ -470,33 +440,29 @@ $('body').on("submit", function(event) {
   }
   UpdateFocus();
 
-var NeedUpdate = [];
 
 $(document).on('hide.bs.modal', '.modal', function () {
   var $modal = $(this);
-  var $active_modals = $("body").find(".modal.show");
-
-  if ($active_modals.length - 1) {
-    alert('update modal')
-
-    var modal_id = '',
-      max_z_index = 0;
-
-    $active_modals.each(function () {
-      var this_z_index = +$(this).css("z-index");
-      if (this_z_index >= max_z_index) {
-        max_z_index = this_z_index;
-        modal_id = $(this).attr('id');
-      }
-    });
-
-    if (NeedUpdate.includes(modal_id)) {
-      LoadToModal(modal_id, $("#" + modal_id).attr("data-url"));
-    }
-
-  } else if (NeedUpdate.includes('page')) {
-    alert('update page')
-    LoadToPage();
+  if ($modal.attr('id') != 'ModalConfirmation') {
+    PageUpdate($modal);
   }
 })
+
+function PageUpdate($modal) {
+  var pre_need_update = $modal.attr("data-pre-need-update");
+
+  if (pre_need_update == 'false') {
+    alert('skip')
+    return true;
+  }
+
+  var pre_modal_id = $modal.attr("data-pre-modal-id");
+  if (pre_modal_id) {
+    alert('update after close #' + pre_modal_id)
+    LoadToModal(pre_modal_id, $("#" + pre_modal_id).attr("data-url"), true);
+  } else {
+    alert('update after close #page')
+    LoadToPage();
+  }
+}
 </script>

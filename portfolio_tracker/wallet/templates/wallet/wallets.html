@@ -86,9 +86,9 @@
             </td>
 
             <td class="text-average">
-              <a class="link-dark text-decoration-none open-modal" href="#" data-url="{{ url_for('.wallet_info', wallet_id=id) }}" data-modal-id="WalletInfoModal">
+              <div class="open-modal" data-modal-id="WalletInfoModal" data-url="{{ url_for('.wallet_info', wallet_id=id) }}">
                 {{ wallet.name }}
-              </a>
+              </div>
             </td>
 
             <td>{{ '$' + wallet.total_spent|int|number_group if wallet.total_spent else '-' }}</td>

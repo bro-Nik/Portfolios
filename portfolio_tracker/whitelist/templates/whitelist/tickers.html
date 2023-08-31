@@ -33,8 +33,8 @@
   </div>
 </div>
 <nav class="nav nav-underline market-menu">
-  <a class="nav-link {{ 'active disabled' if market_id == 'crypto' }} load-page-or-modal" href="#" data-url="{{ url_for('.tickers', market_id='crypto', only_content=True, status=status, modal=modal) }}">Crypto</a>
-  <a class="nav-link {{ 'active disabled' if market_id == 'stocks' }} load-page-or-modal" href="#" data-url="{{ url_for('.tickers', market_id='stocks', only_content=True, status=status, modal=modal) }}">Stocks</a>
+  <span class="nav-link {{ 'active disabled' if market_id == 'crypto' }} load-page-or-modal" data-url="{{ url_for('.tickers', market_id='crypto', only_content=True, status=status, modal=modal) }}">Crypto</span>
+  <span class="nav-link {{ 'active disabled' if market_id == 'stocks' }} load-page-or-modal" data-url="{{ url_for('.tickers', market_id='stocks', only_content=True, status=status, modal=modal) }}">Stocks</span>
 </nav>
 
 {% if tickers %}
@@ -118,23 +118,12 @@
 {% if not modal and not only_content %}
   // Add New Asset
   $('body').on("click", '.select-asset', function () {
-    var $modal = $(this).closest('.modal'),
-      ticker_id = $(this).attr('data-ticker-id'),
+    var ticker_id = $(this).attr('data-ticker-id'),
       url = "{{ url_for('.add_ticker') }}" + "?ticker_id=" + ticker_id;
 
-    $modal.modal('hide');
-
-    NeedUpdate.push('page');
-    LoadToModal('WhitelistTickerInfoModal', url);
-
-    //new Promise(function (resolve) {
-      //LoadToModal('WhitelistTickerInfoModal', url);
-	    //setTimeout(function () {
-	      //resolve(1);
-	    //}, 1000)
-    //});
+    $(this).closest('.modal').modal('hide');
+    LoadToModal('WhitelistTickerInfoModal', url, true, false);
   });
-
 {% endif %}
 
 </script>

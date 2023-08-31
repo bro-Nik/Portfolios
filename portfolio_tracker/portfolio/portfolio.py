@@ -97,28 +97,30 @@ def portfolios():
                      'can_delete': True}
 
         # Assets
-        price_list_local = price_list[user_portfolio.market_id]
-        for asset in user_portfolio.assets:
-            price = float_or_other(price_list_local.get(asset.ticker_id), 0)
+        if user_portfolio.market_id != 'other':
+            price_list_local = price_list[user_portfolio.market_id]
+            for asset in user_portfolio.assets:
+                price = float_or_other(price_list_local.get(asset.ticker_id), 0)
 
-            for transaction in asset.transactions:
-                portfolio['can_delete'] = False
+                for transaction in asset.transactions:
+                    portfolio['can_delete'] = False
 
-                if not price or transaction.order:
-                    continue
+                    if not price or transaction.order:
+                        continue
 
-                portfolio['total_spent'] += transaction.total_spent
-                portfolio['cost_now'] += transaction.quantity * price
+                    portfolio['total_spent'] += transaction.total_spent
+                    portfolio['cost_now'] += transaction.quantity * price
 
         # Other Assets
-        for asset in user_portfolio.other_assets:
+        else:
+            for asset in user_portfolio.other_assets:
 
-            for body in asset.bodys:
-                portfolio['total_spent'] += body.total_spent
-                portfolio['cost_now'] += body.cost_now
+                for body in asset.bodys:
+                    portfolio['total_spent'] += body.total_spent
+                    portfolio['cost_now'] += body.cost_now
 
-            for operation in asset.operations:
-                portfolio['cost_now'] += operation.total_spent
+                for operation in asset.operations:
+                    portfolio['cost_now'] += operation.total_spent
 
         portfolio['profit'] = portfolio['cost_now'] - portfolio['total_spent']
         all['total_spent'] += portfolio['total_spent']
@@ -337,7 +339,7 @@ def asset_info(market_id, asset_id):
 @login_required
 def asset_settings(market_id):
     asset_id = request.args.get('asset_id')
-    asset = get_user_asset(market_id, asset_id)
+    asset = get_user_asset(asset_id)
     return render_template('portfolio/asset_settings.html',
                            asset=asset)
 

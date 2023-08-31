@@ -306,7 +306,7 @@ form {
     background-color: rgb(0 0 0 / 3%);
     border-radius: 0.5rem;
 }
-.open-modal, .open-modal-confirmation, .convert-text {
+.open-modal, .open-modal-confirmation, .load-page-or-modal, .convert-text {
     cursor: pointer;
 }
 .bootstrap-table .fixed-table-container .fixed-table-body {

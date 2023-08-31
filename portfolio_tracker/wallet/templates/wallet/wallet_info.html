@@ -1,4 +1,4 @@
-{% if not request.args.get('load_only_content') %}
+{% if not request.args.get('only_content') %}
   {% extends "modal_base.html" %}
   {% set modal_fullscreen = True %}
 {% endif %}

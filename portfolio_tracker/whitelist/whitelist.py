@@ -132,11 +132,10 @@ def add_ticker():
     """ Add to Tracking list """
     ticker_id = request.args.get('ticker_id')
     whitelist_ticker = get_whitelist_ticker(ticker_id, True)
-    load_only_content = request.args.get('load_only_content')
     return redirect(url_for('.ticker_info',
                             market_id=whitelist_ticker.ticker.market_id,
                             ticker_id=whitelist_ticker.ticker_id,
-                            load_only_content=load_only_content))
+                            only_content=request.args.get('only_content')))
 
 
 @whitelist.route('/action', methods=['POST'])
