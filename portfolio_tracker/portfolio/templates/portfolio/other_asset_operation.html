@@ -3,7 +3,7 @@
 {% set modal_title = 'Изменить операцию' if operation else 'Добавить операцию' %}
 
 {% block content %}
-<form method="post" action="{{ url_for('.other_asset_operation_update', asset_id=asset_id, operation_id=operation.id if operation else None) }}">
+<form data-url="{{ url_for('.other_asset_operation_update', asset_id=asset_id, operation_id=operation.id if operation else None) }}">
 
   <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
     <input type="radio" class="btn-check" name="type" value="1" id="btnplus" {{ 'checked' if not operation or operation.type == 'Прибыль'}}>
@@ -35,12 +35,10 @@
     <div class="col-md-12">
       <div class="mb-3">
         <label class="form-label h7">Комментарий</label>
-        <textarea class="form-control" name="comment">
-          {{ operation.comment if operation }}
-        </textarea>
+        <textarea class="form-control" name="comment">{{ operation.comment if operation }}</textarea>
       </div>
     </div>
   </div>
-  <button class="w-100 btn rounded-3 btn-primary simple-form-submit" type="button" data-modal-id="AssetInfoModal">{{ modal_title }}</button>
+  <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
 </form>
 {% endblock %}

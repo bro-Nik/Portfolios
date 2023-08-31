@@ -1,4 +1,4 @@
-{% if not request.args.get('load_only_content') %}
+{% if not request.args.get('only_content') %}
   {% extends "modal_base.html" %}
   {% set modal_fullscreen = True %}
 {% endif %}
@@ -103,8 +103,10 @@
                 </td>
 
                 <td>
-                  {{ asset_body.name }} <br />
-                  <span class="small_text">{{ asset_body.date }}</span>
+                  <div class="open-modal" data-modal-id="BodyModal" data-url="{{ url_for('.other_asset_body', asset_id=asset.id, body_id=asset_body.id) }}">
+                    {{ asset_body.name }} <br>
+                    <span class="small_text">{{ asset_body.date }}</span>
+                  </div>
                 </td>
 
                 <td>${{ asset_body.total_spent|int|number_group }}</td>
@@ -162,9 +164,10 @@
                 </td>
 
                 <td>
-                  {{ operation.type }}
-                  <br>
-                  <span class="small_text">{{ operation.date }}</span>
+                  <div class="open-modal" data-modal-id="OperationModal" data-url="{{ url_for('.other_asset_operation', asset_id=asset.id, operation_id=operation.id) }}">
+                    {{ operation.type }} <br>
+                    <span class="small_text">{{ operation.date }}</span>
+                  </div>
                 </td>
 
                 <td>
@@ -203,7 +206,7 @@
 </div>
 
 <div class="convert-text" data-convert-to="textarea" data-name="comment"
-  data-send-url="">
+  data-send-url="/">
   <span class="convert-data">{{ asset.comment if asset.comment }}</span>
   <span>{{ 'Добавить комментарий' if not asset.comment }}</span>
 </div>

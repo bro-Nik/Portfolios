@@ -65,9 +65,9 @@
               </td>
 
               <td class="text-average">
-                <span class="open-modal" data-modal-id="AssetInfoModal" data-url="{{ url_for('.asset_info', market_id=portfolio.market_id, asset_id=asset.id) }}">
+                <div class="open-modal" data-modal-id="AssetInfoModal" data-url="{{ url_for('.asset_info', market_id=portfolio.market_id, asset_id=asset.id) }}">
                   {{ asset.name }}
-                </span>
+                </div>
               </td>
 
               <td>{{ '$' + asset.bodys_total_spent|int|number_group if asset.bodys_total_spent else '-' }}</td>

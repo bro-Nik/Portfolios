@@ -1,10 +1,9 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-
 {% set modal_title = 'Изменить актив' if asset else 'Добавить актив' %}
 
 {% block content %}
-<form method="post" action="{{ url_for('.other_asset_settings_post', portfolio_id=portfolio_id)}}">
+<form data-url="{{ url_for('.other_asset_settings_post', portfolio_id=portfolio_id)}}">
   <div class="row g-2">
 
     <div class="col-12">
@@ -21,6 +20,6 @@
       </div>
     </div>
   </div>
-  <button class="w-100 btn btn rounded-3 btn-primary" type="submit">{{ modal_title }}</button>
+  <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
 </form>
 {% endblock %}

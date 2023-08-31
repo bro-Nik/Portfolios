@@ -20,13 +20,14 @@
         <div class="mb-3">
           <label class="form-label h7">Кошелек отправитель</label>
           <select class="ajax-select" name="wallet_out"
-            data-url="{{ url_for('.get_all_user_wallets') }}"></select>
+            data-url="{{ url_for('.get_all_user_wallets') }}" required></select>
         </div>
       </div>
       <div class="col-md-6">
         <div class="mb-3">
           <label class="form-label h7">Кошелек получатель</label>
-          <select class="ajax-select" name="wallet_in" data-url="{{ url_for('.get_all_user_wallets') }}"></select>
+          <select class="ajax-select" name="wallet_in"
+            data-url="{{ url_for('.get_all_user_wallets') }}" required></select>
         </div>
       </div>
     </div>

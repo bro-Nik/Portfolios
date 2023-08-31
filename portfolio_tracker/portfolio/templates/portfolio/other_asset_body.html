@@ -3,8 +3,7 @@
 {% set modal_title = 'Изменить тело актива' if body else 'Добавить тело актива' %}
 
 {% block content %}
-<form method="post"
-  action="{{ url_for('.other_asset_body_update', asset_id=asset_id, body_id=body.id if body else None) }}">
+<form data-url="{{ url_for('.other_asset_body_update', asset_id=asset_id, body_id=body.id if body else None) }}">
   <div class="row g-2">
     <div class="col-md-12">
       <div class="mb-1">
@@ -43,13 +42,11 @@
     <div class="col-md-12">
       <div class="mb-3">
         <label class="form-label h7">Комментарий</label>
-        <textarea class="form-control" name="comment">
-          {{ body.comment if body }}
-        </textarea>
+        <textarea class="form-control" name="comment">{{ body.comment if body }}</textarea>
       </div>
     </div>
   </div>
 
-  <button class="w-100 btn rounded-3 btn-primary simple-form-submit" type="button" data-modal-id="AssetInfoModal">{{ modal_title }}</button>
+  <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
 </form>
 {% endblock %}

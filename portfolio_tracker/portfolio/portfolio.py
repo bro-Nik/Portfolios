@@ -556,15 +556,8 @@ def other_asset_action(market_id):
     ids = data.get('ids')
 
     for id in ids:
-        asset = get_user_asset(market_id, id)
-    # if request.form.get('type') == 'asset_body':
-    #     asset_body = db.session.execute(
-    #             db.select(otherAssetBody).filter_by(id=id)).scalar()
-    #     db.session.delete(asset_body)
-    # elif request.form.get('type') == 'asset_operation':
-    #     asset_operation = db.session.execute(
-    #         db.select(otherAssetOperation).filter_by(id=id)).scalar()
-    #     db.session.delete(asset_operation)
+        asset = get_user_other_asset(id)
+
         if asset.bodys:
             for body in asset.bodys:
                 db.session.delete(body)

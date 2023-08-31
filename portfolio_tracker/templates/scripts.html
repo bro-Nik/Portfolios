@@ -403,7 +403,6 @@
 
   // Load to Page
   function LoadToPage(url) {
-    alert('lazy')
     if (!url) {
       url = $(location).attr('href');
       url += (url.indexOf("?") > 0 ? "&" : "?") + "only_content=true";
@@ -417,7 +416,6 @@
 // Form
 $('body').on("submit", function(event) {
   event.preventDefault();
-  alert('submit')
 
   var $form = $(event.target);
 
@@ -452,16 +450,13 @@ function PageUpdate($modal) {
   var pre_need_update = $modal.attr("data-pre-need-update");
 
   if (pre_need_update == 'false') {
-    alert('skip')
     return true;
   }
 
   var pre_modal_id = $modal.attr("data-pre-modal-id");
   if (pre_modal_id) {
-    alert('update after close #' + pre_modal_id)
     LoadToModal(pre_modal_id, $("#" + pre_modal_id).attr("data-url"), true);
   } else {
-    alert('update after close #page')
     LoadToPage();
   }
 }
