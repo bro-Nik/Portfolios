@@ -1,9 +1,9 @@
 import json
-from flask import flash, render_template, redirect, url_for, request, Blueprint
+from flask import flash, render_template, redirect, session, url_for, request, Blueprint
 from flask_login import login_required, current_user
 from datetime import datetime
 
-from portfolio_tracker.general_functions import float_or_other, get_ticker, \
+from portfolio_tracker.general_functions import dict_get_or_other, float_or_other, get_ticker, \
     get_price_list
 from portfolio_tracker.models import Alert, Ticker, WhitelistTicker
 from portfolio_tracker.wraps import demo_user_change
@@ -36,12 +36,16 @@ def get_user_alert(id):
     return None
 
 
-@whitelist.route('/<string:market_id>', methods=['GET'])
 @whitelist.route('', methods=['GET'])
 @login_required
 @demo_user_change
-def tickers(market_id=None):
-    market_id = market_id if market_id else 'crypto'
+def tickers():
+    market_id = request.args.get('market_id')
+    if market_id:
+        session['whitelist_market_id'] = market_id
+    else:
+        market_id = dict_get_or_other(session, 'whitelist_market_id', 'crypto')
+
     status = request.args.get('status')
 
     select = (db.select(WhitelistTicker).distinct()
@@ -92,7 +96,7 @@ def add_ticker():
     """ Add to Tracking list """
     ticker_id = request.args.get('ticker_id')
     whitelist_ticker = get_whitelist_ticker(ticker_id, True)
-    return redirect(url_for('.ticker_info',
+    return str(url_for('.ticker_info',
                             market_id=whitelist_ticker.ticker.market_id,
                             ticker_id=whitelist_ticker.ticker_id,
                             only_content=request.args.get('only_content')))

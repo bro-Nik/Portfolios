@@ -26,7 +26,7 @@
         <span class="text-average">
           ${{ all.total_spent|int|number_group }} / 
 
-          <span class="{{ 'text-green' if all.profit > 0 }} {{ 'text-red' if all.profit < 0 }}">
+          <span class="{{ 'text-green' if all.profit|int > 0 }} {{ 'text-red' if all.profit|int < 0 }}">
             ${{ all.cost_now|int|number_group }}
           </span>
         </span>
@@ -34,9 +34,9 @@
 
       <div class="col-auto">
         <p class="small_text">Прибыль / убыток</p>
-          <span class="text-average {{ 'text-green' if all.profit > 0 }} {{ 'text-red' if all.profit < 0 }}">
-            {{ '-' if all.profit < 0 }}${{ all.profit|int|abs|number_group }}
-            {% if all.profit and all.total_spent %}
+          <span class="text-average {{ 'text-green' if all.profit|int > 0 }} {{ 'text-red' if all.profit|int < 0 }}">
+            {{ '-' if all.profit|int < 0 }}${{ all.profit|int|abs|number_group }}
+            {% if all.profit|int and all.total_spent %}
               ({{ (all.profit / all.total_spent * 100)|int|abs }}%)
             {% endif %}
           </span>
@@ -90,8 +90,8 @@
 
               <td>
                 {% if portfolio.cost_now %}
-                  <span class="{{ 'text-green' if portfolio.profit > 0 }} {{ 'text-red' if portfolio.profit < 0 }}">
-                    {{ '-' if portfolio.profit < 0 }}${{ portfolio.profit|int|abs|number_group }}
+                  <span class="{{ 'text-green' if portfolio.profit|int > 0 }} {{ 'text-red' if portfolio.profit|int < 0 }}">
+                    {{ '-' if portfolio.profit|int < 0 }}${{ portfolio.profit|int|abs|number_group }}
                   </span>
                 {% else %}
                   -
@@ -100,7 +100,7 @@
               
               <td>
                 {% if portfolio.cost_now %}
-                  {{ (portfolio.cost_now / all.cost_now * 100)|round(1, 'common') }}%
+                  {{ (portfolio.cost_now / all.cost_now * 100)|round(1, 'common')|smart_int }}%
                 {% else %}
                 -
                 {% endif %}

@@ -49,9 +49,9 @@
 
   <div class="col-auto">
     <p class="small_text">Свободные</p>
-    <span class="text-average">
-      {{ '-' if all.free|int < 0 }}${{ all.free|int|abs|number_group }}
-    </span>
+      <span class="text-average {{ 'text-green' if all.free|int > 0 }} {{ 'text-red' if all.free|int < 0 }}">
+        {{ '-' if all.free|int < 0 }}${{ all.free|int|abs|number_group }}
+      </span>
   </div>
 </div>
 

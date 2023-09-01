@@ -317,19 +317,35 @@ def assets_action():
     return ''
 
 
-@portfolio.route('/<string:market_id>/add_asset', methods=['GET'])
+@portfolio.route('/<string:market_id>/add_asset_modal', methods=['GET'])
 @login_required
 @demo_user_change
-def asset_add_new(market_id):
-    per_page = 20
+def asset_add_modal(market_id):
 
-    query = Ticker.query.filter(Ticker.market_id == market_id).order_by(Ticker.id)
+    return render_template('portfolio/add_asset_modal.html',
+                           market_id=market_id)
+
+
+@portfolio.route('/<string:market_id>/add_asset_tickers', methods=['GET'])
+@login_required
+@demo_user_change
+def asset_add_tickers(market_id):
+    per_page = 20
+    search = request.args.get('search')
+
+    query = (Ticker.query.filter(Ticker.market_id == market_id)
+        .order_by(Ticker.market_cap_rank))
+
+    if search:
+        query = query.filter(Ticker.name.contains(search)
+                             | Ticker.symbol.contains(search))
 
     tickers = query.paginate(page=int_or_other(request.args.get('page'), 1),
                              per_page=per_page,
                              error_out=False)
 
-    return render_template('portfolio/add_asset.html', tickers=tickers)
+    return render_template('portfolio/add_asset_tickers.html',
+                           tickers=tickers)
 
 
 @portfolio.route('/<int:portfolio_id>/add_asset', methods=['GET'])
@@ -396,6 +412,11 @@ def asset_info(market_id, asset_id):
         if not asset:
             return ''
 
+        portfolio_total_spent = 0
+        for asset in asset.portfolio.assets:
+            for transaction in asset.transactions:
+                portfolio_total_spent += transaction.total_spent
+
         price_list = get_price_list(market_id)
         price = float_or_other(price_list.get(asset.ticker_id), 0)
 
@@ -403,6 +424,7 @@ def asset_info(market_id, asset_id):
                                asset=asset,
                                price=price,
                                market_id=market_id,
+                               portfolio_total_spent=portfolio_total_spent,
                                date=datetime.now().date())
 
     else:

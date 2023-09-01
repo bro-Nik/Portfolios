@@ -61,7 +61,6 @@
 {% if asset.transactions %}
   {% set asset_quantity = asset.transactions|sum(attribute='quantity') %}
   {% set asset_total_spent = asset.transactions|sum(attribute='total_spent') %}
-  {% set portfolio_total_spent = asset.portfolio.assets|sum(attribute='total_spent') %}
   {% set asset_percent_now = (asset_total_spent / portfolio_total_spent * 100)|round(1, 'common') if portfolio_total_spent %}
 
   <div class="row mb-5 xs-mb-3">
@@ -102,8 +101,8 @@
       <div class="col-auto">
         <p class="small_text">% от портфеля</p>
         <span class="text-average">
-          {{ asset_percent_now|string + '%'  }}
-          {{ 'из ' + asset.percent + '%' if asset.percent }}
+          {{ asset_percent_now|smart_int|string + '%'  }}
+          {{ 'из ' + asset.percent|smart_int|string + '%' if asset.percent }}
         </span>
       </div>
     {% endif %}

@@ -10,7 +10,7 @@
       <h1>{{ portfolio.name }}</h1>
     </div>
     <div class="col-auto ms-auto">
-      <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_new', market_id=portfolio.market_id) }}">Добавить актив</button>
+      <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_modal', market_id=portfolio.market_id) }}">Добавить актив</button>
     </div>
   </div>
 </div>
@@ -21,16 +21,16 @@
     <div class="col-auto">
       <p class="small_text">Вложено / сейчас</p>
       <span class="text-average">${{ portfolio.total_spent|int|number_group }} /</span>
-      <span class="text-average {{ 'text-green' if portfolio.profit > 0 }} {{ 'text-red' if portfolio.profit < 0 }}">
+      <span class="text-average {{ 'text-green' if portfolio.profit|int > 0 }} {{ 'text-red' if portfolio.profit|int < 0 }}">
         ${{ portfolio.cost_now|int|number_group }}
       </span>
     </div>
 
     <div class="col-auto">
       <p class="small_text">Прибыль / убыток</p>
-      <span class="text-average {{ 'text-green' if portfolio.profit > 0 }} {{ 'text-red' if portfolio.profit < 0 }}">
-        {{ '-' if portfolio.profit < 0 }}${{ portfolio.profit|int|abs|number_group }}
-        {% if portfolio.total_spent and portfolio.profit %}
+      <span class="text-average {{ 'text-green' if portfolio.profit|int > 0 }} {{ 'text-red' if portfolio.profit|int < 0 }}">
+        {{ '-' if portfolio.profit|int < 0 }}${{ portfolio.profit|int|abs|number_group }}
+        {% if portfolio.total_spent and portfolio.profit|int %}
           ({{ (portfolio.profit / portfolio.total_spent * 100)|round|int|abs }}%)
         {% endif %}
       </span>

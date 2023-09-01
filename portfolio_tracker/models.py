@@ -160,7 +160,6 @@ class Setting(db.Model):
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    #name = db.Column(db.String(255))
     email = db.Column(db.String(255), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
     type = db.Column(db.String(255))
@@ -176,14 +175,3 @@ class userInfo(db.Model):
     last_visit = db.Column(db.String(255))
     country = db.Column(db.String(255))
     city = db.Column(db.String(255))
-
-
-# class Trackedticker(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     ticker_id = db.Column(db.String(255), db.ForeignKey('ticker.id'))
-#     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-#     # Relationships
-#     user = db.relationship('User',
-#                            backref=db.backref('trackedtickers', lazy=True))
-#     ticker = db.relationship('Ticker',
-#                              backref=db.backref('trackedtickers', lazy=True))

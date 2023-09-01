@@ -26,7 +26,7 @@ def index():
                                    filter_by(email='demo')).scalar()
     if not demo_user:
         # demo user
-        demo_user = User(email='demo', password='demo')
+        demo_user = User(email='demo@demo', password='demo')
         db.session.add(demo_user)
         wallet = Wallet(name='Default', user_id=demo_user.id)
         db.session.add(wallet)

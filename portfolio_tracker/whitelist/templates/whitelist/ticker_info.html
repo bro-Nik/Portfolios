@@ -96,7 +96,9 @@
                 {% else %}
 
                   <div class="form-check form-switch m-0">
-                    <input class="form-check-input action" data-action="turn_{{ 'on' if alert.status == 'off' else 'off' }}" type="checkbox" role="switch" {{ 'checked' if alert.status != 'off' }} data-modal-id="WhitelistTickerInfoModal" data-id="{{ alert.id }}">
+                    <input class="form-check-input action" data-action="turn_{{ 'on' if alert.status == 'off' else 'off' }}"
+                    type="checkbox" role="switch" {{ 'checked' if alert.status != 'off' }}
+                    data-this-need-update="true" data-id="{{ alert.id }}">
                   </div>
 
                   <span class="link-secondary open-modal-confirmation" data-action="delete" data-title="Удалить уведомление?" data-id="{{ alert.id }}" title="Удалить">

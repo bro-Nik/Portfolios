@@ -115,18 +115,17 @@ def user_delete_def(user_id):
 
     # portfolios, assets, transactions
     for portfolio in user.portfolios:
-        if portfolio.assets:
-            for asset in portfolio.assets:
-                for transaction in asset.transactions:
-                    db.session.delete(transaction)
-                db.session.delete(asset)
-        elif portfolio.other_assets:
-            for asset in portfolio.other_assets:
-                for body in asset.bodys:
-                    db.session.delete(body)
-                for operation in asset.operations:
-                    db.session.delete(operation)
-                db.session.delete(asset)
+        for asset in portfolio.assets:
+            for transaction in asset.transactions:
+                db.session.delete(transaction)
+            db.session.delete(asset)
+
+        for asset in portfolio.other_assets:
+            for body in asset.bodys:
+                db.session.delete(body)
+            for operation in asset.operations:
+                db.session.delete(operation)
+            db.session.delete(asset)
         db.session.delete(portfolio)
 
     # user info
@@ -134,6 +133,7 @@ def user_delete_def(user_id):
                                    filter_by(user_id=user.id)).scalar()
     db.session.delete(user_info)
     db.session.commit()
+
     # user
     db.session.delete(user)
     db.session.commit()
@@ -169,4 +169,4 @@ def new_visit():
 def demo_user():
     user = db.session.execute(db.select(User).filter_by(email='demo')).scalar()
     login_user(user)
-    return redirect(url_for('.portfolios'))
+    return redirect(url_for('portfolio.portfolios'))

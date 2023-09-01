@@ -1,0 +1,25 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+
+{% set modal_title = 'Добавить актив' %}
+
+{% block content %}
+
+<div class="add-tickers-box">
+  <div class="search">
+    <input class="border rounded-3 w-100 mb-3 px-3 focus" placeholder="Поиск"></input>
+  </div> 
+  <div id="AssetsList" class="hover-child-color overflow-y-auto tickers-list"></div> 
+</div>
+
+<script>
+  $('.search input').on("input", function () {
+    var url = "{{ url_for('portfolio.asset_add_tickers', market_id=market_id )}}";
+    url += "?search=" + $(this).val();
+
+    $('#AssetsList').load(url)
+  });
+
+  $('#AssetsList').load("{{ url_for('portfolio.asset_add_tickers', market_id=market_id)}}")
+</script>
+{% endblock %}

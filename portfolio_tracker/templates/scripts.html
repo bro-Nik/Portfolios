@@ -105,7 +105,13 @@
       url: $form.attr("action"),
       data: JSON.stringify(data),
       contentType: "application/json; charset=utf-8",
-    }).done(setTimeout(PageUpdate, 500, $modal));
+    }).done(function () {
+      if ($btn.attr('data-this-need-update')) {
+        LoadToModal($modal.attr('id'), $modal.attr("data-url"), true);
+      } else {
+        setTimeout(PageUpdate, 500, $modal);
+      }
+    });
   });
 
 
@@ -451,7 +457,8 @@ $(document).on('hide.bs.modal', '.modal', function () {
 })
 
 function PageUpdate($modal) {
-  var pre_need_update = $modal.attr("data-pre-need-update"),
+  var this_need_update = $modal.attr("data-this-need-update"),
+    pre_need_update = $modal.attr("data-pre-need-update"),
     pre_need_clean = $modal.attr("data-pre-need-clean"),
     pre_modal_id = $modal.attr("data-pre-modal-id");
 

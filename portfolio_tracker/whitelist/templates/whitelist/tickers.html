@@ -119,10 +119,15 @@
   // Add New Asset
   $('body').on("click", '.select-asset', function () {
     var ticker_id = $(this).attr('data-ticker-id'),
-      url = "{{ url_for('.add_ticker') }}" + "?ticker_id=" + ticker_id;
+      url = "{{ url_for('.add_ticker') }}" + "?ticker_id=" + ticker_id,
+      $modal = $(this).closest('.modal'),
+      pre_modal_id = $modal.attr('data-pre-modal-id');
 
-    $(this).closest('.modal').modal('hide');
-    LoadToModal('WhitelistTickerInfoModal', url, true, false);
+    $modal.modal('hide');
+
+    $.get(url).done(function (data) {
+      LoadToModal('AssetInfoModal', data, true, pre_modal_id);
+    })
   });
 {% endif %}
 
