@@ -78,8 +78,8 @@
 
 
               <td class="text-average">
-                <div class="open-modal d-grid" data-modal-id="PortfolioInfoModal" data-url="{{ url_for('.portfolio_info', portfolio_id=portfolio.id) }}">
-                  {{ portfolio.name }}
+                <div class="open-modal d-grid name" data-modal-id="PortfolioInfoModal" data-url="{{ url_for('.portfolio_info', portfolio_id=portfolio.id) }}">
+                  <span class="text-truncate" title="{{ portfolio.name }}">{{ portfolio.name }}</span>
                   <span class="text-muted small_text">{{ portfolio.market }}</span>
                 </div>
               </td>
@@ -106,7 +106,11 @@
                 {% endif %}
               </td>
 
-              <td>{{ portfolio.comment if portfolio.comment }}</td>
+              <td>
+                <div class="d-flex comment">
+                  <span class="text-truncate">{{ portfolio.comment if portfolio.comment }}</span>
+                </div>
+              </td>
 
               <td class="align-middle text-end">
 	              <div class="dropdown dropstart">

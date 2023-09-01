@@ -103,8 +103,8 @@
                 </td>
 
                 <td>
-                  <div class="open-modal" data-modal-id="BodyModal" data-url="{{ url_for('.other_asset_body', asset_id=asset.id, body_id=asset_body.id) }}">
-                    {{ asset_body.name }} <br>
+                  <div class="open-modal d-grid name" data-modal-id="BodyModal" data-url="{{ url_for('.other_asset_body', asset_id=asset.id, body_id=asset_body.id) }}">
+                    <span class="text-truncate" title="{{ asset_body.name }}">{{ asset_body.name }}</span>
                     <span class="small_text">{{ asset_body.date }}</span>
                   </div>
                 </td>
@@ -113,7 +113,11 @@
 
                 <td>${{ asset_body.cost_now|int|number_group }}</td>
 
-                <td>{{ asset_body.comment if asset_body.comment }}</td>
+                <td>
+                  <div class="d-flex comment">
+                    <span class="text-truncate">{{ asset_body.comment if asset_body.comment }}</span>
+                  </div>
+                </td>
 
                 <td class="align-middle text-end">
                   <div class="dropdown dropstart">
@@ -176,7 +180,11 @@
                   </span>
                 </td>
 
-                <td>{{ operation.comment if operation.comment }}</td>
+                <td>
+                  <div class="d-flex comment">
+                    <span class="text-truncate">{{ operation.comment if operation.comment }}</span>
+                  </div>
+                </td>
 
                 <td class="align-middle text-end">
                   <div class="dropdown dropstart">
@@ -206,7 +214,7 @@
 </div>
 
 <div class="convert-text" data-convert-to="textarea" data-name="comment"
-  data-send-url="/">
+  data-url="{{ url_for('.other_asset_settings_update', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
   <span class="convert-data">{{ asset.comment if asset.comment }}</span>
   <span>{{ 'Добавить комментарий' if not asset.comment }}</span>
 </div>

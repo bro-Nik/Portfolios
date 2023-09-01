@@ -39,6 +39,7 @@ def get_user_alert(id):
 @whitelist.route('/<string:market_id>', methods=['GET'])
 @whitelist.route('', methods=['GET'])
 @login_required
+@demo_user_change
 def tickers(market_id=None):
     market_id = market_id if market_id else 'crypto'
     status = request.args.get('status')
@@ -61,8 +62,59 @@ def tickers(market_id=None):
                            market_id=market_id)
 
 
+@whitelist.route('/action', methods=['POST'])
+@login_required
+@demo_user_change
+def tickers_action():
+    data = json.loads(request.data) if request.data else {}
+
+    ids = data.get('ids')
+    for id in ids:
+        whitelist_ticker = get_whitelist_ticker(id)
+
+        if not whitelist_ticker:
+            continue
+
+        # удаляем уведомления
+        for alert in whitelist_ticker.alerts:
+            db.session.delete(alert)
+
+        db.session.delete(whitelist_ticker)
+
+    db.session.commit()
+    return ''
+
+
+@whitelist.route('/add_ticker', methods=['GET'])
+@login_required
+@demo_user_change
+def add_ticker():
+    """ Add to Tracking list """
+    ticker_id = request.args.get('ticker_id')
+    whitelist_ticker = get_whitelist_ticker(ticker_id, True)
+    return redirect(url_for('.ticker_info',
+                            market_id=whitelist_ticker.ticker.market_id,
+                            ticker_id=whitelist_ticker.ticker_id,
+                            only_content=request.args.get('only_content')))
+
+
+@whitelist.route('/whitelist_ticker_update', methods=['POST'])
+@login_required
+@demo_user_change
+def whitelist_ticker_update():
+    ticker_id = request.args.get('ticker_id')
+    whitelist_ticker = get_whitelist_ticker(ticker_id, True)
+
+    comment = request.form.get('comment')
+    if comment is not None:
+        whitelist_ticker.comment = comment
+    db.session.commit()
+    return ''
+
+
 @whitelist.route('/<string:market_id>/ticker_<string:ticker_id>')
 @login_required
+@demo_user_change
 def ticker_info(market_id, ticker_id):
     price_list = get_price_list(market_id)
     price = float_or_other(price_list.get(ticker_id), 0)
@@ -80,8 +132,49 @@ def ticker_info(market_id, ticker_id):
                            price=price)
 
 
+@whitelist.route('/alerts_action', methods=['POST'])
+@login_required
+@demo_user_change
+def alerts_action():
+    data = json.loads(request.data) if request.data else {}
+    ids = data.get('ids')
+    action = data.get('action')
+
+    for id in ids:
+        alert = get_user_alert(id)
+        if not alert:
+            continue
+
+        # Delete
+        if action == 'delete':
+            if not alert.transaction_id:
+                db.session.delete(alert)
+
+        # Convert to transaction
+        elif action == 'convert_to_transaction':
+            alert.transaction.order = 0
+            alert.transaction.date = datetime.now().date()
+            alert.status = 'off'
+
+        # Turn off
+        elif action == 'turn_off':
+            if not alert.transaction_id:
+                alert.status = 'off'
+
+        # Turn on
+        elif action == 'turn_on':
+            if alert.transaction_id and alert.status != 'on':
+                alert.transaction_id = None
+                alert.asset_id = None
+            alert.status = 'on'
+
+    db.session.commit()
+    return ''
+
+
 @whitelist.route('/<string:market_id>/whitelist_ticker/alert', methods=['GET'])
 @login_required
+@demo_user_change
 def alert(market_id):
     whitelist_ticker_id = request.args.get('whitelist_ticker_id')
     ticker_id = request.args.get('ticker_id')
@@ -122,95 +215,4 @@ def alert_update():
     alert.comment = request.form['comment']
 
     db.session.commit()
-
-    return 'OK'
-
-
-@whitelist.route('/add_ticker', methods=['GET'])
-@demo_user_change
-def add_ticker():
-    """ Add to Tracking list """
-    ticker_id = request.args.get('ticker_id')
-    whitelist_ticker = get_whitelist_ticker(ticker_id, True)
-    return redirect(url_for('.ticker_info',
-                            market_id=whitelist_ticker.ticker.market_id,
-                            ticker_id=whitelist_ticker.ticker_id,
-                            only_content=request.args.get('only_content')))
-
-
-@whitelist.route('/action', methods=['POST'])
-@demo_user_change
-def whitelist_action():
-    data = json.loads(request.data) if request.data else {}
-
-    ids = data.get('ids')
-    for id in ids:
-        whitelist_ticker = get_whitelist_ticker(id)
-
-        if not whitelist_ticker:
-            continue
-
-        # удаляем уведомления
-        for alert in whitelist_ticker.alerts:
-            db.session.delete(alert)
-
-        db.session.delete(whitelist_ticker)
-
-    db.session.commit()
-
     return ''
-
-
-@whitelist.route('/whitelist_ticker_update', methods=['POST'])
-@login_required
-@demo_user_change
-def whitelist_ticker_update():
-    ticker_id = request.args.get('ticker_id')
-    whitelist_ticker = get_whitelist_ticker(ticker_id, True)
-
-    comment = request.form.get('comment')
-    if comment is not None:
-        whitelist_ticker.comment = comment
-    db.session.commit()
-    return 'OK'
-
-
-@whitelist.route('/alerts_action', methods=['POST'])
-@login_required
-@demo_user_change
-def alerts_action():
-    data = json.loads(request.data) if request.data else {}
-    ids = data.get('ids')
-    action = data.get('action')
-
-    for id in ids:
-        alert = get_user_alert(id)
-        if not alert:
-            continue
-
-        # Delete
-        if action == 'delete':
-            if not alert.transaction_id:
-                db.session.delete(alert)
-
-        # Convert to transaction
-        elif action == 'convert_to_transaction':
-            alert.transaction.order = 0
-            alert.transaction.date = datetime.now().date()
-            alert.status = 'off'
-
-        # Turn off
-        elif action == 'turn_off':
-            if not alert.transaction_id:
-                alert.status = 'off'
-
-        # Turn on
-        elif action == 'turn_on':
-            if alert.transaction_id and alert.status != 'on':
-                alert.transaction_id = None
-                alert.asset_id = None
-            alert.status = 'on'
-
-    db.session.commit()
-
-    return 'OK'

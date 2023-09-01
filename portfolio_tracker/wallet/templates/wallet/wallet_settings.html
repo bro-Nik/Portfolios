@@ -3,7 +3,7 @@
 {% set modal_title = 'Изменить кошелек' if wallet else 'Добавить кошелек' %}
 
 {% block content %}
-<form data-url="{{ url_for('.wallet_update', wallet_id=wallet.id if wallet) }}">
+<form data-url="{{ url_for('.wallet_settings_update', wallet_id=wallet.id if wallet) }}">
   <div class="row g-2">
     <div class="col-md-6">
       <div class="mb-3">

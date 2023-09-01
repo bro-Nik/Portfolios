@@ -3,7 +3,7 @@
 {% set modal_title = 'Изменить актив' if asset else 'Добавить актив' %}
 
 {% block content %}
-<form data-url="{{ url_for('.other_asset_settings_post', portfolio_id=portfolio_id)}}">
+<form data-url="{{ url_for('.other_asset_settings_update', portfolio_id=portfolio_id, asset_id=asset.id if asset else None) }}">
   <div class="row g-2">
 
     <div class="col-12">

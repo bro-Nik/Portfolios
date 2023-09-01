@@ -39,7 +39,7 @@ login_manager = LoginManager(app)
 from portfolio_tracker.portfolio.portfolio import portfolio
 app.register_blueprint(portfolio, url_prefix='/portfolios')
 from portfolio_tracker.wallet.wallet import wallet
-app.register_blueprint(wallet, url_prefix='/wallet')
+app.register_blueprint(wallet, url_prefix='/wallets')
 from portfolio_tracker.whitelist.whitelist import whitelist
 app.register_blueprint(whitelist, url_prefix='/whitelist')
 from portfolio_tracker.admin.admin import admin

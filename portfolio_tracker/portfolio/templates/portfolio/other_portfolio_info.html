@@ -38,7 +38,7 @@
   </div>
 
   <div class="big-table">
-    <form id="AssetsForm" action="{{ url_for('.other_asset_action', market_id=portfolio.market_id) }}">
+    <form id="AssetsForm" action="{{ url_for('.other_asset_action') }}">
       <table class="table table-sm align-middle table-hover bootstrap-table" data-search="true">
         <thead>
           <tr>
@@ -50,6 +50,7 @@
             <th data-sortable="true" data-sort-name="cost">Стоимость сейчас</th>
             <th data-sortable="true" data-sort-name="profit">Прибыль / убыток</th>
             <th data-sortable="true" data-sort-name="procent">% портфеля</th>
+            <th>Комментарий</th>
             <th></th>
             <!-- For sorting -->
             <th class="visually-hidden" data-sortable="true" data-field="cost">Стоит сейчас</th>
@@ -65,8 +66,8 @@
               </td>
 
               <td class="text-average">
-                <div class="open-modal" data-modal-id="AssetInfoModal" data-url="{{ url_for('.asset_info', market_id=portfolio.market_id, asset_id=asset.id) }}">
-                  {{ asset.name }}
+                <div class="open-modal d-flex name" data-modal-id="AssetInfoModal" data-url="{{ url_for('.asset_info', market_id=portfolio.market_id, asset_id=asset.id) }}">
+                  <span class="text-truncate" title="{{ asset.name }}">{{ asset.name }}</span>
                 </div>
               </td>
 
@@ -88,6 +89,12 @@
               <td>
                 {{ (asset.bodys_total_spent / portfolio.total_spent * 100)|round(1, 'common')|string + '% /' if portfolio.total_spent and asset.bodys_total_spent else '- / ' }}
                 {{ asset.percent|string + '%' if asset.percent else '-' }}
+              </td>
+
+              <td>
+                <div class="d-flex comment">
+                  <span class="text-truncate">{{ asset.comment if asset.comment }}</span>
+                </div>
               </td>
 
               <td class="align-middle text-end">
@@ -126,16 +133,10 @@
   <div class="nothing-box">Пока ничего нет...</div>
 {% endif %}
 
-<script>
+<div class="convert-text" data-convert-to="textarea" data-name="comment"
+  data-url="{{ url_for('.portfolio_settings_update', portfolio_id=portfolio.id) }}">
+  <span class="convert-data">{{ portfolio.comment if portfolio.comment }}</span>
+  <span>{{ 'Добавить комментарий' if not portfolio.comment }}</span>
+</div>
 
-  // Open Modal Asset Settings
-  $('.asset-settings2').on("click", function () {
-    var modal_id = 'customAsset',
-      url = "",
-      asset_id = $(this).attr('data-id');
-    if (asset_id) { url += '?asset_id=' + asset_id; }
-    LoadToModal(modal_id, url);
-  })
-
-</script>
 {% endblock %}

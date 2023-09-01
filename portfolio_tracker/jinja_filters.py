@@ -15,6 +15,8 @@ app.add_template_filter(smart_int)
 
 def smart_round(number):
     ''' Окрушление зависимое от величины числа для Jinja '''
+    if not number:
+        return 0
     try:
         number = float(number)
         if number >= 100:
@@ -28,9 +30,12 @@ def smart_round(number):
         elif number >= 0.0001:
             number = round(number, 7)
 
-        return number
+        if int(number) == number:
+            return int(number)
+        else:
+            return number
     except:  # строка не является float / int
-        return ''
+        return 0
 
 
 app.add_template_filter(smart_round)

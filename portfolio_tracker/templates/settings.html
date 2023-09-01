@@ -1,46 +1,27 @@
 {% extends "base.html" %}
 {% block title %} Настройки {% endblock %}
-{% block head %}
-    {{ super() }}
-{% endblock %}
-{% block link %}
-    <button onclick="document.location='{{ url_for('portfolios') }}'" type="button" class="btn btn-light btn-sm">Портфели</button>
-    <button onclick="document.location='{{ url_for('wallets') }}'" type="button" class="btn btn-light btn-sm">Кошельки</button>
-    <button onclick="document.location='{{ url_for('tracking_list') }}'" type="button" class="btn btn-light btn-sm">Список отслеживания</button>
-    {% if current_user.type == 'admin' %}
-        <button onclick="document.location='{{ url_for('admin_index') }}'" type="button" class="btn btn-light btn-sm">Админ</button>
-    {% endif %}
-{% endblock %}
+
 {% block content %}
 <div class="mb-5">
-    <div class="row xs-mb-3">
-        <div class="col-auto">
-            <h1>Настройки</h1>
-        </div>
-    </div>
-</div>
-<div class="row">
+  <div class="row xs-mb-3">
     <div class="col-auto">
-        <p class="text-average">Профиль</p>
-        <span class="">{{ current_user.email }}</span>
-        <br>
-        <a class="link-danger text-decoration-none" role="button" data-bs-toggle="modal" data-bs-target="#delete">Удалить аккаунт</a>
+      <h1>Настройки</h1>
     </div>
+  </div>
 </div>
-<!-- Modal Delete -->
-<div class="modal fade" id="delete" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-3">Вы уверенны?</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="">Аккаунт будет удален безвозвратно.</p>
-                <a href="{{ url_for('user_delete') }}" class="w-100 mb-2 btn btn rounded-3 btn-primary btn-delete"><strong>Да</strong></a>
-            </div>
-        </div>
-    </div>
+
+<div class="row">
+  <div class="col-auto">
+    <p class="text-average">Профиль</p>
+    <span class="">{{ current_user.email }}</span>
+    <br>
+    <form id="UserActions" action="{{ url_for('user.user_delete') }}">
+      <a class="link-danger open-modal-confirmation" data-title="Удалить аккаунт {{ current_user.email }}?"
+        data-form="#UserActions">
+        Удалить аккаунт
+      </a>
+    </form>
+  </div>
 </div>
 
 {% endblock %}

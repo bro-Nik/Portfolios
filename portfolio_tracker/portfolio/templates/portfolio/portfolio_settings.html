@@ -4,7 +4,7 @@
 {% set modal_title = 'Изменить портфель' if portfolio else 'Добавить портфель' %}
 
 {% block content %}
-<form data-url="{{ url_for('.portfolio_update', portfolio_id=portfolio.id if portfolio else None) }}">
+<form data-url="{{ url_for('.portfolio_settings_update', portfolio_id=portfolio.id if portfolio else None) }}">
   <div class="row g-2">
 
     <div class="col-md-6">
@@ -25,7 +25,7 @@
     <div class="col-md-12">
       <div class="mb-3">
         <label class="form-label h7">Комментарий</label>
-        <textarea class="form-control" name="comment">{{ portfolio.comment if portfolio }}</textarea>
+        <textarea class="form-control silver" name="comment">{{ portfolio.comment if portfolio }}</textarea>
       </div>
     </div>
   </div>

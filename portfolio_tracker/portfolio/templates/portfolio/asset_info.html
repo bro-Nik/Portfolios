@@ -38,11 +38,20 @@
 
     <div class="col-auto ms-auto hstack gap-1">
       <button class="btn btn-primary open-modal focus" type="button" data-modal-id="TransactionModal"
-        data-url="{{ url_for('.transaction', market_id=asset.portfolio.market_id, asset_id=asset.id, ticker=asset.ticker.id) }}">Добавить транзакцию</button>
+        data-url="{{ url_for('.transaction', asset_id=asset.id, price=price) }}">Добавить транзакцию</button>
       <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
       <div class="dropdown-menu">
+        <button class="dropdown-item open-modal" type="button" data-modal-id="AssetSettingsModal"
+          data-url="{{ url_for('.asset_settings', asset_id=asset.id) }}">
+          Настройки {{ asset.ticker.name }}
+        </button>
+
         <form id="AssetActions" action="{{ url_for('.assets_action') }}">
-          <button class="dropdown-item open-modal-confirmation" type="button" data-form="#AssetActions" data-id="{{ asset.id }}" data-apply-modal-id="PortfolioInfoModal" data-title="Удалить {{ asset.ticker.name }}?">Удалить {{ asset.ticker.name }}</button>
+          <button class="dropdown-item link-danger open-modal-confirmation" 
+            type="button" data-form="#AssetActions" data-id="{{ asset.id }}"
+            data-title="Удалить {{ asset.ticker.name }}?" data-pre-need-clean="true">
+            Удалить {{ asset.ticker.name }}
+          </button>
         </form>
       </div>
     </div>
@@ -101,7 +110,7 @@
   </div>
 
 <div class="big-table pt-3 pb-3">
-  <form id="TransactionsForm" action="{{ url_for('.transactions_action', market_id=market_id, asset_id=asset.id) }}">
+  <form id="TransactionsForm" action="{{ url_for('.transactions_action') }}">
     <table class="table table-sm align-middle">
       <thead>
         <tr>
@@ -149,7 +158,11 @@
             </a>
           </td>
 
-          <td>{{ transaction.comment if transaction.comment }}</td>
+          <td>
+            <div class="d-flex comment">
+              <span class="text-truncate">{{ transaction.comment if transaction.comment }}</span>
+            </div>
+          </td>
 
           <td class="align-middle text-end">
             <div class="d-flex justify-content-end">
@@ -194,7 +207,7 @@
 {% endif %}
 
 <div class="convert-text" data-convert-to="textarea" data-name="comment"
-  data-send-url="{{ url_for('.asset_update', market_id=asset.portfolio.market_id, id=asset.id) }}">
+  data-url="{{ url_for('.asset_settings_update', asset_id=asset.id) }}">
   <span class="convert-data">{{ asset.comment if asset.comment }}</span>
   <span>{{ 'Добавить комментарий' if not asset.comment }}</span>
 </div>
@@ -207,15 +220,18 @@
       assetCostNow = $('#AssetCostNow'),
       assetProfit = $('#AssetProfit');
 
+    // if modal is close
+    if (!assetPrice.length) {
+      clearTimeout(assetUpdateTimerId);
+      return true;
+    }
+
     var request = $.get(url);
     request.done(function(data) {
       var text_class = 'text-average text-' + data.profit_color;
       assetPrice.html('$' + data.price);
       assetCostNow.html(data.cost_now).attr('class', text_class);
       assetProfit.html(data.profit).attr('class', text_class);
-    })
-    request.fail(function(data) {
-      clearTimeout(assetUpdateTimerId);
     })
   }
 

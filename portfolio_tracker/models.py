@@ -125,7 +125,7 @@ class WhitelistTicker(db.Model):
     comment = db.Column(db.Text)
     # Relationships
     ticker = db.relationship('Ticker',
-                             backref=db.backref('ticker', lazy=True),
+                             backref=db.backref('whitelist_ticker', lazy=True),
                              uselist=False)
     user = db.relationship('User',
                            backref=db.backref('whitelist_tickers', lazy=True))
@@ -148,8 +148,8 @@ class Alert(db.Model):
     whitelist_ticker = db.relationship('WhitelistTicker',
                                        backref=db.backref('alerts', lazy=True))
     transaction = db.relationship('Transaction',
-                             backref=db.backref('alert', lazy=True),
-                             uselist=False)
+                                  backref='alert',
+                                  uselist=False)
 
 
 class Setting(db.Model):

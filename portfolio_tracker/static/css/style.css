@@ -311,6 +311,7 @@ form {
 }
 .bootstrap-table .fixed-table-container .fixed-table-body {
     height: auto !important;
+    min-height: 150px;
 }
 .sticky-bottom.actions a {
     padding: 0.25rem 0.5rem;
@@ -345,4 +346,10 @@ form {
     white-space: nowrap;
     vertical-align: baseline;
     position: absolute;
+}
+td div.name {
+    max-width: 300px;
+}
+td div.comment {
+    max-width: 200px;
 }

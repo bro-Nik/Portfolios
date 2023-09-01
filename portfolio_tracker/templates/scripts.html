@@ -49,6 +49,10 @@
     if (pre_modal_id) {
       $modal.attr("data-pre-modal-id", pre_modal_id);
     }
+    var pre_need_clean = $btn.attr("data-pre-need-clean");
+    if (pre_need_clean) {
+      $modal.attr("data-pre-need-clean", true);
+    }
 
     // to modal action
     var title = $btn.attr("data-title"),
@@ -101,7 +105,7 @@
       url: $form.attr("action"),
       data: JSON.stringify(data),
       contentType: "application/json; charset=utf-8",
-    }).done(PageUpdate($modal));
+    }).done(setTimeout(PageUpdate, 500, $modal));
   });
 
 
@@ -203,7 +207,8 @@
     });
   }
 
-  $("body").click(function (e) {
+  // Close modal
+  $("body").mousedown(function (e) {
     if ($(e.target).is(".modal")) {
       $(e.target).modal("hide");
     }
@@ -279,6 +284,8 @@
     // Fade
     if (!$modal.find(".modal-fullscreen").length) {
       $("body .modal-backdrop").remove();
+    } else {
+      $modal.find('.modal-body').empty();
     }
   });
 
@@ -306,7 +313,6 @@
 
   $("body").on("click", ".convert-text", function () {
     var $box = $(this),
-      url = $box.attr("data-send-url"),
       convertTo = $box.attr("data-convert-to");
 
     if ($box.hasClass("active")) {
@@ -322,30 +328,28 @@
 
     $box.addClass("active").empty();
 
-    if (url) {
-      $box.append("<form></form>");
-      $box = $box.find("form");
-    }
+    $box = $box.append("<form></form>").find("form");
     $box.append(newTextBox);
 
-    if (url) {
-      var $btn =
-        '<div class="position-right"><button class="btn btn-primary btn-sm submit" type="button">Сохранить</button></div>';
-      $box.append($btn);
-    }
+    $box.append(`
+      <div class="position-right">
+        <button class="btn btn-primary btn-sm submit" type="button">Сохранить</button>
+      </div>
+      `);
+    $box.find('textarea').focus();
   });
 
   $("body").on("click", ".convert-text .submit", function () {
     var $box = $(this).closest(".convert-text"),
       $form = $box.find("form"),
-      url = $box.attr("data-send-url"),
+      url = $box.attr("data-url"),
       posting = $.post(url, $form.serialize());
 
+    $form.closest('.modal').attr('data-pre-need-update', true);
+
     posting.done(function (data) {
-      var convertData = '<span class="convert-data">';
-      convertData += $form.find(".convert-data").val();
-      convertData += "</span>";
-      $box.empty().append(convertData);
+      $box.empty().append(`<span class="convert-data">` +
+        $form.find(".convert-data").val() + `</span>`);
     });
   });
 
@@ -447,17 +451,19 @@ $(document).on('hide.bs.modal', '.modal', function () {
 })
 
 function PageUpdate($modal) {
-  var pre_need_update = $modal.attr("data-pre-need-update");
+  var pre_need_update = $modal.attr("data-pre-need-update"),
+    pre_need_clean = $modal.attr("data-pre-need-clean"),
+    pre_modal_id = $modal.attr("data-pre-modal-id");
 
-  if (pre_need_update == 'false') {
-    return true;
-  }
-
-  var pre_modal_id = $modal.attr("data-pre-modal-id");
-  if (pre_modal_id) {
-    LoadToModal(pre_modal_id, $("#" + pre_modal_id).attr("data-url"), true);
-  } else {
-    LoadToPage();
+  if (pre_need_clean) {
+    $('#' + pre_modal_id).attr('data-pre-need-update', true);
+    $('#' + pre_modal_id).modal('hide');
+  } else if (pre_need_update == 'true') {
+    if (pre_modal_id) {
+      LoadToModal(pre_modal_id, $("#" + pre_modal_id).attr("data-url"), true);
+    } else {
+      LoadToPage();
+    }
   }
 }
 </script>

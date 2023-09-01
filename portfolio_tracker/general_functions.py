@@ -7,6 +7,8 @@ from portfolio_tracker.models import Ticker
 def dict_get_or_other(dict, key, default=None):
     return dict.get(key) if dict and dict.get(key) else default
 
+def int_or_other(number, default=0):
+    return int(number) if number else default
 
 def float_or_other(number, default=0):
     return float(number) if number else default

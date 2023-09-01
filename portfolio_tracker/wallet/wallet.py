@@ -1,5 +1,5 @@
 import json
-from flask import flash, render_template, redirect, url_for, request, Blueprint
+from flask import flash, render_template, request, Blueprint
 from flask_login import login_required, current_user
 from portfolio_tracker.app import db
 from portfolio_tracker.general_functions import get_price_list
@@ -15,15 +15,16 @@ wallet = Blueprint('wallet',
 
 
 def get_user_wallet(id):
-    if not id:
-        return None
-    return db.session.execute(
-            db.select(Wallet).filter_by(id=id,
-                                        user_id=current_user.id)).scalar()
+    if id:
+        return db.session.execute(
+                db.select(Wallet).filter_by(id=id,
+                                            user_id=current_user.id)).scalar()
+    return None
 
 
-@wallet.route('/wallets', methods=['GET'])
+@wallet.route('', methods=['GET'])
 @login_required
+@demo_user_change
 def wallets():
     """ Wallets page """
     wallets = {}
@@ -69,32 +70,6 @@ def wallets():
     return render_template('wallet/wallets.html', all=all, wallets=wallets)
 
 
-@wallet.route('/wallet_settings', methods=['GET'])
-@login_required
-def wallet_settings():
-    wallet = get_user_wallet(request.args.get('wallet_id'))
-
-    return render_template('wallet/wallet_settings.html', wallet=wallet)
-
-
-@wallet.route('/update', methods=['POST'])
-@login_required
-@demo_user_change
-def wallet_update():
-    """ Add or change wallet """
-    wallet = get_user_wallet(request.args.get('wallet_id'))
-    if not wallet:
-        wallet = Wallet(user_id=current_user.id)
-        db.session.add(wallet)
-
-    wallet.name = request.form.get('name')
-    wallet.money_all = dict_get_or_other(request.form, 'money_all', 0)
-
-    db.session.commit()
-
-    return ''
-
-
 @wallet.route('/action', methods=['POST'])
 @login_required
 @demo_user_change
@@ -112,18 +87,41 @@ def wallets_action():
         else:
             db.session.delete(wallet)
 
-    # db.session.commit()
-
     if not current_user.wallets:
         db.session.add(Wallet(name='Default', user_id=current_user.id))
 
     db.session.commit()
+    return ''
 
-    return redirect(url_for('.wallets'))
+
+@wallet.route('/wallet_settings', methods=['GET'])
+@login_required
+@demo_user_change
+def wallet_settings():
+    wallet = get_user_wallet(request.args.get('wallet_id'))
+    return render_template('wallet/wallet_settings.html', wallet=wallet)
+
+
+@wallet.route('/wallet_settings_update', methods=['POST'])
+@login_required
+@demo_user_change
+def wallet_settings_update():
+    """ Add or change wallet """
+    wallet = get_user_wallet(request.args.get('wallet_id'))
+    if not wallet:
+        wallet = Wallet(user_id=current_user.id)
+        db.session.add(wallet)
+
+    wallet.name = request.form.get('name')
+    wallet.money_all = dict_get_or_other(request.form, 'money_all', 0)
+
+    db.session.commit()
+    return ''
 
 
 @wallet.route('/<string:wallet_id>')
 @login_required
+@demo_user_change
 def wallet_info(wallet_id):
     """ Wallet page """
     user_wallet = get_user_wallet(wallet_id)
@@ -179,15 +177,15 @@ def wallet_info(wallet_id):
 
 @wallet.route('/in_out_get', methods=['GET'])
 @login_required
+@demo_user_change
 def wallet_in_out_get():
-
     return render_template('wallet/wallet_in_out.html')
 
 
 @wallet.route('/transfer_get', methods=['GET'])
 @login_required
+@demo_user_change
 def wallet_transfer_get():
-
     return render_template('wallet/wallet_transfer.html')
 
 
@@ -203,7 +201,7 @@ def wallet_in_out():
         sum = sum if type == 'Ввод' else -1 * sum
         wallet.money_all += sum
         db.session.commit()
-    return redirect(url_for('.wallets'))
+    return ''
 
 
 @wallet.route('/transfer', methods=['POST'])
@@ -219,7 +217,7 @@ def wallet_transfer():
         wallet_out.money_all -= sum
         wallet_input.money_all += sum
         db.session.commit()
-    return redirect(url_for('.wallets'))
+    return ''
 
 
 @wallet.route('/ajax_user_wallets', methods=['GET'])
