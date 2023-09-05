@@ -10,7 +10,7 @@ from portfolio_tracker.models import Alert, User, WhitelistTicker
 @app.route('/')
 @login_required
 def index():
-    return redirect(url_for('portfolio.portfolios'))
+    return render_template('index.html')
 
 
 @app.route('/settings')

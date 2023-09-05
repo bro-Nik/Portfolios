@@ -140,17 +140,17 @@ thead > tr {
 .none-cursor {
     cursor: default;
 }
-.tickers-list::-webkit-scrollbar, .fixed-table-body::-webkit-scrollbar {
+#AssetsBox::-webkit-scrollbar, .fixed-table-body::-webkit-scrollbar {
   width: 5px;
   height: 10px;
   background-color: #f9f9fd;
 }
-.tickers-list::-webkit-scrollbar-thumb, .fixed-table-body::-webkit-scrollbar-thumb {
+#AssetsBox::-webkit-scrollbar-thumb, .fixed-table-body::-webkit-scrollbar-thumb {
   border-radius: 5px;
   background-color: #ccc;
   height: 1px;
 }
-.tickers-list::-webkit-scrollbar-track, .fixed-table-body::-webkit-scrollbar-track {
+#AssetsBox::-webkit-scrollbar-track, .fixed-table-body::-webkit-scrollbar-track {
   -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
   background-color: #f9f9fd;
 }
@@ -293,7 +293,7 @@ form {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 450px;
     max-height: 450px;
 }
 .add-tickers-box .search input {
@@ -301,6 +301,9 @@ form {
     border-color: #cfd6e4;
     height: 32px;
     font-size: 12px;
+}
+.add-tickers-box .search input:focus-visible {
+    outline: 0;
 }
 .hover-child-color div:hover {
     background-color: rgb(0 0 0 / 3%);
@@ -352,4 +355,14 @@ td div.name {
 }
 td div.comment {
     max-width: 200px;
+}
+.select-asset {
+    display: flex;
+    cursor: pointer;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    width: 100%;
+    gap: 0.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
 }

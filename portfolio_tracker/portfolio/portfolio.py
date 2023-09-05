@@ -340,12 +340,16 @@ def asset_add_tickers(market_id):
         query = query.filter(Ticker.name.contains(search)
                              | Ticker.symbol.contains(search))
 
+    
     tickers = query.paginate(page=int_or_other(request.args.get('page'), 1),
                              per_page=per_page,
                              error_out=False)
+    if tuple(tickers):
+        return render_template('portfolio/add_asset_tickers.html',
+                               tickers=tickers)
+    else:
+        return 'end'
 
-    return render_template('portfolio/add_asset_tickers.html',
-                           tickers=tickers)
 
 
 @portfolio.route('/<int:portfolio_id>/add_asset', methods=['GET'])

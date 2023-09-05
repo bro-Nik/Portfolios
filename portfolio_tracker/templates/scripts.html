@@ -1,5 +1,11 @@
 {# jinja #}
 <script>
+function updateAlerts() {
+  $('#WorkedAlertsCount').load("{{ url_for('worked_alerts_count') }}");
+}
+updateAlerts();
+setInterval(updateAlerts,10000);
+
   // Checkboxes
 
   // Check All
@@ -300,7 +306,7 @@
     UpdateGeneralSelects($element);
     UpdateAjaxSelects($element);
     StickyBottomActionsUpdate($element);
-    UpdateTables($element);
+    //UpdateTables($element);
   }
 
   // Full Height
@@ -369,7 +375,7 @@
       },
     });
   }
-  UpdateTables();
+  //UpdateTables();
 
 
   // Sticky Bottom Actions
@@ -473,4 +479,29 @@ function PageUpdate($modal) {
     }
   }
 }
+
+function MyTable(){
+  var $table = $('body').find('.bootstrap-table');
+  if (!$table.length) {
+    return true;
+  }
+
+  // Search
+  var $search_box = `
+      <div class="d-flex my-3">
+        <div class="col-4 ms-auto">
+          <input type="text" class="form-control rounded-3 search" placeholder="Поиск">
+        </div>
+      </div>`;
+
+  $table.before($search_box);
+
+  $table.parent().on("input", 'input.search', function () {
+    $table.find('thead th').each(function () {
+      alert($(this).attr('data-search'))
+    })
+  })
+}
+MyTable();
+
 </script>
