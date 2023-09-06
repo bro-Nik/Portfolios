@@ -10,15 +10,20 @@
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     <script src="{{ url_for('static', filename='js/jquery-3.6.4.min.js') }}"></script>
 
-
-    {#}
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-table/bootstrap-table.min.css') }}">
     <script src="{{ url_for('static', filename='bootstrap-table/bootstrap-table.min.js') }}"></script>
-    #}
 
+    <script src="{{ url_for('static', filename='js/smart-select.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/convert-to.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/portfolios.js') }}"></script>
+
+
+
+    {#
     <link rel="stylesheet" href="{{ url_for('static', filename='select2/select2.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='select2/select2-bootstrap-5-theme.css') }}">
     <script src="{{ url_for('static', filename='select2/select2.min.js') }}"></script>
+    #}
     
 
     <title>{% block title %}{% endblock %}</title>
@@ -74,9 +79,14 @@
     {% endblock %}
   </div>
 </div>
-{% include 'scripts.html' %}
 
-{% block after_scripts %}{% endblock %}
+<script>
+  function updateAlerts() {
+    $('#WorkedAlertsCount').load("{{ url_for('worked_alerts_count') }}");
+  }
+  updateAlerts();
+  setInterval(updateAlerts,10000);
+</script>
 
 </body>
 </html>

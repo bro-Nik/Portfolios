@@ -16,7 +16,8 @@
 
     <div class="col-md-6 mb-1" id="market-class">
       <label class="form-label h7">Рынок</label>
-      <select class="general-select" name="market_id" value="{{ portfolio.market_id if portfolio }}" required>
+      <select name="market_id"  data-class="form-select"
+        value="{{ portfolio.market_id if portfolio }}" required>
         <option {{ 'selected' if portfolio.market_id == 'crypto' }} value="crypto">Криптовалюта</option>
         <option {{ 'selected' if portfolio.market_id == 'stocks' }} value="stocks">Акции</option>
         <option {{ 'selected' if portfolio.market_id == 'other' }} value="other">Другое</option>

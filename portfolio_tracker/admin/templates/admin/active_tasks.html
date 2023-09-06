@@ -8,16 +8,16 @@
     {% for server in tasks_list %}
         {% for task in tasks_list[server] %}
         <span class="text-average">Task:</span>
-        <span class="small_text">Name: {{ task['name'] }}</span>
-        <span class="small_text">ID: {{ task['id'] }}</span>
+        <span class="small-text">Name: {{ task['name'] }}</span>
+        <span class="small-text">ID: {{ task['id'] }}</span>
         {% endfor %}
     {% endfor %}
 
     {% for server in scheduled %}
         {% for task in scheduled[server] %}
         <span class="text-average">Task:</span>
-        <span class="small_text">Name: {{ task['request']['name'] }}</span>
-        <span class="small_text">ID: {{ task['request']['id'] }}</span>
+        <span class="small-text">Name: {{ task['request']['name'] }}</span>
+        <span class="small-text">ID: {{ task['request']['id'] }}</span>
         {% endfor %}
     {% endfor %}
 

@@ -220,13 +220,25 @@ def wallet_transfer():
     return ''
 
 
-@wallet.route('/ajax_user_wallets', methods=['GET'])
+# @wallet.route('/ajax_user_wallets', methods=['GET'])
+# @login_required
+# def get_all_user_wallets():
+#     result = {'results': []}
+#
+#     for wallet in current_user.wallets:
+#         result['results'].append({'id': str(wallet.id),
+#                                   'text': wallet.name}) 
+#
+#     return json.dumps(result, ensure_ascii=False)
+
+
+@wallet.route('/ajax_user_wallets2', methods=['GET'])
 @login_required
 def get_all_user_wallets():
-    result = {'results': []}
+    result = []
 
     for wallet in current_user.wallets:
-        result['results'].append({'id': str(wallet.id),
-                                  'text': wallet.name}) 
+        result.append({'value': str(wallet.id),
+                       'text': wallet.name}) 
 
     return json.dumps(result, ensure_ascii=False)

@@ -46,13 +46,17 @@
     <div class="col-md-6">
       <div class="mb-1">
         <label class="form-label h7">Кошелек</label>
-        <select class="ajax-select" name="wallet_id" data-url="{{ url_for('wallet.get_all_user_wallets') }}" required>
+        <select name="wallet_id" data-class="form-select"
+          data-url="{{ url_for('wallet.get_all_user_wallets') }}" data-placeholder="-- Выбрать --" required>
           {% if transaction %}
             <option selected value="{{ transaction.wallet_id }}">{{ transaction.wallet.name }}</option>
           {% elif current_user.wallets|length == 1 %}
-          <option selected value="{{ current_user.wallets[0].id }}">{{ current_user.wallets[0].name }}</option>
+            <option selected value="{{ current_user.wallets[0].id }}">{{ current_user.wallets[0].name }}</option>
           {% endif %}
         </select>
+        <div class="open-modal link-primary small-text" data-modal-id="WalletsModal" data-url="{{ url_for('wallet.wallets', modal='true') }}">
+          Добавить
+        </div>
       </div>
     </div>
     <div class="col-md-12">
@@ -64,4 +68,5 @@
   </div>
   <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
 </form>
+
 {% endblock %}

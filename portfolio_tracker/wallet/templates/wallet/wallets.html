@@ -1,8 +1,14 @@
 {% set only_content = request.args.get('only_content') %}
+{% set modal = request.args.get('modal') %}
 
 {% if not only_content %}
-  {% extends "base.html" %}
-  {% block title %} Кошельки {% endblock %}
+  {% if modal %}
+    {% extends "modal_base.html" %}
+    {% set modal_fullscreen = True %}
+  {% else %}
+    {% extends "base.html" %}
+    {% block title %} Кошельки {% endblock %}
+  {% endif %}
 {% endif %}
 
 {% block content %}
@@ -31,7 +37,7 @@
 <div class="row xs-mb-3">
 
   <div class="col-auto">
-    <p class="small_text">Вложено / сейчас</p>
+    <p class="small-text">Вложено / сейчас</p>
     <span class="text-average">
       ${{ all.total_spent|int|number_group }} / 
       <span class="{{ 'text-green' if all.profit|int > 0 }} {{ 'text-red' if all.profit|int < 0 }}">
@@ -41,14 +47,14 @@
   </div>
 
   <div class="col-auto">
-    <p class="small_text">В ордерах</p>
+    <p class="small-text">В ордерах</p>
     <span class="text-average">
       ${{ all.in_orders|int|number_group }}
     </span>
   </div>
 
   <div class="col-auto">
-    <p class="small_text">Свободные</p>
+    <p class="small-text">Свободные</p>
       <span class="text-average {{ 'text-green' if all.free|int > 0 }} {{ 'text-red' if all.free|int < 0 }}">
         {{ '-' if all.free|int < 0 }}${{ all.free|int|abs|number_group }}
       </span>

@@ -19,7 +19,7 @@
   <div class="row xs-mb-3">
 
     <div class="col-auto">
-      <p class="small_text">Всего вложено / сейчас</p>
+      <p class="small-text">Всего вложено / сейчас</p>
       <span class="text-average"> ${{ portfolio.total_spent|int|number_group }} /</span>
       <span class="text-average {{ 'text-green' if portfolio.profit|int > 0 }} {{ 'text-red' if portfolio.profit|int < 0 }}">
         ${{ portfolio.cost_now|int|number_group }}
@@ -27,7 +27,7 @@
     </div>
 
     <div class="col-auto">
-      <p class="small_text">Прибыль / убыток</p>
+      <p class="small-text">Прибыль / убыток</p>
       <span class="text-average {{ 'text-green' if portfolio.profit|int > 0 }} {{ 'text-red' if portfolio.profit|int < 0 }}">
         {{ '-' if portfolio.profit|int < 0 }}${{ portfolio.profit|int|number_group }}
         {% if portfolio.total_spent > 0 %}

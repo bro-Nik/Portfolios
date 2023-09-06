@@ -66,12 +66,12 @@
   <div class="row mb-5 xs-mb-3">
 
     <div class="col-auto">
-      <p class="small_text">Количество</p>
+      <p class="small-text">Количество</p>
       <span class="text-average">{{ asset_quantity|smart_round|number_group }} {{ asset.ticker.symbol|upper }}</span>
     </div>
 
     <div class="col-auto">
-      <p class="small_text">Средняя цена покупки</p>
+      <p class="small-text">Средняя цена покупки</p>
       <span class="text-average">
         {% if asset_quantity > 0 and asset_total_spent > 0 %}
           ${{ (asset_total_spent / asset_quantity)|smart_round|number_group }}
@@ -82,7 +82,7 @@
     </div>
 
     <div class="col-auto">
-      <p class="small_text">Всего вложено / сейчас</p>
+      <p class="small-text">Всего вложено / сейчас</p>
       <span class="text-average">
         {% if asset_total_spent > 0 %}
           ${{ asset_total_spent|int|number_group }} /
@@ -94,12 +94,12 @@
     </div>
 
     <div class="col-auto">
-      <p class="small_text">Прибыль / убыток</p>
+      <p class="small-text">Прибыль / убыток</p>
       <span id="AssetProfit" class="text-average"> - </span>
     </div>
     {% if asset_percent_now and asset_percent_now != 100 %}
       <div class="col-auto">
-        <p class="small_text">% от портфеля</p>
+        <p class="small-text">% от портфеля</p>
         <span class="text-average">
           {{ asset_percent_now|smart_int|string + '%'  }}
           {{ 'из ' + asset.percent|smart_int|string + '%' if asset.percent }}
@@ -137,7 +137,7 @@
               data-url="{{ url_for('.transaction', market_id=asset.portfolio.market_id, asset_id=asset.id, ticker=asset.ticker.id, transaction_id=transaction.id) }}">
               {{ transaction.type }} {{ '(Ордер)' if transaction.order }}
               <br>
-              <span class="small_text">{{ transaction.date }}</span>
+              <span class="small-text">{{ transaction.date }}</span>
             </div>
           </td>
 
@@ -146,7 +146,7 @@
           <td>
             ${{ transaction.total_spent|smart_int|number_group }}
             <br>
-            <span class="text-average small_text {{ 'text-green' if transaction.type == 'Покупка' else 'text-red' }}">
+            <span class="text-average small-text {{ 'text-green' if transaction.type == 'Покупка' else 'text-red' }}">
               {{ '+' if transaction.type == 'Покупка' else '-' }}{{ transaction.quantity|smart_round|number_group }} {{ asset.ticker.symbol|upper }}
             </span>
           </td>

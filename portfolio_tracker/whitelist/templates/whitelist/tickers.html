@@ -27,7 +27,7 @@
     </div>
     {% if not modal %}
       <div class="col-auto ms-auto">
-        <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_new', market_id=market_id) }}">Добавить актив</button>
+        <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_modal', market_id=market_id) }}">Добавить актив</button>
       </div>
     {% endif %}
   </div>

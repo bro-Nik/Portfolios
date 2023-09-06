@@ -15,7 +15,7 @@
 <div class="row xs-mb-3">
 
   <div class="col-auto">
-    <p class="small_text">Вложено / сейчас</p>
+    <p class="small-text">Вложено / сейчас</p>
     <span class="text-average">${{ wallet.total_spent|int|number_group }} /
       <span class="{{ 'text-green' if wallet.profit|int > 0 }} {{ 'text-red' if wallet.profit|int < 0 }}">
         ${{ wallet.cost_now|int|number_group }}
@@ -24,12 +24,12 @@
   </div>
 
   <div class="col-auto">
-    <p class="small_text">В ордереах</p>
+    <p class="small-text">В ордереах</p>
     <span class="text-average">${{ wallet.in_orders|int|number_group }}</span>
   </div>
 
   <div class="col-auto">
-    <p class="small_text">Свободные средства</p>
+    <p class="small-text">Свободные средства</p>
     <span class="text-average">
       {{ '-' if wallet.free|int < 0 }}${{ wallet.free|int|abs|number_group }}</span>
   </div>
@@ -63,7 +63,7 @@
             </td>
 
             <td>
-              <span class="text-average small_text">
+              <span class="text-average small-text">
                 {{ asset.quantity|smart_round|number_group }}
                 {{ asset.symbol|upper }}
               </span>

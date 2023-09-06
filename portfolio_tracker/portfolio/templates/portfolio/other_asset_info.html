@@ -37,14 +37,14 @@
 {% if asset.bodys or asset.operations %}
   <div class="row mb-5 xs-mb-3">
     <div class="col-auto">
-      <p class="small_text">Вложено</p>
+      <p class="small-text">Вложено</p>
       <span class="text-average">
         ${{ bodys_total_spent|int|number_group }}
       </span>
     </div>
 
     <div class="col-auto">
-      <p class="small_text">Прибыль / убыток</p>
+      <p class="small-text">Прибыль / убыток</p>
       <span class="text-average {{ 'text-green' if asset_profit|int > 0 }} {{ 'text-red' if asset_profit|int < 0 }}">
         {{ '-' if asset_profit|int < 0 }}${{ asset_profit|int|number_group }}
         {% if bodys_total_spent and asset_profit %}
@@ -54,7 +54,7 @@
     </div>
 
     <div class="col-auto">
-      <p class="small_text">% от портфеля</p>
+      <p class="small-text">% от портфеля</p>
       <span class="text-average">
         {{ asset_percent|string + '%' if portfolio_total_spent and asset.bodys else '-' }}
         {{ 'из ' + asset.percent|string + '%' if asset.percent }}
@@ -105,7 +105,7 @@
                 <td>
                   <div class="open-modal d-grid name" data-modal-id="BodyModal" data-url="{{ url_for('.other_asset_body', asset_id=asset.id, body_id=asset_body.id) }}">
                     <span class="text-truncate" title="{{ asset_body.name }}">{{ asset_body.name }}</span>
-                    <span class="small_text">{{ asset_body.date }}</span>
+                    <span class="small-text">{{ asset_body.date }}</span>
                   </div>
                 </td>
 
@@ -170,7 +170,7 @@
                 <td>
                   <div class="open-modal" data-modal-id="OperationModal" data-url="{{ url_for('.other_asset_operation', asset_id=asset.id, operation_id=operation.id) }}">
                     {{ operation.type }} <br>
-                    <span class="small_text">{{ operation.date }}</span>
+                    <span class="small-text">{{ operation.date }}</span>
                   </div>
                 </td>
 

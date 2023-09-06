@@ -22,7 +22,7 @@
     <div class="row xs-mb-3">
 
       <div class="col-auto">
-        <p class="small_text">Вложено / сейчас</p>
+        <p class="small-text">Вложено / сейчас</p>
         <span class="text-average">
           ${{ all.total_spent|int|number_group }} / 
 
@@ -33,7 +33,7 @@
       </div>
 
       <div class="col-auto">
-        <p class="small_text">Прибыль / убыток</p>
+        <p class="small-text">Прибыль / убыток</p>
           <span class="text-average {{ 'text-green' if all.profit|int > 0 }} {{ 'text-red' if all.profit|int < 0 }}">
             {{ '-' if all.profit|int < 0 }}${{ all.profit|int|abs|number_group }}
             {% if all.profit|int and all.total_spent %}
@@ -53,11 +53,11 @@
             <th class="main-tab-checkbox">
               <input class="form-check-input check-all" type="checkbox">
             </th>
-            <th data-search="true">Наименование</th>
-            <th>Вложено</th>
-            <th>Стоимость сейчас</th>
-            <th>Прибыль / убыток</th>
-            <th>% от всех инвестиций</th>
+            <th data-sortable="true" data-sort-name="name">Наименование</th>
+            <th data-sortable="true" data-sort-name="total_spent">Вложено</th>
+            <th data-sortable="true" data-sort-name="cost_now">Стоимость сейчас</th>
+            <th data-sortable="true" data-sort-name="profit">Прибыль / убыток</th>
+            <th data-sortable="true" data-sort-name="percent">% от всех инвестиций</th>
             <th>Комментарий</th>
             <th></th>
             <!-- For sorting -->
@@ -80,7 +80,7 @@
               <td class="text-average">
                 <div class="open-modal d-grid name" data-modal-id="PortfolioInfoModal" data-url="{{ url_for('.portfolio_info', portfolio_id=portfolio.id) }}">
                   <span class="text-truncate" title="{{ portfolio.name }}">{{ portfolio.name }}</span>
-                  <span class="text-muted small_text">{{ portfolio.market }}</span>
+                  <span class="text-muted small-text">{{ portfolio.market }}</span>
                 </div>
               </td>
 
