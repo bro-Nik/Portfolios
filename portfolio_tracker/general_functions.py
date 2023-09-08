@@ -4,14 +4,17 @@ from portfolio_tracker.app import redis, db
 from portfolio_tracker.models import Ticker
 
 
-def dict_get_or_other(dict, key, default=None):
-    return dict.get(key) if dict and dict.get(key) else default
+def int_(number, default=0):
+    try:
+        return int(number)
+    except:
+        return default
 
-def int_or_other(number, default=0):
-    return int(number) if number else default
-
-def float_or_other(number, default=0):
-    return float(number) if number else default
+def float_(number, default=0):
+    try:
+        return float(number)
+    except:
+        return default
 
 def redis_decode_or_other(key, default=''):
     key = redis.get(key)

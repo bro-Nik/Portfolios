@@ -2,8 +2,7 @@ import json
 from flask import flash, render_template, request, Blueprint
 from flask_login import login_required, current_user
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import get_price_list
-from portfolio_tracker.general_functions import dict_get_or_other, float_or_other
+from portfolio_tracker.general_functions import get_price_list, float_
 from portfolio_tracker.models import Wallet
 from portfolio_tracker.wraps import demo_user_change
 
@@ -56,8 +55,7 @@ def wallets():
                     all['in_orders'] += transaction.total_spent
                     continue
 
-                price = dict_get_or_other(price_list,
-                                          transaction.asset.ticker_id, 0)
+                price = float_(price_list.get(asset.ticker_id), 0)
                 wallet['total_spent'] += transaction.total_spent
                 wallet['cost_now'] += transaction.quantity * price
                 wallet['free'] -= transaction.total_spent
@@ -75,7 +73,7 @@ def wallets():
 @demo_user_change
 def wallets_action():
     data = json.loads(request.data) if request.data else {}
-    ids = data.get('ids')
+    ids = data['ids']
 
     for id in ids:
         wallet = get_user_wallet(id)
@@ -113,7 +111,7 @@ def wallet_settings_update():
         db.session.add(wallet)
 
     wallet.name = request.form.get('name')
-    wallet.money_all = dict_get_or_other(request.form, 'money_all', 0)
+    wallet.money_all = float_(request.form.get('money_all'), 0)
 
     db.session.commit()
     return ''
@@ -148,6 +146,7 @@ def wallet_info(wallet_id):
                                   'in_orders': 0}
             if transaction.asset.ticker.image:
                 asset_list[ticker]['image'] = transaction.asset.ticker.image
+                asset_list[ticker]['market_id'] = transaction.asset.ticker.market_id
 
         asset = asset_list[ticker]
 
@@ -157,7 +156,7 @@ def wallet_info(wallet_id):
             continue
 
         price_list = get_price_list(transaction.asset.ticker.market_id)
-        price = float_or_other(price_list.get(ticker), 0)
+        price = float_(price_list.get(ticker), 0)
         asset['quantity'] += transaction.quantity
         asset['cost_now'] += transaction.quantity * price
         asset['total_spent'] += transaction.total_spent
@@ -197,7 +196,7 @@ def wallet_in_out():
     wallet = get_user_wallet(request.form.get('wallet_id'))
     if wallet:
         type = request.form.get('type')
-        sum = float_or_other(request.form.get('transfer_amount'))
+        sum = float_(request.form.get('transfer_amount'))
         sum = sum if type == 'Ввод' else -1 * sum
         wallet.money_all += sum
         db.session.commit()
@@ -209,7 +208,7 @@ def wallet_in_out():
 @demo_user_change
 def wallet_transfer():
     """ Transfer wallet """
-    sum = float_or_other(request.form.get('transfer_amount'))
+    sum = float_(request.form.get('transfer_amount'))
 
     wallet_out = get_user_wallet(request.form.get('wallet_out'))
     wallet_input = get_user_wallet(request.form.get('wallet_in'))

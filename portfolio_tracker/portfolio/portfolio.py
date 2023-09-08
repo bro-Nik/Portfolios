@@ -4,8 +4,8 @@ from flask import flash, render_template, redirect, url_for, request, Blueprint
 from flask_login import login_required, current_user
 
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import int_or_other, \
-        float_or_other, get_ticker, get_price_list
+from portfolio_tracker.general_functions import int_, \
+        float_, get_ticker, get_price_list
 from portfolio_tracker.jinja_filters import number_group, smart_round
 from portfolio_tracker.models import Portfolio, Asset, Ticker, otherAsset, \
         otherAssetOperation, otherAssetBody, Transaction, Alert
@@ -94,7 +94,7 @@ def portfolios():
         if user_portfolio.market_id != 'other':
             price_list_local = price_list[user_portfolio.market_id]
             for asset in user_portfolio.assets:
-                price = float_or_other(price_list_local.get(asset.ticker_id), 0)
+                price = float_(price_list_local.get(asset.ticker_id), 0)
 
                 for transaction in asset.transactions:
                     portfolio['can_delete'] = False
@@ -230,7 +230,7 @@ def portfolio_info(portfolio_id):
                  'name': asset.ticker.name,
                  'comment': asset.comment,
                  'symbol': asset.ticker.symbol,
-                 'price': float_or_other(price_list.get(asset.ticker.id), 0),
+                 'price': float_(price_list.get(asset.ticker.id), 0),
                  'quantity': 0,
                  'total_spent': 0,
                  'percent': asset.percent,
@@ -295,7 +295,7 @@ def assets_action():
     data = json.loads(request.data) if request.data else {}
 
     # action = data.get('action')
-    ids = data.get('ids')
+    ids = data['ids']
 
     for id in ids:
         asset = get_user_asset(id)
@@ -341,7 +341,7 @@ def asset_add_tickers(market_id):
                              | Ticker.symbol.contains(search))
 
     
-    tickers = query.paginate(page=int_or_other(request.args.get('page'), 1),
+    tickers = query.paginate(page=int_(request.args.get('page'), 1),
                              per_page=per_page,
                              error_out=False)
     if tuple(tickers):
@@ -422,7 +422,7 @@ def asset_info(market_id, asset_id):
                 portfolio_total_spent += transaction.total_spent
 
         price_list = get_price_list(market_id)
-        price = float_or_other(price_list.get(asset.ticker_id), 0)
+        price = float_(price_list.get(asset.ticker_id), 0)
 
         return render_template('portfolio/asset_info.html',
                                asset=asset,
@@ -454,7 +454,7 @@ def asset_detail(asset_id):
         return ''
 
     price_list = get_price_list(asset.ticker.market_id)
-    price = float_or_other(price_list.get(asset.ticker_id), 0)
+    price = float_(price_list.get(asset.ticker_id), 0)
 
     asset_quantity = 0
     asset_total_spent = 0
@@ -496,7 +496,7 @@ def transactions_action():
 
     action = data.get('action')
 
-    ids = data.get('ids')
+    ids = data['ids']
     for id in ids:
         transaction = get_transaction(id)
         if not transaction:
@@ -562,7 +562,7 @@ def transaction_update(asset_id):
         # Добавляем уведомление
         whitelist_ticker = get_whitelist_ticker(asset.ticker_id, True)
         price_list = get_price_list(asset.ticker.market_id)
-        cost_now = float_or_other(price_list.get(asset.ticker_id), 0)
+        cost_now = float_(price_list.get(asset.ticker_id), 0)
 
         alert = Alert(
             price=transaction.price,
@@ -588,7 +588,7 @@ def other_asset_action():
     data = json.loads(request.data) if request.data else {}
 
     # action = data.get('action')
-    ids = data.get('ids')
+    ids = data['ids']
 
     for id in ids:
         asset = get_user_other_asset(id)
@@ -725,7 +725,7 @@ def ajax_tickers(market_id):
         query = (query.where(Ticker.name.contains(search),
                              Ticker.symbol.contains(search)))
 
-    tickers = query.paginate(page=int_or_other(request.args.get('page')),
+    tickers = query.paginate(page=int_(request.args.get('page'), 1),
                              per_page=per_page,
                              error_out=False)
 

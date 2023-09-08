@@ -66,7 +66,11 @@
                 <div class="open-modal d-flex gap-2" data-modal-id="WhitelistTickerInfoModal" 
                   data-url="{{ url_for('.ticker_info', market_id=ticker.market_id, ticker_id=ticker.id) }}">
 
-                  {% if ticker.image %}<img class="img-asset-min" src="{{ ticker.image }}">{% endif %}
+                  {% if ticker.image %}
+                    <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + ticker.market_id + '/24/' + ticker.image) }}">
+                  {% else %}
+                    <span class="img-asset-min bg-secondary-subtle"></span>
+                  {% endif %}
                   {{ ticker.name }}
                   <span class="text-muted">{{ ticker.symbol|upper }}</span>
                 </div>

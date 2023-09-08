@@ -16,7 +16,7 @@
 
       <div class="hstack gap-2">
         {% if asset.ticker.image %}
-          <img class="img-asset" src="{{ asset.ticker.image }}">
+          <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + asset.portfolio.market_id + '/40/' + asset.ticker.image) }}">
         {% endif %}
         <span class="fs-1 fw-semibold" id="AssetPrice">${{ price|smart_round|number_group }}</span>
       </div>

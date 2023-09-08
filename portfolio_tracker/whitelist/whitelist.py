@@ -3,7 +3,7 @@ from flask import flash, render_template, redirect, session, url_for, request, B
 from flask_login import login_required, current_user
 from datetime import datetime
 
-from portfolio_tracker.general_functions import dict_get_or_other, float_or_other, get_ticker, \
+from portfolio_tracker.general_functions import float_, get_ticker, \
     get_price_list
 from portfolio_tracker.models import Alert, Ticker, WhitelistTicker
 from portfolio_tracker.wraps import demo_user_change
@@ -44,7 +44,7 @@ def tickers():
     if market_id:
         session['whitelist_market_id'] = market_id
     else:
-        market_id = dict_get_or_other(session, 'whitelist_market_id', 'crypto')
+        market_id = session.get('whitelist_market_id', 'crypto')
 
     status = request.args.get('status')
 
@@ -72,7 +72,7 @@ def tickers():
 def tickers_action():
     data = json.loads(request.data) if request.data else {}
 
-    ids = data.get('ids')
+    ids = data['ids']
     for id in ids:
         whitelist_ticker = get_whitelist_ticker(id)
 
@@ -121,7 +121,7 @@ def whitelist_ticker_update():
 @demo_user_change
 def ticker_info(market_id, ticker_id):
     price_list = get_price_list(market_id)
-    price = float_or_other(price_list.get(ticker_id), 0)
+    price = float_(price_list.get(ticker_id), 0)
 
     whitelist_ticker = get_whitelist_ticker(ticker_id)
 
@@ -141,7 +141,7 @@ def ticker_info(market_id, ticker_id):
 @demo_user_change
 def alerts_action():
     data = json.loads(request.data) if request.data else {}
-    ids = data.get('ids')
+    ids = data['ids']
     action = data.get('action')
 
     for id in ids:
@@ -185,7 +185,7 @@ def alert(market_id):
     alert = get_user_alert(request.args.get('alert_id'))
 
     price_list = get_price_list(market_id)
-    price = float_or_other(price_list.get(ticker_id), 0)
+    price = float_(price_list.get(ticker_id), 0)
 
     return render_template('whitelist/alert.html',
                            whitelist_ticker_id=whitelist_ticker_id,

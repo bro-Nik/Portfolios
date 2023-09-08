@@ -1,7 +1,10 @@
 {% for ticker in tickers %}
 <div class="select-asset" data-ticker-id="{{ ticker.id }}">
   {% if ticker.image %}
-  <img class="img-asset-min" src="{{ ticker.image }}" />
+  <img class="img-asset-min"
+    src="{{ url_for('static', filename='images/tickers/' + ticker.market_id + '/24/' + ticker.image) }}" />
+  {% else %}
+  <span class="img-asset-min bg-secondary-subtle"></span>
   {% endif %}
   <span class="text-average text-truncate" title="{{ ticker.name }}">{{ ticker.name }}</span>
   <span class="text-average text-muted">{{ ticker.symbol|upper }}</span>

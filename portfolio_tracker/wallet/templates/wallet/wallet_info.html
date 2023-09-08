@@ -57,9 +57,16 @@
           {% set asset = assets_list[ticker] %}
           <tr>
             <td class="text-average">
-              {% if asset.image %}<img class="img-asset-min" src="{{ asset.image }}">{% endif %}
-              {{ asset.name }}
-              <span class="text-muted">{{ asset.symbol|upper }}</span>
+              <div class="d-flex gap-2 name">
+
+                {% if asset.image %}
+                  <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + asset.market_id + '/24/' + asset.image) }}">
+                {% else %}
+                  <span class="img-asset-min bg-secondary-subtle"></span>
+                {% endif %}
+                <span class="text-truncate" title="{{ asset.name }}">{{ asset.name }}</span>
+                <span class="text-muted">{{ asset.symbol|upper }}</span>
+              </div>
             </td>
 
             <td>

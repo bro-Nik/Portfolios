@@ -75,7 +75,11 @@
                 <div class="open-modal d-flex gap-2 name" data-modal-id="AssetInfoModal" 
                   data-url="{{ url_for('.asset_info', market_id=portfolio.market_id, asset_id=asset.id) }}">
 
-                  {% if asset.image %}<img class="img-asset-min" src="{{ asset.image }}">{% endif %}
+                  {% if asset.image %}
+                    <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + portfolio.market_id + '/24/' + asset.image) }}">
+                  {% else %}
+                    <span class="img-asset-min bg-secondary-subtle"></span>
+                  {% endif %}
                   <span class="text-truncate" title="{{ asset.name }}">{{ asset.name }}</span>
                   <span class="text-muted">{{ asset.symbol|upper }}</span>
                 </div>

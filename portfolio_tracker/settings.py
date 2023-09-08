@@ -14,3 +14,6 @@ API_KEY_POLYGON = os.environ.get('API_KEY_POLYGON')
 
 CRYPTO_UPDATE = os.environ.get('CRYPTO_UPDATE')
 STOCKS_UPDATE = os.environ.get('STOCKS_UPDATE')
+
+UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER')
+ALLOWED_EXTENSIONS = os.environ.get('ALLOWED_EXTENSIONS')

@@ -1,13 +1,18 @@
+import os
+import requests
+from io import BytesIO
+import urllib.request
+from PIL import Image, ImageFile
 from flask import flash, render_template, redirect, url_for, request, Blueprint
 from flask_login import login_required, current_user
-import requests
 from sqlalchemy import func
 import time
 from datetime import datetime, timedelta
 import pickle
 from pycoingecko import CoinGeckoAPI
 from celery.result import AsyncResult
-from portfolio_tracker.general_functions import get_price_list, get_price_list, redis_decode_or_other, when_updated_def
+from werkzeug.utils import secure_filename
+from portfolio_tracker.general_functions import get_price_list, redis_decode_or_other, when_updated_def
 from portfolio_tracker.models import Market, Ticker, User, Wallet, WhitelistTicker
 from portfolio_tracker.user.user import user_delete_def
 from portfolio_tracker.wraps import admin_only
@@ -23,7 +28,7 @@ cg = CoinGeckoAPI()
 @admin_only
 def index():
     demo_user = db.session.execute(db.select(User).
-                                   filter_by(email='demo')).scalar()
+                                   filter_by(email='demo@demo')).scalar()
     if not demo_user:
         # demo user
         demo_user = User(email='demo@demo', password='demo')
@@ -139,6 +144,14 @@ def tickers():
                            tickers=tickers,
                            price_list=get_price_list()
                            )
+
+
+@admin.route('load_stocks_images', methods=['GET'])
+@admin_only
+def load_stocks_images_start():
+    redis.set('stocks_images_task_id', str(load_stocks_images.delay().id))
+
+    return redirect(url_for('.index'))
 
 
 @admin.route('/load_tickers', methods=['GET'])
@@ -263,6 +276,32 @@ def get_tickers(market_id):
         db.select(Ticker).filter_by(market_id=market_id)).scalars()
 
 
+@celery.task(bind=True, name='load_stocks_images')
+def load_stocks_images(self):
+    self.update_state(state='LOADING')
+    print('Start load stocks images')
+    key = 'apiKey=' + app.config['API_KEY_POLYGON']
+
+    tickers = db.session.execute(
+        db.select(Ticker).filter(Ticker.market_id == 'stocks',
+                                 Ticker.image == None)).scalars()
+
+    for ticker in tickers:
+        id = ticker.id.upper()
+        print(id)
+        url = 'https://api.polygon.io/v3/reference/tickers/' + id + '?' + key
+        time.sleep(15)
+        try:
+            r = requests.get(url)
+            result = r.json()
+            url = result['results']['branding']['icon_url'] + '?' + key
+        except:
+            return None
+        time.sleep(15)
+        ticker.image = load_ticker_image(url, 'stocks', id)
+        db.session.commit()
+
+
 @celery.task(bind=True, name='load_crypto_tickers')
 def load_crypto_tickers(self):
     ''' загрузка тикеров с https://www.coingecko.com/ru/api/ '''
@@ -290,7 +329,7 @@ def load_crypto_tickers(self):
                     symbol=coin['symbol'],
                     market_cap_rank=coin['market_cap_rank'],
                     market_id='crypto',
-                    image=coin['image']
+                    image=load_ticker_image(coin['image'], 'crypto', coin['id'])
                 )
                 db.session.add(new_ticker)
                 tickers_in_base.append(new_ticker.id)
@@ -310,6 +349,7 @@ def load_stocks_tickers(self):
     self.update_state(state='LOADING')
     print('Load stocks tickers')
 
+    key = 'apiKey=' + app.config['API_KEY_POLYGON']
     tickers = get_tickers('stocks')
     tickers_in_base = [ticker.id for ticker in tickers]
 
@@ -317,8 +357,7 @@ def load_stocks_tickers(self):
 
     date = datetime.now().date()
     url = 'https://api.polygon.io/v3/reference/tickers?market=stocks&date=' + \
-        str(date) + '&active=true&order=asc&limit=1000&apiKey=' + \
-        app.config['API_KEY_POLYGON']
+        str(date) + '&active=true&order=asc&limit=1000&' + key 
 
     while url:
         response = requests.get(str(url))
@@ -337,13 +376,13 @@ def load_stocks_tickers(self):
                     new_tickers[new_ticker.id] = 0
             db.session.commit()
 
-            url = str(data.get('next_url')) + '&apiKey=' + \
-                str(app.config['API_KEY_POLYGON']
-                    ) if data.get('next_url') else {}
+            next_url = data.get('next_url')
+            url = next_url + '&' + key if next_url else None
             print('Stocks next url')
             time.sleep(15)
         else:
-            print(data)
+            print('stocks Error :', data)
+            time.sleep(15)
 
     price_list_append_tickers('stocks', new_tickers)
     print('stocks end')
@@ -362,6 +401,31 @@ def price_list_append_tickers(market, tickers):
             redis.delete(*['update_stocks'])
 
 
+def load_ticker_image(url, market, ticker_id):
+    if not url:
+        return None
+
+    path = app.config['UPLOAD_FOLDER'] + '/images/tickers/' + market
+    os.makedirs(path, exist_ok=True)
+
+    try:
+        r = requests.get(url)
+        original_img = Image.open(BytesIO(r.content))
+        filename = (ticker_id + '.' + original_img.format).lower()
+    except:
+        return None
+
+    def resize_image(px):
+        size = (px, px)
+        path_local = os.path.join(path, str(px))
+        os.makedirs(path_local, exist_ok=True)
+        path_saved = os.path.join(path_local, filename)
+        original_img.resize(size).save(path_saved)
+
+    resize_image(24)
+    resize_image(40)
+
+    return filename
 
 
 @celery.task(bind=True, name='price_list_crypto', default_retry_delay=0,
