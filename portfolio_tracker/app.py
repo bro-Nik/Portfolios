@@ -48,10 +48,8 @@ from portfolio_tracker.user.user import user
 app.register_blueprint(user, url_prefix='/user')
 
 
-from portfolio_tracker.admin.admin import delete_tasks
 with app.app_context():
     db.create_all()
-    delete_tasks()
 
 
 

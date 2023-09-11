@@ -197,9 +197,6 @@ td.symbol-icon:empty, td.market-cap-rank:empty {
 .float-left.pagination-detail {
     display: none;
 }
-.page-item:not(.page-pre):not(.page-next) {
-    display: none;
-}
 .add-asset-modal .search {
     width: 100%;
 }

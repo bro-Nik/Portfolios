@@ -3,6 +3,7 @@
 .idea/
 __pycache__/
 portfolio_tracker/__pycache__/
+portfolio_tracker/static/images
 .env
 celerybeat-schedule
 dump.rdb

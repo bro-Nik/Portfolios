@@ -1,61 +1,43 @@
-{% extends "base.html" %}
-{% block title %} Users / Admin {% endblock %}
+{% set only_content = request.args.get('only_content') %}
+
+{% if not only_content %}
+  {% extends "base.html" %}
+  {% block title %} Users / Admin {% endblock %}
+{% endif %}
+
 {% block content %}
 
 {% include 'admin/menu.html' %}
 
-<div class="big-table pt-3 pb-3">
-  <table class="table table-sm align-middle table-hover" id="Table" data-toggle="table" data-search="true">
-    <thead>
-      <tr>
-        <th data-sortable="true">ID</th>
-        <th data-sortable="true">Email</th>
-        <th data-sortable="true" title="Администратор">A</th>
-        <th data-sortable="true">П</th>
-        <th data-sortable="true">A</th>
-        <th data-sortable="true">Total</th>
-        <th data-sortable="true">First visit</th>
-        <th data-sortable="true">Last visit</th>
-        <th data-sortable="true">Country</th>
-        <th data-sortable="true">City</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for user in users %}
+<div class="big-table">
+  <form id="UsersForm" action="{{ url_for('.users_action') }}">
+    <table class="table table-sm align-middle table-hover bootstrap-table"
+      data-pagination="true" data-search="true"
+      data-url="{{ url_for('.users_detail') }}"
+      data-page-size="20">
+      <thead>
         <tr>
-          <td>{{ user.id }}</td>
-          <td>{{ user.email }}</td>
-          <td>{% if user.type == 'admin' %}<b title="Администратор">A</b>{% endif %}</td>
-          <td>{{ user.portfolios|length }}</td>
-          <td>{{ user.assets|length }}</td>
-
-          <td>{{ user.info.first_visit }}</td>
-          <td>{{ user.info.last_visit }}</td>
-          <td>{{ user.info.country }}</td>
-          <td>{{ user.info.city }}</td>
-
-          <td class="align-middle text-end">
-	          <div class="dropdown dropstart">
-	            <a href="#" class="link-secondary" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-	              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
-              </a>
-              <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                {% if user.type != 'admin' %}
-                    <a class="dropdown-item open-modal" href="{{url_for('.user_to_admin', user_id=user.id)}}"  data-url="">
-                      Сделать администратором
-                    </a>
-                {% endif %}
-                <a class="dropdown-item link-danger {{ 'open-modal-confirmation' if False else 'opacity-25 disabled' }}" data-action="delete" data-title="Удалить пользователя?" data-id="">
-                  Удалить
-                </a>
-              </div>
-            </div>
-          </td>
+          <th data-field="id" class="main-tab-checkbox">
+            <input class="form-check-input check-all" type="checkbox">
+          </th>
+          <th data-field="email" data-sortable="true">Email</th>
+          <th data-field="type" data-sortable="true" title="Администратор">A</th>
+          <th data-field="portfolios" data-sortable="true">П</th>
+          <th data-field="first_visit" data-sortable="true">First visit</th>
+          <th data-field="last_visit" data-sortable="true">Last visit</th>
+          <th data-field="country" data-sortable="true">Country</th>
+          <th data-field="city" data-sortable="true">City</th>
         </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+    </table>
+
+    <!-- Actions buttons -->
+    <div class="sticky-bottom-buttons">
+      <a class="open-modal-confirmation" data-action="user_to_admin" data-title="Сделать администраторами?">Сделать администраторами</a>
+      <a class="open-modal-confirmation" data-action="admin_to_user" data-title="Убрать из администраторов?">Убрать из администраторов</a>
+      <a class="open-modal-confirmation" data-action="delete" data-title="Удалить пользователей?">Удалить</a>
+    </div>
+  </form>
 </div>
 
 {% endblock %}

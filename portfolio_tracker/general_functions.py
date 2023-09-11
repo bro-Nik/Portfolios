@@ -37,17 +37,18 @@ def get_price_list(market=''):
             'stocks': get_price_list_market('stocks')}
 
 
-def when_updated_def(when_updated, default=''):
+def when_updated(when_updated, default=''):
     ''' Возвращает сколько прошло от входящей даты '''
     if not when_updated:
         return default
+
     if type(when_updated) == str:
         try:
             when_updated = datetime.strptime(
                 when_updated, '%Y-%m-%d %H:%M:%S.%f')
         except:
             when_updated = datetime.strptime(
-                when_updated + ' 20:00:00.000000', '%Y-%m-%d %H:%M:%S.%f')
+                when_updated + ' 00:00:00.000000', '%Y-%m-%d %H:%M:%S.%f')
 
     delta_time = datetime.now() - when_updated
     date = datetime.now().date()

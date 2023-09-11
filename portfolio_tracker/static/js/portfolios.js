@@ -346,6 +346,9 @@ function UpdateTables($element = $("body")) {
     formatNoMatches() {
       return "Ничего не найдено";
     },
+    formatLoadingMessage: function() {
+        return 'Загрузка...';
+    },
   });
 }
 

@@ -323,7 +323,8 @@ def assets_action():
 def asset_add_modal(market_id):
 
     return render_template('portfolio/add_asset_modal.html',
-                           market_id=market_id)
+                           market_id=market_id,
+                           portfolio_id=request.args.get('portfolio_id'))
 
 
 @portfolio.route('/<string:market_id>/add_asset_tickers', methods=['GET'])
@@ -340,7 +341,6 @@ def asset_add_tickers(market_id):
         query = query.filter(Ticker.name.contains(search)
                              | Ticker.symbol.contains(search))
 
-    
     tickers = query.paginate(page=int_(request.args.get('page'), 1),
                              per_page=per_page,
                              error_out=False)
@@ -417,8 +417,8 @@ def asset_info(market_id, asset_id):
             return ''
 
         portfolio_total_spent = 0
-        for asset in asset.portfolio.assets:
-            for transaction in asset.transactions:
+        for asset_in_portfolio in asset.portfolio.assets:
+            for transaction in asset_in_portfolio.transactions:
                 portfolio_total_spent += transaction.total_spent
 
         price_list = get_price_list(market_id)
