@@ -132,11 +132,11 @@ def index_detail():
 @admin_only
 def index_action():
 
-    def task_stop(id):
-        task_id = redis.get(id)
+    def task_stop(key):
+        task_id = redis.get(key)
         if task_id:
             celery.control.revoke(task_id.decode(), terminate=True)
-            redis.delete(id)
+            redis.delete(key)
             redis.delete('celery-task-meta-' + str(task_id.decode()))
             
     action = request.args.get('action')
@@ -293,6 +293,14 @@ def active_tasks():
                            scheduled=scheduled)
 
 
+@admin.route('/active_tasks_action/<string:task_id>', methods=['GET'])
+@admin_only
+def active_tasks_action(task_id):
+    celery.control.revoke(task_id, terminate=True)
+    return redirect(url_for('.active_tasks'))
+
+
+
 @celery.task(bind=True, name='load_stocks_images')
 def load_stocks_images(self):
     self.update_state(state='LOADING')
@@ -337,12 +345,20 @@ def load_crypto_tickers(self):
     new_tickers = {}
     query = True
     while query != []:
-        query = cg.get_coins_markets('usd', per_page='200', page=page)
-        print('Crypto page ' + str(page))
-
-        if not query:
+        try:
+            query = cg.get_coins_markets('usd', per_page='200', page=page)
+            query[0]['id']
+            print('Crypto page ' + str(page))
+        except:
+            print('not query... sleep...', '#' * 40)
+            print(query)
             time.sleep(60)
             continue
+
+        # if not query:
+        #     print('not query... sleep...')
+        #     time.sleep(60)
+        #     continue
 
         for coin in query:
             id = coin['id'].lower()
@@ -464,13 +480,13 @@ def price_list_crypto_def(self):
     self.update_state(state='WORK')
 
     price_list = get_price_list('crypto')
-
     ids = [ticker.id for ticker in get_tickers('crypto')]
 
     # Делаем запросы кусками
     max = 1900
     n = 0
     while ids:
+        print('len ids: ', len(ids))
         ids_str = ','.join(ids)
         next_ids = ids_str[n:max + n]
         poz = next_ids.rfind(',')
@@ -504,6 +520,8 @@ def price_list_crypto_def(self):
     if price_list:
         redis.set('update-crypto', str(datetime.now()))
         redis.set('price_list_crypto', pickle.dumps(price_list))
+
+    print('len ids: ', len(ids))
     print("Stop load crypto price")
     price_list_crypto_def.retry()
 

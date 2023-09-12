@@ -8,15 +8,15 @@
 <div class="mb-5">
   <div class="row xs-mb-3">
     <div class="col-auto">
-      <h1 class="fs-6 text-muted m-0">{{ asset.ticker.name }} ({{ asset.ticker.symbol|upper }})
-        {% if asset.ticker.market_cap_rank %}
-          <span class="badge text-bg-light text-muted">#{{ asset.ticker.market_cap_rank }}</span>
+      <h1 class="fs-6 text-muted m-0">{{ ticker.name }} ({{ ticker.symbol|upper }})
+        {% if ticker.market_cap_rank %}
+          <span class="badge text-bg-light text-muted">#{{ ticker.market_cap_rank }}</span>
         {% endif %}
       </h1>
 
       <div class="hstack gap-2">
-        {% if asset.ticker.image %}
-          <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + asset.portfolio.market_id + '/40/' + asset.ticker.image) }}">
+        {% if ticker.image %}
+          <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + ticker.market_id + '/40/' + ticker.image) }}">
         {% endif %}
         <span class="fs-1 fw-semibold" id="AssetPrice">${{ price|smart_round|number_group }}</span>
       </div>
@@ -28,10 +28,12 @@
         </span>
 
         <div id="asset-alerts">
+          {#}
           {% for alert in asset.alerts %}
             <span class="badge fw-normal cursor-pointer {{ 'text-bg-success' if alert.worked else 'text-bg-light text-muted' }}" >
               ${{ alert.price|number_group }}</span>
           {% endfor %}
+          #}
         </div>
       </div>
     </div>
@@ -43,14 +45,14 @@
       <div class="dropdown-menu">
         <button class="dropdown-item open-modal" type="button" data-modal-id="AssetSettingsModal"
           data-url="{{ url_for('.asset_settings', asset_id=asset.id) }}">
-          Настройки {{ asset.ticker.name }}
+          Настройки {{ ticker.name }}
         </button>
 
         <form id="AssetActions" action="{{ url_for('.assets_action') }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#AssetActions" data-id="{{ asset.id }}"
-            data-title="Удалить {{ asset.ticker.name }}?" data-pre-need-clean="true">
-            Удалить {{ asset.ticker.name }}
+            data-title="Удалить {{ ticker.name }}?" data-pre-need-clean="true">
+            Удалить {{ ticker.name }}
           </button>
         </form>
       </div>
@@ -58,39 +60,36 @@
   </div>
 </div>
 
-{% if asset.transactions %}
-  {% set asset_quantity = asset.transactions|sum(attribute='quantity') %}
-  {% set asset_total_spent = asset.transactions|sum(attribute='total_spent') %}
-  {% set asset_percent_now = (asset_total_spent / portfolio_total_spent * 100)|round(1, 'common') if portfolio_total_spent %}
+{% if transactions %}
+  {% set asset_percent_now = (asset.total_spent / portfolio_total_spent * 100)|round(1, 'common') if portfolio_total_spent %}
 
   <div class="row mb-5 xs-mb-3">
 
     <div class="col-auto">
       <p class="small-text">Количество</p>
-      <span class="text-average">{{ asset_quantity|smart_round|number_group }} {{ asset.ticker.symbol|upper }}</span>
+      <span class="text-average">{{ asset.quantity|smart_round|number_group }} {{ ticker.symbol|upper }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">Средняя цена покупки</p>
       <span class="text-average">
-        {% if asset_quantity > 0 and asset_total_spent > 0 %}
-          ${{ (asset_total_spent / asset_quantity)|smart_round|number_group }}
+        {% if asset.quantity > 0 and asset.total_spent > 0 %}
+          ${{ (asset.total_spent / asset.quantity)|smart_round|number_group }}
         {% else %}
-          -
+          $0
         {% endif%}
       </span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">Всего вложено / сейчас</p>
-      <span class="text-average">
-        {% if asset_total_spent > 0 %}
-          ${{ asset_total_spent|int|number_group }} /
-        {% else %}
-          - /
-        {% endif %}
-      </span>
+      <span class="text-average"> ${{ asset.total_spent|int|number_group }} / </span>
       <span id="AssetCostNow" class="text-average"> - </span>
+    </div>
+
+    <div class="col-auto">
+      <p class="small-text">В ордерах</p>
+      <span class="text-average"> ${{ asset.in_orders|int|number_group }}</span>
     </div>
 
     <div class="col-auto">
@@ -125,7 +124,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for transaction in asset.transactions|sort(reverse=true, attribute="date")|sort(reverse=true, attribute="order") %}
+        {% for transaction in transactions|sort(reverse=true, attribute="date")|sort(reverse=true, attribute="order") %}
         <tr class="{{ 'table-order' if transaction.order }}">
 
           <td>
@@ -134,8 +133,11 @@
 
           <td>
             <div class="open-modal" data-modal-id="TransactionModal"
-              data-url="{{ url_for('.transaction', market_id=asset.portfolio.market_id, asset_id=asset.id, ticker=asset.ticker.id, transaction_id=transaction.id) }}">
-              {{ transaction.type }} {{ '(Ордер)' if transaction.order }}
+              data-url="{{ url_for('.transaction', market_id=ticker.market_id, asset_id=asset.id, ticker=ticker.id, transaction_id=transaction.id) }}">
+              <span class="{{ 'text-green' if transaction.type == 'Покупка' else 'text-red' }}">
+                {{ transaction.type }}
+              </span>
+              {{ '(Ордер)' if transaction.order }}
               <br>
               <span class="small-text">{{ transaction.date }}</span>
             </div>
@@ -144,10 +146,10 @@
           <td>${{ transaction.price|smart_round|number_group }}</td>
 
           <td>
-            ${{ transaction.total_spent|smart_int|number_group }}
+            {{ '-' if transaction.type == 'Покупка' else '+' }}${{ transaction.total_spent|abs|smart_int|number_group }}
             <br>
             <span class="text-average small-text {{ 'text-green' if transaction.type == 'Покупка' else 'text-red' }}">
-              {{ '+' if transaction.type == 'Покупка' else '-' }}{{ transaction.quantity|smart_round|number_group }} {{ asset.ticker.symbol|upper }}
+              {{ '+' if transaction.type == 'Покупка' else '-' }}{{ transaction.quantity|abs|smart_round|number_group }} {{ ticker.symbol|upper }}
             </span>
           </td>
 
@@ -177,7 +179,7 @@
                 </a>
                 <div class="dropdown-menu" aria-labelledby="dropdownAction">
                   <a class="dropdown-item open-modal" data-modal-id="TransactionModal"
-                    data-url="{{ url_for('.transaction', market_id=asset.portfolio.market_id, asset_id=asset.id, ticker=asset.ticker.id, transaction_id=transaction.id) }}">
+                    data-url="{{ url_for('.transaction', market_id=ticker.market_id, asset_id=asset.id, ticker=ticker.id, transaction_id=transaction.id) }}">
                     Изменить
                   </a>
                   <a class="dropdown-item link-danger open-modal-confirmation" 

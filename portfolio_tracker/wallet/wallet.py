@@ -51,8 +51,9 @@ def wallets():
                 wallet['can_delete'] = False
 
                 if transaction.order:
-                    wallet['in_orders'] += transaction.total_spent
-                    all['in_orders'] += transaction.total_spent
+                    if transaction.type != 'Продажа':
+                        wallet['in_orders'] += transaction.total_spent
+                        all['in_orders'] += transaction.total_spent
                     continue
 
                 price = float_(price_list.get(asset.ticker_id), 0)
@@ -74,16 +75,18 @@ def wallets():
 def wallets_action():
     data = json.loads(request.data) if request.data else {}
     ids = data['ids']
+    action = data['action']
 
     for id in ids:
         wallet = get_user_wallet(id)
         if not wallet:
             continue
 
-        if wallet.money_all > 0 or wallet.transactions:
-            flash('В кошельке ' + wallet.name + ' есть остатки')
-        else:
-            db.session.delete(wallet)
+        if 'delete' in action:
+            if 'delete_all' not in action and (wallet.money_all > 0 or wallet.transactions):
+                flash('В кошельке ' + wallet.name + ' есть остатки')
+            else:
+                db.session.delete(wallet)
 
     if not current_user.wallets:
         db.session.add(Wallet(name='Default', user_id=current_user.id))
@@ -151,8 +154,9 @@ def wallet_info(wallet_id):
         asset = asset_list[ticker]
 
         if transaction.order:
-            asset['in_orders'] += transaction.total_spent
-            wallet['in_orders'] += transaction.total_spent
+            if transaction.type != 'Продажа':
+                asset['in_orders'] += transaction.total_spent
+                wallet['in_orders'] += transaction.total_spent
             continue
 
         price_list = get_price_list(transaction.asset.ticker.market_id)

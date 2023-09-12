@@ -7,8 +7,7 @@ def smart_int(number):
         return 0
     elif int(number) == number:
         return int(number)
-    else:
-        return round(number, 2)
+    return number
 
 app.add_template_filter(smart_int)
 

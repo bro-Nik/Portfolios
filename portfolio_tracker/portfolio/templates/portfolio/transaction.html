@@ -26,7 +26,7 @@
         <div class="input-group">
           <span class="input-prefix">$</span>
           <input type="number" step="any" class="form-control rounded-3 focus" placeholder="0,00" name="price"
-            autocomplete="off" value="{{ transaction.price|smart_int if transaction else price }}" required>
+            autocomplete="off" value="{{ transaction.price if transaction else price }}" required>
         </div>
       </div>
     </div>

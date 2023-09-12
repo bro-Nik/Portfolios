@@ -234,16 +234,18 @@ $(function () {
 
   // Form
   $('body').on("submit", function(event) {
-    event.preventDefault();
+    var $modal = $form.closest(".modal");
+    if ($modal.length) {
+      event.preventDefault();
 
-    var $form = $(event.target),
-      posting = $.post($form.attr("data-url"), $form.serialize()),
-      $modal = $form.closest(".modal");
+      var $form = $(event.target),
+        posting = $.post($form.attr("data-url"), $form.serialize());
 
-    posting.done(function (data) {
-      $modal.attr('data-pre-need-update', true)
-      $modal.modal("hide");
-    });
+      posting.done(function (data) {
+        $modal.attr('data-pre-need-update', true)
+        $modal.modal("hide");
+      });
+    }
   });
 
 })

@@ -54,7 +54,10 @@
     <ul class="dropdown-menu text-small shadow" style="">
       {% if current_user.email != 'demo' %}
       <li>
-        <a class="dropdown-item" href="{{ url_for('settings') }}">Настройки</a>
+        <a class="dropdown-item" href="{{ url_for('user.settings_export_import') }}">Экспорт/Импорт</a>
+      </li>
+      <li>
+        <a class="dropdown-item" href="{{ url_for('user.settings_profile') }}">Настройки</a>
       </li>
       {% else %}
         <li><span class="dropdown-item fw-semibold">Demo user</span></li>

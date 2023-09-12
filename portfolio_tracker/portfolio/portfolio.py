@@ -99,7 +99,7 @@ def portfolios():
                 for transaction in asset.transactions:
                     portfolio['can_delete'] = False
 
-                    if not price or transaction.order:
+                    if transaction.order:
                         continue
 
                     portfolio['total_spent'] += transaction.total_spent
@@ -217,7 +217,8 @@ def portfolio_info(portfolio_id):
                  'market_id': user_portfolio.market_id,
                  'comment': user_portfolio.comment,
                  'cost_now': 0,
-                 'total_spent': 0}
+                 'total_spent': 0,
+                 'in_orders': 0}
 
     # crypto or stocks
     price_list = get_price_list(user_portfolio.market_id)
@@ -240,6 +241,11 @@ def portfolio_info(portfolio_id):
                 a['image'] = asset.ticker.image
 
             for transaction in asset.transactions:
+                if transaction.order:
+                    if transaction.type != 'Продажа':
+                        portfolio['in_orders'] += transaction.total_spent
+                    continue
+
                 a['quantity'] += transaction.quantity
                 a['total_spent'] += transaction.total_spent
             a['cost_now'] = a['quantity'] * a['price']
@@ -412,36 +418,68 @@ def asset_settings_update():
 def asset_info(market_id, asset_id):
     """ Asset page """
     if market_id != 'other':
-        asset = get_user_asset(asset_id)
-        if not asset:
+        user_asset = get_user_asset(asset_id)
+        if not user_asset:
             return ''
 
+        price_list = get_price_list(market_id)
+        price = float_(price_list.get(user_asset.ticker_id), 0)
+
+
+        ticker = {
+            'id': user_asset.ticker.id,
+            'name': user_asset.ticker.name,
+            'symbol': user_asset.ticker.symbol,
+            'market_cap_rank': user_asset.ticker.market_cap_rank,
+            'image': user_asset.ticker.image,
+            'market_id': user_asset.portfolio.market_id
+        }
+
+        asset = {
+            'id': user_asset.id,
+            'alerts': user_asset.alerts,
+            'percent': user_asset.percent,
+            'comment': user_asset.comment,
+            'quantity': 0,
+            'total_spent': 0,
+            'in_orders': 0
+        }
+
+        for transaction in user_asset.transactions:
+            if transaction.order:
+                if transaction.type != 'Продажа':
+                    asset['in_orders'] += transaction.total_spent
+                continue
+
+            asset['quantity'] += transaction.quantity
+            asset['total_spent'] += transaction.total_spent
+
+
         portfolio_total_spent = 0
-        for asset_in_portfolio in asset.portfolio.assets:
+        for asset_in_portfolio in user_asset.portfolio.assets:
             for transaction in asset_in_portfolio.transactions:
                 portfolio_total_spent += transaction.total_spent
-
-        price_list = get_price_list(market_id)
-        price = float_(price_list.get(asset.ticker_id), 0)
 
         return render_template('portfolio/asset_info.html',
                                asset=asset,
                                price=price,
+                               ticker=ticker,
                                market_id=market_id,
+                               transactions=user_asset.transactions,
                                portfolio_total_spent=portfolio_total_spent,
                                date=datetime.now().date())
 
     else:
-        asset = get_user_other_asset(asset_id)
-        if not asset:
+        user_asset = get_user_other_asset(asset_id)
+        if not user_asset:
             return ''
 
         portfolio_total_spent = 0
-        for asset in asset.portfolio.other_assets:
-            portfolio_total_spent += sum([body.total_spent for body in asset.bodys])
+        for user_asset in user_asset.portfolio.other_assets:
+            portfolio_total_spent += sum([body.total_spent for body in user_asset.bodys])
 
         return render_template('portfolio/other_asset_info.html',
-                               asset=asset,
+                               asset=user_asset,
                                date=datetime.now().date(),
                                portfolio_total_spent=portfolio_total_spent)
 
@@ -459,6 +497,8 @@ def asset_detail(asset_id):
     asset_quantity = 0
     asset_total_spent = 0
     for transaction in asset.transactions:
+        if transaction.order:
+            continue
         asset_quantity += transaction.quantity
         asset_total_spent += transaction.total_spent
 
@@ -467,7 +507,7 @@ def asset_detail(asset_id):
     profit_procent = ''
     if profit != 0 and asset_total_spent > 0:
         profit_procent = profit / asset_total_spent * 100
-        profit_procent = '(' + str(int(abs(profit_procent))) + ')'
+        profit_procent = '(' + str(int(abs(profit_procent))) + '%)'
     profit_color = ''
     if profit > 0:
         profit_color = 'green'
@@ -475,8 +515,6 @@ def asset_detail(asset_id):
     elif profit < 0:
         profit_color = 'red'
         profit = '-$' + str(number_group(abs(profit))) + profit_procent
-    elif asset_quantity == 0:
-        profit = ' - '
     else:
         profit = '$0'
 

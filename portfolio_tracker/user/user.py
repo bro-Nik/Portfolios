@@ -1,4 +1,5 @@
-from flask import render_template, redirect, url_for, request, flash, session, Blueprint
+import json
+from flask import Response, jsonify, render_template, redirect, send_file, url_for, request, flash, session, Blueprint
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
@@ -6,7 +7,8 @@ import requests
 import pickle
 
 from portfolio_tracker.app import app, db, login_manager, redis
-from portfolio_tracker.models import User, userInfo, Wallet
+from portfolio_tracker.general_functions import float_
+from portfolio_tracker.models import Alert, Asset, Portfolio, Transaction, User, WhitelistTicker, userInfo, Wallet
 
 
 user = Blueprint('user',
@@ -170,3 +172,199 @@ def demo_user():
     user = db.session.execute(db.select(User).filter_by(email='demo')).scalar()
     login_user(user)
     return redirect(url_for('portfolio.portfolios'))
+
+
+@user.route('/settings_profile')
+@login_required
+def settings_profile():
+    """ Settings page """
+    return render_template('user/settings_profile.html')
+
+
+@user.route('/settings_export_import', methods=['GET'])
+@login_required
+def settings_export_import():
+    return render_template('user/settings_export_import.html')
+
+
+@user.route('/export', methods=['GET'])
+@login_required
+def export_data():
+    result = {'wallets': [],
+              'portfolios': [],
+              'whitelist_tickers': []}
+
+    for wallet in current_user.wallets:
+        result['wallets'].append({'id': wallet.id,
+                                  'name': wallet.name,
+                                  'money_all': wallet.money_all})
+
+
+    for portfolio in current_user.portfolios:
+        p = {'market_id': portfolio.market_id,
+             'name': portfolio.name,
+             'comment': portfolio.comment,
+             'assets': []}
+
+        for asset in portfolio.assets:
+            a = {'ticker_id': asset.ticker_id,
+                 'percent': asset.percent,
+                 'comment': asset.comment,
+                 'transactions': [],
+                 'alerts': []}
+
+            for transaction in asset.transactions:
+                a['transactions'].append({
+                    'date': transaction.date,
+                    'quantity': transaction.quantity,
+                    'price': transaction.price,
+                    'total_spent': transaction.total_spent,
+                    'type': transaction.type,
+                    'comment': transaction.comment,
+                    'wallet_id': transaction.wallet_id,
+                    'order': transaction.order
+                })
+
+            # for alert in asset.alerts:
+            #     if alert.transaction.order:
+            #         continue
+            #
+            #     a['alerts'].append({
+            #         'date': alert.date,
+            #         'whitelist_ticker_id': alert.whitelist_ticker_id,
+            #         'price': alert.price,
+            #         'type': alert.type,
+            #         'comment': alert.comment,
+            #         'status': alert.status
+            #     })
+
+            p['assets'].append(a)
+
+        result['portfolios'].append(p)
+
+    # for whitelist_ticker in current_user.whitelist_tickers:
+    #     alerts = []
+    #     for alert in whitelist_ticker.alerts:
+    #         if alert.asset_id:
+    #             continue
+    #
+    #         alerts.append({
+    #             'date': alert.date,
+    #             'whitelist_ticker_id': alert.whitelist_ticker_id,
+    #             'price': alert.price,
+    #             'type': alert.type,
+    #             'comment': alert.comment,
+    #             'status': alert.status
+    #         })
+    #
+    #     if alerts:
+    #         result['whitelist_tickers'].append({
+    #             'ticker_id': whitelist_ticker.ticker_id,
+    #             'comment': whitelist_ticker.comment,
+    #             'alerts': alerts
+    #         })
+
+    filename = 'portfolios_export (' + str(datetime.now().date()) +').txt'
+    return Response(json.dumps(result),
+                    mimetype='application/json',
+		            headers={'Content-disposition': 'attachment; filename=' + filename})
+
+
+@user.route('/import_post', methods=['POST'])
+@login_required
+def import_data_post():
+    try:
+        data = json.loads(request.form['import'])
+    except:
+        flash('Данные не могут конвертироваться', 'danger')
+        return redirect(url_for('.settings_export_import'))
+
+    def get_new_wallet_id(old_id):
+        for wallet in data['wallets']:
+            if old_id == wallet['id']:
+                return int(wallet['new_id'])
+        return None
+
+
+    for wallet in data['wallets']:
+        new_wallet = Wallet(user_id=current_user.id,
+                            name=wallet['name'],
+                            money_all=wallet['money_all'])
+        db.session.add(new_wallet)
+        db.session.commit()
+        wallet['new_id'] = new_wallet.id
+
+
+    for portfolio in data['portfolios']:
+        new_portfolio = Portfolio(user_id=current_user.id,
+                                  market_id=portfolio['market_id'],
+                                  name=portfolio['name'],
+                                  comment=portfolio['comment'])
+        db.session.add(new_portfolio)
+
+        for asset in portfolio['assets']:
+            new_asset = Asset(ticker_id=asset['ticker_id'],
+                              percent=float_(asset['percent'], 0),
+                              comment=asset['comment'])
+            new_portfolio.assets.append(new_asset)
+
+            for transaction in asset['transactions']:
+                new_transaction = Transaction(
+                    date=transaction['date'],
+                    quantity=transaction['quantity'],
+                    price=transaction['price'],
+                    total_spent=transaction['total_spent'],
+                    type=transaction['type'],
+                    comment=transaction['comment'],
+                    wallet_id=get_new_wallet_id(transaction['wallet_id']),
+                    order=transaction['order']
+                    )
+                new_asset.transactions.append(new_transaction)
+                # if new_transaction.order:
+                #     new_transaction.alert = Alert(
+                #         date=new_transaction.date,
+                #         whitelist_ticker_id=new_transaction.asset.ticker_id,
+                #         price=new_transaction.price,
+                #         type='down' if cost_now >= transaction.price else 'up'
+                #
+                #         type='order',
+                #         comment=alert['comment'],
+                #         status=alert['status']
+                #     )
+
+
+            # for alert in asset['alerts']:
+            #     new_alert = Alert(
+            #         date=alert['date'],
+            #         whitelist_ticker_id=alert['whitelist_ticker_id'],
+            #         price=alert['price'],
+            #         type=alert['type'],
+            #         comment=alert['comment'],
+            #         status=alert['status']
+            #         )
+            #     new_asset.alerts.append(new_alert)
+
+    # for whitelist_ticker in data['whitelist_tickers']:
+    #     new_ticker = WhitelistTicker(user_id=current_user.id,
+    #                                  ticker_id=whitelist_ticker.get('ticker'),
+    #                                  comment=whitelist_ticker.get('comment'))
+    #     db.session.add(new_ticker)
+    #     
+    #     for alert in whitelist_ticker.get('alerts'):
+    #         new_alert = Alert(
+    #             date=alert.get('date'),
+    #             asset_id=alert.get('asset_id'),
+    #             whitelist_ticker_id=alert.get('whitelist_ticker_id'),
+    #             price=alert.get('price'),
+    #             type=alert.get('type'),
+    #             comment=alert.get('comment'),
+    #             status=alert.get('status'),
+    #             transaction_id=alert.get('transaction_id')
+    #             )
+    #         new_ticker.alerts.append(new_alert)
+            
+    db.session.commit()
+
+    flash('Импорт выполнен', 'success')
+
+    return redirect(url_for('.settings_export_import'))

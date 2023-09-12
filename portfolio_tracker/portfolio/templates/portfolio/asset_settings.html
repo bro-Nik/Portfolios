@@ -8,7 +8,12 @@
 
     <div class="col-12">
       <div class="mb-1">
-        {% if asset.ticker.image %}<img class="img-asset-min" src="{{ asset.ticker.image }}">{% endif %}
+        {% if asset.ticker.image %}
+          <img class="img-asset-min"
+            src="{{ url_for('static', filename='images/tickers/' + asset.ticker.market_id + '/24/' + asset.ticker.image) }}" />
+        {% else %}
+          <span class="img-asset-min bg-secondary-subtle"></span>
+        {% endif %}
         {{ asset.ticker.name }}
         <span class="text-muted">{{ asset.ticker.symbol|upper }}</span>
       </div>

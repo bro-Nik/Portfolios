@@ -10,9 +10,13 @@
   </div>
 </div>
 
+<nav class="nav nav-underline market-menu mb-5">
+  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_profile') }}" href="{{ url_for('.settings_profile') }}">Профиль</a>
+  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_export_import') }}" href="{{ url_for('.settings_export_import') }}">Экспорт-импорт</a>
+</nav>
+
 <div class="row">
   <div class="col-auto">
-    <p class="text-average">Профиль</p>
     <span class="">{{ current_user.email }}</span>
     <br>
     <form id="UserActions" action="{{ url_for('user.user_delete') }}">

@@ -13,13 +13,6 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/settings')
-@login_required
-def settings():
-    """ Settings page """
-    return render_template('settings.html')
-
-
 @app.errorhandler(404)
 @login_required
 def page_not_found(e):

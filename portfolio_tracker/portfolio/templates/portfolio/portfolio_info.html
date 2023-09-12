@@ -27,6 +27,11 @@
     </div>
 
     <div class="col-auto">
+      <p class="small-text">В ордерах</p>
+      <span class="text-average">${{ portfolio.in_orders|int|number_group }}</span>
+    </div>
+
+    <div class="col-auto">
       <p class="small-text">Прибыль / убыток</p>
       <span class="text-average {{ 'text-green' if portfolio.profit|int > 0 }} {{ 'text-red' if portfolio.profit|int < 0 }}">
         {{ '-' if portfolio.profit|int < 0 }}${{ portfolio.profit|int|abs|number_group }}
