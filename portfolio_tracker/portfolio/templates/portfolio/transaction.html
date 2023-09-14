@@ -4,13 +4,13 @@
 {% set modal_title = 'Изменить транзакцию' if transaction else 'Добавить транзакцию' %}
 
 {% block content %}
-<form data-url="{{ url_for('.transaction_update', asset_id=asset_id, transaction_id=transaction.id) }}">
+<form id="TransactionForm" data-url="{{ url_for('.transaction_update', asset_id=asset_id, transaction_id=transaction.id) }}">
 
   <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
-    <input type="radio" class="btn-check" name="type" value="Покупка" id="btnradio1" autocomplete="off" checked>
+    <input type="radio" class="btn-check" name="type" value="buy" id="btnradio1" {{ 'checked' if not transaction or transaction.type == 'buy' }}>
     <label class="btn btn-outline-active btn-sm" for="btnradio1">Покупка</label>
 
-    <input type="radio" class="btn-check" name="type" value="Продажа" id="btnradio2" autocomplete="off">
+    <input type="radio" class="btn-check" name="type" value="sell" id="btnradio2" {{ 'checked' if transaction and transaction.type == 'sell' }}>
     <label class="btn btn-outline-not_active btn-sm" for="btnradio2">Продажа</label>
   </div>
 
@@ -31,6 +31,13 @@
       </div>
     </div>
     <div class="col-md-6">
+      <div class="mb-1">
+        <label class="form-label h7">Количество</label>
+        <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="quantity"
+          autocomplete="off" value="{{ transaction.quantity|abs|smart_int if transaction }}" required>
+      </div>
+    </div>
+    <div class="col-md-12">
       <div class="mb-1">
         <label class="form-label h7">На сумму</label>
         <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="total_spent"
@@ -54,7 +61,7 @@
             <option selected value="{{ current_user.wallets[0].id }}">{{ current_user.wallets[0].name }}</option>
           {% endif %}
         </select>
-        <div class="open-modal link-primary small-text" data-modal-id="WalletsModal" data-url="{{ url_for('wallet.wallets', modal='true') }}">
+        <div class="open-modal link-primary small-text not-update" data-modal-id="WalletsModal" data-url="{{ url_for('wallet.wallets', modal='true') }}">
           Добавить
         </div>
       </div>
@@ -68,5 +75,30 @@
   </div>
   <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
 </form>
+
+<script>
+  $('#TransactionForm').on('input', 'input', function () {
+    var name = $(this).attr('name');
+    if (['quantity', 'price', 'total_spent'].includes(name)) {
+      var $quantity = $('#TransactionForm input[name=quantity]'),
+        $total_spent = $('#TransactionForm input[name=total_spent]'),
+        price = $('#TransactionForm input[name=price]').val() || 0,
+        quantity = $quantity.val() || 0,
+        total_spent = $total_spent.val() || 0;
+
+      if (name == 'quantity') { $total_spent.val(price * quantity || '') }
+      else if (name == 'total_spent' && price) { $quantity.val(total_spent / price || '') }
+      else if (name == 'price') {
+        if (quantity && total_spent) {
+          $quantity.val(price ? total_spent / price : '')
+        } else if (!quantity && total_spent) {
+          $quantity.val(price ? total_spent / price : '')
+        } else if (quantity && !total_spent) {
+          $total_spent.val(price * quantity || '');
+        }
+      }
+    }
+  })
+</script>
 
 {% endblock %}

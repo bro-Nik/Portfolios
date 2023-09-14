@@ -9,6 +9,7 @@ import pickle
 from portfolio_tracker.app import app, db, login_manager, redis
 from portfolio_tracker.general_functions import float_
 from portfolio_tracker.models import Alert, Asset, Portfolio, Transaction, User, WhitelistTicker, userInfo, Wallet
+from portfolio_tracker.whitelist.whitelist import get_whitelist_ticker
 
 
 user = Blueprint('user',
@@ -95,11 +96,36 @@ def redirect_to_signin(response):
     return response
 
 
-@user.route('/user/delete')
+@user.route('/user_action', methods=['POST'])
 @login_required
-def user_delete():
-    user_delete_def(current_user.id)
-    return redirect(url_for('.login'))
+def user_action():
+    data = json.loads(request.data) if request.data else {}
+    action = data.get('action')
+
+    if action == 'delete_user':
+        user_delete_def(current_user.id)
+        return redirect(url_for('.login'))
+
+    elif action == 'delete_data':
+        for portfolio in current_user.portfolios:
+            for asset in portfolio.assets:
+                for transaction in asset.transactions:
+                    db.session.delete(transaction)
+                db.session.delete(asset)
+            db.session.delete(portfolio)
+        for wallet in current_user.wallets:
+            db.session.delete(wallet)
+        for whitelist_ticker in current_user.whitelist_tickers:
+            for alert in whitelist_ticker.alerts:
+                db.session.delete(alert)
+            db.session.delete(whitelist_ticker)
+
+        db.session.add(Wallet(name='Default', user_id=current_user.id))
+
+    db.session.commit()
+    flash('Профиль очищен', 'success')
+
+    return ''
 
 
 def user_delete_def(user_id):
@@ -225,44 +251,43 @@ def export_data():
                     'order': transaction.order
                 })
 
-            # for alert in asset.alerts:
-            #     if alert.transaction.order:
-            #         continue
-            #
-            #     a['alerts'].append({
-            #         'date': alert.date,
-            #         'whitelist_ticker_id': alert.whitelist_ticker_id,
-            #         'price': alert.price,
-            #         'type': alert.type,
-            #         'comment': alert.comment,
-            #         'status': alert.status
-            #     })
+            for alert in asset.alerts:
+                if alert.transaction:
+                    continue
+
+                a['alerts'].append({
+                    'date': alert.date,
+                    'ticker_id': alert.whitelist_ticker.ticker_id,
+                    'price': alert.price,
+                    'type': alert.type,
+                    'comment': alert.comment,
+                    'status': alert.status
+                })
 
             p['assets'].append(a)
 
         result['portfolios'].append(p)
 
-    # for whitelist_ticker in current_user.whitelist_tickers:
-    #     alerts = []
-    #     for alert in whitelist_ticker.alerts:
-    #         if alert.asset_id:
-    #             continue
-    #
-    #         alerts.append({
-    #             'date': alert.date,
-    #             'whitelist_ticker_id': alert.whitelist_ticker_id,
-    #             'price': alert.price,
-    #             'type': alert.type,
-    #             'comment': alert.comment,
-    #             'status': alert.status
-    #         })
-    #
-    #     if alerts:
-    #         result['whitelist_tickers'].append({
-    #             'ticker_id': whitelist_ticker.ticker_id,
-    #             'comment': whitelist_ticker.comment,
-    #             'alerts': alerts
-    #         })
+    for whitelist_ticker in current_user.whitelist_tickers:
+        alerts = []
+        for alert in whitelist_ticker.alerts:
+            if alert.asset_id:
+                continue
+
+            alerts.append({
+                'date': alert.date,
+                'price': alert.price,
+                'type': alert.type,
+                'comment': alert.comment,
+                'status': alert.status
+            })
+
+        if alerts:
+            result['whitelist_tickers'].append({
+                'ticker_id': whitelist_ticker.ticker_id,
+                'comment': whitelist_ticker.comment,
+                'alerts': alerts
+            })
 
     filename = 'portfolios_export (' + str(datetime.now().date()) +').txt'
     return Response(json.dumps(result),
@@ -320,48 +345,47 @@ def import_data_post():
                     order=transaction['order']
                     )
                 new_asset.transactions.append(new_transaction)
-                # if new_transaction.order:
-                #     new_transaction.alert = Alert(
-                #         date=new_transaction.date,
-                #         whitelist_ticker_id=new_transaction.asset.ticker_id,
-                #         price=new_transaction.price,
-                #         type='down' if cost_now >= transaction.price else 'up'
-                #
-                #         type='order',
-                #         comment=alert['comment'],
-                #         status=alert['status']
-                #     )
+
+                if new_transaction.order:
+                    ticker = get_whitelist_ticker(new_transaction.asset.ticker_id, True)
+                    new_transaction.alert.append(Alert(
+                        asset_id=new_transaction.asset_id,
+                        date=new_transaction.date,
+                        whitelist_ticker_id=ticker.id,
+                        price=new_transaction.price,
+                        type='down' if new_transaction.type == 'buy' else 'up',
+                        status='on'
+                    ))
 
 
-            # for alert in asset['alerts']:
-            #     new_alert = Alert(
-            #         date=alert['date'],
-            #         whitelist_ticker_id=alert['whitelist_ticker_id'],
-            #         price=alert['price'],
-            #         type=alert['type'],
-            #         comment=alert['comment'],
-            #         status=alert['status']
-            #         )
-            #     new_asset.alerts.append(new_alert)
+            for alert in asset['alerts']:
+                ticker = get_whitelist_ticker(alert['ticker_id'], True)
+                new_alert = Alert(
+                    date=alert['date'],
+                    whitelist_ticker_id=ticker.id,
+                    price=alert['price'],
+                    type=alert['type'],
+                    comment=alert['comment'],
+                    status=alert['status']
+                    )
+                new_asset.alerts.append(new_alert)
 
-    # for whitelist_ticker in data['whitelist_tickers']:
-    #     new_ticker = WhitelistTicker(user_id=current_user.id,
-    #                                  ticker_id=whitelist_ticker.get('ticker'),
-    #                                  comment=whitelist_ticker.get('comment'))
-    #     db.session.add(new_ticker)
-    #     
-    #     for alert in whitelist_ticker.get('alerts'):
-    #         new_alert = Alert(
-    #             date=alert.get('date'),
-    #             asset_id=alert.get('asset_id'),
-    #             whitelist_ticker_id=alert.get('whitelist_ticker_id'),
-    #             price=alert.get('price'),
-    #             type=alert.get('type'),
-    #             comment=alert.get('comment'),
-    #             status=alert.get('status'),
-    #             transaction_id=alert.get('transaction_id')
-    #             )
-    #         new_ticker.alerts.append(new_alert)
+    db.session.commit()
+
+
+    for whitelist_ticker in data['whitelist_tickers']:
+        new_ticker = get_whitelist_ticker(whitelist_ticker.get('ticker_id'), True)
+        new_ticker.comment = whitelist_ticker.get('comment', '')
+        
+        for alert in whitelist_ticker.get('alerts'):
+            new_alert = Alert(
+                date=alert.get('date'),
+                price=alert.get('price'),
+                type=alert.get('type'),
+                comment=alert.get('comment'),
+                status=alert.get('status')
+                )
+            new_ticker.alerts.append(new_alert)
             
     db.session.commit()
 

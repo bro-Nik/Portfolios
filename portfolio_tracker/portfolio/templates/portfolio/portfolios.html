@@ -15,6 +15,7 @@
       <button class="btn btn-primary open-modal" type="button" data-modal-id="PortfolioSettingsModal" data-url="{{ url_for('.portfolio_settings') }}">Добавить портфель</button>
     </div>
   </div>
+  {% include 'flash_messages.html' %}
 </div>
 
 {% if portfolio_list %}

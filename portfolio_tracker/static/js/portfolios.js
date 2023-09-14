@@ -110,6 +110,8 @@ $(function () {
     var pre_modal_id = $btn.closest(".modal").attr("id");
     if (pre_modal_id) {
       $modal.attr("data-pre-modal-id", pre_modal_id);
+    } else {
+      $modal.removeAttr("data-pre-modal-id");
     }
     var pre_need_clean = $btn.attr("data-pre-need-clean");
     if (pre_need_clean) {
@@ -130,6 +132,9 @@ $(function () {
     var modal_id = $(this).attr("data-modal-id"),
       url = $(this).attr("data-url"),
       pre_modal_id = $(this).closest('.modal').attr('id');
+    if ($(this).hasClass('not-update')) {
+      pre_modal_id = false;
+    }
     LoadToModal(modal_id, url, false, pre_modal_id);
   });
 
@@ -139,6 +144,7 @@ $(function () {
       $(e.target).modal("hide");
     }
   });
+
 
   // Open Modal
   $("body").on("show.bs.modal", ".modal", function () {
@@ -216,7 +222,7 @@ $(function () {
 
   $('body').on('hide.bs.modal', '.modal', function () {
     var $modal = $(this);
-    if ($modal.attr('id') != 'ModalConfirmation') {
+    if ($modal.attr('id') != 'ModalConfirmation' && !$modal.hasClass('not-update')) {
       PageUpdate($modal);
     }
   })
@@ -234,12 +240,13 @@ $(function () {
 
   // Form
   $('body').on("submit", function(event) {
-    var $modal = $form.closest(".modal");
+    var $form = $(event.target),
+      $modal = $form.closest(".modal");
+
     if ($modal.length) {
       event.preventDefault();
 
-      var $form = $(event.target),
-        posting = $.post($form.attr("data-url"), $form.serialize());
+      var posting = $.post($form.attr("data-url"), $form.serialize());
 
       posting.done(function (data) {
         $modal.attr('data-pre-need-update', true)

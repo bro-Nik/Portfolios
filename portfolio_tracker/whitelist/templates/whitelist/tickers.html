@@ -19,7 +19,7 @@
     <div class="col-auto">
       <h1>
         {% if status == 'worked' %}
-          Сработавшие уведомления
+          Уведомления
         {% else %}
           Whitelist
         {% endif %}
@@ -107,7 +107,8 @@
 
       <!-- Actions buttons -->
       <div class="sticky-bottom-buttons">
-        <a class="open-modal-confirmation" data-action="delete" data-title="Удалить активы?">Удалить</a>
+        <a class="open-modal-confirmation" data-action="delete_all" data-title="Удалить активы?">Удалить</a>
+        <a class="open-modal-confirmation" data-action="delete_except_orders" data-title="Удалить активы кроме ордеров?">Удалить (кроме ордеров)</a>
       </div>
 
     </form>
@@ -120,19 +121,6 @@
 <script>
 
 {% if not modal and not only_content %}
-  // Add New Asset
-  $('body').on("click", '.select-asset', function () {
-    var ticker_id = $(this).attr('data-ticker-id'),
-      url = "{{ url_for('.add_ticker') }}" + "?ticker_id=" + ticker_id,
-      $modal = $(this).closest('.modal'),
-      pre_modal_id = $modal.attr('data-pre-modal-id');
-
-    $modal.modal('hide');
-
-    $.get(url).done(function (data) {
-      LoadToModal('AssetInfoModal', data, true, pre_modal_id);
-    })
-  });
 {% endif %}
 
 </script>

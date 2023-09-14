@@ -1,14 +1,21 @@
-{% extends "base.html" %}
-{% block title %} Настройки {% endblock %}
+{% set only_content = request.args.get('only_content') %}
+
+{% if not only_content %}
+  {% extends "base.html" %}
+  {% block title %} Настройки {% endblock %}
+{% endif %}
 
 {% block content %}
+
 <div class="mb-5">
   <div class="row xs-mb-3">
     <div class="col-auto">
       <h1>Настройки</h1>
     </div>
   </div>
+  {% include 'flash_messages.html' %}
 </div>
+
 
 <nav class="nav nav-underline market-menu mb-5">
   <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_profile') }}" href="{{ url_for('.settings_profile') }}">Профиль</a>

@@ -69,7 +69,7 @@
               
             <td>
               {% if alert.asset_id %}
-                <span class="link-secondary open-modal" data-url=" url_for('asset_info', market_id=alert.asset.portfolio.market_id, portfolio_url=alert.asset.portfolio.url, asset_url=tracked_ticker.ticker_id) ">
+                <span class="link-secondary open-modal" data-modal-id="AssetInfoModal" data-url="{{ url_for('portfolio.asset_info', market_id=alert.asset.portfolio.market_id, asset_id=alert.asset_id, from_whitelist=True) }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0zM1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5z"/></svg>
                   {{ alert.asset.portfolio.name }}
                 </span>
@@ -79,17 +79,15 @@
                   Whitelist
                 </span>
               {% endif %}
-
-              {% if alert.transaction_id and alert.transaction_id != 0 %}
-                <span class="badge text-bg-secondary">Ордер</span>
-              {% endif %}
             </td>
 
-            <td>{{ alert.comment }}</td>
+            <td>{{ alert.comment if alert.comment }}</td>
 
             <td>
               <div class="d-flex align-items-center justify-content-end">
-                {% if alert.transaction_id and alert.status != 'off' %}
+
+                {% if alert.transaction_id %}
+                  <span class="badge text-bg-secondary">Ордер</span>
                   <a class="link-secondary open-modal-confirmation" data-id="{{ alert.id }}" data-title="Ордер сработал?" data-action="convert_to_transaction" title="Ордер сработал">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>
                   </a>

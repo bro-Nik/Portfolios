@@ -169,7 +169,7 @@ def portfolios_action():
 def portfolio_settings():
     portfolio = get_user_portfolio(request.args.get('portfolio_id'))
     return render_template('portfolio/portfolio_settings.html',
-                           portfolio=portfolio)
+                            portfolio=portfolio)
 
 
 @portfolio.route('/portfolio_settings_update', methods=['POST'])
@@ -242,7 +242,7 @@ def portfolio_info(portfolio_id):
 
             for transaction in asset.transactions:
                 if transaction.order:
-                    if transaction.type != 'Продажа':
+                    if transaction.type != 'sell':
                         portfolio['in_orders'] += transaction.total_spent
                     continue
 
@@ -341,7 +341,7 @@ def asset_add_tickers(market_id):
     search = request.args.get('search')
 
     query = (Ticker.query.filter(Ticker.market_id == market_id)
-        .order_by(Ticker.market_cap_rank))
+        .order_by(Ticker.market_cap_rank.nulls_last(), Ticker.id))
 
     if search:
         query = query.filter(Ticker.name.contains(search)
@@ -355,7 +355,6 @@ def asset_add_tickers(market_id):
                                tickers=tickers)
     else:
         return 'end'
-
 
 
 @portfolio.route('/<int:portfolio_id>/add_asset', methods=['GET'])
@@ -437,7 +436,7 @@ def asset_info(market_id, asset_id):
 
         asset = {
             'id': user_asset.id,
-            'alerts': user_asset.alerts,
+            'alerts': bool(user_asset.alerts),
             'percent': user_asset.percent,
             'comment': user_asset.comment,
             'quantity': 0,
@@ -447,7 +446,7 @@ def asset_info(market_id, asset_id):
 
         for transaction in user_asset.transactions:
             if transaction.order:
-                if transaction.type != 'Продажа':
+                if transaction.type != 'sell':
                     asset['in_orders'] += transaction.total_spent
                 continue
 
@@ -502,6 +501,11 @@ def asset_detail(asset_id):
         asset_quantity += transaction.quantity
         asset_total_spent += transaction.total_spent
 
+    alerts = []
+    for alert in asset.alerts:
+        if alert.status != 'off':
+            alerts.append({'price': number_group(smart_round(alert.price)), 'status': alert.status})
+
     cost_now = int(price * asset_quantity)
     profit = int(cost_now - asset_total_spent)
     profit_procent = ''
@@ -522,7 +526,8 @@ def asset_detail(asset_id):
         "price": number_group(smart_round(price)) if price else '-',
         "cost_now": '$' + str(number_group(cost_now)),
         "profit": profit,
-        "profit_color": profit_color
+        "profit_color": profit_color,
+        "alerts": alerts
     }
 
 
@@ -592,11 +597,11 @@ def transaction_update(asset_id):
     transaction.wallet_id = request.form['wallet_id']
     transaction.quantity = transaction.total_spent / transaction.price
 
-    if transaction.type == 'Продажа':
+    if transaction.type == 'sell':
         transaction.quantity *= -1
         transaction.total_spent *= -1
 
-    if transaction.order:
+    if transaction.order and not transaction.alert:
         # Добавляем уведомление
         whitelist_ticker = get_whitelist_ticker(asset.ticker_id, True)
         price_list = get_price_list(asset.ticker.market_id)

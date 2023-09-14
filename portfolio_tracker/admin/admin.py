@@ -46,11 +46,9 @@ def first_start():
     markets = db.session.execute(db.select(Market)).scalar()
     if not markets:
         # маркеты
-        db.session.add_all([
-           Market(name='Crypto', id='crypto'),
-           Market(name='Stocks', id='stocks'),
-           Market(name='Other', id='other')
-        ])
+        db.session.add_all([Market(name='Crypto', id='crypto'),
+                            Market(name='Stocks', id='stocks'),
+                            Market(name='Other', id='other')])
         current_user.type = 'admin'
         db.session.commit()
 
@@ -210,14 +208,12 @@ def users_detail():
         u = {"id": '<input class="form-check-input to-check" type="checkbox" value="' + str(user.id) + '">',
              "email": user.email,
              "type": user.type,
-             "portfolios": len(user.portfolios)
-             }
+             "portfolios": len(user.portfolios)}
         if user.info:
              u['first_visit'] = user.info.first_visit
              u['last_visit'] = user.info.last_visit
              u['country'] = user.info.country
              u['city'] = user.info.city
-        u['actions'] = 0
         result['rows'].append(u)
 
     return result
@@ -272,8 +268,7 @@ def tickers_detail():
         t = {"id": ticker.id,
              "symbol": ticker.symbol,
              "name": ticker.name,
-             "price": price_list.get(ticker.id, 0)
-             }
+             "price": price_list.get(ticker.id, 0)}
         if ticker.market_cap_rank:
             t['market_cap_rank'] = ticker.market_cap_rank
         result['rows'].append(t)
@@ -333,7 +328,6 @@ def load_crypto_tickers(self):
     print('Load crypto tickers')
 
     tickers = tuple(get_tickers('crypto'))
-    # tickers_in_base = [ticker.id for ticker in tickers]
 
     def ticker_in_base(id):
         for ticker in tickers:
@@ -350,15 +344,10 @@ def load_crypto_tickers(self):
             query[0]['id']
             print('Crypto page ' + str(page))
         except:
-            print('not query... sleep...', '#' * 40)
-            print(query)
+            print('not query... sleep...')
             time.sleep(60)
             continue
 
-        # if not query:
-        #     print('not query... sleep...')
-        #     time.sleep(60)
-        #     continue
 
         for coin in query:
             id = coin['id'].lower()
@@ -483,46 +472,29 @@ def price_list_crypto_def(self):
     ids = [ticker.id for ticker in get_tickers('crypto')]
 
     # Делаем запросы кусками
-    max = 1900
-    n = 0
     while ids:
-        print('len ids: ', len(ids))
-        ids_str = ','.join(ids)
-        next_ids = ids_str[n:max + n]
-        poz = next_ids.rfind(',')
-        if next_ids != '' and poz == -1:
-            data = cg.get_price(vs_currencies='usd', ids=next_ids)
-            break
-        elif next_ids == '':
-            break
-        else:
-            data = ''
-            while data == '':
-                try:
-                    data = cg.get_price(vs_currencies='usd',
-                                        ids=next_ids[0:poz])
-                    n += poz + 1
-                    break
-                except:
-                    print("Соединение отклонено сервером... Сплю. ZZzzzz")
-                    time.sleep(15)
-                    continue
-        if data:
-            new_price_list = {}
-            for ticker in data:
-                new_price_list[ticker] = data[ticker].get('usd')
-                if ticker in ids:
-                    ids.remove(ticker)
-            price_list = price_list | new_price_list
+        ids_str = ''
+        while len(ids_str) < 1900 and ids:
+            ids_str += ',' + ids[0]
+            ids.pop(0)
+
+        data = ''
+        while data == '':
+            try:
+                data = cg.get_price(vs_currencies='usd', ids=ids_str)
+            except:
+                print("Соединение отклонено сервером... Сплю. ZZzzzz")
+                time.sleep(15)
+
+        for ticker in data:
+            price_list[ticker] = data[ticker].get('usd', 0)
+
         time.sleep(17)
-        print('crypto new call')
 
     if price_list:
-        redis.set('update-crypto', str(datetime.now()))
         redis.set('price_list_crypto', pickle.dumps(price_list))
 
-    print('len ids: ', len(ids))
-    print("Stop load crypto price")
+    print("End load crypto price")
     price_list_crypto_def.retry()
 
 
@@ -541,30 +513,29 @@ def price_list_stocks_def(self):
     price_list = get_price_list('stocks')
     key = 'apiKey=' + app.config['API_KEY_POLYGON']
 
-    day = 1
-    while price_list == {}:
+    day = 0
+    data = {}
+    while not data.get('results'):
+        day += 1
+        # задержка на бесплатном тарифе
+        if day % 4 == 0:
+            time.sleep(60)
+
         date = datetime.now().date() - timedelta(days=day)
         url = 'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/' + \
             str(date) + '?adjusted=true&include_otc=false&' + key
         response = requests.get(url)
         data = response.json()
-        if data.get('results'):
-            for ticker in data['results']:
-                # вчерашняя цена закрытия, т.к. бесплатно
-                price_list[ticker['T'].lower()] = ticker['c']
-        else:
-            # если нет результата, делаем запрос еще на 1 день раньше
-            day += 1
-            k = day % 4
-            # задержка на бесплатном тарифе
-            if k == 0:
-                time.sleep(60)
+
+    for ticker in data['results']:
+        # вчерашняя цена закрытия, т.к. бесплатно
+        price_list[ticker['T'].lower()] = ticker['c']
 
     if price_list:
         redis.set('update-stocks', str(datetime.now().date()))
         redis.set('price_list_stocks', pickle.dumps(price_list))
-    print("Stop load stocks price")
 
+    print("End load stocks price")
     price_list_stocks_def.retry()
 
 
@@ -575,7 +546,6 @@ def alerts_update(self):
     self.update_state(state='WORK')
 
     price_list = get_price_list()
-
     tracked_tickers = db.session.execute(db.select(WhitelistTicker)).scalars()
 
     for ticker in tracked_tickers:

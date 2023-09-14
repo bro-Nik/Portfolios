@@ -24,6 +24,11 @@ function UpdateSmartSelects($element = $("body")) {
     var selectList = selectHead.next('.smart-select__list');
     selectList.slideUp(0);
 
+    $select.on('focus', function() {
+      $(this).trigger('blur');
+      selectHead.trigger('click');
+    })
+
     selectHead.on('click', function() {
       if (!$(this).hasClass('on')) {
         $(this).addClass('on');

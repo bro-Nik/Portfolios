@@ -81,14 +81,17 @@ $('#AssetsBox').scroll(function(){
   }
 });
 	
-// Add New Asset
-$('#AssetsBox').on("click", '.select-asset', function () {
+// For portfolio or for whitelist
+{% set url = url_for('.asset_add', portfolio_id=portfolio_id) if portfolio_id else url_for('.add_ticker') %}
+
+$('#AssetsList').on("click", '.select-asset', function () {
+
   var ticker_id = "?ticker_id=" + $(this).attr('data-ticker-id'),
-    url = "{{ url_for('.asset_add', portfolio_id=portfolio_id) }}" + ticker_id,
+    url = "{{ url }}" + ticker_id,
     $modal = $(this).closest('.modal'),
     pre_modal_id = $modal.attr('data-pre-modal-id');
 
-  $modal.modal('hide');
+  $modal.addClass('not-update').modal('hide');
 
   $.get(url).done(function (data) {
     LoadToModal('AssetInfoModal', data, true, pre_modal_id);

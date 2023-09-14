@@ -11,19 +11,19 @@
     <div class="col-md-12">
       <div id="alertPrice" class="mb-1">
         <label class="form-label h7">Цена</label>
-        <div class="input-group">
+        <div class="input-group mb-1">
           <span class="input-prefix">$</span>
-          <input type="number" step="any" class="form-control rounded-3 focus" value="{{ alert.price if alert else price }}" name="price" required>
+          <input type="number" step="any" class="form-control rounded-3 focus" value="{{ alert.price if alert else price }}" name="price" autocomplete="off" required>
           <input type="hidden" name="type" value="{{ alert.type if alert else 'down' }}">
         </div>
-        <span class="alert-price-info">Когда цена {{ ('выше' if alert.type == 'up' else 'ниже') if alert else 'ниже' }} {{ alert.price if alert else price }}$</span>
+        <span class="small-text alert-price-info">Когда цена {{ ('выше' if alert.type == 'up' else 'ниже') if alert else 'ниже' }} {{ alert.price if alert else price }}$</span>
       </div>
     </div>
 
     <div class="col-md-12">
       <div class="mb-3">
         <label class="form-label h7">Комментарий</label>
-        <textarea class="form-control silver" name="comment">{{ alert.comment if alert }}</textarea>
+        <textarea class="form-control" name="comment">{{ alert.comment if alert }}</textarea>
       </div>
     </div>
 
@@ -34,7 +34,7 @@
 <script>
   $('#alertPrice').on('input', 'input[name=price]', function () {
     var price_now = +{{ price }},
-      alert_price = $(this).val();
+      alert_price = +$(this).val();
     if (alert_price > price_now) {
       $('#alertPrice .alert-price-info').text('Когда цена выше ' + alert_price + '$');
       $('#alertPrice').find('input[name=type]').val('up');

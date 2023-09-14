@@ -21,24 +21,18 @@
         <span class="fs-1 fw-semibold" id="AssetPrice">${{ price|smart_round|number_group }}</span>
       </div>
 
-      <div class="d-flex gap-1 align-items-end open-modal" data-modal-id="WhitelistTickerInfoModal" data-url="{{ url_for('whitelist.ticker_info', market_id=market_id, ticker_id=asset.ticker_id, asset_id=asset.id) }}">
-        <span class="badge text-bg-light fw-normal text-muted">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/></svg>
-          {{ 'Добавить уведомление' if not asset.alerts }}
-        </span>
-
-        <div id="asset-alerts">
-          {#}
-          {% for alert in asset.alerts %}
-            <span class="badge fw-normal cursor-pointer {{ 'text-bg-success' if alert.worked else 'text-bg-light text-muted' }}" >
-              ${{ alert.price|number_group }}</span>
-          {% endfor %}
-          #}
+      {% if not request.args.get('from_whitelist') %}
+        <div class="d-flex gap-1 align-items-end open-modal" data-modal-id="WhitelistTickerInfoModal" data-url="{{ url_for('whitelist.ticker_info', market_id=market_id, ticker_id=ticker.id, asset_id=asset.id) }}">
+          <span class="badge text-bg-light fw-normal text-muted">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/></svg>
+            {{ 'Добавить уведомление' if not asset.alerts }}
+          </span>
+          <div id="AssetAlerts"></div>
         </div>
-      </div>
+      {% endif %}
     </div>
 
-    <div class="col-auto ms-auto hstack gap-1">
+    <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal focus" type="button" data-modal-id="TransactionModal"
         data-url="{{ url_for('.transaction', asset_id=asset.id, price=price) }}">Добавить транзакцию</button>
       <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Еще</button>
@@ -125,6 +119,14 @@
       </thead>
       <tbody>
         {% for transaction in transactions|sort(reverse=true, attribute="date")|sort(reverse=true, attribute="order") %}
+        {% if transaction.type == 'buy' %}
+          {% set type_name = 'Покупка' %}
+          {% set type_class = 'text-green' %}
+        {% elif transaction.type == 'sell' %}
+          {% set type_name = 'Продажа' %}
+          {% set type_class = 'text-red' %}
+        {% endif %}
+
         <tr class="{{ 'table-order' if transaction.order }}">
 
           <td>
@@ -134,9 +136,7 @@
           <td>
             <div class="open-modal" data-modal-id="TransactionModal"
               data-url="{{ url_for('.transaction', market_id=ticker.market_id, asset_id=asset.id, ticker=ticker.id, transaction_id=transaction.id) }}">
-              <span class="{{ 'text-green' if transaction.type == 'Покупка' else 'text-red' }}">
-                {{ transaction.type }}
-              </span>
+              <span class="{{ type_class }}">{{ type_name }}</span>
               {{ '(Ордер)' if transaction.order }}
               <br>
               <span class="small-text">{{ transaction.date }}</span>
@@ -146,10 +146,10 @@
           <td>${{ transaction.price|smart_round|number_group }}</td>
 
           <td>
-            {{ '-' if transaction.type == 'Покупка' else '+' }}${{ transaction.total_spent|abs|smart_int|number_group }}
+            {{ '-' if transaction.type == 'buy' else '+' }}${{ transaction.total_spent|abs|smart_int|number_group }}
             <br>
-            <span class="text-average small-text {{ 'text-green' if transaction.type == 'Покупка' else 'text-red' }}">
-              {{ '+' if transaction.type == 'Покупка' else '-' }}{{ transaction.quantity|abs|smart_round|number_group }} {{ ticker.symbol|upper }}
+            <span class="text-average small-text {{ type_class }}">
+              {{ '+' if transaction.type == 'buy' else '-' }}{{ transaction.quantity|abs|smart_round|number_group }} {{ ticker.symbol|upper }}
             </span>
           </td>
 
@@ -216,13 +216,10 @@
 <script>
   // Update Asset Details
   function AssetDetailsUpdate() {
-    var url = "{{ url_for('.asset_detail', asset_id = asset.id) }}",
-      assetPrice = $('#AssetPrice'),
-      assetCostNow = $('#AssetCostNow'),
-      assetProfit = $('#AssetProfit');
+    var url = "{{ url_for('.asset_detail', asset_id = asset.id) }}";
 
     // if modal is close
-    if (!assetPrice.length) {
+    if (!$('#AssetPrice').length) {
       clearTimeout(assetUpdateTimerId);
       return true;
     }
@@ -230,9 +227,21 @@
     var request = $.get(url);
     request.done(function(data) {
       var text_class = 'text-average text-' + data.profit_color;
-      assetPrice.html('$' + data.price);
-      assetCostNow.html(data.cost_now).attr('class', text_class);
-      assetProfit.html(data.profit).attr('class', text_class);
+      $('#AssetPrice').html('$' + data.price);
+      $('#AssetCostNow').html(data.cost_now).attr('class', text_class);
+      $('#AssetProfit').html(data.profit).attr('class', text_class);
+
+      if (data.alerts) {
+        var assetAlerts = $('#AssetAlerts').empty();
+        for (let i = 0; i < data.alerts.length; i++) {
+          var color = data.alerts[i].status == 'on' ? 'light' : 'success';
+          $('<span>', {
+            class: 'badge fw-normal text-muted text-bg-' + color,
+            text: data.alerts[i].price
+          })
+          .appendTo(assetAlerts);
+        }
+      }
     })
   }
 

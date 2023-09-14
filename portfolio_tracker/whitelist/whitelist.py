@@ -73,17 +73,25 @@ def tickers_action():
     data = json.loads(request.data) if request.data else {}
 
     ids = data['ids']
+    action = data['action']
+
     for id in ids:
         whitelist_ticker = get_whitelist_ticker(id)
 
         if not whitelist_ticker:
             continue
 
-        # удаляем уведомления
-        for alert in whitelist_ticker.alerts:
-            db.session.delete(alert)
+        if action == 'delete_all':
+            for alert in whitelist_ticker.alerts:
+                db.session.delete(alert)
+            db.session.delete(whitelist_ticker)
 
-        db.session.delete(whitelist_ticker)
+        elif action == 'delete_except_orders':
+            for alert in whitelist_ticker.alerts:
+                if not alert.transaction_id:
+                    db.session.delete(alert)
+            if not whitelist_ticker.alerts:
+                db.session.delete(whitelist_ticker)
 
     db.session.commit()
     return ''
@@ -158,6 +166,7 @@ def alerts_action():
         elif action == 'convert_to_transaction':
             alert.transaction.order = 0
             alert.transaction.date = datetime.now().date()
+            alert.transaction_id = None
             alert.status = 'off'
 
         # Turn off

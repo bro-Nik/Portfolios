@@ -1,5 +1,9 @@
-{% extends "base.html" %}
-{% block title %} Настройки {% endblock %}
+{% set only_content = request.args.get('only_content') %}
+
+{% if not only_content %}
+  {% extends "base.html" %}
+  {% block title %} Настройки {% endblock %}
+{% endif %}
 
 {% block content %}
 <div class="mb-5">
@@ -8,6 +12,7 @@
       <h1>Настройки</h1>
     </div>
   </div>
+  {% include 'flash_messages.html' %}
 </div>
 
 <nav class="nav nav-underline market-menu mb-5">
@@ -19,9 +24,11 @@
   <div class="col-auto">
     <span class="">{{ current_user.email }}</span>
     <br>
-    <form id="UserActions" action="{{ url_for('user.user_delete') }}">
-      <a class="link-danger open-modal-confirmation" data-title="Удалить аккаунт {{ current_user.email }}?"
-        data-form="#UserActions">
+    <form id="UserActions" class="d-grid" action="{{ url_for('user.user_action') }}">
+      <a class="link-danger open-modal-confirmation" data-title="Удалить все данные аккаунта {{ current_user.email }}?" data-form="#UserActions" data-action="delete_data">
+        Начать с чистого листа
+      </a>
+      <a class="link-danger open-modal-confirmation" data-title="Удалить аккаунт {{ current_user.email }}?" data-form="#UserActions" data-action="delete_user">
         Удалить аккаунт
       </a>
     </form>

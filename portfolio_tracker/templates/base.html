@@ -26,15 +26,6 @@
 {% include 'navbar.html' %}
 
 <div id="wrapper">
-  {% with messages = get_flashed_messages(('error', 'info')) %}
-    {% if messages %}
-      {% for message in messages %} 
-        <div class="alert alert-{{ message[0] }} alert-dismissible" role="alert"> {{ message[1] }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
 
   <div id="content" class="p-5">
     {% block content %}{% endblock %}

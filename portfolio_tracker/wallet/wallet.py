@@ -51,7 +51,7 @@ def wallets():
                 wallet['can_delete'] = False
 
                 if transaction.order:
-                    if transaction.type != 'Продажа':
+                    if transaction.type != 'sell':
                         wallet['in_orders'] += transaction.total_spent
                         all['in_orders'] += transaction.total_spent
                     continue
@@ -154,7 +154,7 @@ def wallet_info(wallet_id):
         asset = asset_list[ticker]
 
         if transaction.order:
-            if transaction.type != 'Продажа':
+            if transaction.type != 'sell':
                 asset['in_orders'] += transaction.total_spent
                 wallet['in_orders'] += transaction.total_spent
             continue
