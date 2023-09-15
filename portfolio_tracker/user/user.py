@@ -104,7 +104,7 @@ def user_action():
 
     if action == 'delete_user':
         user_delete_def(current_user.id)
-        return redirect(url_for('.login'))
+        return {'redirect': str(url_for('.login'))}
 
     elif action == 'delete_data':
         for portfolio in current_user.portfolios:
@@ -157,10 +157,9 @@ def user_delete_def(user_id):
         db.session.delete(portfolio)
 
     # user info
-    user_info = db.session.execute(db.select(userInfo).
-                                   filter_by(user_id=user.id)).scalar()
-    db.session.delete(user_info)
-    db.session.commit()
+    if user.info:
+        db.session.delete(user.info)
+        db.session.commit()
 
     # user
     db.session.delete(user)
@@ -195,7 +194,7 @@ def new_visit():
 
 @user.route("/demo_user")
 def demo_user():
-    user = db.session.execute(db.select(User).filter_by(email='demo')).scalar()
+    user = db.session.execute(db.select(User).filter_by(email='demo@demo')).scalar()
     login_user(user)
     return redirect(url_for('portfolio.portfolios'))
 

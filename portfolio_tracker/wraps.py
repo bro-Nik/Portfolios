@@ -18,16 +18,14 @@ def admin_only(f):
             return redirect(url_for('user.login') + '?next=' + request.url)
     return decorated_function
 
-demo_not_can_change = False
+demo_can_change = True
 
 def demo_user_change(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if current_user.email == 'demo':
-            if demo_not_can_change:
-                flash('Демо пользователь не может вносить изменения')
-                return ''
-                # return redirect(session['last_url'])
+        if current_user.type == 'demo' and not demo_can_change:
+            flash('Демо пользователь не может вносить изменения', 'danger')
+            return ''
         return f(*args, **kwargs)
     return decorated_function
 

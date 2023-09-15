@@ -1,8 +1,6 @@
+const $modalsBox = $('#Modals');
+
 $(function () {
-  StickyBottomActionsUpdate();
-  UpdateTables();
-  UpdateSmartSelects();
-  UpdateFocus();
 
   // Full Height
   var $table = $(".table-responsive.full-height"),
@@ -84,8 +82,10 @@ $(function () {
       url: $form.attr("action"),
       data: JSON.stringify(data),
       contentType: "application/json; charset=utf-8",
-    }).done(function () {
-      if ($btn.attr('data-this-need-update')) {
+    }).done(function (response) {
+      if(response.redirect) {
+        window.location.href = response.redirect;
+      } else if ($btn.attr('data-this-need-update')) {
         LoadToModal($modal.attr('id'), $modal.attr("data-url"), true);
       } else {
         setTimeout(PageUpdate, 500, $modal);
@@ -124,6 +124,7 @@ $(function () {
       id = $btn.attr("data-id") || "";
     $modal.find(".modal-title").text(title);
     $modal.find(".action").attr("data-action", action);
+    $modal.find(".action").attr("data-id", id);
     $modal.find(".action").attr("data-id", id);
     $modal.modal({backdrop: false}).modal("show");
   });
@@ -274,6 +275,7 @@ function LoadToPage(url) {
 function LoadToModal(modal_id, url, pre_need_update, pre_modal_id) {
   var $modal = $("#" + modal_id);
 
+  // нужно для обновления контента в модульном
   if ($modal.length) {
     // load only content
     if ($modal.find(".modal-fullscreen").length) {
@@ -284,10 +286,13 @@ function LoadToModal(modal_id, url, pre_need_update, pre_modal_id) {
     }
   } else {
     // create and load full modal
-    $("body").find("#modals").append(
-      '<div class="modal fade" id="' + modal_id + '" tabindex="-1" aria-hidden="true"></div>',
-      );
-    var $loadIn = $modal = $("body").find("#" + modal_id);
+    var $loadIn = $modal = $('<div>', {
+      id: modal_id,
+      class: 'modal fade',
+      tabindex: '-1'
+    })
+    .attr('aria-hidden', 'false')
+    .appendTo($modalsBox);
   }
   
   $modal.attr("data-pre-need-update", pre_need_update || false);

@@ -82,7 +82,7 @@ $('#AssetsBox').scroll(function(){
 });
 	
 // For portfolio or for whitelist
-{% set url = url_for('.asset_add', portfolio_id=portfolio_id) if portfolio_id else url_for('.add_ticker') %}
+{% set url = url_for('.asset_add', portfolio_id=portfolio_id) if portfolio_id else url_for('whitelist.add_ticker') %}
 
 $('#AssetsList').on("click", '.select-asset', function () {
 
@@ -91,10 +91,14 @@ $('#AssetsList').on("click", '.select-asset', function () {
     $modal = $(this).closest('.modal'),
     pre_modal_id = $modal.attr('data-pre-modal-id');
 
-  $modal.addClass('not-update').modal('hide');
 
   $.get(url).done(function (data) {
-    LoadToModal('AssetInfoModal', data, true, pre_modal_id);
+    if (data) {
+      $modal.addClass('not-update').modal('hide');
+      LoadToModal('AssetInfoModal', data, true, pre_modal_id);
+    } else {
+      $modal.attr('data-pre-need-update', true).modal('hide');
+    }
   })
 });
 </script>

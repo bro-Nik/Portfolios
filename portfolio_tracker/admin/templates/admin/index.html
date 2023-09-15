@@ -86,8 +86,11 @@
   </div>
   <div id="temp"></div>
 </div>
+
+{% endblock %}
+
+{% block after_scripts %}
 <script>
-// Обновление данных без перезагрузки
 
   function AdminDetailsUpdate() {
     var url = "{{ url_for('.index_detail') }}",
@@ -164,4 +167,5 @@
   clearTimeout(adminUpdateTimerId);
   var adminUpdateTimerId = setInterval(AdminDetailsUpdate, 10000);
 </script>
+
 {% endblock %}

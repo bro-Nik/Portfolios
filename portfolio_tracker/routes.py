@@ -8,7 +8,6 @@ from portfolio_tracker.models import Alert, User, WhitelistTicker
 
 
 @app.route('/')
-@login_required
 def index():
     return render_template('index.html')
 
@@ -33,18 +32,3 @@ def worked_alerts_count():
         return '<span>' + str(count) + '</span>'
     else:
         return ''
-
-
-@app.route("/1")
-@login_required
-def w1():
-    tracked_tickers = db.session.execute(
-        db.select(WhitelistTicker).filter(WhitelistTicker.alerts)).scalars()
-
-    for ticker in tracked_tickers:
-        for alert in ticker.alerts:
-            alert.status = 'worked'
-
-    db.session.commit()
-
-    return ''

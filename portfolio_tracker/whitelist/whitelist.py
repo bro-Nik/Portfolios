@@ -38,7 +38,6 @@ def get_user_alert(id):
 
 @whitelist.route('', methods=['GET'])
 @login_required
-@demo_user_change
 def tickers():
     market_id = request.args.get('market_id')
     if market_id:
@@ -124,9 +123,8 @@ def whitelist_ticker_update():
     return ''
 
 
-@whitelist.route('/<string:market_id>/ticker_<string:ticker_id>')
+@whitelist.route('/<string:market_id>/ticker_<string:ticker_id>', methods=['GET'])
 @login_required
-@demo_user_change
 def ticker_info(market_id, ticker_id):
     price_list = get_price_list(market_id)
     price = float_(price_list.get(ticker_id), 0)
@@ -187,7 +185,6 @@ def alerts_action():
 
 @whitelist.route('/<string:market_id>/whitelist_ticker/alert', methods=['GET'])
 @login_required
-@demo_user_change
 def alert(market_id):
     whitelist_ticker_id = request.args.get('whitelist_ticker_id')
     ticker_id = request.args.get('ticker_id')

@@ -23,7 +23,6 @@ def get_user_wallet(id):
 
 @wallet.route('', methods=['GET'])
 @login_required
-@demo_user_change
 def wallets():
     """ Wallets page """
     wallets = {}
@@ -97,7 +96,6 @@ def wallets_action():
 
 @wallet.route('/wallet_settings', methods=['GET'])
 @login_required
-@demo_user_change
 def wallet_settings():
     wallet = get_user_wallet(request.args.get('wallet_id'))
     return render_template('wallet/wallet_settings.html', wallet=wallet)
@@ -122,7 +120,6 @@ def wallet_settings_update():
 
 @wallet.route('/<string:wallet_id>')
 @login_required
-@demo_user_change
 def wallet_info(wallet_id):
     """ Wallet page """
     user_wallet = get_user_wallet(wallet_id)
@@ -180,14 +177,12 @@ def wallet_info(wallet_id):
 
 @wallet.route('/in_out_get', methods=['GET'])
 @login_required
-@demo_user_change
 def wallet_in_out_get():
     return render_template('wallet/wallet_in_out.html')
 
 
 @wallet.route('/transfer_get', methods=['GET'])
 @login_required
-@demo_user_change
 def wallet_transfer_get():
     return render_template('wallet/wallet_transfer.html')
 
@@ -223,19 +218,7 @@ def wallet_transfer():
     return ''
 
 
-# @wallet.route('/ajax_user_wallets', methods=['GET'])
-# @login_required
-# def get_all_user_wallets():
-#     result = {'results': []}
-#
-#     for wallet in current_user.wallets:
-#         result['results'].append({'id': str(wallet.id),
-#                                   'text': wallet.name}) 
-#
-#     return json.dumps(result, ensure_ascii=False)
-
-
-@wallet.route('/ajax_user_wallets2', methods=['GET'])
+@wallet.route('/ajax_user_wallets', methods=['GET'])
 @login_required
 def get_all_user_wallets():
     result = []

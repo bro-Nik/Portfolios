@@ -32,20 +32,10 @@
 </head>
 
 <body>
-  <main class="text-center form-signin w-100 m-auto">
+  <main class="form-signin w-100 m-auto">
     <form method="post">
-      {% with messages = get_flashed_messages() %}
-        {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-success alert-dismissible" role="alert">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
 
-      <a href="/" class="d-flex align-items-center mb-5 justify-content-center link-body-emphasis text-decoration-none">
+      <a href="{{ url_for('index') }}" class="d-flex align-items-center mb-5 justify-content-center link-body-emphasis text-decoration-none">
         <img class="mb-0 me-2" src="{{ url_for('static', filename='favicon.png') }}" alt="" width="32" height="32" />
         <span class="fs-4">Portfolios</span>
       </a>
@@ -54,6 +44,14 @@
         <h1 class="h3 fw-normal">Регистрация</h1>
         <a href="{{ url_for('.login') }}" class="ms-auto link-primary text-decoration-none">Вход</a>
       </div>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <div style="padding: 5px;">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %} 
 
       <div class="mb-3">
         <input type="email" class="form-control" placeholder="Email" name="email">
@@ -69,9 +67,6 @@
 
       <button class="w-100 btn btn-sm btn-primary mb-5" type="submit">Зарегистрироваться</button>
 
-      <a class="text-decoration-none link-secondary" href="" data-bs-toggle="modal" data-bs-target="#About">$
-        Portfolios
-      </a>
     </form>
   </main>
 </body>

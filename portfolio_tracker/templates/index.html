@@ -1,17 +1,78 @@
-<h1 class="modal-title fs-3 w-100 text-center">О проекте</h1>
-<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+{# Jinja #}
+<html lang="ru">
 
-<p>
-    Отслеживай все свои инвестиции в одном месте. Криптовалюта, акции и другие
-    активы.
-</p>
-<h6>Криптовалюта и акции</h6>
-<ul>
-    <li>уведомления по достижению цены</li>
-    <li>неограниченное количество портфелей (удобное распредение стратегий)</li>
-    <li>уведомления на выставленные ордера</li>
-    <li>цены на криптовалюты обновляются 1 раз в мин.</li>
-    <li>цены на акции - цены закрытия прошлого рабочего дня</li>
-</ul>
-<h6>Другие активы</h6>
-<p>Ведение других офлайн инвестиций (коммерческой недвижимости и тд)</p>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" />
+  <title>Portfolios</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+  <div class="container ps-lg-5 pe-lg-5 d-flex flex-column h-100">
+    <header class="d-flex justify-content-center">
+      <div class="d-flex col-12 py-3">
+
+        <div class="d-flex align-items-center">
+          <img class="mb-0 me-2" src="{{ url_for('static', filename='favicon.png') }}" alt="" width="32" height="32" />
+          <span class="fs-4">Portfolios</span>
+        </div>
+
+        <div class="d-flex align-items-center ms-auto">
+          {% if current_user.is_authenticated %}
+            <a class="text-decoration-none text-capitalize" href="{{ url_for('portfolio.portfolios') }}">
+              {{ current_user.email[0 : current_user.email.find("@")] }}
+            </a>
+          {% else %}
+            <a href="{{ url_for('user.register') }}" class="text-decoration-none">Вход/Регистация</a>
+            <a href="{{ url_for('user.demo_user') }}" class="text-decoration-none ms-3">Demo</a>
+          {% endif %}
+        </div>
+
+      </div>
+    </header>
+
+    <section class="d-flex justify-content-center h-100">
+      <div class="d-flex align-items-center col-12">
+        <div class="col-6">
+          <div class="d-flex flex-column" style="padding: 60px 50px 60px 30px;">
+            <h2 class="text-uppercase mb-5 fw-bold" style="font-size: 3.5rem; color: #e5bb15; line-height: 1;">
+              Отслеживай<br> активы<br> в одном месте
+            </h2>
+            <p class="fs-5">
+              Portfolios позволяет вести учет по многим активам
+              (Криптовалюта, Акции, Офлайн активы) в одном личном кабинете, что
+              позволяет ничего не растерять и не забыть.
+            </p>
+            <p class="fw-semibold">Криптовалюта и акции</p>
+            <ul class="fw-light">
+              <li>уведомления по достижению цены</li>
+              <li>
+                неограниченное количество портфелей (удобное распредение
+                стратегий)
+              </li>
+              <li>уведомления на выставленные ордера</li>
+            </ul>
+            <p class="fw-semibold">Другие активы</p>
+            <p class="fw-light">
+              Ведение офлайн инвестиций (коммерческой недвижимости и тд.)
+            </p>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="d-flex flex-column justify-content-center">
+            <img src="{{ url_for('static', filename='home.jpg') }}" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+    <footer class="p-5 text-white" style="background-color: #333333; text-align: center">
+      <p>$Portfolios</p>
+    </footer>
+
+</body>
+
+</html>

@@ -74,7 +74,6 @@ def get_body(id):
 
 @portfolio.route('/', methods=['GET'])
 @login_required
-@demo_user_change
 def portfolios():
     """ Portfolios page """
     price_list = get_price_list()
@@ -165,7 +164,6 @@ def portfolios_action():
 
 @portfolio.route('/portfolio_settings', methods=['GET'])
 @login_required
-@demo_user_change
 def portfolio_settings():
     portfolio = get_user_portfolio(request.args.get('portfolio_id'))
     return render_template('portfolio/portfolio_settings.html',
@@ -205,7 +203,6 @@ def portfolio_settings_update():
 
 @portfolio.route('/portfolio/<int:portfolio_id>', methods=['GET'])
 @login_required
-@demo_user_change
 def portfolio_info(portfolio_id):
     """ Portfolio page """
     user_portfolio = get_user_portfolio(portfolio_id)
@@ -325,7 +322,6 @@ def assets_action():
 
 @portfolio.route('/<string:market_id>/add_asset_modal', methods=['GET'])
 @login_required
-@demo_user_change
 def asset_add_modal(market_id):
 
     return render_template('portfolio/add_asset_modal.html',
@@ -335,7 +331,6 @@ def asset_add_modal(market_id):
 
 @portfolio.route('/<string:market_id>/add_asset_tickers', methods=['GET'])
 @login_required
-@demo_user_change
 def asset_add_tickers(market_id):
     per_page = 20
     search = request.args.get('search')
@@ -385,9 +380,8 @@ def asset_add(portfolio_id):
                 asset_id=asset.id))
 
 
-@portfolio.route('/asset_settings')
+@portfolio.route('/asset_settings', methods=['GET'])
 @login_required
-@demo_user_change
 def asset_settings():
     asset = get_user_asset(request.args.get('asset_id'))
     return render_template('portfolio/asset_settings.html',
@@ -413,7 +407,6 @@ def asset_settings_update():
 
 @portfolio.route('/<string:market_id>/asset_<int:asset_id>')
 @login_required
-@demo_user_change
 def asset_info(market_id, asset_id):
     """ Asset page """
     if market_id != 'other':
@@ -563,7 +556,6 @@ def transactions_action():
 
 @portfolio.route('/<int:asset_id>/transaction', methods=['GET'])
 @login_required
-@demo_user_change
 def transaction(asset_id):
     transaction = get_transaction(request.args.get('transaction_id'))
 
@@ -652,7 +644,6 @@ def other_asset_action():
 
 @portfolio.route('/<int:portfolio_id>/other_asset_settings', methods=['GET'])
 @login_required
-@demo_user_change
 def other_asset_settings(portfolio_id):
     asset = get_user_other_asset(request.args.get('asset_id'))
     return render_template('portfolio/other_asset_settings.html',
@@ -693,7 +684,6 @@ def other_asset_settings_update(portfolio_id):
 
 @portfolio.route('/other_asset_<int:asset_id>/operation', methods=['GET'])
 @login_required
-@demo_user_change
 def other_asset_operation(asset_id):
     operation = get_operation(request.args.get('operation_id'))
 
@@ -726,7 +716,6 @@ def other_asset_operation_update(asset_id):
 
 @portfolio.route('/other_asset_<int:asset_id>/body', methods=['GET'])
 @login_required
-@demo_user_change
 def other_asset_body(asset_id):
     body = get_body(request.args.get('body_id'))
 

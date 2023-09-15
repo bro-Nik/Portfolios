@@ -13,6 +13,7 @@
       <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_modal', market_id=portfolio.market_id, portfolio_id=portfolio.id) }}">Добавить актив</button>
     </div>
   </div>
+  {% include 'flash_messages.html' %}
 </div>
 
 {% if asset_list %}

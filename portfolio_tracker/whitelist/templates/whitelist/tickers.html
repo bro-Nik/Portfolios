@@ -31,6 +31,7 @@
       </div>
     {% endif %}
   </div>
+  {% include 'flash_messages.html' %}
 </div>
 <nav class="nav nav-underline market-menu">
   <span class="nav-link {{ 'active disabled' if market_id == 'crypto' }} load-page-or-modal" data-url="{{ url_for('.tickers', market_id='crypto', only_content=True, status=status, modal=modal) }}">Crypto</span>
@@ -118,10 +119,4 @@
   <div class="nothing-box">Пока ничего нет...</div>
 {% endif %}
 
-<script>
-
-{% if not modal and not only_content %}
-{% endif %}
-
-</script>
 {% endblock %}

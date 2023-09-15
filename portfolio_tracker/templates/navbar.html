@@ -52,7 +52,7 @@
       <strong>{{ current_user.email[0 : current_user.email.find("@")] }}</strong>
     </a>
     <ul class="dropdown-menu text-small shadow" style="">
-      {% if current_user.email != 'demo' %}
+      {% if current_user.type != 'demo' %}
       <li>
         <a class="dropdown-item" href="{{ url_for('user.settings_export_import') }}">Экспорт/Импорт</a>
       </li>

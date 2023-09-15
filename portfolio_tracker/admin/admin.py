@@ -37,10 +37,9 @@ def first_start():
                                    filter_by(email='demo@demo')).scalar()
     if not demo_user:
         # demo user
-        demo_user = User(email='demo@demo', password='demo')
+        demo_user = User(email='demo@demo', password='demo', type='demo')
         db.session.add(demo_user)
-        wallet = Wallet(name='Default', user_id=demo_user.id)
-        db.session.add(wallet)
+        demo_user.wallets.append(Wallet(name='Default'))
         db.session.commit()
 
     markets = db.session.execute(db.select(Market)).scalar()
