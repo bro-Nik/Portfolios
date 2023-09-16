@@ -1,7 +1,7 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = 'Изменить портфель' if portfolio else 'Добавить портфель' %}
+{% set modal_title = gettext('Change portfolio') if portfolio else gettext('Create portfolio') %}
 
 {% block content %}
 <form data-url="{{ url_for('.portfolio_settings_update', portfolio_id=portfolio.id if portfolio else None) }}">
@@ -9,23 +9,23 @@
 
     <div class="col-md-6">
       <div class="mb-1">
-        <label class="form-label h7">Название</label>
+        <label class="form-label h7">{% trans %}Name{% endtrans %}</label>
         <input type="text" class="form-control rounded-3 focus" name="name" value="{{ portfolio.name if portfolio }}" required>
       </div>
     </div>
 
     <div class="col-md-6 mb-1" id="market-class">
-      <label class="form-label h7">Рынок</label>
+      <label class="form-label h7">{% trans %}Market{% endtrans %}</label>
       <select name="market_id"  data-class="form-select"
         value="{{ portfolio.market_id if portfolio }}" required>
-        <option {{ 'selected' if portfolio.market_id == 'crypto' }} value="crypto">Криптовалюта</option>
-        <option {{ 'selected' if portfolio.market_id == 'stocks' }} value="stocks">Акции</option>
-        <option {{ 'selected' if portfolio.market_id == 'other' }} value="other">Другое</option>
+        <option {{ 'selected' if portfolio.market_id == 'crypto' }} value="crypto">{% trans %}Crypto{% endtrans %}</option>
+        <option {{ 'selected' if portfolio.market_id == 'stocks' }} value="stocks">{% trans %}Stocks{% endtrans %}</option>
+        <option {{ 'selected' if portfolio.market_id == 'other' }} value="other">{% trans %}Other{% endtrans %}</option>
       </select>
     </div>
     <div class="col-md-12">
       <div class="mb-3">
-        <label class="form-label h7">Комментарий</label>
+        <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
         <textarea class="form-control" name="comment">{{ portfolio.comment if portfolio }}</textarea>
       </div>
     </div>

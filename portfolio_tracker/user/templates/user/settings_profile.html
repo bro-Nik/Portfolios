@@ -2,37 +2,57 @@
 
 {% if not only_content %}
   {% extends "base.html" %}
-  {% block title %} Настройки {% endblock %}
+  {% block title %}{% trans %}Settings{% endtrans %}{% endblock %}
 {% endif %}
 
 {% block content %}
 <div class="mb-5">
   <div class="row xs-mb-3">
     <div class="col-auto">
-      <h1>Настройки</h1>
+      <h1>{% trans %}Settings{% endtrans %}</h1>
     </div>
   </div>
   {% include 'flash_messages.html' %}
 </div>
 
 <nav class="nav nav-underline market-menu mb-5">
-  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_profile') }}" href="{{ url_for('.settings_profile') }}">Профиль</a>
-  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_export_import') }}" href="{{ url_for('.settings_export_import') }}">Экспорт-импорт</a>
+  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_profile') }}" href="{{ url_for('.settings_profile') }}">{% trans %}Profile{% endtrans %}</a>
+  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_export_import') }}" href="{{ url_for('.settings_export_import') }}">{% trans %}Export{% endtrans %}/{% trans %}Import{% endtrans %}</a>
 </nav>
 
 <div class="row">
   <div class="col-auto">
     <span class="">{{ current_user.email }}</span>
+
+    <p class="">{% trans %}Language{% endtrans %}</p>
+    
+    <div class="">
+      <select id="SelectLocale" data-class="form-select">
+        <option value="en" {{ 'selected' if locale == 'en' }}>English</option>
+        <option value="ru" {{ 'selected' if locale == 'ru' }}>Русский</option>
+      </select>
+    </div>
     <br>
     <form id="UserActions" class="d-grid" action="{{ url_for('user.user_action') }}">
-      <a class="link-danger open-modal-confirmation" data-title="Удалить все данные аккаунта {{ current_user.email }}?" data-form="#UserActions" data-action="delete_data">
-        Начать с чистого листа
+      <a class="link-danger open-modal-confirmation" data-title="{% trans %}Delete all profile data?{% endtrans %}" data-form="#UserActions" data-action="delete_data">
+        {% trans %}Clear profile{% endtrans %}
       </a>
-      <a class="link-danger open-modal-confirmation" data-title="Удалить аккаунт {{ current_user.email }}?" data-form="#UserActions" data-action="delete_user">
-        Удалить аккаунт
+      <a class="link-danger open-modal-confirmation" data-title="{% trans %}Delete profile?{% endtrans %}" data-form="#UserActions" data-action="delete_user">
+        {% trans %}Delete profile{% endtrans %}
       </a>
     </form>
   </div>
 </div>
 
+{% endblock %}
+
+{% block after_scripts %}
+  <script>
+    $('#SelectLocale').on('change', function() {
+      $.get("{{ url_for('change_locale') }}" + '?locale=' + $(this).val())
+      .done(function () {
+        window.location.reload();
+      });
+    });
+  </script>
 {% endblock %}

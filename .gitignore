@@ -8,3 +8,4 @@ portfolio_tracker/static/images
 celerybeat-schedule
 dump.rdb
 pyrightconfig.json
+messages.pot

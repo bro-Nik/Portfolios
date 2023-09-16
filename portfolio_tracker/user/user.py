@@ -1,12 +1,13 @@
 import json
 from flask import Response, jsonify, render_template, redirect, send_file, url_for, request, flash, session, Blueprint
+from flask_babel import gettext
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 import requests
 import pickle
 
-from portfolio_tracker.app import app, db, login_manager, redis
+from portfolio_tracker.app import db, login_manager, redis
 from portfolio_tracker.general_functions import float_
 from portfolio_tracker.models import Alert, Asset, Portfolio, Transaction, User, WhitelistTicker, userInfo, Wallet
 from portfolio_tracker.whitelist.whitelist import get_whitelist_ticker
@@ -17,63 +18,60 @@ user = Blueprint('user',
                   template_folder='templates',
                   static_folder='static')
 
+def get_user(email):
+    return db.session.execute(db.select(User).filter_by(email=email)).scalar()
+
 
 @user.route('/register', methods=['GET', 'POST'])
 def register():
-    email = request.form.get('email')
-    password = request.form.get('password')
-    password2 = request.form.get('password2')
-
     if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        password2 = request.form.get('password2')
+
         if not (email and password and password2):
-            flash('Пожалуйста заполните все поля')
-        elif db.session.execute(db.select(User).filter_by(email=email)).scalar():
-            flash('Такой адрес почты уже используется')
+            flash(gettext('Fill in your Email, password and confirmation password'), 'danger')
+        elif get_user(email):
+            flash(gettext('This Email address is already in use'), 'danger')
         elif password != password2:
-            flash('Пароли не совпадают')
+            flash(gettext('Password and confirmation password do not match'), 'danger')
         else:
             hash_password = generate_password_hash(password)
             new_user = User(email=email, password=hash_password)
             db.session.add(new_user)
-            db.session.commit()
 
-            # кошелек
-            wallet = Wallet(name='Default', user_id=new_user.id)
-            db.session.add(wallet)
+            new_user.wallets.append(Wallet(name=gettext('Default Wallet')))
+            new_user.info.append(userInfo(first_visit=datetime.now()))
 
-            first_visit = userInfo(user_id=new_user.id, first_visit=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M'))
-            db.session.add(first_visit)
             db.session.commit()
 
             return redirect(url_for('.login'))
 
-        return redirect(url_for('.register'))
-
-    else:
-        return render_template('user/register.html')
+    return render_template('user/register.html', locale=get_locale())
 
 
 @user.route('/login', methods=['GET', 'POST'])
 def login():
-    session['last_url'] = request.url
-    email = request.form.get('email')
-    password = request.form.get('password')
-
     if request.method == 'POST':
-        if email and password:
-            user = db.session.execute(db.select(User).filter_by(email=email)).scalar()
+        email = request.form.get('email')
+        password = request.form.get('password')
 
-            if user and check_password_hash(user.password, password):
-                login_user(user, remember=request.form.get('remember-me'))
-                next_page = request.args.get('next') if request.args.get('next') else url_for('portfolio.portfolios')
-                new_visit()
-                return redirect(next_page)
+        if not email or not password:
+            flash(gettext('Enter your Email and password'), 'danger')
+
+        user = get_user(email)
+        if user and check_password_hash(user.password, password):
+            login_user(user, remember=request.form.get('remember-me')) 
+            new_visit()
+            if request.args.get('next'):
+                return redirect(request.args.get('next'))
             else:
-                flash('Некорректные данные')
+                return redirect(url_for('portfolio.portfolios'))
         else:
-            flash('Введите данные')
+            flash(gettext('Invalid Email or password'), 'danger')
 
-    return render_template('user/login.html')
+    return render_template('user/login.html', locale=get_locale())
+
 
 
 @login_manager.user_loader
@@ -203,7 +201,7 @@ def demo_user():
 @login_required
 def settings_profile():
     """ Settings page """
-    return render_template('user/settings_profile.html')
+    return render_template('user/settings_profile.html', locale=get_locale())
 
 
 @user.route('/settings_export_import', methods=['GET'])
@@ -391,3 +389,19 @@ def import_data_post():
     flash('Импорт выполнен', 'success')
 
     return redirect(url_for('.settings_export_import'))
+
+
+def get_locale():
+    if current_user.is_authenticated:
+        if current_user.type == 'demo':
+            return session.get('locale')
+        return current_user.locale
+    elif session.get('locale'):
+        return session.get('locale')
+
+    return request.accept_languages.best_match(['de', 'fr', 'en', 'ru'])
+
+
+def get_timezone():
+    if current_user.is_authenticated:
+        return current_user.timezone

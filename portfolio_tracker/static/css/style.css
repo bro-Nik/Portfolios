@@ -375,6 +375,10 @@ td div.comment {
     padding-right: 0.5rem;
 }
 
+select {
+    display:none;
+}
+
 .smart-select-box {
     display: block;
     width: 100%;
@@ -386,7 +390,7 @@ td div.comment {
     cursor: pointer;
     user-select: none;
     border-radius: 0.5rem;
-    min-height: calc(1.5rem + 0.75rem + 2px);
+    /* min-height: calc(1.5rem + 0.75rem + 2px); */
 }
 
 .smart-select__list {
@@ -437,6 +441,11 @@ td div.comment {
 .alert {
     padding: 0.5rem 1rem;
     margin-bottom: 0.1rem;
+    border:none;
+}
+.alert-danger {
+    --bs-alert-color: rgb(153 27 27/1);
+    --bs-alert-bg: #f8d7da75;
 }
 .alert-dismissible .btn-close {
     padding: 0.75rem;

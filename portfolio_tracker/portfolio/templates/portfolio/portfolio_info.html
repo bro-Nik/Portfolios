@@ -10,7 +10,9 @@
       <h1>{{ portfolio.name }}</h1>
     </div>
     <div class="col-auto ms-auto">
-      <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_modal', market_id=portfolio.market_id, portfolio_id=portfolio.id) }}">Добавить актив</button>
+      <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_modal', market_id=portfolio.market_id, portfolio_id=portfolio.id) }}">
+        {% trans %}Add asset{% endtrans %}
+      </button>
     </div>
   </div>
   {% include 'flash_messages.html' %}
@@ -20,7 +22,7 @@
   <div class="row xs-mb-3">
 
     <div class="col-auto">
-      <p class="small-text">Вложено / сейчас</p>
+      <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
       <span class="text-average">${{ portfolio.total_spent|int|number_group }} /</span>
       <span class="text-average {{ 'text-green' if portfolio.profit|int > 0 }} {{ 'text-red' if portfolio.profit|int < 0 }}">
         ${{ portfolio.cost_now|int|number_group }}
@@ -28,12 +30,12 @@
     </div>
 
     <div class="col-auto">
-      <p class="small-text">В ордерах</p>
+      <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
       <span class="text-average">${{ portfolio.in_orders|int|number_group }}</span>
     </div>
 
     <div class="col-auto">
-      <p class="small-text">Прибыль / убыток</p>
+      <p class="small-text">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</p>
       <span class="text-average {{ 'text-green' if portfolio.profit|int > 0 }} {{ 'text-red' if portfolio.profit|int < 0 }}">
         {{ '-' if portfolio.profit|int < 0 }}${{ portfolio.profit|int|abs|number_group }}
         {% if portfolio.total_spent and portfolio.profit|int %}
@@ -43,7 +45,7 @@
     </div>
 
     <div class="col-auto">
-      <p class="small-text">Активов</p>
+      <p class="small-text">{% trans %}Number of assets{% endtrans %}</p>
       <span class="text-average">{{ asset_list|length}}</span>
     </div>
 
@@ -57,17 +59,17 @@
             <th class="main-tab-checkbox">
               <input class="form-check-input check-all" type="checkbox">
             </th>
-            <th data-sortable="true">Наименование</th>
-            <th>Цена / Ср. цена покупки</th>
-            <th data-sortable="true" data-sort-name="cost_now">Активы</th>
-            <th data-sortable="true" data-sort-name="profit">Прибыль / убыток</th>
-            <th data-sortable="true" data-sort-name="percent">% портфеля</th>
-            <th>Комментарий</th>
+            <th data-sortable="true">{% trans %}Name{% endtrans %}</th>
+            <th>{% trans %}Price{% endtrans %} / {% trans %}Average buy price{% endtrans %}</th>
+            <th data-sortable="true" data-sort-name="cost_now">{% trans %}Holdings{% endtrans %}</th>
+            <th data-sortable="true" data-sort-name="profit">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</th>
+            <th data-sortable="true" data-sort-name="percent">% {% trans %}of portfolio{% endtrans %}</th>
+            <th>{% trans %}Comment{% endtrans %}</th>
             <th></th>
             <!-- For sorting -->
-            <th class="visually-hidden" data-sortable="true" data-field="cost_now">Стоит сейчас</th>
-            <th class="visually-hidden" data-sortable="true" data-field="profit">Профит</th>
-            <th class="visually-hidden" data-sortable="true" data-field="percent">% портфеля</th>
+            <th class="visually-hidden" data-sortable="true" data-field="cost_now">Cost now</th>
+            <th class="visually-hidden" data-sortable="true" data-field="profit">Profit</th>
+            <th class="visually-hidden" data-sortable="true" data-field="percent">% of portfolio</th>
           </tr>
         </thead>
         <tbody>
@@ -148,10 +150,12 @@
 	                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
                   </a>
                   <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                    <a class="dropdown-item open-modal" data-modal-id="AssetSettingsModal" data-url="{{ url_for('.asset_settings', asset_id=asset.id) }}">Изменить</a>
-                    <a class="dropdown-item link-danger {{ 'open-modal-confirmation' if asset.can_delete else 'opacity-25 disabled' }}" data-title="Удалить {{ asset.name }}?"
+                    <a class="dropdown-item open-modal" data-modal-id="AssetSettingsModal" data-url="{{ url_for('.asset_settings', asset_id=asset.id) }}">
+                      {% trans %}Change{% endtrans %}
+                    </a>
+                    <a class="dropdown-item link-danger {{ 'open-modal-confirmation' if asset.can_delete else 'opacity-25 disabled' }}" data-title="{% trans name=asset.name %}Delete {{ name }}?{% endtrans %}"
                       data-id="{{ asset.id }}">
-                      Удалить
+                      {% trans %}Delete{% endtrans %}
                     </a>
                   </div>
                 </div>
@@ -169,19 +173,20 @@
 
       <!-- Actions buttons -->
       <div class="sticky-bottom-buttons">
-        <a class="open-modal-confirmation" data-action="delete" data-title="Удалить активы?">Удалить</a>
+        <a class="open-modal-confirmation" data-action="delete"
+          data-title="{% trans %}Delete assets?{% endtrans %}">{% trans %}Delete{% endtrans %}</a>
       </div>
 
     </form>
   </div>
 {% else %}
-  <div class="nothing-box">Пока ничего нет...</div>
+  <div class="nothing-box">{% trans %}There's nothing yet...{% endtrans %}</div>
 {% endif %}
 
 <div class="convert-text" data-convert-to="textarea" data-name="comment"
   data-url="{{ url_for('.portfolio_settings_update', portfolio_id=portfolio.id) }}">
   <span class="convert-data">{{ portfolio.comment if portfolio.comment }}</span>
-  <span>{{ 'Добавить комментарий' if not portfolio.comment }}</span>
+  <span>{{ gettext('Add comment') if not portfolio.comment }}</span>
 </div>
 
 {% endblock %}

@@ -19,16 +19,29 @@
     </div>
 
     <div class="col-auto ms-auto">
-      <button class="btn btn-primary open-modal" type="button" data-modal-id="OperationModal" data-url="{{ url_for('.other_asset_operation', asset_id=asset.id) }}">Добавить операцию</button>
-      <button class="btn btn-warning open-modal" type="button" data-modal-id="BodyModal" data-url="{{ url_for('.other_asset_body', asset_id=asset.id) }}">Добавить тело актива</button>
+      <button class="btn btn-primary open-modal" type="button" data-modal-id="OperationModal" data-url="{{ url_for('.other_asset_operation', asset_id=asset.id) }}">
+        {% trans %}Add transaction{% endtrans %}
+      </button>
+      <button class="btn btn-warning open-modal" type="button" data-modal-id="BodyModal" data-url="{{ url_for('.other_asset_body', asset_id=asset.id) }}">
+        {% trans %}Add asset body{% endtrans %}
+      </button>
       <button type="button" class="btn btn-light dropdown-toggle ms-1" data-bs-toggle="dropdown"
         aria-expanded="false">
-        Еще
+        {% trans %}More{% endtrans %}
       </button>
       <ul class="dropdown-menu">
-        <li>
-          <a class="dropdown-item">Удалить {{ asset.name }}</a>
-        </li>
+        <button class="dropdown-item open-modal" type="button" data-modal-id="OtherAssetSettingsModal"
+          data-url="{{ url_for('.other_asset_settings', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
+          {% trans name=asset.name %}{{ name }} Settings{% endtrans %}
+        </button>
+
+        <form id="AssetActions" action="{{ url_for('.other_asset_action') }}">
+          <button class="dropdown-item link-danger open-modal-confirmation" 
+            type="button" data-form="#AssetActions" data-id="{{ asset.id }}"
+            data-title="{% trans name=asset.name %}Delete {{ name }}?{% endtrans %}" data-pre-need-clean="true">
+            {% trans name=asset.name %}{{ name }} Delete{% endtrans %}
+          </button>
+        </form>
       </ul>
     </div>
   </div>
@@ -37,14 +50,14 @@
 {% if asset.bodys or asset.operations %}
   <div class="row mb-5 xs-mb-3">
     <div class="col-auto">
-      <p class="small-text">Вложено</p>
+      <p class="small-text">{% trans %}Total spent{% endtrans %}</p>
       <span class="text-average">
         ${{ bodys_total_spent|int|number_group }}
       </span>
     </div>
 
     <div class="col-auto">
-      <p class="small-text">Прибыль / убыток</p>
+      <p class="small-text">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</p>
       <span class="text-average {{ 'text-green' if asset_profit|int > 0 }} {{ 'text-red' if asset_profit|int < 0 }}">
         {{ '-' if asset_profit|int < 0 }}${{ asset_profit|int|number_group }}
         {% if bodys_total_spent and asset_profit %}
@@ -54,7 +67,7 @@
     </div>
 
     <div class="col-auto">
-      <p class="small-text">% от портфеля</p>
+      <p class="small-text">% {% trans %}of portfolio{% endtrans %}</p>
       <span class="text-average">
         {{ asset_percent|string + '%' if portfolio_total_spent and asset.bodys else '-' }}
         {{ 'из ' + asset.percent|string + '%' if asset.percent }}
@@ -67,12 +80,12 @@
   <div class="nav nav-tabs mb-1" id="nav-tab" role="tablist">
     <button class="nav-link link-dark" id="nav-asset-tab" data-bs-toggle="tab" data-bs-target="#nav-asset"
       type="button" role="tab" aria-controls="nav-home" aria-selected="false" tabindex="-1">
-      Активы
+      {% trans %}Asset bodys{% endtrans %}
     </button>
     <button class="nav-link link-dark active" id="nav-operations-tab" data-bs-toggle="tab"
       data-bs-target="#nav-operations" type="button" role="tab" aria-controls="nav-operations"
       aria-selected="true">
-      Операции
+      {% trans %}Transactions{% endtrans %}
     </button>
   </div>
 </nav>
@@ -88,10 +101,10 @@
               <th class="main-tab-checkbox">
                 <input class="form-check-input check-all" type="checkbox">
               </th>
-              <th>Название</th>
-              <th>Стоимость</th>
-              <th>Стоимость сейчас</th>
-              <th>Комментарий</th>
+              <th>{% trans %}Name{% endtrans %}</th>
+              <th>{% trans %}Price{% endtrans %}</th>
+              <th>{% trans %}Cost now{% endtrans %}</th>
+              <th>{% trans %}Comment{% endtrans %}</th>
               <th></th>
             </tr>
           </thead>
@@ -126,10 +139,12 @@
 	                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
                     </a>
                     <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                      <a class="dropdown-item open-modal" data-modal-id="BodyModal" data-url="{{ url_for('.other_asset_body', asset_id=asset.id, body_id=asset_body.id) }}">Изменить</a>
-                      <a class="dropdown-item link-danger {{ 'open-modal-confirmation' if asset_body.can_delete else 'opacity-25 disabled' }}" data-title="Удалить {{ asset.name }}?"
+                      <a class="dropdown-item open-modal" data-modal-id="BodyModal" data-url="{{ url_for('.other_asset_body', asset_id=asset.id, body_id=asset_body.id) }}">
+                        {% trans %}Change{% endtrans %}
+                      </a>
+                      <a class="dropdown-item link-danger open-modal-confirmation" data-title="{% trans name=asset_body.name %}Delete {{ name }}?{% endtrans %}"
                         data-id="{{ asset_body.id }}">
-                        Удалить
+                        {% trans %}Delete{% endtrans %}
                       </a>
                     </div>
                   </div>
@@ -141,7 +156,7 @@
         </table>
       </div>
     {% else %}
-      <div class="nothing-box">Пока ничего нет...</div>
+      <div class="nothing-box">{% trans %}There's nothing yet...{% endtrans %}</div>
     {% endif %}
   </div>
 
@@ -154,9 +169,9 @@
               <th class="main-tab-checkbox">
                 <input class="form-check-input check-all" type="checkbox">
               </th>
-              <th>Тип сделки</th>
-              <th>Сумма</th>
-              <th>Комментарий</th>
+              <th>{% trans %}Type{% endtrans %}</th>
+              <th>{% trans %}Amount{% endtrans %}</th>
+              <th>{% trans %}Comment{% endtrans %}</th>
               <th></th>
             </tr>
           </thead>
@@ -169,14 +184,14 @@
 
                 <td>
                   <div class="open-modal" data-modal-id="OperationModal" data-url="{{ url_for('.other_asset_operation', asset_id=asset.id, operation_id=operation.id) }}">
-                    {{ operation.type }} <br>
+                    {{ gettext('Profit') if operation.type == '+' else gettext('Loss') }} <br>
                     <span class="small-text">{{ operation.date }}</span>
                   </div>
                 </td>
 
                 <td>
-                  <span class="text-average {{ 'text-green' if operation.type == 'Прибыль' else 'text-red' }}">
-                    {{ '+' if operation.type == 'Прибыль' else '-' }}${{ operation.total_spent|abs|smart_int|number_group }}
+                  <span class="text-average {{ 'text-green' if operation.type == '+' else 'text-red' }}">
+                    {{ operation.type }}${{ operation.total_spent|abs|smart_int|number_group }}
                   </span>
                 </td>
 
@@ -193,10 +208,12 @@
 	                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
                     </a>
                     <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                      <a class="dropdown-item open-modal" data-modal-id="OperationModal" data-url="{{ url_for('.other_asset_operation', asset_id=asset.id, operation_id=operation.id) }}">Изменить</a>
-                      <a class="dropdown-item link-danger {{ 'open-modal-confirmation' if operation.can_delete else 'opacity-25 disabled' }}" data-title="Удалить {{ asset.name }}?"
+                      <a class="dropdown-item open-modal" data-modal-id="OperationModal" data-url="{{ url_for('.other_asset_operation', asset_id=asset.id, operation_id=operation.id) }}">
+                        {% trans %}Change{% endtrans %}
+                      </a>
+                      <a class="dropdown-item link-danger open-modal-confirmation" data-title="{% trans %}Delete transaction?{% endtrans %}"
                         data-id="{{ operation.id }}">
-                        Удалить
+                        {% trans %}Delete{% endtrans %}
                       </a>
                     </div>
                   </div>
@@ -208,7 +225,7 @@
         </table>
       </div>
     {% else %}
-      <div class="nothing-box">Пока ничего нет...</div>
+      <div class="nothing-box">{% trans %}There's nothing yet...{% endtrans %}</div>
     {% endif %}
   </div>
 </div>
@@ -216,7 +233,7 @@
 <div class="convert-text" data-convert-to="textarea" data-name="comment"
   data-url="{{ url_for('.other_asset_settings_update', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
   <span class="convert-data">{{ asset.comment if asset.comment }}</span>
-  <span>{{ 'Добавить комментарий' if not asset.comment }}</span>
+  <span>{{ gettext('Add comment') if not asset.comment }}</span>
 </div>
 
 {% endblock %}

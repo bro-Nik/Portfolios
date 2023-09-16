@@ -1,7 +1,7 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = 'Изменить уведомление' if alert else 'Добавить уведомление' %}
+{% set modal_title = gettext('Change alert') if alert else gettext('Add alert') %}
 
 {% block content %}
 {% set asset_id = request.args.get('asset_id') %}
@@ -10,20 +10,22 @@
 
     <div class="col-md-12">
       <div id="alertPrice" class="mb-1">
-        <label class="form-label h7">Цена</label>
+        <label class="form-label h7">{% trans %}Price{% endtrans %}</label>
         <div class="input-group mb-1">
           <span class="input-prefix">$</span>
           <input type="number" step="any" class="form-control rounded-3 focus" value="{{ alert.price if alert else price }}" name="price" autocomplete="off" required>
           <input type="hidden" name="type" value="{{ alert.type if alert else 'down' }}">
         </div>
-        <span class="small-text alert-price-info">Когда цена {{ ('выше' if alert.type == 'up' else 'ниже') if alert else 'ниже' }} {{ alert.price if alert else price }}$</span>
+        <span class="small-text alert-price-info">
+          {{ (gettext('When the price is above') if alert.type == 'up' else gettext('When the price is below')) if alert else gettext('When the price is below') }} {{ alert.price if alert else price }}$
+        </span>
       </div>
     </div>
 
     <div class="col-md-12">
       <div class="mb-3">
-        <label class="form-label h7">Комментарий</label>
-        <textarea class="form-control" name="comment">{{ alert.comment if alert }}</textarea>
+        <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
+        <textarea class="form-control" name="comment">{{ alert.comment if alert and alert.comment }}</textarea>
       </div>
     </div>
 
@@ -34,12 +36,14 @@
 <script>
   $('#alertPrice').on('input', 'input[name=price]', function () {
     var price_now = +{{ price }},
-      alert_price = +$(this).val();
+      alert_price = +$(this).val(),
+      up = "{{ gettext('When the price is above') }}" + ' ',
+      down = "{{ gettext('When the price is below') }}" + ' ';
     if (alert_price > price_now) {
-      $('#alertPrice .alert-price-info').text('Когда цена выше ' + alert_price + '$');
+      $('#alertPrice .alert-price-info').text(up + alert_price + '$');
       $('#alertPrice').find('input[name=type]').val('up');
     } else {
-      $('#alertPrice .alert-price-info').text('Когда цена ниже ' + alert_price + '$');
+      $('#alertPrice .alert-price-info').text(down + alert_price + '$');
       $('#alertPrice').find('input[name=type]').val('down');
     }
   })

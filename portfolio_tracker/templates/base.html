@@ -34,8 +34,8 @@
           </div>
           <div class="modal-body d-flex gap-2 justify-content-center">
             <button class="btn btn-danger rounded-3 action" type="button"
-              data-bs-dismiss="modal"><strong>Да</strong></button>
-            <button class="btn rounded-3" type="button" data-bs-dismiss="modal" aria-label="Close">Отменить</button>
+              data-bs-dismiss="modal"><strong>{{ gettext('Yes')}}</strong></button>
+            <button class="btn rounded-3" type="button" data-bs-dismiss="modal" aria-label="Close">{{ gettext('Cancel')}}</button>
           </div>
         </div>
       </div>
@@ -45,6 +45,15 @@
 
   <div id="footer">{% block footer %}{% endblock %}</div>
 </div>
+<script>
+  var trans = {
+    btn_save: "{{ gettext('OK') }}",
+    selected: "{{ gettext('Selected:') }}",
+    search: "{{ gettext('Search') }}",
+    loading: "{{ gettext('Loading...') }}",
+    nothing_found: "{{ gettext('Nothing found') }}"
+  }
+</script>
 
 <script src="{{ url_for('static', filename='js/jquery-3.6.4.min.js') }}"></script>
 <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>

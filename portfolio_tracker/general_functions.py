@@ -1,5 +1,7 @@
 import pickle
 from datetime import datetime, timedelta
+from flask import request
+from flask_login import current_user
 from portfolio_tracker.app import redis, db
 from portfolio_tracker.models import Ticker
 

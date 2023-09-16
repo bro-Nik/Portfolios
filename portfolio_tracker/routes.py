@@ -1,15 +1,28 @@
 import pickle
-from flask import render_template, url_for, redirect
+from flask import render_template, request, session, url_for, redirect
 from sqlalchemy import func
 from flask_login import login_required, current_user
+from flask_babel import gettext, ngettext
 
 from portfolio_tracker.app import app, redis, db
 from portfolio_tracker.models import Alert, User, WhitelistTicker
+from portfolio_tracker.user.user import get_locale
 
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html')
+    return render_template('index.html', locale=get_locale())
+
+
+@app.route('/change_locale', methods=['GET'])
+def change_locale():
+    locale = request.args.get('locale')
+    if current_user.is_authenticated and current_user.type != 'demo':
+        current_user.locale = locale
+        db.session.commit()
+    else:
+        session['locale'] = locale
+    return ''
 
 
 @app.errorhandler(404)
@@ -18,7 +31,7 @@ def page_not_found(e):
     return render_template('404.html')
 
 
-@app.route("/json/worked_alerts_count")
+@app.route('/json/worked_alerts_count', methods=['GET'])
 @login_required
 def worked_alerts_count():
     count = db.session.execute(

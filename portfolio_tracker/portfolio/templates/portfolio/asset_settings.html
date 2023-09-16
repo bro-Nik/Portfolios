@@ -1,6 +1,6 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-{% set modal_title = 'Настройки актива' %}
+{% set modal_title = gettext('Asset settings') %}
 
 {% block content %}
 <form data-url="{{ url_for('.asset_settings_update', asset_id=asset.id) }}">
@@ -21,7 +21,7 @@
 
     <div class="col-12">
       <div class="mb-1">
-        <label class="form-label h7">Планируемый % портфеля</label>
+        <label class="form-label h7">{% trans %}Planned portfolio percentage{% endtrans %}</label>
         <div class="input-group">
           <span class="input-prefix">%</span>
           <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="percent" value="{{ asset.percent|smart_int if asset.percent }}">
@@ -31,11 +31,11 @@
 
     <div class="col-12">
       <div class="mb-3">
-        <label class="form-label h7">Комментарий</label>
+        <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
         <textarea class="form-control" name="comment">{{ asset.comment if asset.comment }}</textarea>
       </div>
     </div>
   </div>
-  <button class="btn btn-primary rounded-3 w-100" type="submit">Сохранить</button>
+  <button class="btn btn-primary rounded-3 w-100" type="submit">{% trans %}OK{% endtrans %}</button>
 </form>
 {% endblock %}

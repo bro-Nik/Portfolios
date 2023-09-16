@@ -157,6 +157,8 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(255), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
     type = db.Column(db.String(255))
+    locale = db.Column(db.String(32), default='')
+    timezone = db.Column(db.String(32), default='')
     # Relationships
     info = db.relationship('userInfo',
                            backref=db.backref('user', lazy=True), uselist=False)

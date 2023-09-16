@@ -1,9 +1,9 @@
-from flask import Flask, Blueprint
+from flask import Flask
+from flask_babel import Babel
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from celery import Celery
 import redis
-
 
 
 def create_app():
@@ -36,6 +36,7 @@ celery = make_celery(app)
 redis = redis.StrictRedis('127.0.0.1', 6379)
 login_manager = LoginManager(app)
 
+
 from portfolio_tracker.portfolio.portfolio import portfolio
 app.register_blueprint(portfolio, url_prefix='/portfolios')
 from portfolio_tracker.wallet.wallet import wallet
@@ -44,13 +45,13 @@ from portfolio_tracker.whitelist.whitelist import whitelist
 app.register_blueprint(whitelist, url_prefix='/whitelist')
 from portfolio_tracker.admin.admin import admin
 app.register_blueprint(admin, url_prefix='/admin')
-from portfolio_tracker.user.user import user
+from portfolio_tracker.user.user import user, get_locale, get_timezone
 app.register_blueprint(user, url_prefix='/user')
 
+babel = Babel(app, locale_selector=get_locale, timezone_selector=get_timezone)
 
 with app.app_context():
     db.create_all()
-
 
 
 if __name__ == '__main__':

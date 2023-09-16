@@ -236,7 +236,7 @@ def users_action():
             user.type = ''
             db.session.commit()
 
-        elif action == 'user_delete':
+        elif action == 'delete':
             user_delete_def(user_id)
 
     return ''

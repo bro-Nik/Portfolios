@@ -1,39 +1,37 @@
-{# Страница регистрации #}
-
-<!doctype html>
+{# Jinja #}
 <html lang="ru">
 
 <head>
   <meta charset="utf-8" />
-  <title>Register</title>
+  <title>{% trans %}Sign Up{% endtrans %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-  <link href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" rel="stylesheet">
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" />
+  <link href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" rel="stylesheet">
   <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
   <style>
-    .form-signin {
-      max-width: 330px;
-      padding: 15px;
+    form {
+      width: 330px;
     }
-
     body {
-      display: flex;
-      align-items: center;
-      padding-top: 40px;
-      padding-bottom: 40px;
       background-color: #f5f5f5;
-    }
-
-    html,
-    body {
-      height: 100%;
     }
   </style>
 </head>
 
-<body>
-  <main class="form-signin w-100 m-auto">
+<body class="d-flex align-items-center">
+  <main class="m-auto">
     <form method="post">
+      {% with messages = get_flashed_messages(('error', 'info')) %}
+        {% if messages %}
+          <div class="mb-3">
+            {% for message in messages %}
+              <div class="alert alert-{{ message[0] }} text-center" role="alert">
+                {{ message[1] }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
 
       <a href="{{ url_for('index') }}" class="d-flex align-items-center mb-5 justify-content-center link-body-emphasis text-decoration-none">
         <img class="mb-0 me-2" src="{{ url_for('static', filename='favicon.png') }}" alt="" width="32" height="32" />
@@ -41,34 +39,29 @@
       </a>
 
       <div class="d-flex align-items-center gap-2 mb-3">
-        <h1 class="h3 fw-normal">Регистрация</h1>
-        <a href="{{ url_for('.login') }}" class="ms-auto link-primary text-decoration-none">Вход</a>
+        <h1 class="h3 fw-normal">{% trans %}Sign Up{% endtrans %}</h1>
+        <div class="ms-auto d-flex gap-3">
+          <a class="text-decoration-none" href="{{ url_for('.login') }}">{% trans %}Login{% endtrans %}</a>
+          <a class="text-decoration-none" href="{{ url_for('.demo_user') }}">{% trans %}Demo{% endtrans %}</a>
+        </div>
       </div>
 
-      {% with messages = get_flashed_messages() %}
-        {% if messages %}
-          {% for message in messages %}
-            <div style="padding: 5px;">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %} 
-
-      <div class="mb-3">
-        <input type="email" class="form-control" placeholder="Email" name="email">
+      <div class="mb-2">
+        <input type="email" class="form-control" placeholder="{% trans %}Email{% endtrans %}" name="email" required>
       </div>
 
       <div class="mb-1">
-        <input type="password" class="form-control" placeholder="Пароль" name="password">
+        <input type="password" class="form-control" placeholder="{% trans %}Password{% endtrans %}" name="password" required>
       </div>
 
       <div class="mb-3">
-        <input type="password" class="form-control" placeholder="Пароль (повтор)" name="password2">
+        <input type="password" class="form-control" placeholder="{% trans %}Confirm password{% endtrans %}" name="password2" required>
       </div>
 
-      <button class="w-100 btn btn-sm btn-primary mb-5" type="submit">Зарегистрироваться</button>
+      <button class="w-100 btn btn-sm btn-primary" type="submit">{% trans %}Sign Up{% endtrans %}</button>
 
     </form>
   </main>
-</body>
 
+</body>
 </html>

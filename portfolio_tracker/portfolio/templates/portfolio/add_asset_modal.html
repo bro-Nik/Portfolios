@@ -1,13 +1,13 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = 'Добавить актив' %}
+{% set modal_title = gettext('Add asset') %}
 
 {% block content %}
 
 <div id="AssetsGeneralBox" class="add-tickers-box">
   <div class="search">
-    <input class="border rounded-3 w-100 mb-3 px-3 focus" placeholder="Поиск"></input>
+    <input class="border rounded-3 w-100 mb-3 px-3 focus" placeholder="{% trans %}Search{% endtrans %}"></input>
   </div> 
   <div id="AssetsBox" class="overflow-y-auto">
     <div id="AssetsList" class="hover-child-color" data-page="1">

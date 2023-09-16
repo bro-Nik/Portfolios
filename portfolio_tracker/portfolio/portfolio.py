@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from flask import flash, render_template, redirect, url_for, request, Blueprint
 from flask_login import login_required, current_user
+from portfolio_tracker.admin.admin import first_start
 
 from portfolio_tracker.app import db
 from portfolio_tracker.general_functions import int_, \
@@ -76,6 +77,7 @@ def get_body(id):
 @login_required
 def portfolios():
     """ Portfolios page """
+
     price_list = get_price_list()
     all = {'total_spent': 0, 'cost_now': 0}
     portfolio_list = []
@@ -703,10 +705,9 @@ def other_asset_operation_update(asset_id):
         operation = otherAssetOperation(asset_id=asset_id)
         db.session.add(operation)
 
-    type = int(request.form['type'])
-    total_spent = float(request.form['total_spent'])
-    operation.total_spent = total_spent * type
-    operation.type = 'Прибыль' if type == 1 else 'Убыток'
+    total_spent = request.form['total_spent']
+    operation.type = request.form['type']
+    operation.total_spent = float(operation.type + total_spent)
     operation.comment = request.form['comment']
     operation.date = request.form['date']
 

@@ -1,6 +1,6 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-{% set modal_title = 'Изменить актив' if asset else 'Добавить актив' %}
+{% set modal_title = gettext('Change asset') if asset else 'Add asset' %}
 
 {% block content %}
 <form data-url="{{ url_for('.other_asset_settings_update', portfolio_id=portfolio_id, asset_id=asset.id if asset else None) }}">
@@ -8,14 +8,14 @@
 
     <div class="col-12">
       <div class="mb-1">
-        <label class="form-label h7">Название</label>
+        <label class="form-label h7">{% trans %}Name{% endtrans %}</label>
         <input type="text" class="form-control rounded-3 focus" name="name" value="{{ asset.name if asset }}" required>
       </div>
     </div>
 
     <div class="col-12">
       <div class="mb-3">
-        <label class="form-label h7">Комментарий</label>
+        <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
         <textarea class="form-control" name="comment">{{ asset.comment if asset }}</textarea>
       </div>
     </div>

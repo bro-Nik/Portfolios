@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <title>Portfolios</title>
 </head>
 
@@ -19,14 +20,24 @@
           <span class="fs-4">Portfolios</span>
         </div>
 
-        <div class="d-flex align-items-center ms-auto">
+        <div class="d-flex align-items-center ms-auto gap-3 text-nowrap">
+          <div>
+            <select id="SelectLocale" data-class="form-select border-0 fw-medium">
+              <option value="en" {{ 'selected' if locale == 'en' }}>English</option>
+              <option value="ru" {{ 'selected' if locale == 'ru' }}>Русский</option>
+            </select>
+          </div>
+
           {% if current_user.is_authenticated %}
-            <a class="text-decoration-none text-capitalize" href="{{ url_for('portfolio.portfolios') }}">
+            <a class="text-decoration-none text-capitalize fw-medium" href="{{ url_for('portfolio.portfolios') }}">
               {{ current_user.email[0 : current_user.email.find("@")] }}
             </a>
           {% else %}
-            <a href="{{ url_for('user.register') }}" class="text-decoration-none">Вход/Регистация</a>
-            <a href="{{ url_for('user.demo_user') }}" class="text-decoration-none ms-3">Demo</a>
+            <div>
+              <a href="{{ url_for('user.login') }}" class="text-decoration-none fw-medium">{% trans %}Login{% endtrans %}</a> /
+              <a href="{{ url_for('user.register') }}" class="text-decoration-none fw-medium">{% trans %}Sign Up{% endtrans %}</a>
+            </div>
+            <a href="{{ url_for('user.demo_user') }}" class="text-decoration-none fw-medium">{% trans %}Demo{% endtrans %}</a>
           {% endif %}
         </div>
 
@@ -38,25 +49,22 @@
         <div class="col-6">
           <div class="d-flex flex-column" style="padding: 60px 50px 60px 30px;">
             <h2 class="text-uppercase mb-5 fw-bold" style="font-size: 3.5rem; color: #e5bb15; line-height: 1;">
-              Отслеживай<br> активы<br> в одном месте
+              {% trans %}Track<br> your assets<br> in one place{% endtrans %}
             </h2>
             <p class="fs-5">
-              Portfolios позволяет вести учет по многим активам
-              (Криптовалюта, Акции, Офлайн активы) в одном личном кабинете, что
-              позволяет ничего не растерять и не забыть.
+              {% trans %}Portfolios allows you to keep records of many assets (Cryptocurrency, Stocks, Offline assets) in one personal account, which allows you not to lose or forget anything.{% endtrans %}
             </p>
-            <p class="fw-semibold">Криптовалюта и акции</p>
+            <p class="fw-semibold">{% trans %}Cryptocurrency and stocks{% endtrans %}</p>
             <ul class="fw-light">
-              <li>уведомления по достижению цены</li>
+              <li>{% trans %}notifications when price is reached{% endtrans %}</li>
               <li>
-                неограниченное количество портфелей (удобное распредение
-                стратегий)
+                {% trans %}unlimited number of portfolios (convenient distribution strategies){% endtrans %}
               </li>
-              <li>уведомления на выставленные ордера</li>
+              <li>{% trans %}notifications for placed orders{% endtrans %}</li>
             </ul>
-            <p class="fw-semibold">Другие активы</p>
+            <p class="fw-semibold">{% trans %}Other assets{% endtrans %}</p>
             <p class="fw-light">
-              Ведение офлайн инвестиций (коммерческой недвижимости и тд.)
+              {% trans %}Maintaining offline investments (commercial real estate, etc.){% endtrans %}
             </p>
           </div>
         </div>
@@ -67,12 +75,22 @@
         </div>
       </div>
     </section>
-
   </div>
-    <footer class="p-5 text-white" style="background-color: #333333; text-align: center">
-      <p>$Portfolios</p>
-    </footer>
 
+  <footer class="p-5 text-white" style="background-color: #333333; text-align: center">
+    <p>$Portfolios</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/jquery-3.6.4.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/smart-select.js') }}"></script>
+  <script>
+    $('#SelectLocale').on('change', function() {
+      $.get("{{ url_for('change_locale') }}" + '?locale=' + $(this).val())
+      .done(function () {
+        window.location.reload();
+      });
+    });
+  </script>
 </body>
 
 </html>

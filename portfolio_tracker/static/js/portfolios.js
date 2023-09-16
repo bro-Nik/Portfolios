@@ -2,21 +2,10 @@ const $modalsBox = $('#Modals');
 
 $(function () {
 
-  // Full Height
-  var $table = $(".table-responsive.full-height"),
-    $tabParent = $($table.attr("data-parent")),
-    tableHeight = $(window).height();
-
-  tableHeight -= $("#page-content .header").height();
-  tableHeight -= parseInt($tabParent.css("margin-top")) * 2;
-  tableHeight -= $tabParent.height() - $table.height();
-
-  $table.height(tableHeight);
-
   // Check All
   $("body").on("change", ".check-all", function () {
-    var $table = $(this).closest("table");
-    $table.find(".to-check").prop("checked", $(this).is(":checked")).trigger("change");
+    var $form = $(this).closest("form");
+    $form.find(".to-check").prop("checked", $(this).is(":checked")).trigger("change");
   });
 
   // Decheck All
@@ -124,7 +113,6 @@ $(function () {
       id = $btn.attr("data-id") || "";
     $modal.find(".modal-title").text(title);
     $modal.find(".action").attr("data-action", action);
-    $modal.find(".action").attr("data-id", id);
     $modal.find(".action").attr("data-id", id);
     $modal.modal({backdrop: false}).modal("show");
   });
@@ -355,13 +343,13 @@ function UpdateScripts($element) {
 function UpdateTables($element = $("body")) {
   $element.find(".bootstrap-table").bootstrapTable({
     formatSearch() {
-      return "Поиск";
+      return trans.search;
     },
     formatNoMatches() {
-      return "Ничего не найдено";
+      return trans.nothing_found;
     },
     formatLoadingMessage: function() {
-        return 'Загрузка...';
+        return trans.loading;
     },
   });
 }
@@ -372,7 +360,7 @@ function StickyBottomActionsUpdate($element = $("body")) {
     <div class="sticky-bottom actions">
       <div class="col-12">
         <div class="bg-white h-100 d-flex gap-2 align-items-center align-items-center">
-          <span class="ms-5">Отмеченно:</span>
+          <span class="ms-5">` + trans.selected + `</span>
           <span class="checks-count"></span>
           <a class="ms-3 decheck-all">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>
@@ -393,5 +381,4 @@ function StickyBottomActionsUpdate($element = $("body")) {
 
 StickyBottomActionsUpdate();
 UpdateTables();
-UpdateSmartSelects();
 UpdateFocus();

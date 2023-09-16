@@ -1,21 +1,21 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = 'Ввод-вывод' %}
+{% set modal_title = gettext('Input/output') %}
 
 {% block content %}
   <form data-url="{{ url_for('.wallet_in_out') }}">
     <div class="btn-group silver col-12 mb-3" role="group">
-      <input type="radio" class="btn-check" name="type" value="Ввод" id="btnradio1" autocomplete="off" checked>
-      <label class="btn btn-outline-active btn-sm" for="btnradio1">Ввод</label>
+      <input type="radio" class="btn-check" name="type" value="+" id="btnradio1" autocomplete="off" checked>
+      <label class="btn btn-outline-active btn-sm" for="btnradio1">{% trans %}Input{% endtrans %}</label>
 
-      <input type="radio" class="btn-check" name="type" value="Вывод" id="btnradio2" autocomplete="off">
-      <label class="btn btn-outline-not_active btn-sm" for="btnradio2">Вывод</label>
+      <input type="radio" class="btn-check" name="type" value="-" id="btnradio2" autocomplete="off">
+      <label class="btn btn-outline-not_active btn-sm" for="btnradio2">{% trans %}Output{% endtrans %}</label>
     </div>
     <div class="row g-2">
       <div class="col-md-6">
         <div class="mb-3">
-          <label class="form-label h7">Сумма</label>
+          <label class="form-label h7">{% trans %}Amount{% endtrans %}</label>
           <div class="input-group">
             <span class="input-prefix">$</span>
             <input type="number" step="any" class="form-control rounded-3 focus" placeholder="0,00"
@@ -25,15 +25,13 @@
       </div>
       <div class="col-md-6">
         <div class="mb-3">
-          <label class="form-label h7">Кошелек</label>
-          <select class="ajax-select" name="wallet_id" data-url="{{ url_for('.get_all_user_wallets') }}" required>
-            {% if current_user.wallets|length == 1 %}
-              <option selected value="{{ current_user.wallets[0].id }}">{{ current_user.wallets[0].name }}</option>
-            {% endif %}
+          <label class="form-label h7">{% trans %}Wallet{% endtrans %}</label>
+          <select name="wallet_id" data-class="form-select"
+            data-url="{{ url_for('wallet.get_all_user_wallets') }}" data-placeholder="-" required>
           </select>
         </div>
       </div>
     </div>
-    <button class="btn btn-primary rounded-3 w-100" type="submit">Готово</button>
+    <button class="btn btn-primary rounded-3 w-100" type="submit">{% trans %}OK{% endtrans %}</button>
   </form>
 {% endblock %}

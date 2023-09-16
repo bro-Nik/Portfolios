@@ -26,7 +26,8 @@
     <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal focus" data-modal-id="AlertModal" type="button" data-url="{{ url_for('.alert', market_id=market_id, whitelist_ticker_id=whitelist_ticker.id if whitelist_ticker else None,
         ticker_id=ticker.id, asset_id=asset_id) }}">
-        Добавить уведомление</button>
+        {% trans %}Add alert{% endtrans %}
+      </button>
     </div>
   </div>
   {% include 'flash_messages.html' %}
@@ -40,9 +41,9 @@
           <th class="main-tab-checkbox">
             <input class="form-check-input check-all" type="checkbox">
           </th>
-          <th>Цена</th>
-          <th>Откуда</th>
-          <th>Комментарий</th>
+          <th>{% trans %}Price{% endtrans %}</th>
+          <th>{% trans %}Added from{% endtrans %}</th>
+          <th>{% trans %}Comment{% endtrans %}</th>
           <th></th>
         </tr>
       </thead>
@@ -61,7 +62,7 @@
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-green" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 0 0 8a8 8 0 0 0 16 0zm-7.5 3.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V11.5z"/></svg>
                 {% endif %}
 
-                {{ 'Ниже' if alert.type == 'down' else 'Выше' }}
+                {{ gettext('Above') if alert.type == 'up' else gettext('Below') }}
                 ${{ alert.price|smart_round|number_group }}  
                 <br>
                 <span class="small-text">{{ alert.date }}</span>
@@ -77,7 +78,7 @@
               {% else %}
                 <span class="link-secondary">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z"/><path d="M2.242 2.194a.27.27 0 0 1 .516 0l.162.53c.035.115.14.194.258.194h.551c.259 0 .37.333.164.493l-.468.363a.277.277 0 0 0-.094.3l.173.569c.078.256-.213.462-.423.3l-.417-.324a.267.267 0 0 0-.328 0l-.417.323c-.21.163-.5-.043-.423-.299l.173-.57a.277.277 0 0 0-.094-.299l-.468-.363c-.206-.16-.095-.493.164-.493h.55a.271.271 0 0 0 .259-.194l.162-.53zm0 4a.27.27 0 0 1 .516 0l.162.53c.035.115.14.194.258.194h.551c.259 0 .37.333.164.493l-.468.363a.277.277 0 0 0-.094.3l.173.569c.078.255-.213.462-.423.3l-.417-.324a.267.267 0 0 0-.328 0l-.417.323c-.21.163-.5-.043-.423-.299l.173-.57a.277.277 0 0 0-.094-.299l-.468-.363c-.206-.16-.095-.493.164-.493h.55a.271.271 0 0 0 .259-.194l.162-.53zm0 4a.27.27 0 0 1 .516 0l.162.53c.035.115.14.194.258.194h.551c.259 0 .37.333.164.493l-.468.363a.277.277 0 0 0-.094.3l.173.569c.078.255-.213.462-.423.3l-.417-.324a.267.267 0 0 0-.328 0l-.417.323c-.21.163-.5-.043-.423-.299l.173-.57a.277.277 0 0 0-.094-.299l-.468-.363c-.206-.16-.095-.493.164-.493h.55a.271.271 0 0 0 .259-.194l.162-.53z"/></svg>
-                  Whitelist
+                  {% trans %}Whitelist{% endtrans %}
                 </span>
               {% endif %}
             </td>
@@ -88,8 +89,9 @@
               <div class="d-flex align-items-center justify-content-end">
 
                 {% if alert.transaction_id %}
-                  <span class="badge text-bg-secondary">Ордер</span>
-                  <a class="link-secondary open-modal-confirmation" data-id="{{ alert.id }}" data-title="Ордер сработал?" data-action="convert_to_transaction" title="Ордер сработал">
+                  <span class="badge text-bg-secondary">{% trans %}Order{% endtrans %}</span>
+                  <a class="link-secondary open-modal-confirmation" data-id="{{ alert.id }}"
+                    data-title="{{ gettext('Did the order work?') }}" data-action="convert_to_transaction" title="{{ gettext('The order worked') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>
                   </a>
                 {% else %}
@@ -100,7 +102,7 @@
                     data-this-need-update="true" data-id="{{ alert.id }}">
                   </div>
 
-                  <span class="link-secondary open-modal-confirmation" data-action="delete" data-title="Удалить уведомление?" data-id="{{ alert.id }}" title="Удалить">
+                  <span class="link-secondary open-modal-confirmation" data-action="delete" data-title="{% trans %}Delete alert?{% endtrans %}" data-id="{{ alert.id }}" title="{% trans %}Delete{% endtrans %}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
                   </span>
               {% endif %}
@@ -113,22 +115,28 @@
 
     <!-- Actions buttons -->
     <div class="sticky-bottom-buttons">
-      <a class="open-modal-confirmation" data-action="turn_on" data-title="Включить уведомления?">Включить</a>
-      <a class="open-modal-confirmation" data-action="turn_off" data-title="Отключить уведомления?">Отключить</a>
-      <a class="open-modal-confirmation" data-action="delete" data-title="Удалить уведомления?">Удалить</a>
+      <a class="open-modal-confirmation" data-action="turn_on" data-title="{% trans %}Enable alerts?{% endtrans %}">
+        {% trans %}Enable{% endtrans %}
+      </a>
+      <a class="open-modal-confirmation" data-action="turn_off" data-title="{% trans %}Disable alerts?{% endtrans %}">
+        {% trans %}Disable{% endtrans %}
+      </a>
+      <a class="open-modal-confirmation" data-action="delete" data-title="{% trans %}Delete alerts?{% endtrans %}">
+        {% trans %}Delete{% endtrans %}
+      </a>
     </div>
 
   </form>
 </div>
 
 {% else %}
-  <div class="nothing-box">Пока ничего нет...</div>
+  <div class="nothing-box">{% trans %}There's nothing yet...{% endtrans %}</div>
 {% endif %}
 
 <div class="convert-text" data-convert-to="textarea" data-name="comment"
   data-send-url="{{ url_for('.whitelist_ticker_update', ticker_id=ticker.id) }}">
   <span class="convert-data">{{ whitelist_ticker.comment if whitelist_ticker.comment }}</span>
-  <span>{{ 'Добавить комментарий' if not whitelist_ticker.comment }}</span>
+  <span>{{ gettext('Add comment') if not whitelist_ticker.comment }}</span>
 </div>
 
 {% endblock %}

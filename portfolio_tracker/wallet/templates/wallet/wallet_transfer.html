@@ -1,14 +1,14 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = 'Перевод' %}
+{% set modal_title = gettext('Transfer') %}
 
 {% block content %}
   <form data-url="{{ url_for('.wallet_transfer') }}">
     <div class="row g-2">
       <div class="col-md-12">
         <div class="mb-1">
-          <label class="form-label h7">Сумма</label>
+          <label class="form-label h7">{% trans %}Amount{% endtrans %}</label>
           <div class="input-group">
             <span class="input-prefix">$</span>
             <input type="number" step="any" class="form-control rounded-3 focus" placeholder="0,00"
@@ -18,19 +18,21 @@
       </div>
       <div class="col-md-6">
         <div class="mb-3">
-          <label class="form-label h7">Кошелек отправитель</label>
-          <select class="ajax-select" name="wallet_out"
-            data-url="{{ url_for('.get_all_user_wallets') }}" required></select>
+          <label class="form-label h7">{% trans %}Sender wallet{% endtrans %}</label>
+          <select name="wallet_out" data-class="form-select"
+            data-url="{{ url_for('wallet.get_all_user_wallets') }}" data-placeholder="-" required>
+          </select>
         </div>
       </div>
       <div class="col-md-6">
         <div class="mb-3">
-          <label class="form-label h7">Кошелек получатель</label>
-          <select class="ajax-select" name="wallet_in"
-            data-url="{{ url_for('.get_all_user_wallets') }}" required></select>
+          <label class="form-label h7">{% trans %}Recipient wallet{% endtrans %}</label>
+          <select name="wallet_in" data-class="form-select"
+            data-url="{{ url_for('wallet.get_all_user_wallets') }}" data-placeholder="-" required>
+          </select>
         </div>
       </div>
     </div>
-    <button class="btn btn-primary rounded-3 w-100" type="submit">Готово</button>
+    <button class="btn btn-primary rounded-3 w-100" type="submit">{% trans %}OK{% endtrans %}</button>
   </form>
 {% endblock %}

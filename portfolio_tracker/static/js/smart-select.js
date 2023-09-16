@@ -1,3 +1,12 @@
+$(function () {
+  $("body").mousedown(function (e) {
+    var $select = $('body .smart-select.on');
+    if ($select.length && !$(e.target).closest('.smart-select-box').length) {
+      $select.trigger('click');
+    }
+  });
+})
+
 function UpdateSmartSelects($element = $("body")) {
   $element.find('select').each(function() {
     if ($(this).hasClass('visually-hidden')) {
@@ -60,9 +69,7 @@ function GenerateSelect($select) {
         var is_selected = selectOption.eq(i).prop('selected') ? ' selected' : '';
         $('<div>', {
           class: 'smart-select__item' + is_selected,
-          html: $('<span>', {
-            text: selectOption.eq(i).text()
-          })
+          text: selectOption.eq(i).text()
         })
         .attr('data-value', selectOption.eq(i).val())
         .appendTo(selectList);
@@ -109,11 +116,13 @@ function ClickInSelect($select){
     selectItem.removeClass('selected');
     $(this).addClass('selected');
 
-    $select.val(chooseItem).attr('selected', 'selected');
-    selectHead.text($(this).find('span').text());
+    $select.val(chooseItem).attr('selected', 'selected').trigger('change');
+    selectHead.text($(this).text());
 
     selectList.slideUp(50);
     selectHead.removeClass('on');
   });
 
 }
+
+UpdateSmartSelects();

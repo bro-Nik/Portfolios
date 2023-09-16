@@ -22,7 +22,7 @@ $(function () {
 
     $box.append(`
       <div class="position-right">
-        <button class="btn btn-primary btn-sm submit" type="button">Сохранить</button>
+        <button class="btn btn-primary btn-sm submit" type="button">` + trans.btn_save + `</button>
       </div>
       `);
     $box.find('textarea').focus();

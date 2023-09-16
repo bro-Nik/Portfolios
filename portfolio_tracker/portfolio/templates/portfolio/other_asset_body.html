@@ -1,20 +1,20 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-{% set modal_title = 'Изменить тело актива' if body else 'Добавить тело актива' %}
+{% set modal_title = gettext('Change asset body') if body else gettext('Add asset body') %}
 
 {% block content %}
 <form data-url="{{ url_for('.other_asset_body_update', asset_id=asset_id, body_id=body.id if body else None) }}">
   <div class="row g-2">
     <div class="col-md-12">
       <div class="mb-1">
-        <label class="form-label h7">Название</label>
+        <label class="form-label h7">{% trans %}Name{% endtrans %}</label>
         <input type="text" class="form-control rounded-3 focus" name="name" autocomplete="off" value="{{ body.name if body}}" required>
       </div>
     </div>
 
     <div class="col-md-6">
       <div class="mb-1">
-        <label class="form-label h7">На сумму</label>
+        <label class="form-label h7">{% trans %}Price{% endtrans %}</label>
         <div class="input-group">
           <span class="input-prefix">$</span>
           <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="total_spent" value="{{ body.total_spent if body }}" required>
@@ -24,7 +24,7 @@
 
     <div class="col-md-6">
       <div class="mb-1">
-        <label class="form-label h7">Стоимость сейчас</label>
+        <label class="form-label h7">{% trans %}Cost now{% endtrans %}</label>
         <div class="input-group">
           <span class="input-prefix">$</span>
           <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="cost_now" value="{{ body.cost_now if body }}" required>
@@ -34,14 +34,14 @@
 
     <div class="col-md-6">
       <div class="mb-1">
-        <label class="form-label h7">Дата</label>
+        <label class="form-label h7">{% trans %}Date{% endtrans %}</label>
         <input class="form-control" name="date" type="date" value="{{ body.date if body else date }}">
       </div>
     </div>
 
     <div class="col-md-12">
       <div class="mb-3">
-        <label class="form-label h7">Комментарий</label>
+        <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
         <textarea class="form-control" name="comment">{{ body.comment if body }}</textarea>
       </div>
     </div>

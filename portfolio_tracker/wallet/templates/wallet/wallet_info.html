@@ -12,10 +12,10 @@
     </div>
   </div>
 </div>
-<div class="row xs-mb-3">
 
+<div class="row xs-mb-3">
   <div class="col-auto">
-    <p class="small-text">Вложено / сейчас</p>
+    <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
     <span class="text-average">${{ wallet.total_spent|int|number_group }} /
       <span class="{{ 'text-green' if wallet.profit|int > 0 }} {{ 'text-red' if wallet.profit|int < 0 }}">
         ${{ wallet.cost_now|int|number_group }}
@@ -24,12 +24,12 @@
   </div>
 
   <div class="col-auto">
-    <p class="small-text">В ордереах</p>
+    <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
     <span class="text-average">${{ wallet.in_orders|int|number_group }}</span>
   </div>
 
   <div class="col-auto">
-    <p class="small-text">Свободные средства</p>
+    <p class="small-text">{% trans %}Free money{% endtrans %}</p>
     <span class="text-average">
       {{ '-' if wallet.free|int < 0 }}${{ wallet.free|int|abs|number_group }}</span>
   </div>
@@ -40,16 +40,16 @@
     <table class="table table-sm align-middle bootstrap-table" data-search="true">
       <thead>
         <tr>
-          <th data-sortable="true">Наименование</th>
-          <th>Количество</th>
-          <th data-sortable="true" data-sort-name="total_spent">Вложено</th>
-          <th data-sortable="true" data-sort-name="cost_now">Стоимость сейчас</th>
-          <th data-sortable="true" data-sort-name="in_orders">В ордерах</th>
+          <th data-sortable="true">{% trans %}Name{% endtrans %}</th>
+          <th>{% trans %}Holdings{% endtrans %}</th>
+          <th data-sortable="true" data-sort-name="total_spent">{% trans %}Total spent{% endtrans %}</th>
+          <th data-sortable="true" data-sort-name="cost_now">{% trans %}Cost now{% endtrans %}</th>
+          <th data-sortable="true" data-sort-name="in_orders">{% trans %}Money in orders{% endtrans %}</th>
 
           <!-- For sorting -->
-          <th class="visually-hidden" data-sortable="true" data-field="total_spent">Вложено</th>
-          <th class="visually-hidden" data-sortable="true" data-field="cost_now">Стоимость сейчас</th>
-          <th class="visually-hidden" data-sortable="true" data-field="in_orders">В ордерах</th>
+          <th class="visually-hidden" data-sortable="true" data-field="total_spent">Total spent</th>
+          <th class="visually-hidden" data-sortable="true" data-field="cost_now">Cost now</th>
+          <th class="visually-hidden" data-sortable="true" data-field="in_orders"> Money in orders</th>
         </tr>
       </thead>
       <tbody>
@@ -93,6 +93,6 @@
     </table>
   </div>
 {% else %}
-  <div class="nothing-box">Пока ничего нет...</div>
+  <div class="nothing-box">{% trans %}There's nothing yet...{% endtrans %}</div>
 {% endif %}
 {% endblock %}

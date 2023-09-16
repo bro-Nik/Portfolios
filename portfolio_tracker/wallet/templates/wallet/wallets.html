@@ -7,7 +7,7 @@
     {% set modal_fullscreen = True %}
   {% else %}
     {% extends "base.html" %}
-    {% block title %} Кошельки {% endblock %}
+    {% block title %}{% trans %}Wallets{% endtrans %}{% endblock %}
   {% endif %}
 {% endif %}
 
@@ -15,19 +15,23 @@
 <div class="mb-5">
   <div class="row xs-mb-3">
     <div class="col-auto">
-      <h1>Кошельки</h1>
+      <h1>{% trans %}Wallets{% endtrans %}</h1>
     </div>
     <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal" type="button" data-modal-id="WalletSettingsModal" data-url="{{ url_for('.wallet_settings') }}">
-        Добавить кошелек
+        {% trans %}Add wallet{% endtrans %}
       </button>
 
 	    <button type="button" class="btn btn-warning" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        Перевод
+        {% trans %}Transfer{% endtrans %}
       </button>
       <div class="dropdown-menu" aria-labelledby="dropdownAction">
-        <button class="dropdown-item open-modal" type="button" data-modal-id="WalletInputOutCashModal" data-url="{{ url_for('.wallet_in_out_get') }}">Ввод-вывод</button>
-        <button class="dropdown-item open-modal" type="button" data-modal-id="WalletTransferCashModal" data-url="{{ url_for('.wallet_transfer_get') }}">Перевод</button>
+        <button class="dropdown-item open-modal" type="button" data-modal-id="WalletInputOutCashModal" data-url="{{ url_for('.wallet_in_out_get') }}">
+          {% trans %}Input/output{% endtrans %}
+        </button>
+        <button class="dropdown-item open-modal" type="button" data-modal-id="WalletTransferCashModal" data-url="{{ url_for('.wallet_transfer_get') }}">
+          {% trans %}Transfer{% endtrans %}
+        </button>
       </div>
 
     </div>
@@ -38,7 +42,7 @@
 <div class="row xs-mb-3">
 
   <div class="col-auto">
-    <p class="small-text">Вложено / сейчас</p>
+    <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
     <span class="text-average">
       ${{ all.total_spent|int|number_group }} / 
       <span class="{{ 'text-green' if all.profit|int > 0 }} {{ 'text-red' if all.profit|int < 0 }}">
@@ -48,14 +52,14 @@
   </div>
 
   <div class="col-auto">
-    <p class="small-text">В ордерах</p>
+    <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
     <span class="text-average">
       ${{ all.in_orders|int|number_group }}
     </span>
   </div>
 
   <div class="col-auto">
-    <p class="small-text">Свободные</p>
+    <p class="small-text">{% trans %}Free money{% endtrans %}</p>
       <span class="text-average {{ 'text-green' if all.free|int > 0 }} {{ 'text-red' if all.free|int < 0 }}">
         {{ '-' if all.free|int < 0 }}${{ all.free|int|abs|number_group }}
       </span>
@@ -70,18 +74,18 @@
           <th class="main-tab-checkbox">
             <input class="form-check-input check-all" type="checkbox">
           </th>
-          <th data-sortable="true">Наименование</th>
-          <th data-sortable="true" data-sort-name="total_spent">Вложено</th>
-          <th data-sortable="true" data-sort-name="cost_now">Стоимость сейчас</th>
-          <th data-sortable="true" data-sort-name="in_orders">В ордерах</th>
-          <th data-sortable="true" data-sort-name="free">Свободные</th>
+          <th data-sortable="true">{% trans %}Name{% endtrans %}</th>
+          <th data-sortable="true" data-sort-name="total_spent">{% trans %}Total spent{% endtrans %}</th>
+          <th data-sortable="true" data-sort-name="cost_now">{% trans %}Cost now{% endtrans %}</th>
+          <th data-sortable="true" data-sort-name="in_orders">{% trans %}Money in orders{% endtrans %}</th>
+          <th data-sortable="true" data-sort-name="free">{% trans %}Free money{% endtrans %}</th>
           <th></th>
 
           <!-- For sorting -->
-          <th class="visually-hidden" data-sortable="true" data-field="total_spent">Вложено</th>
-          <th class="visually-hidden" data-sortable="true" data-field="cost_now">Стоимость сейчас</th>
-          <th class="visually-hidden" data-sortable="true" data-field="in_orders">В ордерах</th>
-          <th class="visually-hidden" data-sortable="true" data-field="free">Свободные</th>
+          <th class="visually-hidden" data-sortable="true" data-field="total_spent">Total spent</th>
+          <th class="visually-hidden" data-sortable="true" data-field="cost_now">Cost now</th>
+          <th class="visually-hidden" data-sortable="true" data-field="in_orders">Money in orders</th>
+          <th class="visually-hidden" data-sortable="true" data-field="free">Free money</th>
         </tr>
       </thead>
       <tbody>
@@ -119,10 +123,11 @@
                 </a>
                 <div class="dropdown-menu">
                   <a class="dropdown-item open-modal" data-modal-id="WalletSettingsModal" data-url="{{ url_for('.wallet_settings', wallet_id=id) }}">
-                    Изменить
+                    {% trans %}Change{% endtrans %}
                   </a>
-                  <a class="dropdown-item link-danger {{ 'open-modal-confirmation' if wallet.can_delete else 'opacity-50 disabled' }}" data-title="Удалить кошелек {{ wallet.name }}?"
-                    data-id="{{ id }}"> Удалить
+                  <a class="dropdown-item link-danger {{ 'open-modal-confirmation' if wallet.can_delete else 'opacity-50 disabled' }}" data-title="{% trans name=wallet.name %}Delete wallet {{ name }}?{% endtrans %}"
+                    data-id="{{ id }}">
+                    {% trans %}Delete{% endtrans %}
                   </a>
                 </div>
               </div>
@@ -141,8 +146,10 @@
 
     <!-- Actions buttons -->
     <div class="sticky-bottom-buttons">
-      <a class="open-modal-confirmation" data-action="delete" data-title="Удалить кошельки?">Удалить</a>
-      <a class="open-modal-confirmation" data-action="delete_all" data-title="Удалить кошельки несмотря на остатки?">Удалить вместе с отстатками</a>
+      <a class="open-modal-confirmation" data-action="delete"
+        data-title="{% trans %}Delete wallets?{% endtrans %}">{% trans %}Delete{% endtrans %}</a>
+      <a class="open-modal-confirmation" data-action="delete_all"
+        data-title="{% trans %}Delete wallets with contents?{% endtrans %}">{% trans %}Delete with contents{% endtrans %}</a>
     </div>
 
   </form>

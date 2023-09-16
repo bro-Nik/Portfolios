@@ -1,28 +1,28 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = 'Изменить транзакцию' if transaction else 'Добавить транзакцию' %}
+{% set modal_title = gettext('Change transaction') if transaction else gettext('Add transaction') %}
 
 {% block content %}
 <form id="TransactionForm" data-url="{{ url_for('.transaction_update', asset_id=asset_id, transaction_id=transaction.id) }}">
 
   <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
     <input type="radio" class="btn-check" name="type" value="buy" id="btnradio1" {{ 'checked' if not transaction or transaction.type == 'buy' }}>
-    <label class="btn btn-outline-active btn-sm" for="btnradio1">Покупка</label>
+    <label class="btn btn-outline-active btn-sm" for="btnradio1">{% trans %}Buy{% endtrans %}</label>
 
     <input type="radio" class="btn-check" name="type" value="sell" id="btnradio2" {{ 'checked' if transaction and transaction.type == 'sell' }}>
-    <label class="btn btn-outline-not_active btn-sm" for="btnradio2">Продажа</label>
+    <label class="btn btn-outline-not_active btn-sm" for="btnradio2">{% trans %}Sell{% endtrans %}</label>
   </div>
 
   <div class="form-check mb-3">
     <input class="form-check-input" type="checkbox" value="true" {{ 'checked' if transaction.order }} name="order">
-    <label class="form-check-label">Ордер</label>
+    <label class="form-check-label">{% trans %}Order{% endtrans %}</label>
   </div>
 
   <div class="row g-2">
     <div class="col-md-6">
       <div class="mb-1">
-        <label class="form-label h7">Цена</label>
+        <label class="form-label h7">{% trans %}Price{% endtrans %}</label>
         <div class="input-group">
           <span class="input-prefix">$</span>
           <input type="number" step="any" class="form-control rounded-3 focus" placeholder="0,00" name="price"
@@ -32,29 +32,29 @@
     </div>
     <div class="col-md-6">
       <div class="mb-1">
-        <label class="form-label h7">Количество</label>
+        <label class="form-label h7">{% trans %}Amount{% endtrans %}</label>
         <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="quantity"
           autocomplete="off" value="{{ transaction.quantity|abs|smart_int if transaction }}" required>
       </div>
     </div>
     <div class="col-md-12">
       <div class="mb-1">
-        <label class="form-label h7">На сумму</label>
+        <label class="form-label h7">{% trans %}Total spent{% endtrans %}</label>
         <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="total_spent"
           autocomplete="off" value="{{ transaction.total_spent|smart_int if transaction }}" required>
       </div>
     </div>
     <div class="col-md-6">
       <div class="mb-1">
-        <label class="form-label h7">Дата</label>
+        <label class="form-label h7">{% trans %}Date{% endtrans %}</label>
         <input class="form-control" name="date" type="date" value="{{ transaction.date if transaction else date }}" required>
       </div>
     </div>
     <div class="col-md-6">
       <div class="mb-1">
-        <label class="form-label h7">Кошелек</label>
+        <label class="form-label h7">{% trans %}Wallet{% endtrans %}</label>
         <select name="wallet_id" data-class="form-select"
-          data-url="{{ url_for('wallet.get_all_user_wallets') }}" data-placeholder="-- Выбрать --" required>
+          data-url="{{ url_for('wallet.get_all_user_wallets') }}" data-placeholder="-" required>
           {% if transaction %}
             <option selected value="{{ transaction.wallet_id }}">{{ transaction.wallet.name }}</option>
           {% elif current_user.wallets|length == 1 %}
@@ -62,13 +62,13 @@
           {% endif %}
         </select>
         <div class="open-modal link-primary small-text not-update" data-modal-id="WalletsModal" data-url="{{ url_for('wallet.wallets', modal='true') }}">
-          Добавить
+          {% trans %}Add new{% endtrans %}
         </div>
       </div>
     </div>
     <div class="col-md-12">
       <div class="mb-3">
-        <label class="form-label h7">Комментарий</label>
+        <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
         <textarea class="form-control" name="comment">{{ transaction.comment if transaction }}</textarea>
       </div>
     </div>
