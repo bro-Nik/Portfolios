@@ -1,6 +1,6 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-{% set modal_title = gettext('Change asset') if asset else 'Add asset' %}
+{% set modal_title = gettext('Edit asset') if asset else 'Add asset' %}
 
 {% block content %}
 <form data-url="{{ url_for('.other_asset_settings_update', portfolio_id=portfolio_id, asset_id=asset.id if asset else None) }}">
@@ -10,6 +10,16 @@
       <div class="mb-1">
         <label class="form-label h7">{% trans %}Name{% endtrans %}</label>
         <input type="text" class="form-control rounded-3 focus" name="name" value="{{ asset.name if asset }}" required>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="mb-1">
+        <label class="form-label h7">{% trans %}Planned portfolio percentage{% endtrans %}</label>
+        <div class="input-group">
+          <span class="input-prefix">%</span>
+          <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="percent" value="{{ asset.percent|smart_int if asset and asset.percent }}">
+        </div>
       </div>
     </div>
 

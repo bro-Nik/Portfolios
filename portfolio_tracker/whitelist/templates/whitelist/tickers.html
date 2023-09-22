@@ -102,8 +102,17 @@
 	                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
                   </a>
                   <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                    <a class="dropdown-item link-danger {{ 'open-modal-confirmation' if True else 'opacity-25 disabled' }}" data-action="delete" data-title="{% trans name=ticker.name %}Delete {{ name }}?{% endtrans %}" data-id="{{ ticker.id }}">
-                      {% trans %}Delete{% endtrans %}
+                    <a class="dropdown-item link-danger open-modal-confirmation" data-action="delete"
+                      data-title="{% trans %}Remove asset?{% endtrans %}"
+                      data-text="{% trans %}Notifications other than orders will be removed. An asset without notifications will also be removed{% endtrans %}"
+                      data-id="{{ ticker.id }}">
+                      {% trans %}Remove asset{% endtrans %}
+                    </a>
+                    <a class="dropdown-item link-danger open-modal-confirmation" data-action="delete_with_orders"
+                      data-title="{% trans %}Remove asset with orders?{% endtrans %}"
+                      data-text="{% trans %}All notifications (including notifications for orders) associated with this asset will be removed{% endtrans %}"
+                      data-id="{{ ticker.id }}">
+                      {% trans %}Remove asset with orders{% endtrans %}
                     </a>
                   </div>
                 </div>
@@ -115,10 +124,14 @@
 
       <!-- Actions buttons -->
       <div class="sticky-bottom-buttons">
-        <a class="open-modal-confirmation" data-action="delete_all"
-          data-title="{% trans %}Delete assets?{% endtrans %}">{% trans %}Delete{% endtrans %}</a>
-        <a class="open-modal-confirmation" data-action="delete_except_orders"
-          data-title="{% trans %}Delete assets other than orders?{% endtrans %}">{% trans %}Delete except orders{% endtrans %}</a>
+        <a class="open-modal-confirmation" data-action="delete"
+          data-title="{% trans %}Remove assets?{% endtrans %}"
+          data-text="{% trans %}Only assets that do not contain orders will be removed. Order notifications will remain{% endtrans %}">
+          {% trans %}Remove{% endtrans %}</a>
+        <a class="open-modal-confirmation" data-action="delete_with_orders"
+          data-title="{% trans %}Remove assets with orders?{% endtrans %}"
+          data-text="{% trans %}All notifications (including notifications for orders) associated with these assets will be removed{% endtrans %}">
+          {% trans %}Remove with orders{% endtrans %}</a>
       </div>
 
     </form>

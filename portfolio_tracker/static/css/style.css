@@ -375,9 +375,9 @@ td div.comment {
     padding-right: 0.5rem;
 }
 
-select {
-    display:none;
-}
+/* select { */
+/*     display:none; */
+/* } */
 
 .smart-select-box {
     display: block;
@@ -416,6 +416,7 @@ select {
     transform: translate(0, 3px);
     max-height: 200px;
     overflow-y: auto;
+    z-index: 1;
 }
 .smart-select.on .smart-select__list {
     padding: 0.5rem 0;

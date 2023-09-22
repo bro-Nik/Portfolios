@@ -20,33 +20,35 @@
   {% include 'flash_messages.html' %}
 </div>
 
-{% if portfolio_list %}
-  {% if all.total_spent %}
-    <div class="row xs-mb-3">
-
-      <div class="col-auto">
-        <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
-        <span class="text-average">
-          ${{ all.total_spent|int|number_group }} / 
-
-          <span class="{{ 'text-green' if all.profit|int > 0 }} {{ 'text-red' if all.profit|int < 0 }}">
-            ${{ all.cost_now|int|number_group }}
-          </span>
+{% if current_user.portfolios %}
+  <div class="row xs-mb-3">
+    
+    <div class="col-auto">
+      <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
+      <span class="text-average">
+        ${{ all_portfolios.total_spent|number_group }} / 
+        <span class="{{ all_portfolios.color }}">
+          ${{ all_portfolios.cost_now|number_group }}
         </span>
-      </div>
-
-      <div class="col-auto">
-        <p class="small-text">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</p>
-          <span class="text-average {{ 'text-green' if all.profit|int > 0 }} {{ 'text-red' if all.profit|int < 0 }}">
-            {{ '-' if all.profit|int < 0 }}${{ all.profit|int|abs|number_group }}
-            {% if all.profit|int and all.total_spent %}
-              ({{ (all.profit / all.total_spent * 100)|int|abs }}%)
-            {% endif %}
-          </span>
-      </div>
-
+      </span>
     </div>
-  {% endif %}
+
+    <div class="col-auto">
+      <p class="small-text">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</p>
+        <span class="text-average {{ all_portfolios.color }}">
+          {{ '-' if all_portfolios.profit < 0 }}${{ all_portfolios.profit|abs|number_group }}
+          {{ '({}%)'.format(all_portfolios.profit_percent) if all_portfolios.profit_percent }}
+        </span>
+    </div>
+
+    <div class="col-auto">
+      <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
+      <span class="text-average">
+        ${{ all_portfolios.in_orders|number_group }}
+      </span>
+    </div>
+
+  </div>
 
   <div class="big-table">
     <form id="PortfoliosForm" action="{{ url_for('.portfolios_action') }}">
@@ -60,7 +62,8 @@
             <th data-sortable="true" data-sort-name="total_spent">{% trans %}Total spent{% endtrans %}</th>
             <th data-sortable="true" data-sort-name="cost_now">{% trans %}Cost now{% endtrans %}</th>
             <th data-sortable="true" data-sort-name="profit">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</th>
-            <th data-sortable="true" data-sort-name="percent">% {% trans %}of all investments{% endtrans %}</th>
+            <th data-sortable="true" data-sort-name="percent">{% trans %}Share of total investments{% endtrans %}</th>
+            <th data-sortable="true" data-sort-name="percent">{% trans %}Money in orders{% endtrans %}</th>
             <th>{% trans %}Comment{% endtrans %}</th>
             <th></th>
             <!-- For sorting -->
@@ -73,28 +76,32 @@
         </thead>
 
         <tbody>
-          {% for portfolio in portfolio_list %}
+          {% for portfolio in current_user.portfolios %}
             <tr>
               <td>
                 <input class="form-check-input to-check" type="checkbox" value="{{ portfolio.id }}">
               </td>
 
-
               <td class="text-average">
                 <div class="open-modal d-grid name" data-modal-id="PortfolioInfoModal" data-url="{{ url_for('.portfolio_info', portfolio_id=portfolio.id) }}">
                   <span class="text-truncate" title="{{ portfolio.name }}">{{ portfolio.name }}</span>
-                  <span class="text-muted small-text">{{ portfolio.market }}</span>
+                  <span class="text-muted small-text">{{ gettext(portfolio.market.name) }}</span>
                 </div>
               </td>
 
-              <td>{{ '$' + portfolio.total_spent|int|number_group if portfolio.total_spent else '-' }}</td>
+              <td>{{ '-' if portfolio.total_spent < 0 }}{{ '$' + portfolio.total_spent|abs|number_group if portfolio.total_spent else '-' }}</td>
 
-              <td>{{ '$' + portfolio.cost_now|int|number_group if portfolio.cost_now else '-' }}</td>
+              <td>
+                <span class="{{ portfolio.color }}">
+                  {{ '$' + portfolio.cost_now|number_group if portfolio.cost_now else '-' }}
+                </span>
+              </td>
 
               <td>
                 {% if portfolio.cost_now %}
-                  <span class="{{ 'text-green' if portfolio.profit|int > 0 }} {{ 'text-red' if portfolio.profit|int < 0 }}">
-                    {{ '-' if portfolio.profit|int < 0 }}${{ portfolio.profit|int|abs|number_group }}
+                  <span class="{{ portfolio.color }}">
+                    {{ '-' if portfolio.profit < 0 }}${{ portfolio.profit|abs|number_group }}
+                    {{ '({}%)'.format(portfolio.profit_percent) if portfolio.profit_percent }}
                   </span>
                 {% else %}
                   -
@@ -102,11 +109,12 @@
               </td>
               
               <td>
-                {% if portfolio.cost_now %}
-                  {{ (portfolio.cost_now / all.cost_now * 100)|round(1, 'common')|smart_int }}%
-                {% else %}
-                -
-                {% endif %}
+                {{ (portfolio.total_spent / all_portfolios.total_spent * 100)|round(1, 'common')|smart_int|string + '%' if portfolio.cost_now else '-' }}
+                / {{ portfolio.percent|smart_int |string + '%' if portfolio.percent else '-' }}
+              </td>
+
+              <td>
+                {{ '$' + portfolio.in_orders|smart_int|string if portfolio.in_orders else '-' }}
               </td>
 
               <td>
@@ -121,12 +129,22 @@
 	                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
                   </a>
                   <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                    <a class="dropdown-item open-modal" data-modal-id="PortfolioSettingsModal" data-url="{{ url_for('.portfolio_settings', portfolio_id=portfolio.id) }}">
-                      {% trans %}Change{% endtrans %}
+                    <a class="dropdown-item open-modal" data-modal-id="PortfolioSettingsModal"
+                      data-url="{{ url_for('.portfolio_settings', portfolio_id=portfolio.id) }}">
+                      {% trans %}Edit portfolio{% endtrans %}
                     </a>
-                    <a class="dropdown-item link-danger {{ 'open-modal-confirmation' if portfolio.can_delete else 'opacity-25 disabled' }}" data-action="delete" data-title="{% trans %}Delete portfolio{% endtrans %} {{ portfolio.name }}?" data-id="{{ portfolio.id }}">
-                      {% trans %}Delete{% endtrans %}
-                    </a>
+                      <a class="dropdown-item link-danger open-modal-confirmation"
+                        {% if portfolio.is_empty %}
+                          data-title="{% trans name=portfolio.name %}Remove portfolio {{ name }}?{% endtrans %}"
+                          data-action="delete"
+                        {% else %}
+                          data-title="{% trans name=portfolio.name %}Remove portfolio {{ name }} with contents?{% endtrans %}"
+                          data-text="{% trans %}All assets and transactions in this portfolio will be removed{% endtrans %}"
+                          data-action="delete_with_contents"
+                        {% endif %}
+                        data-id="{{ portfolio.id }}">
+                        {% trans %}Remove portfolio{% endtrans %}
+                      </a>
                   </div>
                 </div>
               </td>
@@ -136,7 +154,7 @@
               <td class="visually-hidden">{{ portfolio.total_spent }}</td>
               <td class="visually-hidden">{{ portfolio.cost_now }}</td>
               <td class="visually-hidden">{{ portfolio.profit }}</td>
-              <td class="visually-hidden">{{ (portfolio.cost_now / all.cost_now * 100) if all.cost_now }}</td>
+              <td class="visually-hidden">{{ (portfolio.cost_now / all_portfolios.cost_now * 100) if all_portfolios.cost_now }}</td>
 
             </tr>
           {% endfor %}
@@ -146,7 +164,13 @@
       <!-- Actions buttons -->
       <div class="sticky-bottom-buttons">
         <a class="open-modal-confirmation" data-action="delete"
-          data-title="{% trans %}Delete portfolios{% endtrans %}?">{% trans %}Delete{% endtrans %}</a>
+          data-title="{% trans %}Remove portfolios?{% endtrans %}"
+          data-text="{% trans %}Only empty portfolios will be removed{% endtrans %}">
+          {% trans %}Remove{% endtrans %}</a>
+        <a class="open-modal-confirmation" data-action="delete_with_contents"
+          data-title="{% trans %}Remove portfolios with contents?{% endtrans %}"
+          data-text="{% trans %}All assets and transactions in these portfolios will be removed{% endtrans %}">
+          {% trans %}Remove with contents{% endtrans %}</a>
       </div>
 
     </form>

@@ -1,16 +1,16 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = gettext('Change transaction') if transaction else gettext('Add transaction') %}
+{% set modal_title = gettext('Edit transaction') if transaction else gettext('Add transaction') %}
 
 {% block content %}
 <form id="TransactionForm" data-url="{{ url_for('.transaction_update', asset_id=asset_id, transaction_id=transaction.id) }}">
 
   <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
-    <input type="radio" class="btn-check" name="type" value="buy" id="btnradio1" {{ 'checked' if not transaction or transaction.type == 'buy' }}>
+    <input type="radio" class="btn-check" name="type" value="+" id="btnradio1" {{ 'checked' if not transaction or transaction.type == '+' }}>
     <label class="btn btn-outline-active btn-sm" for="btnradio1">{% trans %}Buy{% endtrans %}</label>
 
-    <input type="radio" class="btn-check" name="type" value="sell" id="btnradio2" {{ 'checked' if transaction and transaction.type == 'sell' }}>
+    <input type="radio" class="btn-check" name="type" value="-" id="btnradio2" {{ 'checked' if transaction and transaction.type == '-' }}>
     <label class="btn btn-outline-not_active btn-sm" for="btnradio2">{% trans %}Sell{% endtrans %}</label>
   </div>
 
@@ -32,16 +32,16 @@
     </div>
     <div class="col-md-6">
       <div class="mb-1">
-        <label class="form-label h7">{% trans %}Amount{% endtrans %}</label>
+        <label class="form-label h7">{% trans %}Quantity{% endtrans %}</label>
         <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="quantity"
           autocomplete="off" value="{{ transaction.quantity|abs|smart_int if transaction }}" required>
       </div>
     </div>
     <div class="col-md-12">
       <div class="mb-1">
-        <label class="form-label h7">{% trans %}Total spent{% endtrans %}</label>
+        <label class="form-label h7">{% trans %}Transaction amount{% endtrans %}</label>
         <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="total_spent"
-          autocomplete="off" value="{{ transaction.total_spent|smart_int if transaction }}" required>
+          autocomplete="off" value="{{ transaction.total_spent|abs|smart_int if transaction }}" required>
       </div>
     </div>
     <div class="col-md-6">
@@ -53,8 +53,8 @@
     <div class="col-md-6">
       <div class="mb-1">
         <label class="form-label h7">{% trans %}Wallet{% endtrans %}</label>
-        <select name="wallet_id" data-class="form-select"
-          data-url="{{ url_for('wallet.get_all_user_wallets') }}" data-placeholder="-" required>
+        <select name="wallet_id" class="form-select" data-placeholder="-"
+          data-url="{{ url_for('wallet.get_all_user_wallets') }}" required>
           {% if transaction %}
             <option selected value="{{ transaction.wallet_id }}">{{ transaction.wallet.name }}</option>
           {% elif current_user.wallets|length == 1 %}

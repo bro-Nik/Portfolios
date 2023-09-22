@@ -18,7 +18,8 @@
       <h1>{% trans %}Wallets{% endtrans %}</h1>
     </div>
     <div class="col-auto ms-auto">
-      <button class="btn btn-primary open-modal" type="button" data-modal-id="WalletSettingsModal" data-url="{{ url_for('.wallet_settings') }}">
+      <button class="btn btn-primary open-modal" type="button" data-modal-id="WalletSettingsModal"
+        data-url="{{ url_for('.wallet_settings') }}">
         {% trans %}Add wallet{% endtrans %}
       </button>
 
@@ -44,24 +45,20 @@
   <div class="col-auto">
     <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
     <span class="text-average">
-      ${{ all.total_spent|int|number_group }} / 
-      <span class="{{ 'text-green' if all.profit|int > 0 }} {{ 'text-red' if all.profit|int < 0 }}">
-        ${{ all.cost_now|int|number_group }}
-      </span>
+      ${{ all_wallets.total_spent|number_group }} / 
+      <span class="{{ all_wallets.color }}">${{ all_wallets.cost_now|number_group }}</span>
     </span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
-    <span class="text-average">
-      ${{ all.in_orders|int|number_group }}
-    </span>
+    <span class="text-average">${{ all_wallets.in_orders|number_group }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Free money{% endtrans %}</p>
-      <span class="text-average {{ 'text-green' if all.free|int > 0 }} {{ 'text-red' if all.free|int < 0 }}">
-        {{ '-' if all.free|int < 0 }}${{ all.free|int|abs|number_group }}
+      <span class="text-average">
+        {{ '-' if all_wallets.free_money < 0 }}${{ all_wallets.free_money|abs|number_group }}
       </span>
   </div>
 </div>
@@ -79,6 +76,7 @@
           <th data-sortable="true" data-sort-name="cost_now">{% trans %}Cost now{% endtrans %}</th>
           <th data-sortable="true" data-sort-name="in_orders">{% trans %}Money in orders{% endtrans %}</th>
           <th data-sortable="true" data-sort-name="free">{% trans %}Free money{% endtrans %}</th>
+          <th>{% trans %}Comment{% endtrans %}</th>
           <th></th>
 
           <!-- For sorting -->
@@ -89,31 +87,36 @@
         </tr>
       </thead>
       <tbody>
-        {% for id in wallets %}
-          {% set wallet = wallets[id] %}
+        {% for wallet in current_user.wallets %}
           <tr>
             <td>
-              <input class="form-check-input to-check" type="checkbox" value="{{ id }}">
+              <input class="form-check-input to-check" type="checkbox" value="{{ wallet.id }}">
             </td>
 
             <td class="text-average">
-              <div class="open-modal" data-modal-id="WalletInfoModal" data-url="{{ url_for('.wallet_info', wallet_id=id) }}">
+              <div class="open-modal" data-modal-id="WalletInfoModal" data-url="{{ url_for('.wallet_info', wallet_id=wallet.id) }}">
                 {{ wallet.name }}
               </div>
             </td>
 
-            <td>{{ '$' + wallet.total_spent|int|number_group if wallet.total_spent else '-' }}</td>
+            <td>{{ '$' + wallet.total_spent|number_group if wallet.total_spent else '-' }}</td>
 
-            <td>{{ '$' + wallet.cost_now|int|number_group if wallet.cost_now else '-' }}</td>
+            <td>{{ '$' + wallet.cost_now|number_group if wallet.cost_now else '-' }}</td>
 
-            <td>{{ '$' + wallet.in_orders|int|number_group if wallet.in_orders else '-' }}</td>
+            <td>{{ '$' + wallet.in_orders|number_group if wallet.in_orders else '-' }}</td>
 
             <td>
-              {% if not (wallet.free == 0 and wallet.total_spent == 0) %}
-                {{ '-' if wallet.free < 0 }}${{ wallet.free|int|abs|number_group }}
+              {% if not (wallet.free_money == 0 and wallet.total_spent == 0) %}
+                {{ '-' if wallet.free_money < 0 }}${{ wallet.free_money|abs|number_group }}
               {% else %}
                 -
               {% endif %}
+            </td>
+
+            <td>
+              <div class="d-flex comment">
+                <span class="text-truncate">{{ wallet.comment if wallet.comment }}</span>
+              </div>
             </td>
 
             <td class="align-middle text-end">
@@ -122,12 +125,22 @@
 	                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
                 </a>
                 <div class="dropdown-menu">
-                  <a class="dropdown-item open-modal" data-modal-id="WalletSettingsModal" data-url="{{ url_for('.wallet_settings', wallet_id=id) }}">
-                    {% trans %}Change{% endtrans %}
+                  <a class="dropdown-item open-modal" data-modal-id="WalletSettingsModal"
+                    data-url="{{ url_for('.wallet_settings', wallet_id=wallet.id) }}">
+                    {% trans %}Edit wallet{% endtrans %}
                   </a>
-                  <a class="dropdown-item link-danger {{ 'open-modal-confirmation' if wallet.can_delete else 'opacity-50 disabled' }}" data-title="{% trans name=wallet.name %}Delete wallet {{ name }}?{% endtrans %}"
-                    data-id="{{ id }}">
-                    {% trans %}Delete{% endtrans %}
+
+                  <a class="dropdown-item link-danger open-modal-confirmation"
+                    {% if wallet.is_empty %}
+                      data-title="{% trans name=wallet.name %}Remove wallet {{ name }}?{% endtrans %}"
+                      data-action="delete"
+                    {% else %}
+                      data-title="{% trans name=wallet.name %}Remove wallet {{ name }} with contents?{% endtrans %}"
+                      data-text="{% trans %}All transactions associated with this wallet will be removed{% endtrans %}"
+                      data-action="delete_with_contents"
+                    {% endif %}
+                    data-id="{{ wallet.id }}">
+                    {% trans %}Remove wallet{% endtrans %}
                   </a>
                 </div>
               </div>
@@ -147,9 +160,13 @@
     <!-- Actions buttons -->
     <div class="sticky-bottom-buttons">
       <a class="open-modal-confirmation" data-action="delete"
-        data-title="{% trans %}Delete wallets?{% endtrans %}">{% trans %}Delete{% endtrans %}</a>
-      <a class="open-modal-confirmation" data-action="delete_all"
-        data-title="{% trans %}Delete wallets with contents?{% endtrans %}">{% trans %}Delete with contents{% endtrans %}</a>
+        data-title="{% trans %}Remove wallets?{% endtrans %}"
+        data-text="{% trans %}Only empty wallets will be removed{% endtrans %}">
+        {% trans %}Remove{% endtrans %}</a>
+      <a class="open-modal-confirmation" data-action="delete_with_contents"
+        data-title="{% trans %}Remove wallets with contents?{% endtrans %}"
+        data-text="{% trans %}All transactions associated with these wallets will be removed{% endtrans %}">
+        {% trans %}Remove with contents{% endtrans %}</a>
     </div>
 
   </form>

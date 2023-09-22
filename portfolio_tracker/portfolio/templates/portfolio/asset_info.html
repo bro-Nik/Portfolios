@@ -4,6 +4,7 @@
 {% endif %}
 
 {% block content %}
+{% set ticker = asset.ticker %}
 
 <div class="mb-5">
   <div class="row xs-mb-3">
@@ -22,7 +23,7 @@
       </div>
 
       {% if not request.args.get('from_whitelist') %}
-        <div class="d-flex gap-1 align-items-end open-modal" data-modal-id="WhitelistTickerInfoModal" data-url="{{ url_for('whitelist.ticker_info', market_id=market_id, ticker_id=ticker.id, asset_id=asset.id) }}">
+        <div class="d-flex gap-1 align-items-end open-modal" data-modal-id="WhitelistTickerInfoModal" data-url="{{ url_for('whitelist.ticker_info', market_id=ticker.market_id, ticker_id=ticker.id, asset_id=asset.id) }}">
           <span class="badge text-bg-light fw-normal text-muted d-flex gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/></svg>
             {{ gettext('Add alert') if not asset.alerts }}
@@ -34,7 +35,7 @@
 
     <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal focus" type="button" data-modal-id="TransactionModal"
-        data-url="{{ url_for('.transaction', asset_id=asset.id, price=price) }}">
+        data-url="{{ url_for('.transaction', asset_id=asset.id, price=asset.price) }}">
         {% trans %}Add transaction{% endtrans %}
       </button>
       <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
@@ -43,14 +44,22 @@
       <div class="dropdown-menu">
         <button class="dropdown-item open-modal" type="button" data-modal-id="AssetSettingsModal"
           data-url="{{ url_for('.asset_settings', asset_id=asset.id) }}">
-          {% trans name=ticker.name %}{{ name }} Settings{% endtrans %}
+          {% trans %}Edit asset{% endtrans %}
         </button>
 
         <form id="AssetActions" action="{{ url_for('.assets_action') }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
-            type="button" data-form="#AssetActions" data-id="{{ asset.id }}"
-            data-title="{% trans name=ticker.name %}Delete {{ name }}?{% endtrans %}" data-pre-need-clean="true">
-            {% trans name=ticker.name %}{{ name }} Delete{% endtrans %}
+            type="button" data-form="#AssetActions"
+            {% if asset.is_empty %}
+              data-title="{% trans name=asset.ticker.name %}Remove asset {{ name }}?{% endtrans %}"
+              data-action="delete"
+            {% else %}
+              data-title="{% trans name=asset.ticker.name %}Remove asset {{ name }} with contents?{% endtrans %}"
+              data-text="{% trans %}All transactions in this asset will be removed{% endtrans %}"
+              data-action="delete_with_contents"
+            {% endif %}
+            data-id="{{ asset.id }}" data-pre-need-clean="true">
+            {% trans %}Remove asset{% endtrans %}
           </button>
         </form>
       </div>
@@ -59,13 +68,11 @@
   {% include 'flash_messages.html' %}
 </div>
 
-{% if transactions %}
-  {% set asset_percent_now = (asset.total_spent / portfolio_total_spent * 100)|round(1, 'common') if portfolio_total_spent %}
-
+{% if asset.transactions %}
   <div class="row mb-5 xs-mb-3">
 
     <div class="col-auto">
-      <p class="small-text">{% trans %}Holdings{% endtrans %}</p>
+      <p class="small-text">{% trans %}Quantity{% endtrans %}</p>
       <span class="text-average">{{ asset.quantity|smart_round|number_group }} {{ ticker.symbol|upper }}</span>
     </div>
 
@@ -82,28 +89,28 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
-      <span class="text-average"> ${{ asset.total_spent|int|number_group }} / </span>
+      <span class="text-average"> {{ '-' if asset.total_spent < 0 }}${{ asset.total_spent|abs|number_group }} / </span>
       <span id="AssetCostNow" class="text-average"> - </span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
-      <span class="text-average"> ${{ asset.in_orders|int|number_group }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</p>
       <span id="AssetProfit" class="text-average"> - </span>
     </div>
-    {% if asset_percent_now and asset_percent_now != 100 %}
-      <div class="col-auto">
-        <p class="small-text">% {% trans %}of portfolio{% endtrans %}</p>
-        <span class="text-average">
-          {{ asset_percent_now|smart_int|string + '%'  }}
-          {{ gettext('out of') + asset.percent|smart_int|string + '%' if asset.percent }}
-        </span>
-      </div>
-    {% endif %}
+
+    <div class="col-auto">
+      <p class="small-text">{% trans %}Share of portfolio{% endtrans %}</p>
+      <span class="text-average">
+        {{ (asset.total_spent / asset.portfolio.total_spent * 100)|round(1, 'common')|smart_int|string + '%' if asset.portfolio.total_spent else '' }} /
+        {{ asset.percent|smart_int|string + '%' if asset.percent else '-' }}
+      </span>
+    </div>
+
+    <div class="col-auto">
+      <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
+      <span class="text-average"> ${{ asset.in_orders|number_group }}</span>
+    </div>
+
   </div>
 
 <div class="big-table pt-3 pb-3">
@@ -123,14 +130,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for transaction in transactions|sort(reverse=true, attribute="date")|sort(reverse=true, attribute="order") %}
-        {% if transaction.type == 'buy' %}
-          {% set type_name = gettext('Buy') %}
-          {% set type_class = 'text-green' %}
-        {% elif transaction.type == 'sell' %}
-          {% set type_name = gettext('Sell') %}
-          {% set type_class = 'text-red' %}
-        {% endif %}
+        {% for transaction in asset.transactions|sort(reverse=true, attribute="date")|sort(reverse=true, attribute="order") %}
 
         <tr class="{{ 'table-order' if transaction.order }}">
 
@@ -141,7 +141,7 @@
           <td>
             <div class="open-modal" data-modal-id="TransactionModal"
               data-url="{{ url_for('.transaction', market_id=ticker.market_id, asset_id=asset.id, ticker=ticker.id, transaction_id=transaction.id) }}">
-              <span class="{{ type_class }}">{{ type_name }}</span>
+              <span class="{{ transaction.color }}">{{ transaction.type_name }}</span>
               {{ '(' + gettext('Order') + ')' if transaction.order }}
               <br>
               <span class="small-text">{{ transaction.date }}</span>
@@ -151,10 +151,10 @@
           <td>${{ transaction.price|smart_round|number_group }}</td>
 
           <td>
-            {{ '-' if transaction.type == 'buy' else '+' }}${{ transaction.total_spent|abs|smart_int|number_group }}
+            {{ '-' if transaction.type == '+' else '+' }}${{ transaction.total_spent|abs|smart_int|number_group }}
             <br>
-            <span class="text-average small-text {{ type_class }}">
-              {{ '+' if transaction.type == 'buy' else '-' }}{{ transaction.quantity|abs|smart_round|number_group }} {{ ticker.symbol|upper }}
+            <span class="text-average small-text {{ transaction.color }}">
+              {{ transaction.type }}{{ transaction.quantity|abs|smart_round|number_group }} {{ ticker.symbol|upper }}
             </span>
           </td>
 
@@ -174,7 +174,10 @@
             <div class="d-flex justify-content-end">
               {% if transaction.order %}
                 <a class="link-secondary open-modal-confirmation" data-id="{{ transaction.id }}"
-                  data-title="{{ gettext('Did the order work?') }}" data-action="convert_to_transaction" title="{{ gettext('The order worked') }}">
+                  data-title="{% trans %}Did the order work?{% endtrans %}"
+                  data-text="{% trans %}The order will be marked as worked{% endtrans %}"
+                  data-action="convert_to_transaction"
+                  title="{% trans %}The order worked{% endtrans %}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.235.235 0 0 1 .02-.022z"/></svg>
                 </a>
               {% endif %}
@@ -186,12 +189,13 @@
                 <div class="dropdown-menu" aria-labelledby="dropdownAction">
                   <a class="dropdown-item open-modal" data-modal-id="TransactionModal"
                     data-url="{{ url_for('.transaction', market_id=ticker.market_id, asset_id=asset.id, ticker=ticker.id, transaction_id=transaction.id) }}">
-                    {% trans %}Change{% endtrans %}
+                    {% trans %}Edit transaction{% endtrans %}
                   </a>
                   <a class="dropdown-item link-danger open-modal-confirmation" 
-                    data-action="delete"
-                    data-id="{{ transaction.id }}" data-title="{{ gettext('Delete transaction?') }}">
-                    {% trans %}Delete{% endtrans %}
+                    data-action="delete" data-id="{{ transaction.id }}"
+                    data-title="{% trans %}Remove transaction?{% endtrans %}"
+                    data-text="{% trans %}Are you sure you want to remove this transaction?{% endtrans %}">
+                    {% trans %}Remove transaction{% endtrans %}
                   </a>
                 </div>
               </div>
@@ -205,7 +209,9 @@
     <!-- Actions buttons -->
     <div class="sticky-bottom-buttons">
       <a class="open-modal-confirmation" data-action="delete"
-        data-title="{% trans %}Delete transactions?{% endtrans %}">{% trans %}Delete{% endtrans %}</a>
+        data-title="{% trans %}Remove transactions?{% endtrans %}"
+        data-text="{% trans %}Are you sure you want to remove these transactions?{% endtrans %}">
+        {% trans %}Remove{% endtrans %}</a>
     </div>
 
   </form>
@@ -214,10 +220,9 @@
   <div class="nothing-box">{% trans %}There's nothing yet...{% endtrans %}</div>
 {% endif %}
 
-<div class="convert-text" data-convert-to="textarea" data-name="comment"
+<div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Add comment') }}"
   data-url="{{ url_for('.asset_settings_update', asset_id=asset.id) }}">
   <span class="convert-data">{{ asset.comment if asset.comment }}</span>
-  <span>{{ gettext('Add comment') if not asset.comment }}</span>
 </div>
 
 <script>
@@ -233,7 +238,7 @@
 
     var request = $.get(url);
     request.done(function(data) {
-      var text_class = 'text-average text-' + data.profit_color;
+      var text_class = 'text-average ' + data.color;
       $('#AssetPrice').html('$' + data.price);
       $('#AssetCostNow').html(data.cost_now).attr('class', text_class);
       $('#AssetProfit').html(data.profit).attr('class', text_class);

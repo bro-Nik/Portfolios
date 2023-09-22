@@ -1,45 +1,62 @@
 $(function () {
 
-  $('body').on("click", ".convert-text", function () {
-    var $box = $(this),
-      convertTo = $box.attr("data-convert-to");
+  $('body').on('click', '.convert-text', function () {
+    var $box = $(this);
 
-    if ($box.hasClass("active")) {
+    if ($box.hasClass('active')) {
       return true;
     }
 
-    var newTextBox = "";
-    if (convertTo == "textarea") {
-      newTextBox += '<textarea class="form-control convert-data" name="' + $box.attr("data-name") + '">';
-      newTextBox += $box.find(".convert-data").text();
-      newTextBox += "</textarea>";
-    }
+    var old_data = $box.find('.convert-data').text();
 
-    $box.addClass("active").empty();
-
-    $box = $box.append("<form></form>").find("form");
-    $box.append(newTextBox);
-
-    $box.append(`
-      <div class="position-right">
+    var $form = $('<form>', {
+      html: $('<textarea>', {
+        class: 'form-control convert-data',
+        text: old_data,
+        name: $box.data('name')
+      })
+    }).append(`
+      <div class="position-right d-flex gap-1">
         <button class="btn btn-primary btn-sm submit" type="button">` + trans.btn_save + `</button>
+        <button class="btn btn-light btn-sm cancel" type="button">` + trans.btn_cancel + `</button>
       </div>
       `);
-    $box.find('textarea').focus();
 
-    $box.on("click", ".submit", function () {
-      var $box = $(this).closest(".convert-text"),
-        $form = $box.find("form"),
-        url = $box.attr("data-url"),
+    $box.addClass('active').empty().append($form);
+    $form.find('textarea').focus();
+
+    $form.on('click', '.submit', function () {
+      var url = $box.data('url'),
         posting = $.post(url, $form.serialize());
 
-      $form.closest('.modal').attr('data-pre-need-update', true);
+      $form.closest('.modal').data('pre-need-update', true);
+      alert($form.closest('.modal').data('pre-need-update'))
 
       posting.done(function (data) {
-        $box.empty().append(`<span class="convert-data">` +
-          $form.find(".convert-data").val() + `</span>`);
+        UpdateConvertTo($box, $form.find('.convert-data').val());
       });
+    });
+
+    $form.on('click', '.cancel', function () {
+      UpdateConvertTo($box, old_data);
     });
 
   });
 })
+
+function CreateConvertTo($element = $("body")) {
+  $element.find('.convert-text').each(function () {
+    UpdateConvertTo($(this));
+  })
+}
+
+function UpdateConvertTo($box, data) {
+  if (data == undefined) {
+    data = $box.find('.convert-data').text();
+  }
+  $box.removeClass('active').empty().append(`<span class="convert-data">` + data + `</span>`);
+
+  if (!$box.find('.convert-data').text().length) {
+    $box.append(`<span>` + $box.data('placeholder') + `</span>`);
+  }
+}

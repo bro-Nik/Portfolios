@@ -34,7 +34,7 @@ def get_tickers(market_id=None):
 @admin_only
 def first_start():
     demo_user = db.session.execute(db.select(User).
-                                   filter_by(email='demo@demo')).scalar()
+                                   filter_by(type='demo')).scalar()
     if not demo_user:
         # demo user
         demo_user = User(email='demo@demo', password='demo', type='demo')
@@ -242,6 +242,12 @@ def users_action():
     return ''
 
 
+@admin.route('/demo_user', methods=['GET'])
+@admin_only
+def demo_user():
+    return render_template('admin/demo_user.html')
+
+
 @admin.route('/tickers', methods=['GET'])
 @admin_only
 def tickers():
@@ -292,7 +298,6 @@ def active_tasks():
 def active_tasks_action(task_id):
     celery.control.revoke(task_id, terminate=True)
     return redirect(url_for('.active_tasks'))
-
 
 
 @celery.task(bind=True, name='load_stocks_images')

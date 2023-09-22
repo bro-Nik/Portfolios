@@ -64,11 +64,6 @@
           {% trans %}Settings{% endtrans %}
         </a>
       </li>
-      {% else %}
-        <li>
-          <span class="dropdown-item fw-semibold">{% trans %}Demo user{% endtrans %}</span>
-        </li>
-      {% endif %}
       <li>
         <hr class="dropdown-divider" />
       </li>
@@ -77,6 +72,11 @@
           {% trans %}Log out{% endtrans %}
         </a>
       </li>
+      {% else %}
+        <li>
+          <a class="dropdown-item" href="{{ url_for('user.register') }}">{% trans %}Sign Up{% endtrans %}</a>
+        </li>
+      {% endif %}
     </ul>
   </div>
 </div>

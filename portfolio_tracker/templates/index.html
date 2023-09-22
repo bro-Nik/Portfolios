@@ -22,13 +22,13 @@
 
         <div class="d-flex align-items-center ms-auto gap-3 text-nowrap">
           <div>
-            <select id="SelectLocale" data-class="form-select border-0 fw-medium">
+            <select id="SelectLocale" class="form-select border-0 fw-medium">
               <option value="en" {{ 'selected' if locale == 'en' }}>English</option>
               <option value="ru" {{ 'selected' if locale == 'ru' }}>Русский</option>
             </select>
           </div>
 
-          {% if current_user.is_authenticated %}
+          {% if current_user.is_authenticated and current_user.type != 'demo' %}
             <a class="text-decoration-none text-capitalize fw-medium" href="{{ url_for('portfolio.portfolios') }}">
               {{ current_user.email[0 : current_user.email.find("@")] }}
             </a>

@@ -102,16 +102,16 @@ $(function () {
     } else {
       $modal.removeAttr("data-pre-modal-id");
     }
-    var pre_need_clean = $btn.attr("data-pre-need-clean");
-    if (pre_need_clean) {
-      $modal.attr("data-pre-need-clean", true);
-    }
+    var pre_need_clean = $btn.attr("data-pre-need-clean") || false;
+    $modal.attr("data-pre-need-clean", pre_need_clean);
 
     // to modal action
     var title = $btn.attr("data-title"),
       action = $btn.attr("data-action"),
-      id = $btn.attr("data-id") || "";
+      id = $btn.attr("data-id") || "",
+      text = $btn.attr("data-text") || "";
     $modal.find(".modal-title").text(title);
+    $modal.find(".modal-text").text(text);
     $modal.find(".action").attr("data-action", action);
     $modal.find(".action").attr("data-id", id);
     $modal.modal({backdrop: false}).modal("show");
@@ -310,7 +310,7 @@ function PageUpdate($modal) {
     pre_need_clean = $modal.attr("data-pre-need-clean"),
     pre_modal_id = $modal.attr("data-pre-modal-id");
 
-  if (pre_need_clean) {
+  if (pre_need_clean == 'true') {
     $('#' + pre_modal_id).attr('data-pre-need-update', true);
     $('#' + pre_modal_id).modal('hide');
   } else if (pre_need_update == 'true') {
@@ -336,6 +336,7 @@ function UpdateScripts($element) {
   UpdateSmartSelects($element);
   StickyBottomActionsUpdate($element);
   UpdateTables($element);
+  CreateConvertTo($element);
 }
 
 
@@ -356,6 +357,17 @@ function UpdateTables($element = $("body")) {
 
 // Sticky Bottom Actions
 function StickyBottomActionsUpdate($element = $("body")) {
+
+  if ($element.find('form').length > 1) {
+    $element.find('form').each(function () {
+      CreateStickyBottomActions($(this));
+    })
+  } else {
+    CreateStickyBottomActions($element);
+  }
+}
+
+function CreateStickyBottomActions($element) {
   var $content = $(`
     <div class="sticky-bottom actions">
       <div class="col-12">
@@ -373,7 +385,7 @@ function StickyBottomActionsUpdate($element = $("body")) {
   `);
   var stickyBottomButtons = $element.find(".sticky-bottom-buttons");
   if (stickyBottomButtons.length) {
-    $content.find(".buttons").append(stickyBottomButtons.children());
+    $content.find('.buttons').append(stickyBottomButtons.children());
     stickyBottomButtons.parent().append($content);
     stickyBottomButtons.remove();
   }
@@ -381,4 +393,6 @@ function StickyBottomActionsUpdate($element = $("body")) {
 
 StickyBottomActionsUpdate();
 UpdateTables();
+CreateConvertTo();
+$('body .fade').addClass('show');
 UpdateFocus();

@@ -13,6 +13,11 @@ from portfolio_tracker.models import Alert, Asset, Portfolio, Transaction, User,
 from portfolio_tracker.whitelist.whitelist import get_whitelist_ticker
 
 
+login_manager.login_view = 'user.login'
+login_manager.login_message = gettext('Please log in to access this page')
+login_manager.login_message_category = 'danger'
+
+
 user = Blueprint('user',
                   __name__,
                   template_folder='templates',
@@ -41,7 +46,7 @@ def register():
             db.session.add(new_user)
 
             new_user.wallets.append(Wallet(name=gettext('Default Wallet')))
-            new_user.info.append(userInfo(first_visit=datetime.now()))
+            new_user.info = userInfo(first_visit=datetime.now())
 
             db.session.commit()
 
@@ -52,6 +57,9 @@ def register():
 
 @user.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated and current_user.type != 'demo':
+	    return redirect(url_for('portfolio.portfolios'))
+	
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -121,7 +129,7 @@ def user_action():
         db.session.add(Wallet(name='Default', user_id=current_user.id))
 
     db.session.commit()
-    flash('Профиль очищен', 'success')
+    flash(gettext('Profile cleared'), 'success')
 
     return ''
 
@@ -147,10 +155,10 @@ def user_delete_def(user_id):
             db.session.delete(asset)
 
         for asset in portfolio.other_assets:
-            for body in asset.bodys:
+            for body in asset.bodies:
                 db.session.delete(body)
-            for operation in asset.operations:
-                db.session.delete(operation)
+            for transaction in asset.transactions:
+                db.session.delete(transaction)
             db.session.delete(asset)
         db.session.delete(portfolio)
 
@@ -213,17 +221,25 @@ def settings_export_import():
 @user.route('/export', methods=['GET'])
 @login_required
 def export_data():
+    # For export to demo user
+    if request.args.get('demo_user') and current_user.type == 'admin':
+        user = db.session.execute(db.select(User).
+                                  filter_by(type='demo')).scalar()
+    else:
+        user = current_user
+
     result = {'wallets': [],
               'portfolios': [],
               'whitelist_tickers': []}
 
-    for wallet in current_user.wallets:
+    for wallet in user.wallets:
         result['wallets'].append({'id': wallet.id,
                                   'name': wallet.name,
+                                  'comment': wallet.comment,
                                   'money_all': wallet.money_all})
 
 
-    for portfolio in current_user.portfolios:
+    for portfolio in user.portfolios:
         p = {'market_id': portfolio.market_id,
              'name': portfolio.name,
              'comment': portfolio.comment,
@@ -265,7 +281,7 @@ def export_data():
 
         result['portfolios'].append(p)
 
-    for whitelist_ticker in current_user.whitelist_tickers:
+    for whitelist_ticker in user.whitelist_tickers:
         alerts = []
         for alert in whitelist_ticker.alerts:
             if alert.asset_id:
@@ -295,11 +311,20 @@ def export_data():
 @user.route('/import_post', methods=['POST'])
 @login_required
 def import_data_post():
+    # For import to demo user
+    if request.args.get('demo_user') and current_user.type == 'admin':
+        user = db.session.execute(db.select(User).
+                                  filter_by(type='demo')).scalar()
+        url = url_for('admin.demo_user', )
+    else:
+        user = current_user
+        url = url_for('.settings_export_import')
+
     try:
         data = json.loads(request.form['import'])
     except:
-        flash('Данные не могут конвертироваться', 'danger')
-        return redirect(url_for('.settings_export_import'))
+        flash(gettext('Error reading data'), 'danger')
+        return redirect(url)
 
     def get_new_wallet_id(old_id):
         for wallet in data['wallets']:
@@ -309,8 +334,9 @@ def import_data_post():
 
 
     for wallet in data['wallets']:
-        new_wallet = Wallet(user_id=current_user.id,
+        new_wallet = Wallet(user_id=user.id,
                             name=wallet['name'],
+                            comment=wallet['comment'],
                             money_all=wallet['money_all'])
         db.session.add(new_wallet)
         db.session.commit()
@@ -318,7 +344,7 @@ def import_data_post():
 
 
     for portfolio in data['portfolios']:
-        new_portfolio = Portfolio(user_id=current_user.id,
+        new_portfolio = Portfolio(user_id=user.id,
                                   market_id=portfolio['market_id'],
                                   name=portfolio['name'],
                                   comment=portfolio['comment'])
@@ -350,7 +376,7 @@ def import_data_post():
                         date=new_transaction.date,
                         whitelist_ticker_id=ticker.id,
                         price=new_transaction.price,
-                        type='down' if new_transaction.type == 'buy' else 'up',
+                        type='down' if new_transaction.type == '+' else 'up',
                         status='on'
                     ))
 
@@ -386,9 +412,9 @@ def import_data_post():
             
     db.session.commit()
 
-    flash('Импорт выполнен', 'success')
+    flash(gettext('Import completed'), 'success')
 
-    return redirect(url_for('.settings_export_import'))
+    return redirect(url)
 
 
 def get_locale():
@@ -399,7 +425,7 @@ def get_locale():
     elif session.get('locale'):
         return session.get('locale')
 
-    return request.accept_languages.best_match(['de', 'fr', 'en', 'ru'])
+    return request.accept_languages.best_match(['en', 'ru'])
 
 
 def get_timezone():

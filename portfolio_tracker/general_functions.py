@@ -1,9 +1,6 @@
 import pickle
-from datetime import datetime, timedelta
-from flask import request
-from flask_login import current_user
-from portfolio_tracker.app import redis, db
-from portfolio_tracker.models import Ticker
+from datetime import datetime
+from portfolio_tracker.app import redis
 
 
 def int_(number, default=0):
@@ -70,7 +67,3 @@ def when_updated(when_updated, default=''):
     return result
 
 
-def get_ticker(id):
-    if not id:
-        return None
-    return db.session.execute(db.select(Ticker).filter_by(id=id)).scalar()

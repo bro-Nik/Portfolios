@@ -26,12 +26,12 @@
       <div class="col-md-6">
         <div class="mb-3">
           <label class="form-label h7">{% trans %}Wallet{% endtrans %}</label>
-          <select name="wallet_id" data-class="form-select"
+          <select name="wallet_id" class="form-select"
             data-url="{{ url_for('wallet.get_all_user_wallets') }}" data-placeholder="-" required>
           </select>
         </div>
       </div>
     </div>
-    <button class="btn btn-primary rounded-3 w-100" type="submit">{% trans %}OK{% endtrans %}</button>
+    <button class="btn btn-primary rounded-3 w-100" type="submit">{% trans %}Save{% endtrans %}</button>
   </form>
 {% endblock %}

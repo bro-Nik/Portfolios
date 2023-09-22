@@ -10,32 +10,57 @@
     <div class="col-auto">
       <h1>{{ wallet.name }}</h1>
     </div>
+    <div class="col-auto ms-auto">
+      <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        {% trans %}More{% endtrans %}
+      </button>
+      <div class="dropdown-menu">
+        <button class="dropdown-item open-modal" type="button" data-modal-id="WalletSettingsModal"
+          data-url="{{ url_for('.wallet_settings', wallet_id=wallet.id) }}">
+          {% trans %}Edit wallet{% endtrans %}
+        </button>
+        <form id="WalletActions" action="{{ url_for('.wallets_action') }}">
+          <button class="dropdown-item link-danger open-modal-confirmation" 
+            type="button" data-form="#WalletActions" data-pre-need-clean="true"
+            {% if wallet.is_empty %}
+              data-title="{% trans name=wallet.name %}Remove wallet {{ name }}?{% endtrans %}"
+              data-action="delete"
+            {% else %}
+              data-title="{% trans name=wallet.name %}Remove wallet {{ name }} with contents?{% endtrans %}"
+              data-text="{% trans %}All transactions associated with this wallet will be removed{% endtrans %}"
+              data-action="delete_with_contents"
+            {% endif %}
+            data-id="{{ wallet.id }}">
+            {% trans %}Remove wallet{% endtrans %}
+          </button>
+        </form>
+      </div>
+
+    </div>
   </div>
 </div>
 
 <div class="row xs-mb-3">
   <div class="col-auto">
     <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
-    <span class="text-average">${{ wallet.total_spent|int|number_group }} /
-      <span class="{{ 'text-green' if wallet.profit|int > 0 }} {{ 'text-red' if wallet.profit|int < 0 }}">
-        ${{ wallet.cost_now|int|number_group }}
-      </span>
+    <span class="text-average">${{ wallet.total_spent|number_group }} /
+      <span class="{{ wallet.color }}">${{ wallet.cost_now|number_group }}</span>
     </span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
-    <span class="text-average">${{ wallet.in_orders|int|number_group }}</span>
+    <span class="text-average">${{ wallet.in_orders|number_group }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Free money{% endtrans %}</p>
     <span class="text-average">
-      {{ '-' if wallet.free|int < 0 }}${{ wallet.free|int|abs|number_group }}</span>
+      {{ '-' if wallet.free_money < 0 }}${{ wallet.free_money|abs|number_group }}</span>
   </div>
 </div>
 
-{% if assets_list %}
+{% if wallet.transactions %}
   <div class="big-table">
     <table class="table table-sm align-middle bootstrap-table" data-search="true">
       <thead>
@@ -53,39 +78,38 @@
         </tr>
       </thead>
       <tbody>
-        {% for ticker in assets_list %}
-          {% set asset = assets_list[ticker] %}
+        {% for ticker in wallet.tickers %}
           <tr>
             <td class="text-average">
               <div class="d-flex gap-2 name">
 
-                {% if asset.image %}
-                  <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + asset.market_id + '/24/' + asset.image) }}">
+                {% if ticker.image %}
+                  <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + ticker.market_id + '/24/' + ticker.image) }}">
                 {% else %}
                   <span class="img-asset-min bg-secondary-subtle"></span>
                 {% endif %}
-                <span class="text-truncate" title="{{ asset.name }}">{{ asset.name }}</span>
-                <span class="text-muted">{{ asset.symbol|upper }}</span>
+                <span class="text-truncate" title="{{ ticker.name }}">{{ ticker.name }}</span>
+                <span class="text-muted">{{ ticker.symbol|upper }}</span>
               </div>
             </td>
 
             <td>
               <span class="text-average small-text">
-                {{ asset.quantity|smart_round|number_group }}
-                {{ asset.symbol|upper }}
+                {{ ticker.quantity|smart_round|number_group }}
+                {{ ticker.symbol|upper }}
               </span>
             </td>
 
-            <td>${{ asset.total_spent|int|number_group }}</td>
+            <td>${{ ticker.total_spent|int|number_group }}</td>
 
-            <td>${{ asset.cost_now|int|number_group }}</td>
+            <td>${{ ticker.cost_now|int|number_group }}</td>
 
-            <td>${{ asset.in_orders|int|number_group }}</td>
+            <td>${{ ticker.in_orders|int|number_group }}</td>
 
             <!-- For sorting -->
-            <td class="visually-hidden">{{ asset.total_spent }}</td>
-            <td class="visually-hidden">{{ asset.cost_now }}</td>
-            <td class="visually-hidden">{{ asset.in_orders }}</td>
+            <td class="visually-hidden">{{ ticker.total_spent }}</td>
+            <td class="visually-hidden">{{ ticker.cost_now }}</td>
+            <td class="visually-hidden">{{ ticker.in_orders }}</td>
  
           </tr>
         {% endfor %}
@@ -95,4 +119,10 @@
 {% else %}
   <div class="nothing-box">{% trans %}There's nothing yet...{% endtrans %}</div>
 {% endif %}
+
+<div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Add comment') }}"
+  data-url="{{ url_for('.wallet_settings_update', wallet_id=wallet.id) }}">
+  <span class="convert-data">{{ wallet.comment if wallet.comment }}</span>
+</div>
+
 {% endblock %}

@@ -1,6 +1,6 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-{% set modal_title = gettext('Asset settings') %}
+{% set modal_title = gettext('Edit asset') %}
 
 {% block content %}
 <form data-url="{{ url_for('.asset_settings_update', asset_id=asset.id) }}">
@@ -36,6 +36,6 @@
       </div>
     </div>
   </div>
-  <button class="btn btn-primary rounded-3 w-100" type="submit">{% trans %}OK{% endtrans %}</button>
+  <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
 </form>
 {% endblock %}

@@ -1,9 +1,11 @@
 import json
 from flask import flash, render_template, request, Blueprint
+from flask_babel import gettext
 from flask_login import login_required, current_user
 from portfolio_tracker.app import db
 from portfolio_tracker.general_functions import get_price_list, float_
 from portfolio_tracker.models import Wallet
+from portfolio_tracker.portfolio.portfolio import delete_transaction
 from portfolio_tracker.wraps import demo_user_change
 
 
@@ -13,7 +15,7 @@ wallet = Blueprint('wallet',
                    static_folder='static')
 
 
-def get_user_wallet(id):
+def get_wallet(id):
     if id:
         return db.session.execute(
                 db.select(Wallet).filter_by(id=id,
@@ -21,51 +23,37 @@ def get_user_wallet(id):
     return None
 
 
+class AllWallets:
+    def __init__(self):
+        price_list = get_price_list()
+        self.total_spent = 0
+        self.cost_now = 0
+        self.in_orders = 0
+        self.free_money = 0
+
+        for wallet in current_user.wallets:
+            wallet.update_details(price_list)
+            self.total_spent += wallet.total_spent
+            self.cost_now += wallet.cost_now
+            self.in_orders += wallet.in_orders
+            self.free_money += wallet.free_money
+
+        self.total_spent = int(self.total_spent)
+        self.cost_now = int(self.cost_now)
+        self.in_orders = int(self.in_orders)
+        self.free_money = int(self.free_money)
+
+        if self.cost_now > self.total_spent:
+            self.color = 'text-green'
+        elif self.cost_now < self.total_spent:
+            self.color = 'text-red'
+
+
 @wallet.route('', methods=['GET'])
 @login_required
 def wallets():
     """ Wallets page """
-    wallets = {}
-    all = {'total_spent': 0,
-           'in_orders': 0,
-           'cost_now': 0,
-           'money_all': 0}
-
-    for user_wallet in current_user.wallets:
-        wallets[user_wallet.id] = {'name': user_wallet.name,
-                                   'money_all': user_wallet.money_all,
-                                   'cost_now': 0,
-                                   'total_spent': 0,
-                                   'in_orders': 0,
-                                   'free': user_wallet.money_all,
-                                   'can_delete': False if user_wallet.money_all else True}
-        all['money_all'] += user_wallet.money_all
-
-    for portfolio in current_user.portfolios:
-        price_list = get_price_list(portfolio.market_id)
-
-        for asset in portfolio.assets:
-            for transaction in asset.transactions:
-                wallet = wallets[transaction.wallet.id]
-                wallet['can_delete'] = False
-
-                if transaction.order:
-                    if transaction.type != 'sell':
-                        wallet['in_orders'] += transaction.total_spent
-                        all['in_orders'] += transaction.total_spent
-                    continue
-
-                price = float_(price_list.get(asset.ticker_id), 0)
-                wallet['total_spent'] += transaction.total_spent
-                wallet['cost_now'] += transaction.quantity * price
-                wallet['free'] -= transaction.total_spent
-                all['total_spent'] += transaction.total_spent
-                all['cost_now'] += transaction.quantity * price
-
-    all['free'] = all['money_all'] - all['total_spent'] - all['in_orders']
-    all['profit'] = all['cost_now'] - all['total_spent'] - all['in_orders']
-
-    return render_template('wallet/wallets.html', all=all, wallets=wallets)
+    return render_template('wallet/wallets.html', all_wallets=AllWallets())
 
 
 @wallet.route('/action', methods=['POST'])
@@ -77,18 +65,21 @@ def wallets_action():
     action = data['action']
 
     for id in ids:
-        wallet = get_user_wallet(id)
+        wallet = get_wallet(id)
         if not wallet:
             continue
 
         if 'delete' in action:
-            if 'delete_all' not in action and (wallet.money_all > 0 or wallet.transactions):
-                flash('В кошельке ' + wallet.name + ' есть остатки')
+            if 'with_contents' not in action and not wallet.is_empty():
+                flash(gettext('Wallet %(name)s is not empty',
+                               name=wallet.name), 'danger')
             else:
+                for transaction in wallet.transactions:
+                    delete_transaction(transaction)
                 db.session.delete(wallet)
 
     if not current_user.wallets:
-        db.session.add(Wallet(name='Default', user_id=current_user.id))
+        current_user.wallets.append(Wallet(name=gettext('Default Wallet')))
 
     db.session.commit()
     return ''
@@ -97,7 +88,7 @@ def wallets_action():
 @wallet.route('/wallet_settings', methods=['GET'])
 @login_required
 def wallet_settings():
-    wallet = get_user_wallet(request.args.get('wallet_id'))
+    wallet = get_wallet(request.args.get('wallet_id'))
     return render_template('wallet/wallet_settings.html', wallet=wallet)
 
 
@@ -106,13 +97,18 @@ def wallet_settings():
 @demo_user_change
 def wallet_settings_update():
     """ Add or change wallet """
-    wallet = get_user_wallet(request.args.get('wallet_id'))
+    wallet = get_wallet(request.args.get('wallet_id'))
     if not wallet:
         wallet = Wallet(user_id=current_user.id)
         db.session.add(wallet)
 
-    wallet.name = request.form.get('name')
-    wallet.money_all = float_(request.form.get('money_all'), 0)
+    name = request.form.get('name')
+    money_all = request.form.get('money_all')
+    if name is not None:
+        wallet.name = name
+    if money_all is not None:
+        wallet.money_all = float_(money_all, 0)
+    wallet.comment = request.form.get('comment')
 
     db.session.commit()
     return ''
@@ -122,57 +118,13 @@ def wallet_settings_update():
 @login_required
 def wallet_info(wallet_id):
     """ Wallet page """
-    user_wallet = get_user_wallet(wallet_id)
-    if not user_wallet:
+    wallet = get_wallet(wallet_id)
+    if not wallet:
         return ''
 
-    wallet = {'name': user_wallet.name,
-              'total_spent': 0,
-              'cost_now': 0,
-              'in_orders': 0}
+    wallet.update_details(get_price_list())
 
-    asset_list = {}
-
-    for transaction in user_wallet.transactions:
-        ticker = transaction.asset.ticker_id
-
-        if not asset_list.get(ticker):
-            asset_list[ticker] = {'name': transaction.asset.ticker.name,
-                                  'symbol': transaction.asset.ticker.symbol,
-                                  'ticker': ticker,
-                                  'quantity': 0,
-                                  'cost_now': 0,
-                                  'total_spent': 0,
-                                  'in_orders': 0}
-            if transaction.asset.ticker.image:
-                asset_list[ticker]['image'] = transaction.asset.ticker.image
-                asset_list[ticker]['market_id'] = transaction.asset.ticker.market_id
-
-        asset = asset_list[ticker]
-
-        if transaction.order:
-            if transaction.type != 'sell':
-                asset['in_orders'] += transaction.total_spent
-                wallet['in_orders'] += transaction.total_spent
-            continue
-
-        price_list = get_price_list(transaction.asset.ticker.market_id)
-        price = float_(price_list.get(ticker), 0)
-        asset['quantity'] += transaction.quantity
-        asset['cost_now'] += transaction.quantity * price
-        asset['total_spent'] += transaction.total_spent
-
-        wallet['cost_now'] += transaction.quantity * price
-        wallet['total_spent'] += transaction.total_spent
-
-    wallet['free'] = user_wallet.money_all
-    wallet['free'] -= wallet['total_spent'] + wallet['in_orders']
-    wallet['profit'] = wallet['cost_now']
-    wallet['profit'] -= wallet['total_spent'] + wallet['in_orders']
-
-    return render_template('wallet/wallet_info.html',
-                           wallet=wallet,
-                           assets_list=asset_list)
+    return render_template('wallet/wallet_info.html', wallet=wallet)
 
 
 @wallet.route('/in_out_get', methods=['GET'])
@@ -192,11 +144,10 @@ def wallet_transfer_get():
 @demo_user_change
 def wallet_in_out():
     """ Input output wallet """
-    wallet = get_user_wallet(request.form.get('wallet_id'))
+    wallet = get_wallet(request.form['wallet_id'])
     if wallet:
-        type = request.form.get('type')
-        sum = float_(request.form.get('transfer_amount'))
-        sum = sum if type == 'Ввод' else -1 * sum
+        type = int(request.form['type'])
+        sum = float_(request.form.get('transfer_amount')) * type
         wallet.money_all += sum
         db.session.commit()
     return ''
@@ -209,8 +160,8 @@ def wallet_transfer():
     """ Transfer wallet """
     sum = float_(request.form.get('transfer_amount'))
 
-    wallet_out = get_user_wallet(request.form.get('wallet_out'))
-    wallet_input = get_user_wallet(request.form.get('wallet_in'))
+    wallet_out = get_wallet(request.form.get('wallet_out'))
+    wallet_input = get_wallet(request.form.get('wallet_in'))
     if wallet_out and wallet_input and wallet_out != wallet_input:
         wallet_out.money_all -= sum
         wallet_input.money_all += sum

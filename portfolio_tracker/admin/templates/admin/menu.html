@@ -3,6 +3,8 @@
     href="{{ url_for('.index') }}">Главная</a>
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.users') }}"
     href="{{ url_for('.users') }}">Пользователи</a>
+  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.demo_user') }}"
+    href="{{ url_for('.demo_user') }}">Демо пользователь</a>
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.tickers') }}"
     href="{{ url_for('.tickers') }}">Тикеры</a>
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.active_tasks') }}"

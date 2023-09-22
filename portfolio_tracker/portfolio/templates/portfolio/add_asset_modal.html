@@ -48,7 +48,7 @@
     $.get(url, function (data) {
       if (data == 'end') {
         if (type == 'search') {
-          $assetsList.html('Ничего не найдено');
+          $assetsList.html(trans.nothing_found);
         } else {
           end_of_tickers = true;
         }

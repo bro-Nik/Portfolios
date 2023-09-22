@@ -1,7 +1,7 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = gettext('Change alert') if alert else gettext('Add alert') %}
+{% set modal_title = gettext('Edit alert') if alert else gettext('Add alert') %}
 
 {% block content %}
 {% set asset_id = request.args.get('asset_id') %}
@@ -13,7 +13,8 @@
         <label class="form-label h7">{% trans %}Price{% endtrans %}</label>
         <div class="input-group mb-1">
           <span class="input-prefix">$</span>
-          <input type="number" step="any" class="form-control rounded-3 focus" value="{{ alert.price if alert else price }}" name="price" autocomplete="off" required>
+          <input type="number" step="any" class="form-control rounded-3 focus"
+            value="{{ alert.price if alert else price }}" name="price" autocomplete="off" required {{ 'disabled' if alert.transaction }}>
           <input type="hidden" name="type" value="{{ alert.type if alert else 'down' }}">
         </div>
         <span class="small-text alert-price-info">

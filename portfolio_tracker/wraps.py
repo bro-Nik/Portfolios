@@ -1,5 +1,6 @@
 from functools import wraps
 from flask import session, request, redirect, url_for, abort, flash
+from flask_babel import gettext
 from flask_login import current_user
 
 from portfolio_tracker.app import db
@@ -18,13 +19,12 @@ def admin_only(f):
             return redirect(url_for('user.login') + '?next=' + request.url)
     return decorated_function
 
-demo_can_change = True
 
 def demo_user_change(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if current_user.type == 'demo' and not demo_can_change:
-            flash('Демо пользователь не может вносить изменения', 'danger')
+        if current_user.type == 'demo':
+            flash(gettext('Demo user cannot make changes'), 'warning')
             return ''
         return f(*args, **kwargs)
     return decorated_function

@@ -1,9 +1,9 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-{% set modal_title = gettext('Change asset body') if body else gettext('Add asset body') %}
+{% set modal_title = gettext('Edit asset body') if body else gettext('Add asset body') %}
 
 {% block content %}
-<form data-url="{{ url_for('.other_asset_body_update', asset_id=asset_id, body_id=body.id if body else None) }}">
+<form data-url="{{ url_for('.other_body_update', asset_id=asset_id, body_id=body.id if body else None) }}">
   <div class="row g-2">
     <div class="col-md-12">
       <div class="mb-1">

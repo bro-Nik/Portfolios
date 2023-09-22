@@ -13,9 +13,13 @@ function UpdateSmartSelects($element = $("body")) {
       return false;
     }
 
+    if ($(this).attr('disabled')) {
+      return false;
+    }
+
     var $select = $(this),
       selectedOption = $select.find('option:selected'),
-      selectClass = $(this).attr('data-class');
+      selectClass = $(this).attr('class');
 
     $select.addClass('visually-hidden');
     $select.wrap('<div class="smart-select-box"></div>');

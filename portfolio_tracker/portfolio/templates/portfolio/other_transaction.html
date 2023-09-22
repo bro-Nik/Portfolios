@@ -1,15 +1,15 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-{% set modal_title = gettext('Change transaction') if operation else gettext('Add transaction') %}
+{% set modal_title = gettext('Edit transaction') if transaction else gettext('Add transaction') %}
 
 {% block content %}
-<form data-url="{{ url_for('.other_asset_operation_update', asset_id=asset_id, operation_id=operation.id if operation else None) }}">
+<form data-url="{{ url_for('.other_transaction_update', asset_id=asset_id, transaction_id=transaction.id if transaction else None) }}">
 
   <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
-    <input type="radio" class="btn-check" name="type" value="+" id="btnplus" {{ 'checked' if not operation or operation.type == '+'}}>
+    <input type="radio" class="btn-check" name="type" value="+" id="btnplus" {{ 'checked' if not transaction or transaction.type == '+'}}>
     <label class="btn btn-sm" for="btnplus">{% trans %}Profit{% endtrans %}</label>
 
-    <input type="radio" class="btn-check" name="type" value="-" id="btnminus" {{ 'checked' if operation and operation.type == '-'}}>
+    <input type="radio" class="btn-check" name="type" value="-" id="btnminus" {{ 'checked' if transaction and transaction.type == '-'}}>
     <label class="btn btn-sm" for="btnminus">{% trans %}Loss{% endtrans %}</label>
   </div>
 
@@ -20,7 +20,7 @@
         <div class="input-group">
           <span class="input-prefix">$</span>
           <input type="number" step="any" class="form-control rounded-3 focus"
-                 placeholder="0,00" name="total_spent" value="{{ operation.total_spent|smart_int if operation }}" required>
+                 placeholder="0,00" name="total_spent" value="{{ transaction.total_spent|smart_int if transaction }}" required>
         </div>
       </div>
     </div>
@@ -28,14 +28,14 @@
     <div class="col-md-6">
       <div class="mb-1">
         <label class="form-label h7">{% trans %}Date{% endtrans %}</label>
-        <input class="form-control" name="date" type="date" value="{{ operation.date if operation else date }}" required>
+        <input class="form-control" name="date" type="date" value="{{ transaction.date if transaction else date }}" required>
       </div>
     </div>
 
     <div class="col-md-12">
       <div class="mb-3">
         <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
-        <textarea class="form-control" name="comment">{{ operation.comment if operation }}</textarea>
+        <textarea class="form-control" name="comment">{{ transaction.comment if transaction }}</textarea>
       </div>
     </div>
   </div>

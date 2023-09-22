@@ -1,6 +1,6 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-{% set modal_title = gettext('Change wallet') if wallet else gettext('Add wallet') %}
+{% set modal_title = gettext('Edit wallet') if wallet else gettext('Add wallet') %}
 
 {% block content %}
 <form data-url="{{ url_for('.wallet_settings_update', wallet_id=wallet.id if wallet) }}">
@@ -19,6 +19,12 @@
           <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="money_all"
             value="{{ wallet.money_all if wallet.money_all }}" autocomplete="off">
         </div>
+      </div>
+    </div>
+    <div class="col-md-12">
+      <div class="mb-3">
+        <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
+        <textarea class="form-control" name="comment">{{ wallet.comment if wallet }}</textarea>
       </div>
     </div>
   </div>

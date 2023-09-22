@@ -3,8 +3,7 @@ from flask import flash, render_template, redirect, session, url_for, request, B
 from flask_login import login_required, current_user
 from datetime import datetime
 
-from portfolio_tracker.general_functions import float_, get_ticker, \
-    get_price_list
+from portfolio_tracker.general_functions import float_, get_price_list
 from portfolio_tracker.models import Alert, Ticker, WhitelistTicker
 from portfolio_tracker.wraps import demo_user_change
 from portfolio_tracker.app import db
@@ -36,7 +35,7 @@ def get_user_alert(id):
     return None
 
 
-@whitelist.route('', methods=['GET'])
+@whitelist.route('/', methods=['GET'])
 @login_required
 def tickers():
     market_id = request.args.get('market_id')
@@ -70,7 +69,6 @@ def tickers():
 @demo_user_change
 def tickers_action():
     data = json.loads(request.data) if request.data else {}
-
     ids = data['ids']
     action = data['action']
 
@@ -80,12 +78,12 @@ def tickers_action():
         if not whitelist_ticker:
             continue
 
-        if action == 'delete_all':
+        if action == 'delete_with_orders':
             for alert in whitelist_ticker.alerts:
                 db.session.delete(alert)
             db.session.delete(whitelist_ticker)
 
-        elif action == 'delete_except_orders':
+        elif action == 'delete':
             for alert in whitelist_ticker.alerts:
                 if not alert.transaction_id:
                     db.session.delete(alert)
@@ -134,7 +132,8 @@ def ticker_info(market_id, ticker_id):
     # не добавляем если пока нет уведомлений
     ticker = {}
     if not whitelist_ticker:
-        ticker = get_ticker(ticker_id)
+        ticker = db.session.execute(
+            db.select(Ticker).filter_by(id=ticker_id)).scalar()
     return render_template('whitelist/ticker_info.html',
                            whitelist_ticker=whitelist_ticker,
                            ticker=ticker,
