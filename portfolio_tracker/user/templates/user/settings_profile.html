@@ -24,14 +24,6 @@
   <div class="col-auto">
     <span class="">{{ current_user.email }}</span>
 
-    <p class="">{% trans %}Language{% endtrans %}</p>
-    
-    <div class="">
-      <select id="SelectLocale" class="form-select">
-        <option value="en" {{ 'selected' if locale == 'en' }}>English</option>
-        <option value="ru" {{ 'selected' if locale == 'ru' }}>Русский</option>
-      </select>
-    </div>
     <br>
     <form id="UserActions" class="d-grid" action="{{ url_for('user.user_action') }}">
       <a class="link-danger open-modal-confirmation" data-title="{% trans %}Delete all profile data?{% endtrans %}" data-form="#UserActions" data-action="delete_data">
@@ -46,13 +38,3 @@
 
 {% endblock %}
 
-{% block after_scripts %}
-  <script>
-    $('#SelectLocale').on('change', function() {
-      $.get("{{ url_for('change_locale') }}" + '?locale=' + $(this).val())
-      .done(function () {
-        window.location.reload();
-      });
-    });
-  </script>
-{% endblock %}

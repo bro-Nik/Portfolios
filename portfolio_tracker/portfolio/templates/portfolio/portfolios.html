@@ -26,9 +26,9 @@
     <div class="col-auto">
       <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
       <span class="text-average">
-        ${{ all_portfolios.total_spent|number_group }} / 
+        {{ all_portfolios.amount_usd|user_currency }} / 
         <span class="{{ all_portfolios.color }}">
-          ${{ all_portfolios.cost_now|number_group }}
+          ${{ all_portfolios.cost_now|user_currency }}
         </span>
       </span>
     </div>
@@ -36,7 +36,7 @@
     <div class="col-auto">
       <p class="small-text">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</p>
         <span class="text-average {{ all_portfolios.color }}">
-          {{ '-' if all_portfolios.profit < 0 }}${{ all_portfolios.profit|abs|number_group }}
+          {{ all_portfolios.profit|user_currency }}
           {{ '({}%)'.format(all_portfolios.profit_percent) if all_portfolios.profit_percent }}
         </span>
     </div>
@@ -44,34 +44,40 @@
     <div class="col-auto">
       <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
       <span class="text-average">
-        ${{ all_portfolios.in_orders|number_group }}
+        {{ all_portfolios.in_orders|user_currency }}
       </span>
     </div>
 
   </div>
 
   <div class="big-table">
+    {% set tab_name = 'portfolios' %}
+    {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'total_spent' %}
+    {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
     <form id="PortfoliosForm" action="{{ url_for('.portfolios_action') }}">
-      <table class="table table-sm align-middle table-hover bootstrap-table" data-search="true">
+      <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
+        data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
+        data-sort-url="{{ url_for('portfolio.change_table_sort') }}">
         <thead>
           <tr>
             <th class="main-tab-checkbox">
               <input class="form-check-input check-all" type="checkbox">
             </th>
-            <th data-sortable="true" data-sort-name="name">{% trans %}Name{% endtrans %}</th>
-            <th data-sortable="true" data-sort-name="total_spent">{% trans %}Total spent{% endtrans %}</th>
-            <th data-sortable="true" data-sort-name="cost_now">{% trans %}Cost now{% endtrans %}</th>
-            <th data-sortable="true" data-sort-name="profit">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</th>
-            <th data-sortable="true" data-sort-name="percent">{% trans %}Share of total investments{% endtrans %}</th>
-            <th data-sortable="true" data-sort-name="percent">{% trans %}Money in orders{% endtrans %}</th>
+            <th data-sortable="true" data-field="name" data-sort-name="_name">{% trans %}Name{% endtrans %}</th>
+            <th data-sortable="true" data-field="total_spent" data-sort-name="_total_spent">{% trans %}Total spent{% endtrans %}</th>
+            <th data-sortable="true" data-field="cost_now" data-sort-name="_cost_now">{% trans %}Cost now{% endtrans %}</th>
+            <th data-sortable="true" data-field="profit" data-sort-name="_profit">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</th>
+            <th data-sortable="true" data-field="percent" data-sort-name="_percent">{% trans %}Share of total investments{% endtrans %}</th>
+            <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}Money in orders{% endtrans %}</th>
             <th>{% trans %}Comment{% endtrans %}</th>
             <th></th>
             <!-- For sorting -->
-            <th class="visually-hidden" data-sortable="true" data-field="name">Name</th>
-            <th class="visually-hidden" data-sortable="true" data-field="total_spent">Total spent</th>
-            <th class="visually-hidden" data-sortable="true" data-field="cost_now">Cost now</th>
-            <th class="visually-hidden" data-sortable="true" data-field="profit">Profit</th>
-            <th class="visually-hidden" data-sortable="true" data-field="percent">%</th>
+            <th class="visually-hidden" data-field="_name">Name</th>
+            <th class="visually-hidden" data-field="_total_spent">Total spent</th>
+            <th class="visually-hidden" data-field="_cost_now">Cost now</th>
+            <th class="visually-hidden" data-field="_profit">Profit</th>
+            <th class="visually-hidden" data-field="_percent">%</th>
+            <th class="visually-hidden" data-field="_in_orders">Orders</th>
           </tr>
         </thead>
 
@@ -85,22 +91,22 @@
               <td class="text-average">
                 <div class="open-modal d-grid name" data-modal-id="PortfolioInfoModal" data-url="{{ url_for('.portfolio_info', portfolio_id=portfolio.id) }}">
                   <span class="text-truncate" title="{{ portfolio.name }}">{{ portfolio.name }}</span>
-                  <span class="text-muted small-text">{{ gettext(portfolio.market.name) }}</span>
+                  <span class="text-muted small-text">{{ gettext(portfolio.market)|capitalize }}</span>
                 </div>
               </td>
 
-              <td>{{ '-' if portfolio.total_spent < 0 }}{{ '$' + portfolio.total_spent|abs|number_group if portfolio.total_spent else '-' }}</td>
+              <td>{{ portfolio.amount_usd|user_currency if portfolio.amount_usd else '-' }}</td>
 
               <td>
                 <span class="{{ portfolio.color }}">
-                  {{ '$' + portfolio.cost_now|number_group if portfolio.cost_now else '-' }}
+                  {{ portfolio.cost_now|user_currency if portfolio.cost_now else '-' }}
                 </span>
               </td>
 
               <td>
                 {% if portfolio.cost_now %}
                   <span class="{{ portfolio.color }}">
-                    {{ '-' if portfolio.profit < 0 }}${{ portfolio.profit|abs|number_group }}
+                    {{ portfolio.profit|user_currency }}
                     {{ '({}%)'.format(portfolio.profit_percent) if portfolio.profit_percent }}
                   </span>
                 {% else %}
@@ -109,12 +115,12 @@
               </td>
               
               <td>
-                {{ (portfolio.total_spent / all_portfolios.total_spent * 100)|round(1, 'common')|smart_int|string + '%' if portfolio.cost_now else '-' }}
+                {{ (portfolio.amount_usd / all_portfolios.amount_usd * 100)|round(1, 'common')|smart_int|string + '%' if portfolio.cost_now and all_portfolios.amount_usd else '-' }}
                 / {{ portfolio.percent|smart_int |string + '%' if portfolio.percent else '-' }}
               </td>
 
               <td>
-                {{ '$' + portfolio.in_orders|smart_int|string if portfolio.in_orders else '-' }}
+                {{ portfolio.in_orders|user_currency if portfolio.in_orders else '-' }}
               </td>
 
               <td>
@@ -151,10 +157,11 @@
 
               <!-- For sorting -->
               <td class="visually-hidden">{{ portfolio.name }}</td>
-              <td class="visually-hidden">{{ portfolio.total_spent }}</td>
+              <td class="visually-hidden">{{ portfolio.amount_usd }}</td>
               <td class="visually-hidden">{{ portfolio.cost_now }}</td>
               <td class="visually-hidden">{{ portfolio.profit }}</td>
               <td class="visually-hidden">{{ (portfolio.cost_now / all_portfolios.cost_now * 100) if all_portfolios.cost_now }}</td>
+              <td class="visually-hidden">{{ portfolio.in_orders }}</td>
 
             </tr>
           {% endfor %}

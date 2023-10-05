@@ -140,7 +140,6 @@ $(function () {
     var $modal = $(this);
 
     $modal.css("height", $(window).height());
-
     var $active_modals = $("body").find(".modal.show"),
       z_index = parseInt($modal.css("z-index"));
 
@@ -352,7 +351,19 @@ function UpdateTables($element = $("body")) {
     formatLoadingMessage: function() {
         return trans.loading;
     },
-  });
+  })
+  // Sort
+  .on('click', '.th-inner.sortable', function () {
+    var tab_name = $(this).closest('table').data('name'),
+      field = $(this).parent().data('field'),
+      sort_order = $(this).hasClass('desc') ? 'asc' : 'desc',
+      url = $(this).closest('table').data('sort-url');
+
+    if (tab_name && field && sort_order && url) {
+      url += '?tab_name=' + tab_name + '&field=' + field + '&sort_order=' + sort_order;
+      $.get(url)
+    }
+  })
 }
 
 // Sticky Bottom Actions

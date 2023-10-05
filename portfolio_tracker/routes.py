@@ -14,17 +14,6 @@ def index():
     return render_template('index.html', locale=get_locale())
 
 
-@app.route('/change_locale', methods=['GET'])
-def change_locale():
-    locale = request.args.get('locale')
-    if current_user.is_authenticated and current_user.type != 'demo':
-        current_user.locale = locale
-        db.session.commit()
-    else:
-        session['locale'] = locale
-    return ''
-
-
 @app.errorhandler(404)
 @login_required
 def page_not_found(e):

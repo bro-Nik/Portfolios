@@ -10,7 +10,7 @@
       <div class="mb-1">
         {% if asset.ticker.image %}
           <img class="img-asset-min"
-            src="{{ url_for('static', filename='images/tickers/' + asset.ticker.market_id + '/24/' + asset.ticker.image) }}" />
+            src="{{ url_for('static', filename='images/tickers/' + asset.ticker.market + '/24/' + asset.ticker.image) }}" />
         {% else %}
           <span class="img-asset-min bg-secondary-subtle"></span>
         {% endif %}

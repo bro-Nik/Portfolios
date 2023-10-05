@@ -5,14 +5,15 @@
 {% include 'admin/menu.html' %}
 
 <nav class="nav nav-underline">
-  <a class="nav-link {{ 'active disabled' if market_id == 'crypto' }}" href="{{ url_for('.tickers', market_id='crypto') }}">Crypto</a>
-  <a class="nav-link {{ 'active disabled' if market_id == 'stocks' }}" href="{{ url_for('.tickers', market_id='stocks') }}">Stocks</a>
+  <a class="nav-link {{ 'active disabled' if market == 'crypto' }}" href="{{ url_for('.tickers', market='crypto') }}">Crypto</a>
+  <a class="nav-link {{ 'active disabled' if market == 'stocks' }}" href="{{ url_for('.tickers', market='stocks') }}">Stocks</a>
+  <a class="nav-link {{ 'active disabled' if market == 'currency' }}" href="{{ url_for('.tickers', market='currency') }}">Currency</a>
 </nav>
 
 <div class="big-table pt-3 pb-3">
   <table class="table table-sm align-middle table-hover bootstrap-table"
       data-pagination="true" data-search="true"
-      data-url="{{ url_for('.tickers_detail', market_id=market_id) }}"
+      data-url="{{ url_for('.tickers_detail', market=market) }}"
       data-page-size="20">
     <thead>
       <tr>

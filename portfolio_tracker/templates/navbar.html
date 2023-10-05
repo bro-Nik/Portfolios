@@ -45,6 +45,23 @@
       {% endif %}
     </li>
   </ul>
+  <div class="d-flex">
+    <div>
+      <select class="form-select border-0 bg-transparent"
+        data-url="{{ url_for('user.ajax_locales') }}"
+        data-action-url="{{ url_for('user.change_locale') }}">
+        <option selected value="{{ current_user.locale }}">{{ current_user.locale|upper }}</option>
+      </select>
+    </div>
+    <div>
+      <select class="form-select border-0 bg-transparent"
+        data-url="{{ url_for('wallet.ajax_currencies') }}"
+        data-action-url="{{ url_for('user.change_currency') }}">
+        <option selected value="{{ current_user.currency }}">{{ current_user.currency|upper }}</option>
+      </select>
+    </div>
+
+  </div>
   <hr>
   <div class="dropdown">
     <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle link-secondary"

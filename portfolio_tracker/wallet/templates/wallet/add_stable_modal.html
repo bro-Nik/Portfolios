@@ -37,7 +37,7 @@
     tickers_loading_started = true;
 
     var $assetsList = $("#AssetsList");
-      url = "{{ url_for('portfolio.asset_add_tickers', market=market)}}",
+      url = "{{ url_for('.stable_add_tickers') }}",
       search = $('#AssetsGeneralBox .search input').val();
 
     url += "?page=" + page;
@@ -81,13 +81,12 @@ $('#AssetsBox').scroll(function(){
   }
 });
 	
-// For portfolio or for whitelist
-{% set url = url_for('.asset_add', portfolio_id=portfolio_id) if portfolio_id else url_for('whitelist.add_ticker') %}
 
 $('#AssetsList').on("click", '.select-asset', function () {
 
-  var ticker_id = "?ticker_id=" + $(this).attr('data-ticker-id'),
-    url = "{{ url }}" + ticker_id,
+  var ticker_id = "?ticker_id=" + $(this).data('ticker-id'),
+    market = "&market=" + $(this).data('market'),
+    url = "{{ url_for('.stable_add', wallet_id=wallet_id) }}" + ticker_id + market,
     $modal = $(this).closest('.modal'),
     pre_modal_id = $modal.attr('data-pre-modal-id');
 

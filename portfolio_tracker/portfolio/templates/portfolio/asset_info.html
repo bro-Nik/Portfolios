@@ -17,13 +17,13 @@
 
       <div class="hstack gap-2">
         {% if ticker.image %}
-          <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + ticker.market_id + '/40/' + ticker.image) }}">
+          <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/40/' + ticker.image) }}">
         {% endif %}
-        <span class="fs-1 fw-semibold" id="AssetPrice">${{ price|smart_round|number_group }}</span>
+        <span class="fs-1 fw-semibold" id="AssetPrice">{{ asset.price|smart_round|user_currency }}</span>
       </div>
 
       {% if not request.args.get('from_whitelist') %}
-        <div class="d-flex gap-1 align-items-end open-modal" data-modal-id="WhitelistTickerInfoModal" data-url="{{ url_for('whitelist.ticker_info', market_id=ticker.market_id, ticker_id=ticker.id, asset_id=asset.id) }}">
+        <div class="d-flex gap-1 align-items-end open-modal" data-modal-id="WhitelistTickerInfoModal" data-url="{{ url_for('whitelist.ticker_info', market=ticker.market, ticker_id=ticker.id, asset_id=asset.id) }}">
           <span class="badge text-bg-light fw-normal text-muted d-flex gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/></svg>
             {{ gettext('Add alert') if not asset.alerts }}
@@ -79,8 +79,8 @@
     <div class="col-auto">
       <p class="small-text">{% trans %}Average buy price{% endtrans %}</p>
       <span class="text-average">
-        {% if asset.quantity > 0 and asset.total_spent > 0 %}
-          ${{ (asset.total_spent / asset.quantity)|smart_round|number_group }}
+        {% if asset.quantity > 0 and asset.amount > 0 %}
+          {{ (asset.amount_usd / asset.quantity)|smart_round|user_currency }}
         {% else %}
           $0
         {% endif%}
@@ -89,7 +89,7 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
-      <span class="text-average"> {{ '-' if asset.total_spent < 0 }}${{ asset.total_spent|abs|number_group }} / </span>
+      <span class="text-average"> {{ asset.amount_usd|user_currency }} / </span>
       <span id="AssetCostNow" class="text-average"> - </span>
     </div>
 
@@ -98,17 +98,19 @@
       <span id="AssetProfit" class="text-average"> - </span>
     </div>
 
+    {#}
     <div class="col-auto">
       <p class="small-text">{% trans %}Share of portfolio{% endtrans %}</p>
       <span class="text-average">
-        {{ (asset.total_spent / asset.portfolio.total_spent * 100)|round(1, 'common')|smart_int|string + '%' if asset.portfolio.total_spent else '' }} /
+        {{ (asset.amount_usd / asset.portfolio.amount_usd * 100)|round(1, 'common')|smart_int|string + '%' if asset.portfolio.amount else '' }} /
         {{ asset.percent|smart_int|string + '%' if asset.percent else '-' }}
       </span>
     </div>
+    #}
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
-      <span class="text-average"> ${{ asset.in_orders|number_group }}</span>
+      <span class="text-average"> {{ asset.in_orders|user_currency }}</span>
     </div>
 
   </div>
@@ -140,21 +142,31 @@
 
           <td>
             <div class="open-modal" data-modal-id="TransactionModal"
-              data-url="{{ url_for('.transaction', market_id=ticker.market_id, asset_id=asset.id, ticker=ticker.id, transaction_id=transaction.id) }}">
+              data-url="{{ url_for('.transaction', market=ticker.market, asset_id=asset.id, ticker=ticker.id, transaction_id=transaction.id) }}">
               <span class="{{ transaction.color }}">{{ transaction.type_name }}</span>
               {{ '(' + gettext('Order') + ')' if transaction.order }}
               <br>
-              <span class="small-text">{{ transaction.date }}</span>
+              <span class="small-text">{{ transaction.date|user_date }}</span>
             </div>
           </td>
 
-          <td>${{ transaction.price|smart_round|number_group }}</td>
+          <td>
+            {% if current_user.currency != transaction.against_ticker.symbol %}
+              {{ transaction.price|smart_round|other_currency(transaction.against_ticker.symbol) }}
+              <br>
+            {% endif %}
+            {{ transaction.price|smart_round|user_currency }}
+          </td>
 
           <td>
-            {{ '-' if transaction.type == '+' else '+' }}${{ transaction.total_spent|abs|smart_int|number_group }}
+            {% if current_user.currency != transaction.against_ticker.symbol %}
+              {{ '-' if transaction.type[0] == '+' else '+' }}{{ transaction.amount|abs|smart_int|other_currency(transaction.against_ticker.symbol) }}
+              <br>
+            {% endif %}
+            {{ '-' if transaction.type[0] == '+' else '+' }}{{ (transaction.quantity * transaction.price_usd)|abs|smart_int|user_currency }}
             <br>
             <span class="text-average small-text {{ transaction.color }}">
-              {{ transaction.type }}{{ transaction.quantity|abs|smart_round|number_group }} {{ ticker.symbol|upper }}
+              {{ transaction.type[0] }}{{ transaction.quantity|abs|smart_round|number_group }} {{ ticker.symbol|upper }}
             </span>
           </td>
 
@@ -188,7 +200,7 @@
                 </a>
                 <div class="dropdown-menu" aria-labelledby="dropdownAction">
                   <a class="dropdown-item open-modal" data-modal-id="TransactionModal"
-                    data-url="{{ url_for('.transaction', market_id=ticker.market_id, asset_id=asset.id, ticker=ticker.id, transaction_id=transaction.id) }}">
+                    data-url="{{ url_for('.transaction', market=ticker.market, asset_id=asset.id, ticker=ticker.id, transaction_id=transaction.id) }}">
                     {% trans %}Edit transaction{% endtrans %}
                   </a>
                   <a class="dropdown-item link-danger open-modal-confirmation" 

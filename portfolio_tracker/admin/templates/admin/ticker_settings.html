@@ -1,0 +1,38 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+{% set modal_title = ticker.name %}
+
+{% block content %}
+<form data-url="{{ url_for('.ticker_settings_update', market=ticker.market, ticker_id=ticker.id) }}">
+  <div class="row g-2">
+
+    <div class="col-12">
+      <div class="mb-1">
+        <label class="form-label h7">ID</label>
+        <input type="text" class="form-control rounded-3 focus" name="id" value="{{ ticker.id }}" required>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="mb-1">
+        <label class="form-label h7">Symbol</label>
+        <input type="text" class="form-control rounded-3 focus" name="symbol" value="{{ ticker.symbol }}" required>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="mb-1">
+        <label class="form-label h7">Название</label>
+        <input type="text" class="form-control rounded-3 focus" name="name" value="{{ ticker.name }}" required>
+      </div>
+    </div>
+
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" value="true" {{ 'checked' if ticker.stable }} name="stable">
+      <label class="form-check-label">Участвует в сделках (Стабильная валюта)</label>
+    </div>
+
+  </div>
+  <button class="btn btn-primary rounded-3 w-100" type="submit">Изменить</button>
+</form>
+{% endblock %}

@@ -2,6 +2,7 @@ from flask import Flask
 from flask_babel import Babel
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_migrate import Migrate
 from celery import Celery
 import redis
 
@@ -35,6 +36,7 @@ def make_celery(app):
 celery = make_celery(app)
 redis = redis.StrictRedis('127.0.0.1', 6379)
 login_manager = LoginManager(app)
+migrate = Migrate(app,  db)
 
 
 from portfolio_tracker.portfolio.portfolio import portfolio

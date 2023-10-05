@@ -1,7 +1,7 @@
 $(function () {
   $("body").mousedown(function (e) {
     var $select = $('body .smart-select.on');
-    if ($select.length && !$(e.target).closest('.smart-select-box').length) {
+    if ($select.length && !$(e.target).closest('.smart-select-box').is($select.closest('.smart-select-box'))) {
       $select.trigger('click');
     }
   });
@@ -35,7 +35,7 @@ function UpdateSmartSelects($element = $("body")) {
     }).insertAfter(selectHead);
 
     var selectList = selectHead.next('.smart-select__list');
-    selectList.slideUp(0);
+    // selectList.slideUp(0);
 
     $select.on('focus', function() {
       $(this).trigger('blur');
@@ -45,6 +45,9 @@ function UpdateSmartSelects($element = $("body")) {
     selectHead.on('click', function() {
       if (!$(this).hasClass('on')) {
         $(this).addClass('on');
+        if (selectHead.offset().top > $(window).height() / 4) {
+          selectList.css('bottom', '45px');
+        }
         
         // load options
         if ($select.attr('data-url')) {
@@ -54,9 +57,11 @@ function UpdateSmartSelects($element = $("body")) {
         }
       } else {
         $(this).removeClass('on');
-        selectList.slideUp(50);
+        // selectList.slideUp(50);
+        selectList.fadeOut(50);
       }
     });
+
   });
 }
 
@@ -71,9 +76,14 @@ function GenerateSelect($select) {
     for (let i = 0; i < selectOptionLength; i++) {
       if (selectOption.eq(i).val() && selectOption.eq(i).text()) {
         var is_selected = selectOption.eq(i).prop('selected') ? ' selected' : '';
+
+        var text = '<span class="text">' + selectOption.eq(i).text() + '</span>';
+        if (selectOption.eq(i).data('subtext')) {
+          text += '<span class="subtext">' + selectOption.eq(i).data('subtext') + '</span>';
+        }
         $('<div>', {
           class: 'smart-select__item' + is_selected,
-          text: selectOption.eq(i).text()
+          html: text 
         })
         .attr('data-value', selectOption.eq(i).val())
         .appendTo(selectList);
@@ -81,7 +91,9 @@ function GenerateSelect($select) {
     }
   }
   ClickInSelect($select);
-  selectList.slideDown(50);
+  // selectList.slideDown(50);
+  // selectList.slideToggle(100);
+  selectList.fadeIn(50);
 }
 
 function GetOptions($select) {
@@ -95,7 +107,7 @@ function GetOptions($select) {
       var $newOption = $('<option>', {
         value: data[i].value,
         text: data[i].text
-      })
+      }).data('subtext', data[i].subtext)
 
       $select.append($newOption);
       if (data[i].value == selectedOptionValue) {
@@ -104,7 +116,6 @@ function GetOptions($select) {
     }
     $select.parent().find('.smart-select__list').empty();
     GenerateSelect($select);
-    ClickInSelect($select);
   })
 }
 
@@ -121,10 +132,18 @@ function ClickInSelect($select){
     $(this).addClass('selected');
 
     $select.val(chooseItem).attr('selected', 'selected').trigger('change');
-    selectHead.text($(this).text());
+    selectHead.text($(this).find('.text').text());
 
-    selectList.slideUp(50);
+    // selectList.slideUp(50);
+    selectList.fadeOut(50);
     selectHead.removeClass('on');
+
+    if ($select.data('action-url')) {
+      $.get($select.data('action-url') + '?value=' + chooseItem)
+      .done(function (data) {
+        location. reload();
+      });
+    }
   });
 
 }

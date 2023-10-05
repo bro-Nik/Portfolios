@@ -2,46 +2,111 @@
 {% set modal_fullscreen = False %}
 
 {% set modal_title = gettext('Edit transaction') if transaction else gettext('Add transaction') %}
+{% set buy_class = 'visually-hidden' if transaction and transaction.type == '-1' %}
+{% set sell_class = 'visually-hidden' if not transaction or transaction.type == '+1' %}
+
+{% if transaction %}
+  {% set buy_wallet = transaction.wallet %}
+  {% set sell_wallet = transaction.wallet %}
+  {% set against_ticker = transaction.wallet.get_asset(ticker_id=transaction.against_ticker_id).ticker %}
+  {% set amount_symbol = against_ticker.symbol|upper %}
+{% else %}
+  {% set buy_wallet = current_user.wallets[0] %}
+  {% set sell_wallet = None %}
+  {% set against_ticker = current_user.wallets[0].free_stable()[0].ticker %}
+  {% set amount_symbol = current_user.wallets[0].free_stable()[0].ticker.symbol|upper %}
+{% endif %}
 
 {% block content %}
-<form id="TransactionForm" data-url="{{ url_for('.transaction_update', asset_id=asset_id, transaction_id=transaction.id) }}">
+<form id="TransactionForm" data-url="{{ url_for('.transaction_update', asset_id=asset.id, transaction_id=transaction.id) }}">
 
-  <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
-    <input type="radio" class="btn-check" name="type" value="+" id="btnradio1" {{ 'checked' if not transaction or transaction.type == '+' }}>
+  <div class="btn-group silver col-12 mb-3 nav" role="group" id="typetransaction">
+    <input type="radio" class="btn-check" name="type" value="+1" id="btnradio1" {{ 'checked' if not transaction or transaction.type == '+1' }}>
     <label class="btn btn-outline-active btn-sm" for="btnradio1">{% trans %}Buy{% endtrans %}</label>
 
-    <input type="radio" class="btn-check" name="type" value="-" id="btnradio2" {{ 'checked' if transaction and transaction.type == '-' }}>
+    <input type="radio" class="btn-check" name="type" value="-1" id="btnradio2" {{ 'checked' if transaction and transaction.type == '-1' }}>
     <label class="btn btn-outline-not_active btn-sm" for="btnradio2">{% trans %}Sell{% endtrans %}</label>
   </div>
 
-  <div class="form-check mb-3">
-    <input class="form-check-input" type="checkbox" value="true" {{ 'checked' if transaction.order }} name="order">
-    <label class="form-check-label">{% trans %}Order{% endtrans %}</label>
+  <div class="d-flex gap-2 form-check mb-3">
+    <label class="form-check-label">{% trans %}Order{% endtrans %}
+      <input class="form-check-input" type="checkbox" value="true" {{ 'checked' if transaction.order }} name="order">
+    </label>
+
+    {% set calculation_type = session.get('transaction_calculation_type', 'amount') %}
+    <div class="ms-auto cursor-pointer text-primary calculation-type">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-down-up" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z"/></svg>
+      <span class="{{ 'visually-hidden' if calculation_type != 'amount' }}" data-type="amount">Amount</span>
+      <span class="{{ 'visually-hidden' if calculation_type != 'quantity' }}" data-type="quantity">Quantity</span>
+    </div>
+
   </div>
 
+
   <div class="row g-2">
-    <div class="col-md-6">
+    <div class="col-md-12">
+      <div class="mb-1">
+        <label class="d-flex form-label h7">
+          {% trans %}Wallet{% endtrans %}
+          <span class="open-modal link-primary small-text not-update ms-auto" data-modal-id="WalletsModal"
+            data-url="{{ url_for('wallet.wallets', modal='true') }}">
+            Открыть кошельки
+          </span>
+        </label>
+        <div class="buy {{ buy_class }}">
+          <select name="buy_wallet_id" class="form-select"
+            data-url="{{ url_for('wallet.get_all_wallets', info='free_money') }}" {{ 'required' if not buy_class }}>
+            <option selected value="{{ buy_wallet.id }}">{{ buy_wallet.name }}</option>
+          </select>
+        </div>
+        <div class="sell {{ sell_class }}">
+          <select name="sell_wallet_id" class="form-select" data-placeholder="-"
+            data-url="{{ url_for('wallet.get_all_wallets', with_ticker_id=asset.ticker_id) }}" {{ 'required' if not sell_class }}>
+            {% if sell_wallet %}
+              <option selected value="{{ sell_wallet.id }}">{{ sell_wallet.name }}</option>
+            {% endif %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-12">
       <div class="mb-1">
         <label class="form-label h7">{% trans %}Price{% endtrans %}</label>
         <div class="input-group">
-          <span class="input-prefix">$</span>
-          <input type="number" step="any" class="form-control rounded-3 focus" placeholder="0,00" name="price"
+          <div class="col-3">
+            <select name="against_ticker_id" class="form-select"
+              data-url="{{ url_for('wallet.ajax_stable_assets', wallet_id=buy_wallet.id) }}" required>
+              <option selected value="{{ against_ticker.id }}">{{ against_ticker.symbol|upper }}</option>
+            </select>
+          </div>
+          <input type="number" step="any" class="form-control focus" placeholder="0,00" name="price"
             autocomplete="off" value="{{ transaction.price if transaction else price }}" required>
         </div>
       </div>
     </div>
+
     <div class="col-md-6">
-      <div class="mb-1">
+      <div class="mb-1" data-type="quantity">
         <label class="form-label h7">{% trans %}Quantity{% endtrans %}</label>
-        <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="quantity"
-          autocomplete="off" value="{{ transaction.quantity|abs|smart_int if transaction }}" required>
+        <div class="input-group">
+          <span class="input-group-text silver disabled">{{ asset.ticker.symbol|upper }}</span>
+          <input type="number" step="any" class="form-control {{ 'silver disabled' if calculation_type != 'quantity' }}" placeholder="0,00" name="quantity"
+            autocomplete="off" value="{{ transaction.quantity|abs|smart_int if transaction }}" {{ 'required' if calculation_type == 'quantity' }}>
+        </div>
       </div>
     </div>
-    <div class="col-md-12">
-      <div class="mb-1">
+
+    <div class="col-md-6">
+      <div class="mb-1" data-type="amount">
         <label class="form-label h7">{% trans %}Transaction amount{% endtrans %}</label>
-        <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="total_spent"
-          autocomplete="off" value="{{ transaction.total_spent|abs|smart_int if transaction }}" required>
+        <div class="input-group">
+          <span class="input-group-text silver disabled amount-symbol">
+            {{ amount_symbol }}
+          </span>
+          <input type="number" step="any" class="form-control {{ 'silver disabled' if calculation_type != 'amount' }}" placeholder="0,00" name="amount"
+            autocomplete="off" value="{{ transaction.amount|abs|smart_int if transaction }}" {{ 'required' if calculation_type == 'amount' }}>
+        </div>
       </div>
     </div>
     <div class="col-md-6">
@@ -50,28 +115,18 @@
         <input class="form-control" name="date" type="date" value="{{ transaction.date if transaction else date }}" required>
       </div>
     </div>
-    <div class="col-md-6">
-      <div class="mb-1">
-        <label class="form-label h7">{% trans %}Wallet{% endtrans %}</label>
-        <select name="wallet_id" class="form-select" data-placeholder="-"
-          data-url="{{ url_for('wallet.get_all_user_wallets') }}" required>
-          {% if transaction %}
-            <option selected value="{{ transaction.wallet_id }}">{{ transaction.wallet.name }}</option>
-          {% elif current_user.wallets|length == 1 %}
-            <option selected value="{{ current_user.wallets[0].id }}">{{ current_user.wallets[0].name }}</option>
-          {% endif %}
-        </select>
-        <div class="open-modal link-primary small-text not-update" data-modal-id="WalletsModal" data-url="{{ url_for('wallet.wallets', modal='true') }}">
-          {% trans %}Add new{% endtrans %}
+
+    <span class="mb-3 cursor-pointer text-primary show-more">+ {% trans %}Comment{% endtrans %}</span>
+
+    <div class="show-more-content" style="display: none;">
+      <div class="col-md-12">
+        <div class="mb-3">
+          <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
+          <textarea class="form-control" name="comment">{{ transaction.comment if transaction }}</textarea>
         </div>
       </div>
     </div>
-    <div class="col-md-12">
-      <div class="mb-3">
-        <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
-        <textarea class="form-control" name="comment">{{ transaction.comment if transaction }}</textarea>
-      </div>
-    </div>
+
   </div>
   <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
 </form>
@@ -79,24 +134,54 @@
 <script>
   $('#TransactionForm').on('input', 'input', function () {
     var name = $(this).attr('name');
-    if (['quantity', 'price', 'total_spent'].includes(name)) {
+    if (['quantity', 'price', 'amount'].includes(name)) {
       var $quantity = $('#TransactionForm input[name=quantity]'),
-        $total_spent = $('#TransactionForm input[name=total_spent]'),
-        price = $('#TransactionForm input[name=price]').val() || 0,
-        quantity = $quantity.val() || 0,
-        total_spent = $total_spent.val() || 0;
+        $amount = $('#TransactionForm input[name=amount]'),
+        price = $('#TransactionForm input[name=price]').val();
 
-      if (name == 'quantity') { $total_spent.val(price * quantity || '') }
-      else if (name == 'total_spent' && price) { $quantity.val(total_spent / price || '') }
-      else if (name == 'price') {
-        if (quantity && total_spent) {
-          $quantity.val(price ? total_spent / price : '')
-        } else if (!quantity && total_spent) {
-          $quantity.val(price ? total_spent / price : '')
-        } else if (quantity && !total_spent) {
-          $total_spent.val(price * quantity || '');
-        }
+      if (name == 'quantity') { $amount.val(price * $quantity.val() || '') }
+      else if (name == 'amount' && price) { $quantity.val($amount.val() / price || '') }
+      else { // if price
+        if ($quantity.hasClass('disabled')) { $quantity.val(price && $amount.val() ? $amount.val() / price : '') }
+        else { $amount.val(price * $quantity.val() || '') }
       }
+    }
+  })
+
+  
+  $('#TransactionForm').on('change', 'select[name*=wallet_id]', function () {
+    var wallet_id = $(this).val(),
+      url = "{{ url_for('wallet.ajax_stable_assets')}}" + '?wallet_id=' + wallet_id;
+    $('#TransactionForm').find('select[name=against_ticker_id]').attr('data-url', url);
+  })
+
+  $('#TransactionForm').on('change', 'select[name=against_ticker_id]', function () {
+    var text = $(this).find(':selected').text();
+    $('#TransactionForm .amount-symbol').text(text);
+  })
+
+  $('#TransactionForm').on('click', '.calculation-type span', function () {
+    var to_show = $(this).data('type') == 'amount' ? 'quantity' : 'amount',
+      to_hide = $(this).data('type'),
+      $form = $('#TransactionForm');
+      $form.find('span[data-type=' + to_show + ']').removeClass('visually-hidden');
+      $form.find('[data-type=' + to_show + '] input').removeClass('silver disabled').attr('required', true);
+      $form.find('span[data-type=' + to_hide + ']').addClass('visually-hidden');
+      $form.find('[data-type=' + to_hide + '] input').addClass('silver disabled').attr('required', false);
+  })
+
+  $('#TransactionForm').on('click', '.show-more', function () {
+    $('#TransactionForm .show-more-content').slideToggle(500);
+  })
+
+  $('#TransactionForm').on('change', 'input[name=type]', function () {
+    var $form = $('#TransactionForm');
+    if (+$(this).val() < 0) {
+      $form.find('.buy').addClass('visually-hidden').find('select').attr('required', false);
+      $form.find('.sell').removeClass('visually-hidden').find('select').attr('required', true);
+    } else {
+      $form.find('.sell').addClass('visually-hidden').find('select').attr('required', false);
+      $form.find('.buy').removeClass('visually-hidden').find('select').attr('required', true);
     }
   })
 </script>

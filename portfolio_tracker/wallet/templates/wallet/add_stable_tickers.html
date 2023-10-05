@@ -1,5 +1,5 @@
 {% for ticker in tickers %}
-<div class="select-asset" data-ticker-id="{{ ticker.id }}">
+<div class="select-asset" data-ticker-id="{{ ticker.id }}" data-market="{{ ticker.market }}">
   {% if ticker.image %}
   <img class="img-asset-min"
     src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/24/' + ticker.image) }}" />

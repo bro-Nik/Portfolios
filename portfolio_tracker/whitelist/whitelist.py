@@ -38,11 +38,11 @@ def get_user_alert(id):
 @whitelist.route('/', methods=['GET'])
 @login_required
 def tickers():
-    market_id = request.args.get('market_id')
-    if market_id:
-        session['whitelist_market_id'] = market_id
+    market = request.args.get('market')
+    if market:
+        session['whitelist_market'] = market
     else:
-        market_id = session.get('whitelist_market_id', 'crypto')
+        market = session.get('whitelist_market', 'crypto')
 
     status = request.args.get('status')
 
@@ -54,14 +54,14 @@ def tickers():
             .filter(Alert.status == status))
 
     select = (select.join(WhitelistTicker.ticker)
-        .where(Ticker.market_id == market_id))
+        .where(Ticker.market == market))
     
     tickers = db.session.execute(select).scalars()
 
     return render_template('whitelist/tickers.html',
                            tickers=tuple(tickers),
                            status=status,
-                           market_id=market_id)
+                           market=market)
 
 
 @whitelist.route('/action', methods=['POST'])
@@ -102,7 +102,7 @@ def add_ticker():
     ticker_id = request.args.get('ticker_id')
     whitelist_ticker = get_whitelist_ticker(ticker_id, True)
     return str(url_for('.ticker_info',
-                            market_id=whitelist_ticker.ticker.market_id,
+                            market=whitelist_ticker.ticker.market,
                             ticker_id=whitelist_ticker.ticker_id,
                             only_content=request.args.get('only_content')))
 
@@ -121,10 +121,10 @@ def whitelist_ticker_update():
     return ''
 
 
-@whitelist.route('/<string:market_id>/ticker_<string:ticker_id>', methods=['GET'])
+@whitelist.route('/<string:market>/ticker_<string:ticker_id>', methods=['GET'])
 @login_required
-def ticker_info(market_id, ticker_id):
-    price_list = get_price_list(market_id)
+def ticker_info(market, ticker_id):
+    price_list = get_price_list(market)
     price = float_(price_list.get(ticker_id), 0)
 
     whitelist_ticker = get_whitelist_ticker(ticker_id)
@@ -137,7 +137,7 @@ def ticker_info(market_id, ticker_id):
     return render_template('whitelist/ticker_info.html',
                            whitelist_ticker=whitelist_ticker,
                            ticker=ticker,
-                           market_id=market_id,
+                           market=market,
                            price=price)
 
 
@@ -182,14 +182,14 @@ def alerts_action():
     return ''
 
 
-@whitelist.route('/<string:market_id>/whitelist_ticker/alert', methods=['GET'])
+@whitelist.route('/<string:market>/whitelist_ticker/alert', methods=['GET'])
 @login_required
-def alert(market_id):
+def alert(market):
     whitelist_ticker_id = request.args.get('whitelist_ticker_id')
     ticker_id = request.args.get('ticker_id')
     alert = get_user_alert(request.args.get('alert_id'))
 
-    price_list = get_price_list(market_id)
+    price_list = get_price_list(market)
     price = float_(price_list.get(ticker_id), 0)
 
     return render_template('whitelist/alert.html',

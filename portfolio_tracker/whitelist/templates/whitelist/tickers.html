@@ -27,7 +27,7 @@
     </div>
     {% if not modal %}
       <div class="col-auto ms-auto">
-        <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_modal', market_id=market_id) }}">
+        <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_modal', market=market) }}">
           {% trans %}Add asset{% endtrans %}
         </button>
       </div>
@@ -37,10 +37,10 @@
 </div>
 
 <nav class="nav nav-underline market-menu">
-  <span class="nav-link {{ 'active disabled' if market_id == 'crypto' }} load-page-or-modal" data-url="{{ url_for('.tickers', market_id='crypto', only_content=True, status=status, modal=modal) }}">
+  <span class="nav-link {{ 'active disabled' if market == 'crypto' }} load-page-or-modal" data-url="{{ url_for('.tickers', market='crypto', only_content=True, status=status, modal=modal) }}">
     {% trans %}Crypto{% endtrans %}
   </span>
-  <span class="nav-link {{ 'active disabled' if market_id == 'stocks' }} load-page-or-modal" data-url="{{ url_for('.tickers', market_id='stocks', only_content=True, status=status, modal=modal) }}">
+  <span class="nav-link {{ 'active disabled' if market == 'stocks' }} load-page-or-modal" data-url="{{ url_for('.tickers', market='stocks', only_content=True, status=status, modal=modal) }}">
     {% trans %}Stocks{% endtrans %}
   </span>
 </nav>
@@ -72,10 +72,10 @@
 
               <td class="text-average text-truncate">
                 <div class="open-modal d-flex gap-2" data-modal-id="WhitelistTickerInfoModal" 
-                  data-url="{{ url_for('.ticker_info', market_id=ticker.market_id, ticker_id=ticker.id) }}">
+                  data-url="{{ url_for('.ticker_info', market=ticker.market, ticker_id=ticker.id) }}">
 
                   {% if ticker.image %}
-                    <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + ticker.market_id + '/24/' + ticker.image) }}">
+                    <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/24/' + ticker.image) }}">
                   {% else %}
                     <span class="img-asset-min bg-secondary-subtle"></span>
                   {% endif %}

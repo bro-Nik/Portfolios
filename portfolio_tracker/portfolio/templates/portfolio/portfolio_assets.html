@@ -1,0 +1,126 @@
+<table class="table table-sm align-middle table-hover bootstrap-table" data-search="true" data-pagination="true">
+  <thead>
+    <tr>
+      <th class="main-tab-checkbox">
+        <input class="form-check-input check-all" type="checkbox">
+      </th>
+      <th data-sortable="true">{% trans %}Name{% endtrans %}</th>
+      <th>{% trans %}Price{% endtrans %} / {% trans %}Average buy price{% endtrans %}</th>
+      <th data-sortable="true" data-sort-name="cost_now">{% trans %}Holdings{% endtrans %}</th>
+      <th data-sortable="true" data-sort-name="profit">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</th>
+      <th data-sortable="true" data-sort-name="percent">{% trans %}Share of portfolio{% endtrans %}</th>
+      <th>{% trans %}Comment{% endtrans %}</th>
+      <th></th>
+      <!-- For sorting -->
+      <th class="visually-hidden" data-sortable="true" data-field="cost_now">Cost now</th>
+      <th class="visually-hidden" data-sortable="true" data-field="profit">Profit</th>
+      <th class="visually-hidden" data-sortable="true" data-field="percent">% of portfolio</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for asset in portfolio.assets %}
+      <tr>
+        <td>
+          <input class="form-check-input to-check" type="checkbox" value="{{ asset.id }}">
+        </td>
+
+        <td>
+          <div class="text-average open-modal d-flex gap-2 name" data-modal-id="AssetInfoModal" 
+            data-url="{{ url_for('.asset_info', market=portfolio.market, asset_id=asset.id) }}">
+
+            {% if asset.ticker.image %}
+              <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + portfolio.market + '/24/' + asset.ticker.image) }}">
+            {% else %}
+              <span class="img-asset-min bg-secondary-subtle"></span>
+            {% endif %}
+            <span class="text-truncate" title="{{ asset.ticker.name }}">{{ asset.ticker.name }}</span>
+            <span class="text-muted">{{ asset.ticker.symbol|upper }}</span>
+          </div>
+        </td>
+
+        <td>
+          <div class="mx-1 text-nowrap">
+            {{ asset.price|user_currency }} / {{ (asset.amount_usd / asset.quantity)|user_currency if asset.quantity else '-' }}
+          </div>
+        </td>
+
+        <td>
+          <div class="mx-1 text-nowrap">
+            {% if asset.quantity > 0 %}
+              {{ asset.amount_usd|user_currency if asset.amount_usd > 0 }} /
+              <span class="{{ asset.color }}">{{ asset.cost_now|user_currency }}</span>
+              <br>
+              <span class="text-average small-text">
+                {{ asset.quantity|smart_round|number_group }}
+                {{ asset.ticker.symbol|upper }}
+              </span>
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </td>
+
+        <td>
+          <div class="mx-1 text-nowrap">
+            {% if asset.quantity > 0 %}
+              <span class="{{ asset.color }}">
+                {{ asset.profit|user_currency }}
+                {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
+              </span>
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </td>
+
+        <td>
+          {% if portfolio.amount_usd and asset.amount_usd %}
+            {{ (asset.amount_usd / portfolio.amount_usd * 100)|round(1, 'common')|smart_int }}% /
+          {% else %}
+            - /
+          {% endif %}
+          {{ asset.percent|round(1, 'common')|smart_int|string + '%' if asset.percent else '-' }}
+        </td>
+
+        <td>
+          <div class="d-flex comment">
+            <span class="text-truncate">{{ asset.comment if asset.comment }}</span>
+          </div>
+        </td>
+
+        <td class="align-middle text-end">
+          <div class="dropdown dropstart">
+            <a href="#" class="link-secondary" role="button" id="dropdownAction"
+              data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+            </a>
+            <div class="dropdown-menu" aria-labelledby="dropdownAction">
+              <a class="dropdown-item open-modal" data-modal-id="AssetSettingsModal"
+                data-url="{{ url_for('.asset_settings', asset_id=asset.id) }}">
+                {% trans %}Edit asset{% endtrans %}
+              </a>
+              <a class="dropdown-item link-danger open-modal-confirmation"
+                {% if asset.is_empty %}
+                  data-title="{% trans name=asset.ticker.name %}Remove asset {{ name }}?{% endtrans %}"
+                  data-action="delete"
+                {% else %}
+                  data-title="{% trans name=asset.ticker.name %}Remove asset {{ name }} with contents?{% endtrans %}"
+                  data-text="{% trans %}All transactions in this asset will be removed{% endtrans %}"
+                  data-action="delete_with_contents"
+                {% endif %}
+                data-id="{{ asset.id }}">
+                {% trans %}Remove asset{% endtrans %}
+              </a>
+            </div>
+          </div>
+        </td>
+
+        <!-- For sorting -->
+        <td class="visually-hidden">{{ asset.cost_now }}</td>
+        <td class="visually-hidden">{{ asset.profit }}</td>
+        <td class="visually-hidden">{{ (asset.amount / portfolio.amount * 100) if portfolio.amount }}</td>
+
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

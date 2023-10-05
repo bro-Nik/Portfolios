@@ -22,9 +22,10 @@
 
         <div class="d-flex align-items-center ms-auto gap-3 text-nowrap">
           <div>
-            <select id="SelectLocale" class="form-select border-0 fw-medium">
-              <option value="en" {{ 'selected' if locale == 'en' }}>English</option>
-              <option value="ru" {{ 'selected' if locale == 'ru' }}>Русский</option>
+            <select class="form-select border-0 fw-medium"
+              data-url="{{ url_for('user.ajax_locales') }}"
+              data-action-url="{{ url_for('user.change_locale') }}">
+              <option selected value="{{ locale }}">{{ locale|upper }}</option>
             </select>
           </div>
 
@@ -83,14 +84,6 @@
 
   <script src="{{ url_for('static', filename='js/jquery-3.6.4.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/smart-select.js') }}"></script>
-  <script>
-    $('#SelectLocale').on('change', function() {
-      $.get("{{ url_for('change_locale') }}" + '?locale=' + $(this).val())
-      .done(function () {
-        window.location.reload();
-      });
-    });
-  </script>
 </body>
 
 </html>

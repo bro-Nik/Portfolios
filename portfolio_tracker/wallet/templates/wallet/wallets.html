@@ -22,19 +22,6 @@
         data-url="{{ url_for('.wallet_settings') }}">
         {% trans %}Add wallet{% endtrans %}
       </button>
-
-	    <button type="button" class="btn btn-warning" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        {% trans %}Transfer{% endtrans %}
-      </button>
-      <div class="dropdown-menu" aria-labelledby="dropdownAction">
-        <button class="dropdown-item open-modal" type="button" data-modal-id="WalletInputOutCashModal" data-url="{{ url_for('.wallet_in_out_get') }}">
-          {% trans %}Input/output{% endtrans %}
-        </button>
-        <button class="dropdown-item open-modal" type="button" data-modal-id="WalletTransferCashModal" data-url="{{ url_for('.wallet_transfer_get') }}">
-          {% trans %}Transfer{% endtrans %}
-        </button>
-      </div>
-
     </div>
   </div>
   {% include 'flash_messages.html' %}
@@ -43,47 +30,50 @@
 <div class="row xs-mb-3">
 
   <div class="col-auto">
-    <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
-    <span class="text-average">
-      ${{ all_wallets.total_spent|number_group }} / 
-      <span class="{{ all_wallets.color }}">${{ all_wallets.cost_now|number_group }}</span>
-    </span>
+    <p class="small-text">{% trans %}Общая сумма{% endtrans %}</p>
+    <span class="text-average">{{ (all_wallets.cost_now + all_wallets.in_orders + all_wallets.free)|user_currency }}</span>
+  </div>
+
+  <div class="col-auto">
+    <p class="small-text">{% trans %}Cost now{% endtrans %}</p>
+    <span class="text-average {{ all_wallets.color }}">{{ all_wallets.cost_now|user_currency }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
-    <span class="text-average">${{ all_wallets.in_orders|number_group }}</span>
+    <span class="text-average">{{ all_wallets.in_orders|user_currency }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Free money{% endtrans %}</p>
-      <span class="text-average">
-        {{ '-' if all_wallets.free_money < 0 }}${{ all_wallets.free_money|abs|number_group }}
-      </span>
+    <span class="text-average">{{ all_wallets.free|user_currency }}</span>
   </div>
 </div>
 
 <div class="big-table">
+  {% set tab_name = 'wallets' %}
+  {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'cost' %}
+  {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
   <form id="WalletsForm" action="{{ url_for('.wallets_action') }}">
-    <table class="table table-sm align-middle table-hover bootstrap-table" data-search="true">
+    <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
+      data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
+      data-sort-url="{{ url_for('portfolio.change_table_sort') }}">
       <thead>
         <tr>
           <th class="main-tab-checkbox">
             <input class="form-check-input check-all" type="checkbox">
           </th>
-          <th data-sortable="true">{% trans %}Name{% endtrans %}</th>
-          <th data-sortable="true" data-sort-name="total_spent">{% trans %}Total spent{% endtrans %}</th>
-          <th data-sortable="true" data-sort-name="cost_now">{% trans %}Cost now{% endtrans %}</th>
-          <th data-sortable="true" data-sort-name="in_orders">{% trans %}Money in orders{% endtrans %}</th>
-          <th data-sortable="true" data-sort-name="free">{% trans %}Free money{% endtrans %}</th>
+          <th data-sortable="true" data-field="name">{% trans %}Name{% endtrans %}</th>
+          <th data-sortable="true" data-field="cost" data-sort-name="cost_now">{% trans %}Cost now{% endtrans %}</th>
+          <th data-sortable="true" data-field="orers" data-sort-name="in_orders">{% trans %}Money in orders{% endtrans %}</th>
+          <th data-sortable="true" data-field="free" data-sort-name="in_free">{% trans %}Free money{% endtrans %}</th>
           <th>{% trans %}Comment{% endtrans %}</th>
           <th></th>
 
           <!-- For sorting -->
-          <th class="visually-hidden" data-sortable="true" data-field="total_spent">Total spent</th>
-          <th class="visually-hidden" data-sortable="true" data-field="cost_now">Cost now</th>
-          <th class="visually-hidden" data-sortable="true" data-field="in_orders">Money in orders</th>
-          <th class="visually-hidden" data-sortable="true" data-field="free">Free money</th>
+          <th class="visually-hidden" data-field="cost_now">Cost now</th>
+          <th class="visually-hidden" data-field="in_orders">Money in orders</th>
+          <th class="visually-hidden" data-field="in_free">Free money</th>
         </tr>
       </thead>
       <tbody>
@@ -94,20 +84,20 @@
             </td>
 
             <td class="text-average">
-              <div class="open-modal" data-modal-id="WalletInfoModal" data-url="{{ url_for('.wallet_info', wallet_id=wallet.id) }}">
+              <div class="open-modal" data-modal-id="WalletInfoModal"
+                data-url="{{ url_for('.wallet_info', wallet_id=wallet.id) }}">
                 {{ wallet.name }}
               </div>
             </td>
 
-            <td>{{ '$' + wallet.total_spent|number_group if wallet.total_spent else '-' }}</td>
+            <td>{{ wallet.cost_now|user_currency if wallet.cost_now else '-' }}
+            </td>
 
-            <td>{{ '$' + wallet.cost_now|number_group if wallet.cost_now else '-' }}</td>
-
-            <td>{{ '$' + wallet.in_orders|number_group if wallet.in_orders else '-' }}</td>
+            <td>{{ wallet.in_orders|user_currency if wallet.in_orders or wallet.cost_now else '-' }}</td>
 
             <td>
-              {% if not (wallet.free_money == 0 and wallet.total_spent == 0) %}
-                {{ '-' if wallet.free_money < 0 }}${{ wallet.free_money|abs|number_group }}
+              {% if wallet.free != 0 or wallet.cost_now or wallet.in_orders %}
+                {{ '-' if wallet.free < 0 }}{{ wallet.free|abs|user_currency }}
               {% else %}
                 -
               {% endif %}
@@ -147,7 +137,6 @@
             </td>
 
             <!-- For sorting -->
-            <td class="visually-hidden">{{ wallet.total_spent }}</td>
             <td class="visually-hidden">{{ wallet.cost_now }}</td>
             <td class="visually-hidden">{{ wallet.in_orders }}</td>
             <td class="visually-hidden">{{ wallet.free }}</td>

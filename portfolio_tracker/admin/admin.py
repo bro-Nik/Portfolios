@@ -3,7 +3,7 @@ import os
 import requests
 from io import BytesIO
 from PIL import Image
-from flask import render_template, redirect, url_for, request, Blueprint
+from flask import Response, render_template, redirect, url_for, request, Blueprint
 from flask_login import current_user
 from sqlalchemy import func
 import time
@@ -13,7 +13,7 @@ from pycoingecko import CoinGeckoAPI
 from celery.result import AsyncResult
 
 from portfolio_tracker.general_functions import get_price_list, redis_decode_or_other, when_updated
-from portfolio_tracker.models import Market, Ticker, User, Wallet, WhitelistTicker
+from portfolio_tracker.models import Asset, Portfolio, Ticker, Transaction, User, Wallet, WalletAsset, WalletTransaction, WhitelistTicker
 from portfolio_tracker.user.user import user_delete_def
 from portfolio_tracker.wraps import admin_only
 from portfolio_tracker.app import app, db, celery, redis
@@ -23,10 +23,10 @@ admin = Blueprint('admin', __name__, template_folder='templates', static_folder=
 cg = CoinGeckoAPI()
 
 
-def get_tickers(market_id=None):
+def get_tickers(market=None):
     select = db.select(Ticker)
-    if market_id:
-        select = select.filter_by(market_id=market_id)
+    if market:
+        select = select.filter_by(market=market)
     return db.session.execute(select).scalars()
 
 
@@ -40,16 +40,20 @@ def first_start():
         demo_user = User(email='demo@demo', password='demo', type='demo')
         db.session.add(demo_user)
         demo_user.wallets.append(Wallet(name='Default'))
-        db.session.commit()
-
-    markets = db.session.execute(db.select(Market)).scalar()
-    if not markets:
-        # маркеты
-        db.session.add_all([Market(name='Crypto', id='crypto'),
-                            Market(name='Stocks', id='stocks'),
-                            Market(name='Other', id='other')])
         current_user.type = 'admin'
         db.session.commit()
+
+    currencies = db.session.execute(db.select(Ticker).
+                                   filter_by(market='currency')).scalar()
+    if not currencies:
+        # fiat money
+        db.session.add_all(
+            [Ticker(id='cu-usd', name='US Dollar', symbol='usd', market='currency'),
+             Ticker(id='cu-rub', name='Russian Ruble', symbol='rub', market='currency'),
+             Ticker(id='cu-eur', name='Euro', symbol='eur', market='currency'),
+             Ticker(id='cu-jpy', name='Japanese Yen', symbol='jpy', market='currency')])
+        db.session.commit()
+
 
     return redirect(url_for('.index'))
 
@@ -82,9 +86,9 @@ def index_detail():
         else:
             return ''
 
-    def get_tickers_count(market_id):
+    def get_tickers_count(market):
         return db.session.execute(db.select(func.count()).select_from(Ticker)
-                                  .filter_by(market_id=market_id)).scalar()
+                                  .filter_by(market=market)).scalar()
 
     def get_users_count(type=None):
         select = db.select(func.count()).select_from(User)
@@ -185,6 +189,8 @@ def index_action():
         keys = ['price_list_crypto', 'price_list_stocks', 'update-crypto',
                 'update-stocks']
         redis.delete(*keys)
+    elif action == 'clear':
+        clear()
 
     return redirect(url_for('.index'))
 
@@ -242,35 +248,65 @@ def users_action():
     return ''
 
 
-@admin.route('/demo_user', methods=['GET'])
+@admin.route('/imports', methods=['GET'])
 @admin_only
-def demo_user():
-    return render_template('admin/demo_user.html')
+def imports():
+    return render_template('admin/imports.html')
+
+
+@admin.route('/export_tickers', methods=['GET'])
+@admin_only
+def export_tickers():
+    tickers = db.session.execute(db.select(Ticker)).scalars()
+    result = []
+    prefixes = {'crypto': 'cr-', 'stocks': 'st-', 'currency': 'cu-'}
+
+    for ticker in tickers:
+        result.append({
+            'id': ticker.id,
+            'name': ticker.name,
+            'symbol': ticker.symbol,
+            'image': ticker.image,
+            'market_cap_rank': ticker.market_cap_rank,
+            'market': ticker.market,
+            'stable': ticker.stable,
+            'prefix': prefixes[ticker.market]
+        })
+
+    filename = 'tickers_export (' + str(datetime.now().date()) +').txt'
+
+    return Response(json.dumps(result),
+                    mimetype='application/json',
+		            headers={'Content-disposition': 'attachment; filename=' + filename})
 
 
 @admin.route('/tickers', methods=['GET'])
 @admin_only
 def tickers():
-    market_id = request.args.get('market_id')
-    if not market_id:
-        market_id = 'crypto'
-    return render_template('admin/tickers.html', market_id=market_id)
+    market = request.args.get('market')
+    if not market:
+        market = 'crypto'
+    return render_template('admin/tickers.html', market=market)
 
 
 @admin.route('/tickers_detail', methods=['GET'])
 @admin_only
 def tickers_detail():
 
-    market_id = request.args['market_id']
-    tickers = tuple(get_tickers(market_id))
-    price_list = get_price_list(market_id)
+    market = request.args['market']
+    tickers = tuple(get_tickers(market))
+    price_list = get_price_list(market)
 
     result = {"total": len(tickers),
               "totalNotFiltered": len(tickers),
               "rows": []}
 
     for ticker in tickers:
-        t = {"id": ticker.id,
+        modal = '<span class="open-modal" data-modal-id="TickerSettingsModal"'
+        modal += ' data-url="' + url_for('.ticker_settings', market=market, ticker_id=ticker.id) + '">'
+        modal += ticker.id + '</span>'
+         
+        t = {"id": modal,
              "symbol": ticker.symbol,
              "name": ticker.name,
              "price": price_list.get(ticker.id, 0)}
@@ -279,6 +315,31 @@ def tickers_detail():
         result['rows'].append(t)
 
     return result
+
+
+@admin.route('/tickers/settings', methods=['GET'])
+@admin_only
+def ticker_settings():
+    ticker = db.session.execute(
+        db.select(Ticker).filter_by(market=request.args.get('market'),
+                                    id=request.args.get('ticker_id'))).scalar()
+    return render_template('admin/ticker_settings.html', ticker=ticker)
+
+
+@admin.route('/tickers/settings_update', methods=['POST'])
+@admin_only
+def ticker_settings_update():
+    ticker = db.session.execute(
+        db.select(Ticker).filter_by(market=request.args.get('market'),
+                                    id=request.args.get('ticker_id'))).scalar()
+
+    ticker.id = request.form.get('id')
+    ticker.symbol = request.form.get('symbol')
+    ticker.name = request.form.get('name')
+    ticker.stable = bool(request.form.get('stable'))
+
+    db.session.commit()
+    return ''
 
 
 @admin.route('/active_tasks', methods=['GET'])
@@ -307,7 +368,7 @@ def load_stocks_images(self):
     key = 'apiKey=' + app.config['API_KEY_POLYGON']
 
     tickers = db.session.execute(
-        db.select(Ticker).filter(Ticker.market_id == 'stocks',
+        db.select(Ticker).filter(Ticker.market == 'stocks',
                                  Ticker.image == None)).scalars()
 
     for ticker in tickers:
@@ -332,6 +393,7 @@ def load_crypto_tickers(self):
     print('Load crypto tickers')
 
     tickers = tuple(get_tickers('crypto'))
+    prefix = 'cr-'
 
     def ticker_in_base(id):
         for ticker in tickers:
@@ -354,7 +416,7 @@ def load_crypto_tickers(self):
 
 
         for coin in query:
-            id = coin['id'].lower()
+            id = prefix + coin['id'].lower()
             if id in new_tickers:
                 continue
 
@@ -362,7 +424,7 @@ def load_crypto_tickers(self):
             if not ticker:
                 ticker = Ticker(
                     id=id,
-                    market_id='crypto',
+                    market='crypto',
                     name=coin.get('name'),
                     symbol=coin.get('symbol'),
                     image=load_ticker_image(coin.get('image'), 'crypto', id)
@@ -393,6 +455,7 @@ def load_stocks_tickers(self):
     key = 'apiKey=' + app.config['API_KEY_POLYGON']
     tickers = get_tickers('stocks')
     tickers_in_base = [ticker.id for ticker in tickers]
+    prefix = 'st-'
 
     new_tickers = {}
 
@@ -403,27 +466,29 @@ def load_stocks_tickers(self):
     while url:
         response = requests.get(str(url))
         data = response.json()
-        if data.get('results'):
-            for ticker in data['results']:
-                if ticker['ticker'].lower() not in tickers_in_base:
-                    new_ticker = Ticker(
-                        id=ticker['ticker'].lower(),
-                        name=ticker['name'],
-                        symbol=ticker['ticker'],
-                        market_id='stocks'
-                    )
-                    db.session.add(new_ticker)
-                    tickers_in_base.append(new_ticker.id)
-                    new_tickers[new_ticker.id] = 0
-            db.session.commit()
-
-            next_url = data.get('next_url')
-            url = next_url + '&' + key if next_url else None
-            print('Stocks next url')
-            time.sleep(15)
-        else:
+        if not data.get('results'):
             print('stocks Error :', data)
             time.sleep(15)
+            continue
+
+        for ticker in data['results']:
+            id = prefix + ticker['ticker'].lower()
+            if id not in tickers_in_base:
+                new_ticker = Ticker(
+                    id=id,
+                    name=ticker['name'],
+                    symbol=ticker['ticker'],
+                    market='stocks'
+                )
+                db.session.add(new_ticker)
+                tickers_in_base.append(id)
+                new_tickers[id] = 0
+        db.session.commit()
+
+        next_url = data.get('next_url')
+        url = next_url + '&' + key if next_url else None
+        print('Stocks next url')
+        time.sleep(15)
 
     price_list_append_tickers('stocks', new_tickers)
     print('stocks end')
@@ -472,8 +537,9 @@ def price_list_crypto_def(self):
     ''' Запрос цен у КоинГеко криптовалюта '''
     self.update_state(state='WORK')
 
+    prefix = 'cr-'
     price_list = get_price_list('crypto')
-    ids = [ticker.id for ticker in get_tickers('crypto')]
+    ids = [ticker.id[len(prefix):] for ticker in get_tickers('crypto')]
 
     # Делаем запросы кусками
     while ids:
@@ -486,17 +552,20 @@ def price_list_crypto_def(self):
         while data == '':
             try:
                 data = cg.get_price(vs_currencies='usd', ids=ids_str)
+                print("New page")
             except:
                 print("Соединение отклонено сервером... Сплю. ZZzzzz")
                 time.sleep(15)
 
-        for ticker in data:
-            price_list[ticker] = data[ticker].get('usd', 0)
+        for id in data:
+            price_list[prefix + id] = data[id].get('usd', 0)
 
+        if price_list:
+            redis.set('price_list_crypto', pickle.dumps(price_list))
         time.sleep(17)
 
-    if price_list:
-        redis.set('price_list_crypto', pickle.dumps(price_list))
+    # if price_list:
+    #     redis.set('price_list_crypto', pickle.dumps(price_list))
 
     print("End load crypto price")
     price_list_crypto_def.retry()
@@ -516,6 +585,7 @@ def price_list_stocks_def(self):
 
     price_list = get_price_list('stocks')
     key = 'apiKey=' + app.config['API_KEY_POLYGON']
+    prefix = 'st-'
 
     day = 0
     data = {}
@@ -533,7 +603,8 @@ def price_list_stocks_def(self):
 
     for ticker in data['results']:
         # вчерашняя цена закрытия, т.к. бесплатно
-        price_list[ticker['T'].lower()] = ticker['c']
+        id = ticker['T'].lower()
+        price_list[prefix + id] = ticker['c']
 
     if price_list:
         redis.set('update-stocks', str(datetime.now().date()))
@@ -541,6 +612,42 @@ def price_list_stocks_def(self):
 
     print("End load stocks price")
     price_list_stocks_def.retry()
+
+
+@admin.route('/test', methods=['GET'])
+@admin_only
+def price_list_currency_def():
+
+    update = redis_decode_or_other('update-currency', '')
+    if update == str(datetime.now().date()):
+        # price_list_stocks_def.retry()
+        return ''
+
+    price_list = get_price_list('currency')
+    key = 'access_key=' + app.config['API_KEY_CURRENCYLAYER']
+    prefix = 'cu-'
+
+    ids = [ticker.id[len(prefix):] for ticker in get_tickers('currency')]
+    ids_str = ','.join(ids)
+    url = 'http://apilayer.net/api/live?' + key + '&currencies=' + ids_str + '&source=USD&format=1'
+
+    response = requests.get(url)
+    data = response.json()
+
+    result = []
+    if data.get('quotes'):
+        price_list[prefix + 'usd'] = 1
+        for ticker in data['quotes']:
+            id = ticker[3:].lower()
+            price_list[prefix + id] = data['quotes'][ticker]
+
+        if price_list:
+            redis.set('update-currency', str(datetime.now().date()))
+            redis.set('price_list_currency', pickle.dumps(price_list))
+
+        # print("End load currency price")
+        # price_list_stocks_def.retry()
+    return result
 
 
 @celery.task(bind=True, name='alerts_update', default_retry_delay=180,
@@ -556,7 +663,7 @@ def alerts_update(self):
         if not ticker.alerts:
             continue
 
-        price = price_list[ticker.ticker.market_id].get(ticker.ticker_id)
+        price = price_list.get(ticker.ticker_id)
         if not price:
             continue
 
@@ -570,3 +677,32 @@ def alerts_update(self):
 
     db.session.commit()
     alerts_update.retry()
+
+
+def clear():
+    items = db.session.execute(db.select(WalletTransaction)).scalars()
+    for item in items:
+        db.session.delete(item)
+
+    items = db.session.execute(db.select(WalletAsset)).scalars()
+    for item in items:
+        db.session.delete(item)
+
+    items = db.session.execute(db.select(Wallet)).scalars()
+    for item in items:
+        db.session.delete(item)
+
+    items = db.session.execute(db.select(Asset)).scalars()
+    for item in items:
+        db.session.delete(item)
+
+    items = db.session.execute(db.select(Portfolio)).scalars()
+    for item in items:
+        db.session.delete(item)
+    db.session.commit()
+
+    items = db.session.execute(db.select(Transaction)).scalars()
+    for item in items:
+        db.session.delete(item)
+    db.session.commit()
+

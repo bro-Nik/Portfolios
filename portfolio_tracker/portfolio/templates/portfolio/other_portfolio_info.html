@@ -100,7 +100,7 @@
 
               <td class="text-average">
                 <div class="open-modal d-flex name" data-modal-id="AssetInfoModal"
-                  data-url="{{ url_for('.asset_info', market_id=portfolio.market_id, asset_id=asset.id) }}">
+                  data-url="{{ url_for('.asset_info', market=portfolio.market, asset_id=asset.id) }}">
                   <span class="text-truncate" title="{{ asset.name }}">{{ asset.name }}</span>
                 </div>
               </td>

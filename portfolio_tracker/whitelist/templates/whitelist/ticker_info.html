@@ -18,13 +18,13 @@
       </h1>
       <div class="hstack gap-2">
         {% if ticker.image %}
-          <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + ticker.market_id + '/40/' + ticker.image) }}">
+          <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/40/' + ticker.image) }}">
         {% endif %}
         <span class="fs-1 fw-semibold">${{ price|smart_round|number_group }}</span>
       </div>
     </div>
     <div class="col-auto ms-auto">
-      <button class="btn btn-primary open-modal focus" data-modal-id="AlertModal" type="button" data-url="{{ url_for('.alert', market_id=market_id, whitelist_ticker_id=whitelist_ticker.id if whitelist_ticker else None,
+      <button class="btn btn-primary open-modal focus" data-modal-id="AlertModal" type="button" data-url="{{ url_for('.alert', market=market, whitelist_ticker_id=whitelist_ticker.id if whitelist_ticker else None,
         ticker_id=ticker.id, asset_id=asset_id) }}">
         {% trans %}Add alert{% endtrans %}
       </button>
@@ -55,7 +55,7 @@
             </td>
 
             <td>
-              <div class="open-modal" data-modal-id="AlertModal" data-url="{{ url_for('.alert', market_id=market_id, whitelist_ticker_id=whitelist_ticker.id, ticker_id=ticker.id, asset_id=asset_id, alert_id=alert.id) }}">
+              <div class="open-modal" data-modal-id="AlertModal" data-url="{{ url_for('.alert', market=market, whitelist_ticker_id=whitelist_ticker.id, ticker_id=ticker.id, asset_id=asset_id, alert_id=alert.id) }}">
                 {% if alert.type == 'down' %}
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-red" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V4.5z"/></svg>
                 {% else %}
@@ -71,7 +71,7 @@
               
             <td>
               {% if alert.asset_id %}
-                <span class="link-secondary open-modal" data-modal-id="AssetInfoModal" data-url="{{ url_for('portfolio.asset_info', market_id=alert.asset.portfolio.market_id, asset_id=alert.asset_id, from_whitelist=True) }}">
+                <span class="link-secondary open-modal" data-modal-id="AssetInfoModal" data-url="{{ url_for('portfolio.asset_info', market=alert.asset.portfolio.market, asset_id=alert.asset_id, from_whitelist=True) }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0zM1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5z"/></svg>
                   {{ alert.asset.portfolio.name }}
                 </span>

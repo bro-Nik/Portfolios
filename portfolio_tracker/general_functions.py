@@ -1,6 +1,6 @@
 import pickle
 from datetime import datetime
-from portfolio_tracker.app import redis
+from portfolio_tracker.app import redis, db
 
 
 def int_(number, default=0):
@@ -24,16 +24,15 @@ def redis_decode_or_other(key, default=''):
 
 def get_price_list(market=''):
     ''' Общая функция сбора цен '''
-    def get_price_list_market(market):
+    def get_for(market):
         price_list_key = 'price_list_' + market
         price_list = redis.get(price_list_key)
         return pickle.loads(price_list) if price_list else {}
 
     if market:
-        return get_price_list_market(market)
+        return get_for(market)
 
-    return {'crypto': get_price_list_market('crypto'),
-            'stocks': get_price_list_market('stocks')}
+    return get_for('crypto') | get_for('stocks') | get_for('currency')
 
 
 def when_updated(when_updated, default=''):
@@ -67,3 +66,9 @@ def when_updated(when_updated, default=''):
     return result
 
 
+def delete_transaction(transaction):
+    if transaction.order:
+        # Мистика
+        if transaction.alert:
+            db.session.delete(transaction.alert[0])
+    db.session.delete(transaction)

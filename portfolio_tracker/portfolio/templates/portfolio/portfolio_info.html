@@ -10,7 +10,8 @@
       <h1>{{ portfolio.name }}</h1>
     </div>
     <div class="col-auto ms-auto">
-      <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_modal', market_id=portfolio.market_id, portfolio_id=portfolio.id) }}">
+      <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal"
+        data-url="{{ url_for('portfolio.asset_add_modal', market=portfolio.market, portfolio_id=portfolio.id) }}">
         {% trans %}Add asset{% endtrans %}
       </button>
 
@@ -49,20 +50,19 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
-      <span class="text-average">{{ '-' if portfolio.total_spent < 0 }}${{ portfolio.total_spent|abs|number_group }} /</span>
-      <span class="text-average {{ portfolio.color }}">
-        ${{ portfolio.cost_now|number_group }}
-      </span>
+      <span class="text-average">{{ portfolio.amount_usd|user_currency }} /</span>
+      <span class="text-average {{ portfolio.color }}">{{ portfolio.cost_now|user_currency }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</p>
       <span class="text-average {{ portfolio.color }}">
-        {{ '-' if portfolio.profit < 0 }}${{ portfolio.profit|abs|number_group }}
+        {{ portfolio.profit|user_currency }}
         {{ '({}%)'.format(portfolio.profit_percent) if portfolio.profit_percent }}
       </span>
     </div>
 
+    {#}
     <div class="col-auto">
       <p class="small-text">{% trans %}Share of total investments{% endtrans %}</p>
       <span class="text-average">
@@ -70,10 +70,11 @@
         / {{ portfolio.percent|smart_int|string + '%' if portfolio.percent else '-' }}
       </span>
     </div>
+    #}
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
-      <span class="text-average">${{ portfolio.in_orders|number_group }}</span>
+      <span class="text-average">{{ portfolio.in_orders|user_currency }}</span>
     </div>
 
     <div class="col-auto">
@@ -84,24 +85,32 @@
   </div>
 
   <div class="big-table pt-3 pb-3">
-    <form id="AssetsForm" action="{{ url_for('.assets_action') }}">
-      <table class="table table-sm align-middle table-hover bootstrap-table" data-search="true">
+    {% set tab_name = 'portfolio_info' %}
+    {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'cost_now' %}
+    {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
+    <form action="{{ url_for('.assets_action') }}">
+      
+      <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
+        data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
+        data-sort-url="{{ url_for('portfolio.change_table_sort') }}" data-pagination="true">
         <thead>
           <tr>
             <th class="main-tab-checkbox">
               <input class="form-check-input check-all" type="checkbox">
             </th>
-            <th data-sortable="true">{% trans %}Name{% endtrans %}</th>
+            <th data-sortable="true" data-field="name">{% trans %}Name{% endtrans %}</th>
             <th>{% trans %}Price{% endtrans %} / {% trans %}Average buy price{% endtrans %}</th>
-            <th data-sortable="true" data-sort-name="cost_now">{% trans %}Holdings{% endtrans %}</th>
-            <th data-sortable="true" data-sort-name="profit">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</th>
-            <th data-sortable="true" data-sort-name="percent">{% trans %}Share of portfolio{% endtrans %}</th>
+            <th data-sortable="true" data-field="cost_now" data-sort-name="_cost_now">{% trans %}Holdings{% endtrans %}</th>
+            <th data-sortable="true" data-field="profit" data-sort-name="_profit">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</th>
+            <th data-sortable="true" data-field="percent" data-sort-name="_percent">{% trans %}Share of portfolio{% endtrans %}</th>
+            <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}Money in orders{% endtrans %}</th>
             <th>{% trans %}Comment{% endtrans %}</th>
             <th></th>
             <!-- For sorting -->
-            <th class="visually-hidden" data-sortable="true" data-field="cost_now">Cost now</th>
-            <th class="visually-hidden" data-sortable="true" data-field="profit">Profit</th>
-            <th class="visually-hidden" data-sortable="true" data-field="percent">% of portfolio</th>
+            <th class="visually-hidden" data-field="_cost_now">Cost now</th>
+            <th class="visually-hidden" data-field="_profit">Profit</th>
+            <th class="visually-hidden" data-field="_percent">% of portfolio</th>
+            <th class="visually-hidden" data-field="_in_orders">Orders</th>
           </tr>
         </thead>
         <tbody>
@@ -111,12 +120,12 @@
                 <input class="form-check-input to-check" type="checkbox" value="{{ asset.id }}">
               </td>
 
-              <td class="text-average">
-                <div class="open-modal d-flex gap-2 name" data-modal-id="AssetInfoModal" 
-                  data-url="{{ url_for('.asset_info', market_id=portfolio.market_id, asset_id=asset.id) }}">
+              <td>
+                <div class="text-average open-modal d-flex gap-2 name" data-modal-id="AssetInfoModal" 
+                  data-url="{{ url_for('.asset_info', market=portfolio.market, asset_id=asset.id) }}">
 
                   {% if asset.ticker.image %}
-                    <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + portfolio.market_id + '/24/' + asset.ticker.image) }}">
+                    <img class="img-asset-min" loading="lazy" src="{{ url_for('static', filename='images/tickers/' + portfolio.market + '/24/' + asset.ticker.image) }}">
                   {% else %}
                     <span class="img-asset-min bg-secondary-subtle"></span>
                   {% endif %}
@@ -126,45 +135,50 @@
               </td>
 
               <td>
-                ${{ asset.price|smart_round|number_group }}
-                  / {{ '$' + (asset.total_spent / asset.quantity)|smart_round|number_group if asset.quantity else '-' }}
+                <div class="mx-1 text-nowrap">
+                  {{ asset.price|user_currency }} / {{ (asset.amount_usd / asset.quantity)|user_currency if asset.quantity else '-' }}
+                </div>
               </td>
 
               <td>
-                {% if asset.quantity > 0 %}
-                  {{ '$' + asset.total_spent|number_group if asset.total_spent > 0 }} /
-                  <span class="{{ asset.color }}">
-                    ${{ asset.cost_now|number_group }}
-                  </span>
-                  <br>
-                  <span class="text-average small-text">
-                    {{ asset.quantity|smart_round|number_group }}
-                    {{ asset.ticker.symbol|upper }}
-                  </span>
-                {% else %}
-                  -
-                {% endif %}
+                <div class="mx-1 text-nowrap">
+                  {% if asset.quantity > 0 %}
+                    {{ asset.amount_usd|user_currency if asset.amount_usd > 0 }} /
+                    <span class="{{ asset.color }}">{{ asset.cost_now|user_currency }}</span>
+                    <br>
+                    <span class="text-average small-text">
+                      {{ asset.quantity|smart_round|number_group }}
+                      {{ asset.ticker.symbol|upper }}
+                    </span>
+                  {% else %}
+                    -
+                  {% endif %}
+                </div>
               </td>
 
               <td>
-                {% if asset.quantity > 0 %}
-                  <span class="{{ asset.color }}">
-                    {{ '-' if asset.profit < 0 }}${{ asset.profit|abs|number_group }}
-                    {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
-                  </span>
-                {% else %}
-                  -
-                {% endif %}
+                <div class="mx-1 text-nowrap">
+                  {% if asset.quantity > 0 %}
+                    <span class="{{ asset.color }}">
+                      {{ asset.profit|user_currency }}
+                      {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
+                    </span>
+                  {% else %}
+                    -
+                  {% endif %}
+                </div>
               </td>
 
               <td>
-                {% if portfolio.total_spent and asset.total_spent %}
-                  {{ (asset.total_spent / portfolio.total_spent * 100)|round(1, 'common')|smart_int }}% /
+                {% if portfolio.amount_usd and asset.amount_usd %}
+                  {{ (asset.amount_usd / portfolio.amount_usd * 100)|round(1, 'common')|smart_int }}% /
                 {% else %}
                   - /
                 {% endif %}
                 {{ asset.percent|round(1, 'common')|smart_int|string + '%' if asset.percent else '-' }}
               </td>
+
+              <td>{{ asset.in_orders|user_currency }}</td>
 
               <td>
                 <div class="d-flex comment">
@@ -202,7 +216,8 @@
               <!-- For sorting -->
               <td class="visually-hidden">{{ asset.cost_now }}</td>
               <td class="visually-hidden">{{ asset.profit }}</td>
-              <td class="visually-hidden">{{ (asset.total_spent / portfolio.total_spent * 100) if portfolio.total_spent }}</td>
+              <td class="visually-hidden">{{ (asset.amount / portfolio.amount * 100) if portfolio.amount }}</td>
+              <td class="visually-hidden">{{ asset.in_orders }}</td>
 
             </tr>
           {% endfor %}
@@ -220,7 +235,6 @@
           data-text="{% trans %}All transactions in these assets will be removed{% endtrans %}">
           {% trans %}Remove with contents{% endtrans %}</a>
       </div>
-
     </form>
   </div>
 {% else %}
@@ -231,5 +245,17 @@
   data-url="{{ url_for('.portfolio_settings_update', portfolio_id=portfolio.id) }}">
   <span class="convert-data">{{ portfolio.comment if portfolio.comment }}</span>
 </div>
+<script>
+  var url = "{{ url_for('.portfolio_detail', portfolio_id=portfolio.id) }}",
+    $form = $('#AssetsForm');
+
+  $form = $('#AssetsFormContent');
+  $form.load(url, function () {
+    $form.fadeIn(500)
+    $('#AssetsFormPlaceholder').remove();
+    UpdateTables($form);
+    UpdateFocus($form);
+  });
+</script>
 
 {% endblock %}
