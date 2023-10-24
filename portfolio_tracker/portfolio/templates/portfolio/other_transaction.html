@@ -1,43 +1,62 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-{% set modal_title = gettext('Edit transaction') if transaction else gettext('Add transaction') %}
+{% set modal_title = gettext('Изменить транзакцию') if transaction else gettext('Добавить транзакцию') %}
+
+{% if transaction %}
+  {% set quote_ticker = transaction.amount_ticker %}
+{% else %}
+  {% set quote_ticker = current_user.last_quote_ticker('other_portfolio') %}
+{% endif %}
 
 {% block content %}
-<form data-url="{{ url_for('.other_transaction_update', asset_id=asset_id, transaction_id=transaction.id if transaction else None) }}">
+<form data-url="{{ url_for('.other_transaction_update',portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
 
   <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
-    <input type="radio" class="btn-check" name="type" value="+" id="btnplus" {{ 'checked' if not transaction or transaction.type == '+'}}>
-    <label class="btn btn-sm" for="btnplus">{% trans %}Profit{% endtrans %}</label>
+    <input type="radio" class="btn-check" name="type" value="Profit" id="btnplus" {{ 'checked' if not transaction or transaction.type == 'Profit'}}>
+    <label class="btn btn-sm" for="btnplus">{% trans %}Прибыль{% endtrans %}</label>
 
-    <input type="radio" class="btn-check" name="type" value="-" id="btnminus" {{ 'checked' if transaction and transaction.type == '-'}}>
-    <label class="btn btn-sm" for="btnminus">{% trans %}Loss{% endtrans %}</label>
+    <input type="radio" class="btn-check" name="type" value="Loss" id="btnminus" {{ 'checked' if transaction and transaction.type == 'Loss'}}>
+    <label class="btn btn-sm" for="btnminus">{% trans %}Убыток{% endtrans %}</label>
   </div>
 
   <div class="row g-2">
+
     <div class="col-md-12">
-      <div class="col-12 mb-1">
-        <label class="form-label h7">{% trans %}Amount{% endtrans %}</label>
+      <div class="mb-1">
+        <label class="form-label h7">{% trans %}Сумма{% endtrans %}</label>
         <div class="input-group">
-          <span class="input-prefix">$</span>
-          <input type="number" step="any" class="form-control rounded-3 focus"
-                 placeholder="0,00" name="total_spent" value="{{ transaction.total_spent|smart_int if transaction }}" required>
+          <div class="col-3">
+            <select name="amount_ticker_id" class="form-select"
+              data-url="{{ url_for('.ajax_stable_assets') }}" required>
+              {% if quote_ticker %}
+                <option selected value="{{ quote_ticker.id }}">{{ quote_ticker.symbol|upper }}</option>
+              {% endif %}
+            </select>
+          </div>
+          <input type="number" step="any" class="form-control focus" autocomplete="off"
+                 placeholder="0,00" name="amount" value="{{ transaction.amount|smart_int if transaction }}" required>
         </div>
       </div>
     </div>
 
     <div class="col-md-6">
       <div class="mb-1">
-        <label class="form-label h7">{% trans %}Date{% endtrans %}</label>
+        <label class="form-label h7">{% trans %}Дата{% endtrans %}</label>
         <input class="form-control" name="date" type="date" value="{{ transaction.date if transaction else date }}" required>
       </div>
     </div>
 
-    <div class="col-md-12">
-      <div class="mb-3">
-        <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
-        <textarea class="form-control" name="comment">{{ transaction.comment if transaction }}</textarea>
+    <span class="mb-3 cursor-pointer text-primary show-more">+ {% trans %}Комментарий{% endtrans %}</span>
+
+    <div class="show-more-content" style="display: none;">
+      <div class="col-md-12">
+        <div class="mb-3">
+          <label class="form-label h7">{% trans %}Комментарий{% endtrans %}</label>
+          <textarea class="form-control" name="comment">{{ transaction.comment if transaction }}</textarea>
+        </div>
       </div>
     </div>
+
   </div>
   <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
 </form>

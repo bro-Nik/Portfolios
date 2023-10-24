@@ -1,32 +1,45 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-{% set modal_title = gettext('Edit asset body') if body else gettext('Add asset body') %}
+{% set modal_title = gettext('Изменить тело актива') if body else gettext('Добавить тело актива') %}
+
+{% if body %}
+  {% set quote_ticker = body.amount_ticker %}
+{% else %}
+  {% set quote_ticker = current_user.last_quote_ticker('other_portfolio') %}
+{% endif %}
 
 {% block content %}
-<form data-url="{{ url_for('.other_body_update', asset_id=asset_id, body_id=body.id if body else None) }}">
+<form data-url="{{ url_for('.other_body_update', portfolio_id=asset.portfolio_id, asset_id=asset.id, body_id=body.id) }}">
   <div class="row g-2">
     <div class="col-md-12">
       <div class="mb-1">
-        <label class="form-label h7">{% trans %}Name{% endtrans %}</label>
+        <label class="form-label h7">{% trans %}Название{% endtrans %}</label>
         <input type="text" class="form-control rounded-3 focus" name="name" autocomplete="off" value="{{ body.name if body}}" required>
       </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-12">
       <div class="mb-1">
-        <label class="form-label h7">{% trans %}Price{% endtrans %}</label>
+        <label class="form-label h7">{% trans %}Цена покупки{% endtrans %}</label>
         <div class="input-group">
-          <span class="input-prefix">$</span>
-          <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="total_spent" value="{{ body.total_spent if body }}" required>
+          <div class="col-3">
+            <select name="amount_ticker_id" class="form-select"
+              data-url="{{ url_for('.ajax_stable_assets') }}" required>
+              {% if quote_ticker %}
+                <option selected value="{{ quote_ticker.id }}">{{ quote_ticker.symbol|upper }}</option>
+              {% endif %}
+            </select>
+          </div>
+          <input type="number" step="any" class="form-control" placeholder="0,00"
+                 name="amount" autocomplete="off" value="{{ body.total_spent if body }}" required>
         </div>
       </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-12">
       <div class="mb-1">
-        <label class="form-label h7">{% trans %}Cost now{% endtrans %}</label>
+        <label class="form-label h7">{% trans %}Стоимость сейчас{% endtrans %}</label>
         <div class="input-group">
-          <span class="input-prefix">$</span>
           <input type="number" step="any" class="form-control rounded-3" placeholder="0,00" name="cost_now" value="{{ body.cost_now if body }}" required>
         </div>
       </div>
@@ -34,17 +47,22 @@
 
     <div class="col-md-6">
       <div class="mb-1">
-        <label class="form-label h7">{% trans %}Date{% endtrans %}</label>
+        <label class="form-label h7">{% trans %}Дата{% endtrans %}</label>
         <input class="form-control" name="date" type="date" value="{{ body.date if body else date }}">
       </div>
     </div>
 
-    <div class="col-md-12">
-      <div class="mb-3">
-        <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
-        <textarea class="form-control" name="comment">{{ body.comment if body }}</textarea>
+    <span class="mb-3 cursor-pointer text-primary show-more">+ {% trans %}Комментарий{% endtrans %}</span>
+
+    <div class="show-more-content" style="display: none;">
+      <div class="col-md-12">
+        <div class="mb-3">
+          <label class="form-label h7">{% trans %}Комментарий{% endtrans %}</label>
+          <textarea class="form-control" name="comment">{{ body.comment if body }}</textarea>
+        </div>
       </div>
     </div>
+
   </div>
 
   <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>

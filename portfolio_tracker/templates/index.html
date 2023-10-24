@@ -35,10 +35,10 @@
             </a>
           {% else %}
             <div>
-              <a href="{{ url_for('user.login') }}" class="text-decoration-none fw-medium">{% trans %}Login{% endtrans %}</a> /
-              <a href="{{ url_for('user.register') }}" class="text-decoration-none fw-medium">{% trans %}Sign Up{% endtrans %}</a>
+              <a href="{{ url_for('user.login') }}" class="text-decoration-none fw-medium">{% trans %}Вход{% endtrans %}</a> /
+              <a href="{{ url_for('user.register') }}" class="text-decoration-none fw-medium">{% trans %}Регистрация{% endtrans %}</a>
             </div>
-            <a href="{{ url_for('user.demo_user') }}" class="text-decoration-none fw-medium">{% trans %}Demo{% endtrans %}</a>
+            <a href="{{ url_for('user.demo_user') }}" class="text-decoration-none fw-medium">{% trans %}Демо{% endtrans %}</a>
           {% endif %}
         </div>
 
@@ -50,22 +50,22 @@
         <div class="col-6">
           <div class="d-flex flex-column" style="padding: 60px 50px 60px 30px;">
             <h2 class="text-uppercase mb-5 fw-bold" style="font-size: 3.5rem; color: #e5bb15; line-height: 1;">
-              {% trans %}Track<br> your assets<br> in one place{% endtrans %}
+              {% trans %}Отслеживай<br> активы<br> в одном месте{% endtrans %}
             </h2>
             <p class="fs-5">
-              {% trans %}Portfolios allows you to keep records of many assets (Cryptocurrency, Stocks, Offline assets) in one personal account, which allows you not to lose or forget anything.{% endtrans %}
+              {% trans %}Portfolios позволяет вести учет по многим активам(Криптовалюта, Акции, Офлайн активы) в одном личном кабинете, чтопозволяет ничего не растерять и не забыть.{% endtrans %}
             </p>
-            <p class="fw-semibold">{% trans %}Cryptocurrency and stocks{% endtrans %}</p>
+            <p class="fw-semibold">{% trans %}Криптовалюта и акции{% endtrans %}</p>
             <ul class="fw-light">
-              <li>{% trans %}notifications when price is reached{% endtrans %}</li>
+              <li>{% trans %}уведомления по достижению цены{% endtrans %}</li>
               <li>
-                {% trans %}unlimited number of portfolios (convenient distribution strategies){% endtrans %}
+                {% trans %}неограниченное количество портфелей (удобное распредение стратегий){% endtrans %}
               </li>
-              <li>{% trans %}notifications for placed orders{% endtrans %}</li>
+              <li>{% trans %}уведомления на выставленные ордера{% endtrans %}</li>
             </ul>
-            <p class="fw-semibold">{% trans %}Other assets{% endtrans %}</p>
+            <p class="fw-semibold">{% trans %}Другие активы{% endtrans %}</p>
             <p class="fw-light">
-              {% trans %}Maintaining offline investments (commercial real estate, etc.){% endtrans %}
+              {% trans %}Ведение офлайн инвестиций (коммерческой недвижимости и тд.){% endtrans %}
             </p>
           </div>
         </div>

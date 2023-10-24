@@ -8,7 +8,7 @@
     {% set modal_fullscreen = True %}
   {% else %}
     {% extends "base.html" %}
-    {% block title %}{% trans %}Whitelist{% endtrans %}{% endblock %}
+    {% block title %}{% trans %}Избранное{% endtrans %}{% endblock %}
   {% endif %}
 {% endif %}
 
@@ -19,16 +19,17 @@
     <div class="col-auto">
       <h1>
         {% if status == 'worked' %}
-          {% trans %}Alerts{% endtrans %}
+          {% trans %}Уведомления{% endtrans %}
         {% else %}
-          {% trans %}Whitelist{% endtrans %}
+          {% trans %}Избранное{% endtrans %}
         {% endif %}
       </h1>
     </div>
     {% if not modal %}
       <div class="col-auto ms-auto">
-        <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal" data-url="{{ url_for('portfolio.asset_add_modal', market=market) }}">
-          {% trans %}Add asset{% endtrans %}
+        <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal"
+          data-url="{{ url_for('portfolio.asset_add_modal', market=market) }}">
+          {% trans %}Добавить актив{% endtrans %}
         </button>
       </div>
     {% endif %}
@@ -37,31 +38,34 @@
 </div>
 
 <nav class="nav nav-underline market-menu">
-  <span class="nav-link {{ 'active disabled' if market == 'crypto' }} load-page-or-modal" data-url="{{ url_for('.tickers', market='crypto', only_content=True, status=status, modal=modal) }}">
-    {% trans %}Crypto{% endtrans %}
+  <span class="nav-link {{ 'active disabled' if market == 'crypto' }} load-page-or-modal"
+    data-url="{{ url_for('.assets', market='crypto', only_content=True, status=status, modal=modal) }}">
+    {% trans %}Крипто{% endtrans %}
   </span>
-  <span class="nav-link {{ 'active disabled' if market == 'stocks' }} load-page-or-modal" data-url="{{ url_for('.tickers', market='stocks', only_content=True, status=status, modal=modal) }}">
-    {% trans %}Stocks{% endtrans %}
+  <span class="nav-link {{ 'active disabled' if market == 'stocks' }} load-page-or-modal"
+    data-url="{{ url_for('.assets', market='stocks', only_content=True, status=status, modal=modal) }}">
+    {% trans %}Акции{% endtrans %}
   </span>
 </nav>
 
 {% if tickers %}
   <div class="big-table">
-    <form id="WhitelistForm" action="{{ url_for('.tickers_action') }}">
+    <form id="WhitelistForm" action="{{ url_for('.assets_action') }}">
       <table class="table table-sm align-middle table-hover bootstrap-table" data-search="true">
         <thead>
           <tr>
             <th class="main-tab-checkbox">
               <input class="form-check-input check-all" type="checkbox">
             </th>
-            <th data-sortable="true">{% trans %}Name{% endtrans %}</th>
-            <th>{% trans %}Alerts{% endtrans %}</th>
-            <th>{% trans %}Comment{% endtrans %}</th>
+            <th data-sortable="true">{% trans %}Название{% endtrans %}</th>
+            <th>{% trans %}Уведомления{% endtrans %}</th>
+            <th>{% trans %}Комментарий{% endtrans %}</th>
             <th></th>
           </tr>
         </thead>
 
         <tbody>
+
           {% for whitelist_ticker in tickers|sort(attribute="ticker.name") %}
             {% set ticker = whitelist_ticker.ticker %}
 
@@ -72,7 +76,7 @@
 
               <td class="text-average text-truncate">
                 <div class="open-modal d-flex gap-2" data-modal-id="WhitelistTickerInfoModal" 
-                  data-url="{{ url_for('.ticker_info', market=ticker.market, ticker_id=ticker.id) }}">
+                  data-url="{{ url_for('.asset_info', ticker_id=ticker.id) }}">
 
                   {% if ticker.image %}
                     <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/24/' + ticker.image) }}">
@@ -85,9 +89,9 @@
               </td>
 
               <td>
-                {% for alert in whitelist_ticker.alerts if alert.status != 'off' %}
+                {% for alert in whitelist_ticker.alerts|sort(attribute="price") if alert.status != 'off' %}
                   <span class="badge {{ 'text-bg-success' if alert.status == 'worked' else 'text-bg-light' }} fw-normal none-cursor">
-                    ${{ alert.price|number_group }}
+                    {{ alert.price_usd|user_currency }}
                   </span>
                 {% endfor %}
               </td>
@@ -103,16 +107,16 @@
                   </a>
                   <div class="dropdown-menu" aria-labelledby="dropdownAction">
                     <a class="dropdown-item link-danger open-modal-confirmation" data-action="delete"
-                      data-title="{% trans %}Remove asset?{% endtrans %}"
-                      data-text="{% trans %}Notifications other than orders will be removed. An asset without notifications will also be removed{% endtrans %}"
+                      data-title="{% trans %}Удалить актив?{% endtrans %}"
+                      data-text="{% trans %}Уведомления, кроме ордеров, будут удалены. Актив без уведомлений также будет удален{% endtrans %}"
                       data-id="{{ ticker.id }}">
-                      {% trans %}Remove asset{% endtrans %}
+                      {% trans %}Удалить актив{% endtrans %}
                     </a>
                     <a class="dropdown-item link-danger open-modal-confirmation" data-action="delete_with_orders"
-                      data-title="{% trans %}Remove asset with orders?{% endtrans %}"
-                      data-text="{% trans %}All notifications (including notifications for orders) associated with this asset will be removed{% endtrans %}"
+                      data-title="{% trans %}Удалить актив с ордерами?{% endtrans %}"
+                      data-text="{% trans %}Все уведомления (включая уведомления на ордеры), связанные с этим активом будут удалены{% endtrans %}"
                       data-id="{{ ticker.id }}">
-                      {% trans %}Remove asset with orders{% endtrans %}
+                      {% trans %}Удалить актив с ордерами{% endtrans %}
                     </a>
                   </div>
                 </div>
@@ -125,20 +129,20 @@
       <!-- Actions buttons -->
       <div class="sticky-bottom-buttons">
         <a class="open-modal-confirmation" data-action="delete"
-          data-title="{% trans %}Remove assets?{% endtrans %}"
-          data-text="{% trans %}Only assets that do not contain orders will be removed. Order notifications will remain{% endtrans %}">
-          {% trans %}Remove{% endtrans %}</a>
+          data-title="{% trans %}Удалить активы?{% endtrans %}"
+          data-text="{% trans %}Будут удалены только те активы, которые не содержат ордеров. Уведомления на ордеры останутся{% endtrans %}">
+          {% trans %}Удалить{% endtrans %}</a>
         <a class="open-modal-confirmation" data-action="delete_with_orders"
-          data-title="{% trans %}Remove assets with orders?{% endtrans %}"
-          data-text="{% trans %}All notifications (including notifications for orders) associated with these assets will be removed{% endtrans %}">
-          {% trans %}Remove with orders{% endtrans %}</a>
+          data-title="{% trans %}Удалить активы с ордерами?{% endtrans %}"
+          data-text="{% trans %}Все уведомления (включая уведомления на ордеры), связанные с этими активами будут удалены{% endtrans %}">
+          {% trans %}Удалить с ордерами{% endtrans %}</a>
       </div>
 
     </form>
   </div>
 
 {% else %}
-  <div class="nothing-box">{% trans %}There's nothing yet...{% endtrans %}</div>
+  <div class="nothing-box">{% trans %}Пока ничего нет...{% endtrans %}</div>
 {% endif %}
 
 {% endblock %}

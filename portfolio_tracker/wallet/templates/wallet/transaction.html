@@ -1,64 +1,66 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% if transaction %}
-  {% set asset = transaction.wallet_asset %}
-{% endif %}
-
-{% if asset.ticker.stable %}
-  {% set modal_title = gettext('Edit transaction') if transaction else gettext('Add transaction') %}
-{% else %}
-  {% set modal_title = gettext('Edit transfer') if transaction else gettext('Add transfer') %}
-{% endif %}
+{% set modal_title = gettext('Изменить транзакцию') if transaction else gettext('Добавить транзакцию') %}
 
 
 {% block content %}
-  <form id="TransferForm" data-url="{{ url_for('.transaction_update', asset_id=asset.id, transaction_id=transaction.id if transaction) }}">
-    {% if asset.ticker.stable %}
-      <div class="btn-group silver mb-3 w-100">
-        <input type="radio" class="btn-check" name="type" value="+1" id="btnradio1" {{ 'checked' if not transaction or transaction.type == '+1' }}>
-        <label class="btn btn-outline-active btn-sm" for="btnradio1">{% trans %}Input{% endtrans %}</label>
+  <form id="TransferForm" data-url="{{ url_for('.transaction_update', wallet_id=asset.wallet_id, ticker_id=asset.ticker_id, transaction_id=transaction.id) }}">
+    <div class="btn-group silver mb-3 w-100">
+      {% if transaction.type != 'TransferIn' %}
+        {% if asset.ticker.stable %}
+          <input type="radio" class="btn-check" name="type" value="Input" id="btnradio1">
+          <label class="btn btn-outline-active btn-sm" for="btnradio1">{% trans %}Ввод{% endtrans %}</label>
 
-        <input type="radio" class="btn-check" name="type" value="-1" id="btnradio2" {{ 'checked' if transaction and transaction.type == '-1' and not transaction.related_transaction }}>
-        <label class="btn btn-outline-not_active btn-sm" for="btnradio2">{% trans %}Output{% endtrans %}</label>
-
-        {% if current_user.wallets|length > 1 %}
-          <input type="radio" class="btn-check transfer" name="type" value="-1" id="btnradio3" {{ 'checked' if transaction and transaction.type == '-1' and transaction.related_transaction }}>
-          <label class="btn btn-outline-not_active btn-sm" for="btnradio3">{% trans %}Transfer{% endtrans %}</label>
+          <input type="radio" class="btn-check" name="type" value="Output" id="btnradio2">
+          <label class="btn btn-outline-not_active btn-sm" for="btnradio2">{% trans %}Вывод{% endtrans %}</label>
         {% endif %}
-      </div>
-    {% else %}
-      <input type="hidden" name="type" value="-1">
-    {% endif %}
+
+          <input type="radio" class="btn-check" name="type" value="TransferOut" id="btnradio3">
+          <label class="btn btn-outline-not_active btn-sm" for="btnradio3">{% trans %}Отправка{% endtrans %}</label>
+
+      {% else %}
+        <input type="radio" class="btn-check" name="type" value="TransferIn" id="btnradio4" checked>
+        <label class="btn btn-outline-not_active btn-sm" for="btnradio4">{% trans %}Поступление{% endtrans %}</label>
+      {% endif %}
+    </div>
+
 
     <div class="col-md-12">
       <div class="mb-3">
-        <label class="d-flex form-label h7">{% trans %}Amount{% endtrans %}
-          <span class="link-primary small-text ms-auto gap-2">
-            <span class="to-input" data-quantity="{{ asset.quantity * 0.25 }}">25%</span>
-            <span class="to-input" data-quantity="{{ asset.quantity * 0.5 }}">50%</span>
-            <span class="to-input" data-quantity="{{ asset.quantity * 0.75 }}">75%</span>
-            <span class="to-input" data-quantity="{{ asset.quantity }}">100%</span>
+        <label class="d-flex form-label h7">{% trans %}Количество{% endtrans %}
+          <span class="small-text ms-auto out visually-hidden">
+            <span class="{{ 'text-red' if not asset.free > 0 }}">Свободно: {{ asset.free }}</span>
+            {% if asset.free > 0 %}
+              <span class="ms-3 link-primary">
+                <span class="paste-into-input" data-value="{{ asset.free * 0.25 }}">25%</span>
+                <span class="paste-into-input" data-value="{{ asset.free * 0.5 }}">50%</span>
+                <span class="paste-into-input" data-value="{{ asset.free * 0.75 }}">75%</span>
+                <span class="paste-into-input" data-value="{{ asset.free }}">100%</span>
+              </span>
+            {% endif %}
           </span>
         </label>
         <div class="input-group">
           <span class="input-group-text">{{ asset.ticker.symbol|upper }}</span> 
-          <input type="number" step="any" class="form-control focus" placeholder="0,00"
-            name="amount" autocomplete="off" required value="{{ transaction.amount|abs if transaction }}">
+          <input type="number" step="any" min="0.000001" class="form-control focus" placeholder="0,00"
+            name="quantity" autocomplete="off" required value="{{ transaction.quantity|abs if transaction.quantity }}">
         </div>
       </div>
     </div>
 
-    {% set style = 'display: none;' if asset.ticker.stable or (transaction and not transaction.related_transaction) else '' %}
-    <div class="col-md-12 wallet" style="{{ style }}">
+    <div class="col-md-12 wallet">
       <div class="mb-3">
-        <label class="form-label h7">{% trans %}Recipient wallet{% endtrans %}</label>
+        <label class="form-label h7">{% trans %}Второй кошелек{% endtrans %}</label>
         <select name="wallet_id" class="form-select" data-placeholder="-"
-          data-url="{{ url_for('wallet.get_all_wallets', with_out_id=asset.wallet_id) }}">
-          {% if transaction %}
-            {% set related_transaction = transaction.get_related_transaction() %}
-            
-            <option selected value="{{ transaction.related.wallet_asset.wallet_id }}">{{ transaction.related.wallet_asset.wallet.name }}</option>
+          data-url="{{ url_for('wallet.get_wallets_to_transfer_out', wallet_id=asset.wallet_id, ticker_id=asset.ticker_id) }}">
+          {% if transaction.id %}
+            {% if transaction.related_transaction %}
+              <option selected value="{{ transaction.related_transaction.wallet_id }}">
+              {{ transaction.related_transaction.wallet.name }}</option>
+            {% else %}
+              <option selected>{% trans %}Кошелек удален{% endtrans %}</option>
+            {% endif %}
           {% endif %}
         </select>
       </div>
@@ -66,28 +68,47 @@
 
     <div class="col-md-12">
       <div class="mb-3">
-        <label class="form-label h7">{% trans %}Date{% endtrans %}</label>
-        <input class="form-control" name="date" type="date" value="{{ transaction.date if transaction else date }}" required>
+        <label class="form-label h7">{% trans %}Дата{% endtrans %}</label>
+        <input class="form-control" name="date" type="date" value="{{ transaction.date }}" required>
       </div>
     </div>
 
     <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
   </form>
+
   <script>
-  $('#TransferForm').on('change', 'input[type=radio]', function () {
-    if ($(this).hasClass('transfer')) {
-      $('#TransferForm .wallet').slideDown(500);
-      $('#TransferForm .wallet select').attr('required', true)
+  $('#TransferForm').on('change', 'input[name=type]', function () {
+    var $form = $(this).closest('form'),
+      type = $(this).val(),
+      asset_free = +{{ asset.free }};
+
+    if ('TransferOut'.includes(type)) {
+      $form.find('.wallet').slideDown(500).find('select').attr('required', true);
     } else {
-      $('#TransferForm .wallet').slideUp(500);
-      $('#TransferForm .wallet select').attr('required', false)
+      $form.find('.wallet').slideUp(500).find('select').attr('required', false);
     }
-    $('#TransferForm .focus').focus();
+
+    if (type.includes('Out')) {
+      $form.find('.in').addClass('visually-hidden');
+      $form.find('.out').removeClass('visually-hidden');
+      $form.find('input[name=quantity]').attr('max', asset_free);
+      if (asset_free <= 0) {
+        $form.find('input[name=quantity]').attr('disabled', true);
+        $form.find('[type=submit]').addClass('disabled');
+      }
+    } else {
+      $form.find('.out').addClass('visually-hidden');
+      $form.find('.in').removeClass('visually-hidden');
+      $form.find('input[name=quantity]').removeAttr('max');
+      $form.find('input[name=quantity]').attr('disabled', false);
+      $form.find('[type=submit]').removeClass('disabled');
+    }
+
+    $form.find('.focus').focus();
+
   })
 
-  $('#TransferForm').on('click', '.to-input', function () {
-    $('#TransferForm input[name=amount]').val($(this).data('quantity'));
-    
-  })
+  // Start
+  $('#TransferForm').find("input[value={{ transaction.type }}]").trigger('click');
   </script>
 {% endblock %}

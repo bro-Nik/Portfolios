@@ -1,7 +1,7 @@
 from datetime import datetime
-import decimal
-from babel.numbers import format_number, format_decimal, format_percent, parse_decimal, format_currency
-from babel.dates import format_datetime, format_date
+import math
+from babel.numbers import format_decimal
+from babel.dates import format_date, format_datetime
 from flask_babel import Locale
 from flask_login import current_user
 from portfolio_tracker.app import app
@@ -21,35 +21,46 @@ app.add_template_filter(smart_int)
 
 def smart_round(number):
     ''' Окрушление зависимое от величины числа для Jinja '''
-    if not number:
-        return 0
     try:
-        number = float(number)
-        if number >= 1000:
+        # number = float(number)
+        abs_number = abs(number)
+        if abs_number >= 1000:
             number = int(number)
-        elif number >= 100:
+        elif abs_number >= 100:
             number = round(number, 1)
-        elif number >= 10:
+        elif abs_number >= 10:
             number = round(number, 2)
-        elif number >= 1:
-            number = round(number, 3)
-        elif number >= 0.1:
-            number = round(number, 5)
-        elif number >= 0.0001:
-            number = round(number, 7)
-        elif -0.000000000000001 < number < 0.000000000000001:
-            number = 0
-
-
-        if int(number) == number:
-            return int(number)
         else:
-            return number
+            dist = int(math.log10(abs_number)) #number of zeros after decimal point
+            if dist:
+                number = (round(number, abs(dist) + 2))
+        return number
+
     except:  # строка не является float / int
         return 0
 
-
 app.add_template_filter(smart_round)
+
+
+# def big_round(number):
+#     try:
+#         abs_number = abs(number)
+#         if abs_number >= 1000:
+#             number = int(number)
+#         elif abs_number >= 100:
+#             number = round(number, 1)
+#         elif abs_number >= 10:
+#             number = round(number, 2)
+#         else:
+#             dist = int(math.log10(abs_number)) #number of zeros after decimal point
+#             if dist:
+#                 number = (round(number, abs(dist) + 2))
+#         return number
+#
+#     except:  # строка не является float / int
+#         return 0
+#
+# app.add_template_filter(smart_round)
 
 
 def number_group(number):
@@ -68,12 +79,20 @@ def long_number(number):
 app.add_template_filter(long_number)
 
 
-def user_currency(number):
-    number = smart_round(number)
+def user_currency(number, param=''):
     currency = current_user.currency
     locale = current_user.locale
     price_list = get_price_list()
-    number *= price_list.get('cu-' + currency)
+    price_currency_to_usd = price_list.get(app.config['CURRENCY_PREFIX'] + currency, 1)
+    number *= price_currency_to_usd
+
+    # round
+    if param == 'big':
+        if number - round(number) < price_currency_to_usd:
+            number = round(number)
+        elif number - round(number, 1) < price_currency_to_usd:
+            number = round(number, 1)
+
     currency = currency.upper()
 
     # for integer
@@ -86,7 +105,7 @@ def user_currency(number):
     elif number == round(number, 1):
         force_frac = (1, 1)
     elif number < 1:
-        s = str(number)
+        s = str(long_number(number))
         length = len(s[s.index('.') + 1:])
         force_frac = (length, length)
     return pattern.apply(number, locale, currency=currency, force_frac=force_frac)
@@ -94,8 +113,14 @@ def user_currency(number):
 app.add_template_filter(user_currency)
 
 
-def other_currency(number, currency):
-    number = smart_round(number)
+def other_currency(number, currency, param=''):
+    # round
+    if param == 'big':
+        if number - int(number) < 1:
+            number = int(number)
+        elif number - round(number, 1) < 1:
+            number = round(number, 1)
+
     locale = Locale.parse(current_user.locale)
     pattern = locale.currency_formats['standard']
     force_frac = None
@@ -103,8 +128,9 @@ def other_currency(number, currency):
         force_frac = (0, 0)
     elif number == round(number, 1):
         force_frac = (1, 1)
-    elif number < 1:
-        s = str(number)
+    # elif abs(number) < 1:
+    else:
+        s = str(long_number(number))
         length = len(s[s.index('.') + 1:])
         force_frac = (length, length)
     return pattern.apply(number, locale, currency=currency.upper(), force_frac=force_frac)
@@ -120,7 +146,8 @@ def user_date(date):
             return date
     locale = current_user.locale.upper()
     
-    return format_date(date, locale=locale)
+    # return format_date(date, locale=locale)
+    return format_datetime(date, locale=locale)
 
 app.add_template_filter(user_date)
 

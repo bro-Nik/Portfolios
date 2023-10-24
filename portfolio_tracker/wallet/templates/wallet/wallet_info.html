@@ -17,26 +17,26 @@
         {% trans %}Добавить{% endtrans %}
       </button>
       <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-        {% trans %}More{% endtrans %}
+        {% trans %}Еще{% endtrans %}
       </button>
       <div class="dropdown-menu">
         <button class="dropdown-item open-modal" type="button" data-modal-id="WalletSettingsModal"
           data-url="{{ url_for('.wallet_settings', wallet_id=wallet.id) }}">
-          {% trans %}Edit wallet{% endtrans %}
+          {% trans %}Изменить кошелек{% endtrans %}
         </button>
         <form id="WalletActions" action="{{ url_for('.wallets_action') }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#WalletActions" data-pre-need-clean="true"
-            {% if wallet.is_empty %}
-              data-title="{% trans name=wallet.name %}Remove wallet {{ name }}?{% endtrans %}"
+            {% if wallet.is_empty() %}
+              data-title="{% trans name=wallet.name %}Удалить кошелек {{ name }}?{% endtrans %}"
               data-action="delete"
             {% else %}
-              data-title="{% trans name=wallet.name %}Remove wallet {{ name }} with contents?{% endtrans %}"
-              data-text="{% trans %}All transactions associated with this wallet will be removed{% endtrans %}"
+              data-title="{% trans name=wallet.name %}Удалить кошелек {{ name }} с содержимым?{% endtrans %}"
+              data-text="{% trans %}Все транзакции, связанные с этим кошельком, будут удалены{% endtrans %}"
               data-action="delete_with_contents"
             {% endif %}
             data-id="{{ wallet.id }}">
-            {% trans %}Remove wallet{% endtrans %}
+            {% trans %}Удалить кошелек{% endtrans %}
           </button>
         </form>
       </div>
@@ -48,23 +48,18 @@
 <div class="row mb-5 xs-mb-3">
 
   <div class="col-auto">
-    <p class="small-text">{% trans %}Общая сумма{% endtrans %}</p>
-    <span class="text-average">{{ (wallet.cost_now + wallet.in_orders + wallet.free)|user_currency }}</span>
+    <p class="small-text">{% trans %}Стоимость сейчас{% endtrans %}</p>
+    <span class="text-average">{{ wallet.cost_now|user_currency('big') }}</span>
   </div>
 
   <div class="col-auto">
-    <p class="small-text">{% trans %}Cost now{% endtrans %}</p>
-    <span class="text-average">{{ wallet.cost_now|user_currency }}</span>
+    <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
+    <span class="text-average">{{ wallet.in_orders|user_currency('big') }}</span>
   </div>
 
   <div class="col-auto">
-    <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
-    <span class="text-average">{{ wallet.in_orders|user_currency }}</span>
-  </div>
-
-  <div class="col-auto">
-    <p class="small-text">{% trans %}Free money{% endtrans %}</p>
-    <span class="text-average">{{ wallet.free|user_currency }}</span>
+    <p class="small-text">{% trans %}Свободные средства{% endtrans %}</p>
+    <span class="text-average">{{ wallet.free|user_currency('big') }}</span>
   </div>
 </div>
 
@@ -74,7 +69,7 @@
       {% trans %}Активы{% endtrans %}
     </button>
     <button class="nav-link link-dark" data-bs-toggle="tab" data-bs-target="#nav-transactions" type="button">
-      {% trans %}Стейблы{% endtrans %}
+      {% trans %}Стабильные активы{% endtrans %}
     </button>
   </div>
 </nav>
@@ -84,170 +79,219 @@
   <div class="tab-pane fade active show" id="nav-asset">
     {% if wallet.assets %}
       <div class="big-table">
-        {% set tab_name = 'wallet_assets' %}
-        {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'cost' %}
-        {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
-        <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
-          data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
-          data-sort-url="{{ url_for('portfolio.change_table_sort') }}">
-          <thead>
-            <tr>
-              <th data-sortable="true" data-field="name">{% trans %}Name{% endtrans %}</th>
-              <th>{% trans %}Holdings{% endtrans %}</th>
-              <th data-sortable="true" data-field="cost" data-sort-name="cost_now">{% trans %}Cost now{% endtrans %}</th>
-              <th data-sortable="true" data-field="orders" data-sort-name="in_orders">{% trans %}Money in orders{% endtrans %}</th>
-              <th></th>
-
-              <!-- For sorting -->
-              <th class="visually-hidden" data-field="cost_now">Cost now</th>
-              <th class="visually-hidden" data-field="in_orders"> Money in orders</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for asset in wallet.assets %}
-              {% set ticker = asset.ticker %}
+        <form id="WalletAssets" action="{{ url_for('wallet.assets_action', wallet_id=wallet.id) }}">
+          {% set tab_name = 'wallet_assets' %}
+          {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'cost_now' %}
+          {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
+          <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
+            data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
+            data-sort-url="{{ url_for('portfolio.change_table_sort') }}">
+            <thead>
               <tr>
-                <td class="text-average">
-                  <div class="open-modal d-flex gap-2 name" data-modal-id="WalletAssetInfoModal"
-                    data-url="{{ url_for('.asset_info', asset_id=asset.id) }}">
-
-                    {% if ticker.image %}
-                      <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/24/' + ticker.image) }}">
-                    {% else %}
-                      <span class="img-asset-min bg-secondary-subtle"></span>
-                    {% endif %}
-                    <span class="text-truncate" title="{{ ticker.name }}">{{ ticker.name }}</span>
-                    <span class="text-muted">{{ ticker.symbol|upper }}</span>
-                  </div>
-                </td>
-
-                <td>
-                  <span class="text-average small-text">
-                    {{ asset.quantity|other_currency(ticker.symbol) if asset.quantity|smart_round else '-' }}
-                  </span>
-                </td>
-
-                <td>{{ asset.cost_now|user_currency if asset.quantity|smart_round else '-' }}</td>
-
-                <td>{{ asset.in_orders|user_currency if asset.in_orders or asset.quantity|smart_round else '-' }}</td>
-
-                <td class="align-middle text-end">
-                  <div class="d-flex justify-content-end">
-                    <div class="dropdown dropstart">
-                      <a href="#" class="link-secondary" role="button" id="dropdownAction"
-                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-	                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
-                      </a>
-                      <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                        <a class="dropdown-item open-modal" data-modal-id="TransferCoinModal"
-                          data-url="">
-                          {% trans %}Transfer Coin{% endtrans %}
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </td>
+                <th class="main-tab-checkbox">
+                  <input class="form-check-input check-all" type="checkbox">
+                </th>
+                <th data-sortable="true" data-field="name">{% trans %}Название{% endtrans %}</th>
+                <th data-sortable="true" data-field="cost_now" data-sort-name="_cost_now">{% trans %}Стоимость сейчас{% endtrans %}</th>
+                <th>{% trans %}Активы{% endtrans %}</th>
+                <th data-sortable="true" data-field="in_orders_sell" data-sort-name="_in_orders_sell">{% trans %}В ордерах на продажу{% endtrans %}</th>
+                <th data-sortable="true" data-field="in_orders_buy" data-sort-name="_in_orders_buy">{% trans %}В ордерах на покупку{% endtrans %}</th>
+                <th></th>
 
                 <!-- For sorting -->
-                <td class="visually-hidden">{{ asset.cost_now }}</td>
-                <td class="visually-hidden">{{ asset.in_orders }}</td>
-     
+                <th class="visually-hidden" data-field="_cost_now"></th>
+                <th class="visually-hidden" data-field="_in_orders_buy"></th>
+                <th class="visually-hidden" data-field="_in_orders_sell"></th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for asset in wallet.assets %}
+                {% set ticker = asset.ticker %}
+                <tr>
+                  <td>
+                    <input class="form-check-input to-check" type="checkbox" value="{{ asset.ticker_id }}">
+                  </td>
+
+                  <td class="text-average">
+                    <div class="open-modal d-flex gap-2 name" data-modal-id="WalletAssetInfoModal"
+                      data-url="{{ url_for('wallet.asset_info', wallet_id=wallet.id, ticker_id=ticker.id) }}">
+
+                      {% if ticker.image %}
+                        <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/24/' + ticker.image) }}">
+                      {% else %}
+                        <span class="img-asset-min bg-secondary-subtle"></span>
+                      {% endif %}
+                      <span class="text-truncate" title="{{ ticker.name }}">{{ ticker.name }}</span>
+                      <span class="text-muted">{{ ticker.symbol|upper }}</span>
+                    </div>
+                  </td>
+
+                  <td>{{ asset.cost_now|user_currency('big') if asset.quantity else '-' }}</td>
+
+                  <td>
+                    <span class="text-average small-text">
+                      {{ asset.quantity|other_currency(ticker.symbol) if asset.quantity else '-' }}
+                    </span>
+                  </td>
+
+                  <td>{{ asset.sell_orders|other_currency(ticker.symbol) if asset.sell_orders else '-' }}</td>
+                  <td>{{ asset.buy_orders|user_currency('big') if asset.buy_orders else '-' }}</td>
+
+                  <td class="align-middle text-end">
+                    <div class="d-flex justify-content-end">
+                      <div class="dropdown dropstart">
+                        <a href="#" class="link-secondary" role="button" id="dropdownAction"
+                          data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="dropdownAction">
+                          <a class="dropdown-item open-modal" data-modal-id="WalletInOutferModal"
+                            data-url="{{ url_for('.transaction', wallet_id=wallet.id, ticker_id=ticker.id) }}">
+                            {% trans %}Отправить{% endtrans %}
+                          </a>
+                          <a class="dropdown-item link-danger open-modal-confirmation"
+                            {% if asset.is_empty() %}
+                              data-title="{% trans name=asset.ticker.name %}Удалить актив {{ name }}?{% endtrans %}"
+                              data-action="delete"
+                            {% else %}
+                              data-title="{% trans name=asset.ticker.name %}Удалить актив {{ name }} с содержимым?{% endtrans %}"
+                              data-text="{% trans %}Все транзакции в этом активе будут удалены{% endtrans %}"
+                              data-action="delete_with_contents"
+                            {% endif %}
+                            data-id="{{ asset.id }}">
+                            {% trans %}Удалить актив{% endtrans %}
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- For sorting -->
+                  <td class="visually-hidden">{{ asset.cost_now }}</td>
+                  <td class="visually-hidden">{{ asset.sell_orders }}</td>
+                  <td class="visually-hidden">{{ asset.buy_orders }}</td>
+
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <!-- Actions buttons -->
+          <div class="sticky-bottom-buttons">
+            <a class="open-modal-confirmation" data-action="delete"
+              data-title="{% trans %}Удалить активы?{% endtrans %}"
+              data-text="{% trans %}Будут удалены только пустые активы{% endtrans %}">
+              {% trans %}Удалить{% endtrans %}</a>
+            <a class="open-modal-confirmation" data-action="delete_with_contents"
+              data-title="{% trans %}Удалить активы с содержимым?{% endtrans %}"
+              data-text="{% trans %}Все транзакции в этих активах будут удалены{% endtrans %}">
+              {% trans %}Удалить с содержимым{% endtrans %}</a>
+          </div>
+        </form>
       </div>
     {% else %}
-      <div class="nothing-box">{% trans %}There's nothing yet...{% endtrans %}</div>
+      <div class="nothing-box">{% trans %}Пока ничего нет...{% endtrans %}</div>
     {% endif %}
   </div>
 
   <div class="tab-pane fade" id="nav-transactions" role="tabpanel" aria-labelledby="nav-transactions-tab">
     {% if wallet.stable_assets %}
       <div class="big-table pb-3">
-        {% set tab_name = 'wallet_stable_assets' %}
-        {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'free' %}
-        {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
-        <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
-          data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
-          data-sort-url="{{ url_for('portfolio.change_table_sort') }}">
-          <thead>
-            <tr>
-              <th data-sortable="true" data-field="name">{% trans %}Name{% endtrans %}</th>
-              <th data-sortable="true" data-field="free" data-sort-name="in_free">{% trans %}Свободно{% endtrans %}</th>
-              <th data-sortable="true" data-field="orders" data-sort-name="in_orders">{% trans %}Money in orders{% endtrans %}</th>
-              <th></th>
-
-              <!-- For sorting -->
-              <th class="visually-hidden" data-field="in_free">Money free</th>
-              <th class="visually-hidden" data-field="in_orders">Money in orders</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for asset in wallet.stable_assets %}
-              {% set ticker = asset.ticker %}
+        <form id="WalletStableAssets" action="{{ url_for('wallet.assets_action', wallet_id=wallet.id) }}">
+          {% set tab_name = 'wallet_stable_assets' %}
+          {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'free' %}
+          {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
+          <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
+            data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
+            data-sort-url="{{ url_for('portfolio.change_table_sort') }}">
+            <thead>
               <tr>
-                <td class="text-average">
-                  <div class="open-modal d-flex gap-2 name" data-modal-id="WalletAssetInfoModal"
-                    data-url="{{ url_for('.asset_info', asset_id=asset.id) }}">
-
-                    {% if ticker.image %}
-                      <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/24/' + ticker.image) }}">
-                    {% else %}
-                      <span class="img-asset-min bg-secondary-subtle"></span>
-                    {% endif %}
-                    <span class="text-truncate" title="{{ ticker.name }}">{{ ticker.name }}</span>
-                    <span class="text-muted">{{ ticker.symbol|upper }}</span>
-                  </div>
-                </td>
-
-                <td>
-                  <span class="text-average small-text">
-                    {{ asset.free|smart_round|number_group }}
-                    {{ ticker.symbol|upper }}
-                  </span>
-                </td>
-
-                <td>
-                  <span class="text-average small-text">
-                    {{ asset.in_orders|smart_round|number_group }}
-                    {{ ticker.symbol|upper }}
-                  </span>
-                </td>
-
-                <td class="align-middle text-end">
-                  <div class="d-flex justify-content-end">
-                    <div class="dropdown dropstart">
-                      <a href="#" class="link-secondary" role="button" id="dropdownAction"
-                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-	                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
-                      </a>
-                      <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                        <a class="dropdown-item open-modal" data-modal-id="TransferCoinModal"
-                          data-url="">
-                          {% trans %}Transfer Coin{% endtrans %}
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </td>
+                <th class="main-tab-checkbox">
+                  <input class="form-check-input check-all" type="checkbox">
+                </th>
+                <th data-sortable="true" data-field="name">{% trans %}Название{% endtrans %}</th>
+                <th data-sortable="true" data-field="free" data-sort-name="_free">{% trans %}Свободно{% endtrans %}</th>
+                <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}В ордерах{% endtrans %}</th>
+                <th></th>
 
                 <!-- For sorting -->
-                <td class="visually-hidden">{{ asset.free }}</td>
-                <td class="visually-hidden">{{ asset.in_orders }}</td>
-     
+                <th class="visually-hidden" data-field="_free"></th>
+                <th class="visually-hidden" data-field="_in_orders"></th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for asset in wallet.stable_assets %}
+                {% set ticker = asset.ticker %}
+                <tr>
+                  <td>
+                    <input class="form-check-input to-check" type="checkbox" value="{{ asset.ticker_id }}">
+                  </td>
+
+                  <td class="text-average">
+                    <div class="open-modal d-flex gap-2 name" data-modal-id="WalletAssetInfoModal"
+                      data-url="{{ url_for('wallet.asset_info', wallet_id=wallet.id, ticker_id=ticker.id) }}">
+
+                      {% if ticker.image %}
+                        <img class="img-asset-min" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/24/' + ticker.image) }}">
+                      {% else %}
+                        <span class="img-asset-min bg-secondary-subtle"></span>
+                      {% endif %}
+                      <span class="text-truncate" title="{{ ticker.name }}">{{ ticker.name }}</span>
+                      <span class="text-muted">{{ ticker.symbol|upper }}</span>
+                    </div>
+                  </td>
+
+                  <td>
+                    <span class="text-average small-text">{{ asset.free|other_currency(ticker.symbol, 'big') }}</span>
+                  </td>
+
+                  <td>
+                    <span class="text-average small-text">{{ asset.buy_orders|other_currency(ticker.symbol, 'big') }}</span>
+                  </td>
+
+                  <td class="align-middle text-end">
+                    <div class="d-flex justify-content-end">
+                      <div class="dropdown dropstart">
+                        <a href="#" class="link-secondary" role="button" id="dropdownAction"
+                          data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="dropdownAction">
+                          <a class="dropdown-item open-modal" data-modal-id="WalletInOutferModal"
+                            data-url="{{ url_for('.transaction', wallet_id=wallet.id, ticker_id=ticker.id) }}">
+                            {% trans %}Добавить транзакцию{% endtrans %}
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- For sorting -->
+                  <td class="visually-hidden">{{ asset.free }}</td>
+                  <td class="visually-hidden">{{ asset.in_orders }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <!-- Actions buttons -->
+          <div class="sticky-bottom-buttons">
+            <a class="open-modal-confirmation" data-action="delete"
+              data-title="{% trans %}Удалить активы?{% endtrans %}"
+              data-text="{% trans %}Будут удалены только пустые активы{% endtrans %}">
+              {% trans %}Удалить{% endtrans %}</a>
+            <a class="open-modal-confirmation" data-action="delete_with_contents"
+              data-title="{% trans %}Удалить активы с содержимым?{% endtrans %}"
+              data-text="{% trans %}Все транзакции в этих активах будут удалены{% endtrans %}">
+              {% trans %}Удалить с содержимым{% endtrans %}</a>
+          </div>
+        </form>
       </div>
     {% else %}
-      <div class="nothing-box">{% trans %}There's nothing yet...{% endtrans %}</div>
+      <div class="nothing-box">{% trans %}Пока ничего нет...{% endtrans %}</div>
     {% endif %}
   </div>
 </div>
 
-<div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Add comment') }}"
+<div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Добавить комментарий') }}"
   data-url="{{ url_for('.wallet_settings_update', wallet_id=wallet.id) }}">
   <span class="convert-data">{{ wallet.comment if wallet.comment }}</span>
 </div>

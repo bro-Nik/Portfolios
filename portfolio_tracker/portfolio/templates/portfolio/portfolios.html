@@ -2,18 +2,18 @@
 
 {% if not only_content %}
   {% extends "base.html" %}
-  {% block title %}{% trans %}Portfolios{% endtrans %}{% endblock %}
+  {% block title %}{% trans %}Портфели{% endtrans %}{% endblock %}
 {% endif %}
 
 {% block content %}
 <div class="mb-5">
   <div class="row xs-mb-3">
     <div class="col-auto">
-      <h1>{% trans %}Portfolios{% endtrans %}</h1>
+      <h1>{% trans %}Портфели{% endtrans %}</h1>
     </div>
     <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal" type="button" data-modal-id="PortfolioSettingsModal" data-url="{{ url_for('.portfolio_settings') }}">
-        {% trans %}Create portfolio{% endtrans %}
+        {% trans %}Добавить портфель{% endtrans %}
       </button>
     </div>
   </div>
@@ -24,27 +24,25 @@
   <div class="row xs-mb-3">
     
     <div class="col-auto">
-      <p class="small-text">{% trans %}Total spent{% endtrans %} / {% trans %}Cost now{% endtrans %}</p>
+      <p class="small-text">{% trans %}Вложено{% endtrans %} / {% trans %}Стоимость сейчас{% endtrans %}</p>
       <span class="text-average">
-        {{ all_portfolios.amount_usd|user_currency }} / 
-        <span class="{{ all_portfolios.color }}">
-          ${{ all_portfolios.cost_now|user_currency }}
-        </span>
+        {{ all_portfolios.amount|user_currency('big') }} / 
+        <span class="{{ all_portfolios.color }}">{{ all_portfolios.cost_now|user_currency('big') }}</span>
       </span>
     </div>
 
     <div class="col-auto">
-      <p class="small-text">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</p>
+      <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
         <span class="text-average {{ all_portfolios.color }}">
-          {{ all_portfolios.profit|user_currency }}
+          {{ all_portfolios.profit|user_currency('big') }}
           {{ '({}%)'.format(all_portfolios.profit_percent) if all_portfolios.profit_percent }}
         </span>
     </div>
 
     <div class="col-auto">
-      <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
+      <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
       <span class="text-average">
-        {{ all_portfolios.in_orders|user_currency }}
+        {{ all_portfolios.in_orders|user_currency('big') }}
       </span>
     </div>
 
@@ -63,21 +61,21 @@
             <th class="main-tab-checkbox">
               <input class="form-check-input check-all" type="checkbox">
             </th>
-            <th data-sortable="true" data-field="name" data-sort-name="_name">{% trans %}Name{% endtrans %}</th>
-            <th data-sortable="true" data-field="total_spent" data-sort-name="_total_spent">{% trans %}Total spent{% endtrans %}</th>
-            <th data-sortable="true" data-field="cost_now" data-sort-name="_cost_now">{% trans %}Cost now{% endtrans %}</th>
-            <th data-sortable="true" data-field="profit" data-sort-name="_profit">{% trans %}Profit{% endtrans %} / {% trans %}Loss{% endtrans %}</th>
-            <th data-sortable="true" data-field="percent" data-sort-name="_percent">{% trans %}Share of total investments{% endtrans %}</th>
-            <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}Money in orders{% endtrans %}</th>
-            <th>{% trans %}Comment{% endtrans %}</th>
+            <th data-sortable="true" data-field="name" data-sort-name="_name">{% trans %}Название{% endtrans %}</th>
+            <th data-sortable="true" data-field="total_spent" data-sort-name="_total_spent">{% trans %}Вложено{% endtrans %}</th>
+            <th data-sortable="true" data-field="cost_now" data-sort-name="_cost_now">{% trans %}Стоимость сейчас{% endtrans %}</th>
+            <th data-sortable="true" data-field="profit" data-sort-name="_profit">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</th>
+            <th data-sortable="true" data-field="percent" data-sort-name="_percent">{% trans %}Доля от всех инвестиций{% endtrans %}</th>
+            <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}В ордерах{% endtrans %}</th>
+            <th>{% trans %}Комментарий{% endtrans %}</th>
             <th></th>
             <!-- For sorting -->
-            <th class="visually-hidden" data-field="_name">Name</th>
-            <th class="visually-hidden" data-field="_total_spent">Total spent</th>
-            <th class="visually-hidden" data-field="_cost_now">Cost now</th>
-            <th class="visually-hidden" data-field="_profit">Profit</th>
-            <th class="visually-hidden" data-field="_percent">%</th>
-            <th class="visually-hidden" data-field="_in_orders">Orders</th>
+            <th class="visually-hidden" data-field="_name"></th>
+            <th class="visually-hidden" data-field="_total_spent"></th>
+            <th class="visually-hidden" data-field="_cost_now"></th>
+            <th class="visually-hidden" data-field="_profit"></th>
+            <th class="visually-hidden" data-field="_percent"></th>
+            <th class="visually-hidden" data-field="_in_orders"></th>
           </tr>
         </thead>
 
@@ -95,18 +93,18 @@
                 </div>
               </td>
 
-              <td>{{ portfolio.amount_usd|user_currency if portfolio.amount_usd else '-' }}</td>
+              <td>{{ portfolio.amount|user_currency('big') if portfolio.amount else '-' }}</td>
 
               <td>
                 <span class="{{ portfolio.color }}">
-                  {{ portfolio.cost_now|user_currency if portfolio.cost_now else '-' }}
+                  {{ portfolio.cost_now|user_currency('big') if portfolio.cost_now else '-' }}
                 </span>
               </td>
 
               <td>
                 {% if portfolio.cost_now %}
                   <span class="{{ portfolio.color }}">
-                    {{ portfolio.profit|user_currency }}
+                    {{ portfolio.profit|user_currency('big') }}
                     {{ '({}%)'.format(portfolio.profit_percent) if portfolio.profit_percent }}
                   </span>
                 {% else %}
@@ -115,12 +113,12 @@
               </td>
               
               <td>
-                {{ (portfolio.amount_usd / all_portfolios.amount_usd * 100)|round(1, 'common')|smart_int|string + '%' if portfolio.cost_now and all_portfolios.amount_usd else '-' }}
-                / {{ portfolio.percent|smart_int |string + '%' if portfolio.percent else '-' }}
+                {{ (portfolio.amount / all_portfolios.amount * 100)|round(1, 'common')|smart_int|string + '%' if portfolio.cost_now and all_portfolios.amount else '-' }}
+                / {{ portfolio.percent|smart_int|string + '%' if portfolio.percent else '-' }}
               </td>
 
               <td>
-                {{ portfolio.in_orders|user_currency if portfolio.in_orders else '-' }}
+                {{ portfolio.in_orders|user_currency('big') if portfolio.in_orders else '-' }}
               </td>
 
               <td>
@@ -137,19 +135,19 @@
                   <div class="dropdown-menu" aria-labelledby="dropdownAction">
                     <a class="dropdown-item open-modal" data-modal-id="PortfolioSettingsModal"
                       data-url="{{ url_for('.portfolio_settings', portfolio_id=portfolio.id) }}">
-                      {% trans %}Edit portfolio{% endtrans %}
+                      {% trans %}Изменить портфель{% endtrans %}
                     </a>
                       <a class="dropdown-item link-danger open-modal-confirmation"
-                        {% if portfolio.is_empty %}
-                          data-title="{% trans name=portfolio.name %}Remove portfolio {{ name }}?{% endtrans %}"
+                        {% if portfolio.is_empty() %}
+                          data-title="{% trans name=portfolio.name %}Удалить портфель {{ name }}?{% endtrans %}"
                           data-action="delete"
                         {% else %}
-                          data-title="{% trans name=portfolio.name %}Remove portfolio {{ name }} with contents?{% endtrans %}"
-                          data-text="{% trans %}All assets and transactions in this portfolio will be removed{% endtrans %}"
+                          data-title="{% trans name=portfolio.name %}Удалить портфель {{ name }} с содержимым?{% endtrans %}"
+                          data-text="{% trans %}Все активы и транзакции в этом портфеле будут удалены{% endtrans %}"
                           data-action="delete_with_contents"
                         {% endif %}
                         data-id="{{ portfolio.id }}">
-                        {% trans %}Remove portfolio{% endtrans %}
+                        {% trans %}Удалить портфель{% endtrans %}
                       </a>
                   </div>
                 </div>
@@ -157,7 +155,7 @@
 
               <!-- For sorting -->
               <td class="visually-hidden">{{ portfolio.name }}</td>
-              <td class="visually-hidden">{{ portfolio.amount_usd }}</td>
+              <td class="visually-hidden">{{ portfolio.amount }}</td>
               <td class="visually-hidden">{{ portfolio.cost_now }}</td>
               <td class="visually-hidden">{{ portfolio.profit }}</td>
               <td class="visually-hidden">{{ (portfolio.cost_now / all_portfolios.cost_now * 100) if all_portfolios.cost_now }}</td>
@@ -171,19 +169,19 @@
       <!-- Actions buttons -->
       <div class="sticky-bottom-buttons">
         <a class="open-modal-confirmation" data-action="delete"
-          data-title="{% trans %}Remove portfolios?{% endtrans %}"
-          data-text="{% trans %}Only empty portfolios will be removed{% endtrans %}">
-          {% trans %}Remove{% endtrans %}</a>
+          data-title="{% trans %}Удалить портфели?{% endtrans %}"
+          data-text="{% trans %}Будут удалены только пустые портфели{% endtrans %}">
+          {% trans %}Удалить{% endtrans %}</a>
         <a class="open-modal-confirmation" data-action="delete_with_contents"
-          data-title="{% trans %}Remove portfolios with contents?{% endtrans %}"
-          data-text="{% trans %}All assets and transactions in these portfolios will be removed{% endtrans %}">
-          {% trans %}Remove with contents{% endtrans %}</a>
+          data-title="{% trans %}Удалить портфели с содержимым?{% endtrans %}"
+          data-text="{% trans %}Все активы и транзакции в этих портфелях будут удалены{% endtrans %}">
+          {% trans %}Удалить с содержимым{% endtrans %}</a>
       </div>
 
     </form>
   </div>
 {% else %}
-  <div class="nothing-box">{% trans %}There's nothing yet...{% endtrans %}</div>
+  <div class="nothing-box">{% trans %}Пока ничего нет...{% endtrans %}</div>
 {% endif %}
 
 {% endblock %}

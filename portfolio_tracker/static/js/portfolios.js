@@ -243,6 +243,17 @@ $(function () {
     }
   });
 
+  // Show more content
+  $('body').on('click', '.show-more', function () {
+    $(this).next('.show-more-content').slideToggle(500);
+  })
+
+  // Paste into input
+  $('body').on('click', '.paste-into-input', function () {
+    var $input = $(this).closest('div').find('input');
+    $input.val($(this).data('value')).trigger('input');
+  })
+
 })
 
 // Load to Page

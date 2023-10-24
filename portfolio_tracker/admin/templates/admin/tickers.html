@@ -1,5 +1,10 @@
-{% extends "base.html" %}
-{% block title %} Tickers / Admin {% endblock %}
+{% set only_content = request.args.get('only_content') %}
+
+{% if not only_content %}
+  {% extends "base.html" %}
+  {% block title %} Tickers / Admin {% endblock %}
+{% endif %}
+
 {% block content %}
 
 {% include 'admin/menu.html' %}
@@ -11,20 +16,32 @@
 </nav>
 
 <div class="big-table pt-3 pb-3">
-  <table class="table table-sm align-middle table-hover bootstrap-table"
-      data-pagination="true" data-search="true"
-      data-url="{{ url_for('.tickers_detail', market=market) }}"
-      data-page-size="20">
-    <thead>
-      <tr>
-        <th data-field="id">ID</th>
-        <th data-field="symbol" data-sortable="true">Symbol</th>
-        <th data-field="name" data-sortable="true">Name</th>
-        <th data-field="price" data-sortable="true">Price</th>
-        <th data-field="market_cap_rank" data-sortable="true">Market Cap</th>
-      </tr>
-    </thead>
-  </table>
+  {% set tab_name = 'wallets' %}
+  {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'cost_now' %}
+  {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
+  <form id="AdminTickers" action="{{ url_for('.tickers_action') }}">
+    <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
+        data-pagination="true" data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
+        data-url="{{ url_for('.tickers_detail', market=market) }}"
+        data-sort-url="{{ url_for('portfolio.change_table_sort') }}" data-page-size="20">
+      <thead>
+        <tr>
+          <th data-field="checkbox" class="main-tab-checkbox">
+            <input class="form-check-input check-all" type="checkbox">
+          </th>
+          <th data-field="id">ID</th>
+          <th data-field="symbol" data-sortable="true">Символ</th>
+          <th data-field="name" data-sortable="true">Название</th>
+          <th data-field="price" data-sortable="true">Цена к USD</th>
+          <th data-field="market_cap_rank" data-sortable="true">Market Cap</th>
+        </tr>
+      </thead>
+    </table>
+    <!-- Actions buttons -->
+    <div class="sticky-bottom-buttons">
+      <a class="open-modal-confirmation" data-action="delete" data-title="Удалить тикеры?">Удалить</a>
+    </div>
+  </form>
 </div>
 
 {% endblock %}

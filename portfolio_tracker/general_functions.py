@@ -1,6 +1,9 @@
 import pickle
 from datetime import datetime
-from portfolio_tracker.app import redis, db
+from babel.dates import format_date
+from flask import g
+from flask_login import current_user
+from portfolio_tracker.app import redis
 
 
 def int_(number, default=0):
@@ -9,11 +12,13 @@ def int_(number, default=0):
     except:
         return default
 
+
 def float_(number, default=0):
     try:
         return float(number)
     except:
         return default
+
 
 def redis_decode_or_other(key, default=''):
     key = redis.get(key)
@@ -22,7 +27,7 @@ def redis_decode_or_other(key, default=''):
     return key.decode()
 
 
-def get_price_list(market=''):
+def get_price_list(market=None):
     ''' Общая функция сбора цен '''
     def get_for(market):
         price_list_key = 'price_list_' + market
@@ -32,7 +37,17 @@ def get_price_list(market=''):
     if market:
         return get_for(market)
 
-    return get_for('crypto') | get_for('stocks') | get_for('currency')
+    price_list = getattr(g, 'price_list', None)
+    if price_list is None:
+        price_list = get_for('crypto') | get_for('stocks') | get_for('currency')
+        g.price_list = price_list
+
+    return price_list
+
+
+def get_price(ticker_id, default=0):
+    price_list = get_price_list()
+    return price_list.get(ticker_id, default)
 
 
 def when_updated(when_updated, default=''):
@@ -62,13 +77,7 @@ def when_updated(when_updated, default=''):
     elif 2 <= (date - datetime.date(when_updated)).days < 10:
         result = str((date - datetime.date(when_updated)).days) + 'д. назад'
     else:
-        result = str(datetime.strftime(when_updated, '%Y-%m-%d %H:%M'))
+        result = format_date(when_updated, locale=current_user.locale.upper())
+        # result = str(datetime.strftime(when_updated, '%Y-%m-%d %H:%M'))
     return result
 
-
-def delete_transaction(transaction):
-    if transaction.order:
-        # Мистика
-        if transaction.alert:
-            db.session.delete(transaction.alert[0])
-    db.session.delete(transaction)

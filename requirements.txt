@@ -1,3 +1,4 @@
+alembic==1.12.0
 amqp==5.1.1
 async-timeout==4.0.2
 Babel==2.12.1
@@ -16,6 +17,7 @@ cymysql==0.9.18
 Flask==2.2.3
 flask-babel==3.1.0
 Flask-Login==0.6.2
+Flask-Migrate==4.0.5
 Flask-SQLAlchemy==3.0.3
 flower==1.2.0
 greenlet==2.0.2
@@ -25,8 +27,10 @@ importlib-metadata==6.1.0
 itsdangerous==2.1.2
 Jinja2==3.1.2
 kombu==5.2.4
+Mako==1.2.4
 MarkupSafe==2.1.2
 Pillow==10.0.0
+progress==1.6
 prometheus-client==0.16.0
 prompt-toolkit==3.0.38
 psycopg2-binary==2.9.5

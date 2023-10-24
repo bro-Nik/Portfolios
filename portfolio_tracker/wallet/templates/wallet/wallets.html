@@ -7,7 +7,7 @@
     {% set modal_fullscreen = True %}
   {% else %}
     {% extends "base.html" %}
-    {% block title %}{% trans %}Wallets{% endtrans %}{% endblock %}
+    {% block title %}{% trans %}Кошельки{% endtrans %}{% endblock %}
   {% endif %}
 {% endif %}
 
@@ -15,12 +15,12 @@
 <div class="mb-5">
   <div class="row xs-mb-3">
     <div class="col-auto">
-      <h1>{% trans %}Wallets{% endtrans %}</h1>
+      <h1>{% trans %}Кошельки{% endtrans %}</h1>
     </div>
     <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal" type="button" data-modal-id="WalletSettingsModal"
         data-url="{{ url_for('.wallet_settings') }}">
-        {% trans %}Add wallet{% endtrans %}
+        {% trans %}Добавить кошелек{% endtrans %}
       </button>
     </div>
   </div>
@@ -30,29 +30,24 @@
 <div class="row xs-mb-3">
 
   <div class="col-auto">
-    <p class="small-text">{% trans %}Общая сумма{% endtrans %}</p>
-    <span class="text-average">{{ (all_wallets.cost_now + all_wallets.in_orders + all_wallets.free)|user_currency }}</span>
+    <p class="small-text">{% trans %}Стоимость сейчас{% endtrans %}</p>
+    <span class="text-average {{ all_wallets.color }}">{{ all_wallets.cost_now|user_currency('big') }}</span>
   </div>
 
   <div class="col-auto">
-    <p class="small-text">{% trans %}Cost now{% endtrans %}</p>
-    <span class="text-average {{ all_wallets.color }}">{{ all_wallets.cost_now|user_currency }}</span>
+    <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
+    <span class="text-average">{{ all_wallets.in_orders|user_currency('big') }}</span>
   </div>
 
   <div class="col-auto">
-    <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
-    <span class="text-average">{{ all_wallets.in_orders|user_currency }}</span>
-  </div>
-
-  <div class="col-auto">
-    <p class="small-text">{% trans %}Free money{% endtrans %}</p>
-    <span class="text-average">{{ all_wallets.free|user_currency }}</span>
+    <p class="small-text">{% trans %}Свободные средства{% endtrans %}</p>
+    <span class="text-average">{{ all_wallets.free|user_currency('big') }}</span>
   </div>
 </div>
 
 <div class="big-table">
   {% set tab_name = 'wallets' %}
-  {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'cost' %}
+  {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'cost_now' %}
   {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
   <form id="WalletsForm" action="{{ url_for('.wallets_action') }}">
     <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
@@ -63,17 +58,17 @@
           <th class="main-tab-checkbox">
             <input class="form-check-input check-all" type="checkbox">
           </th>
-          <th data-sortable="true" data-field="name">{% trans %}Name{% endtrans %}</th>
-          <th data-sortable="true" data-field="cost" data-sort-name="cost_now">{% trans %}Cost now{% endtrans %}</th>
-          <th data-sortable="true" data-field="orers" data-sort-name="in_orders">{% trans %}Money in orders{% endtrans %}</th>
-          <th data-sortable="true" data-field="free" data-sort-name="in_free">{% trans %}Free money{% endtrans %}</th>
-          <th>{% trans %}Comment{% endtrans %}</th>
+          <th data-sortable="true" data-field="name">{% trans %}Название{% endtrans %}</th>
+          <th data-sortable="true" data-field="cost_now" data-sort-name="_cost_now">{% trans %}Стоимость сейчас{% endtrans %}</th>
+          <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}В ордерах{% endtrans %}</th>
+          <th data-sortable="true" data-field="free" data-sort-name="_free">{% trans %}Свободные средства{% endtrans %}</th>
+          <th>{% trans %}Комментарий{% endtrans %}</th>
           <th></th>
 
           <!-- For sorting -->
-          <th class="visually-hidden" data-field="cost_now">Cost now</th>
-          <th class="visually-hidden" data-field="in_orders">Money in orders</th>
-          <th class="visually-hidden" data-field="in_free">Free money</th>
+          <th class="visually-hidden" data-field="_cost_now"></th>
+          <th class="visually-hidden" data-field="_in_orders"></th>
+          <th class="visually-hidden" data-field="_free"></th>
         </tr>
       </thead>
       <tbody>
@@ -90,14 +85,14 @@
               </div>
             </td>
 
-            <td>{{ wallet.cost_now|user_currency if wallet.cost_now else '-' }}
+            <td>{{ wallet.cost_now|user_currency('big') if wallet.cost_now else '-' }}
             </td>
 
-            <td>{{ wallet.in_orders|user_currency if wallet.in_orders or wallet.cost_now else '-' }}</td>
+            <td>{{ wallet.in_orders|user_currency('big') if wallet.in_orders or wallet.cost_now else '-' }}</td>
 
             <td>
               {% if wallet.free != 0 or wallet.cost_now or wallet.in_orders %}
-                {{ '-' if wallet.free < 0 }}{{ wallet.free|abs|user_currency }}
+                {{ wallet.free|user_currency('big') }}
               {% else %}
                 -
               {% endif %}
@@ -117,20 +112,20 @@
                 <div class="dropdown-menu">
                   <a class="dropdown-item open-modal" data-modal-id="WalletSettingsModal"
                     data-url="{{ url_for('.wallet_settings', wallet_id=wallet.id) }}">
-                    {% trans %}Edit wallet{% endtrans %}
+                    {% trans %}Изменить кошелек{% endtrans %}
                   </a>
 
                   <a class="dropdown-item link-danger open-modal-confirmation"
-                    {% if wallet.is_empty %}
-                      data-title="{% trans name=wallet.name %}Remove wallet {{ name }}?{% endtrans %}"
+                    {% if wallet.is_empty() %}
+                      data-title="{% trans name=wallet.name %}Удалить кошелек {{ name }}?{% endtrans %}"
                       data-action="delete"
                     {% else %}
-                      data-title="{% trans name=wallet.name %}Remove wallet {{ name }} with contents?{% endtrans %}"
-                      data-text="{% trans %}All transactions associated with this wallet will be removed{% endtrans %}"
+                      data-title="{% trans name=wallet.name %}Удалить кошелек {{ name }} с содержимым?{% endtrans %}"
+                      data-text="{% trans %}Все транзакции, связанные с этим кошельком, будут удалены{% endtrans %}"
                       data-action="delete_with_contents"
                     {% endif %}
                     data-id="{{ wallet.id }}">
-                    {% trans %}Remove wallet{% endtrans %}
+                    {% trans %}Удалить кошелек{% endtrans %}
                   </a>
                 </div>
               </div>
@@ -149,13 +144,13 @@
     <!-- Actions buttons -->
     <div class="sticky-bottom-buttons">
       <a class="open-modal-confirmation" data-action="delete"
-        data-title="{% trans %}Remove wallets?{% endtrans %}"
-        data-text="{% trans %}Only empty wallets will be removed{% endtrans %}">
-        {% trans %}Remove{% endtrans %}</a>
+        data-title="{% trans %}Удалить кошельки?{% endtrans %}"
+        data-text="{% trans %}Будут удалены только пустые кошельки{% endtrans %}">
+        {% trans %}Удалить{% endtrans %}</a>
       <a class="open-modal-confirmation" data-action="delete_with_contents"
-        data-title="{% trans %}Remove wallets with contents?{% endtrans %}"
-        data-text="{% trans %}All transactions associated with these wallets will be removed{% endtrans %}">
-        {% trans %}Remove with contents{% endtrans %}</a>
+        data-title="{% trans %}Удалить кошельки с содержимым?{% endtrans %}"
+        data-text="{% trans %}Все транзакции, связанные с этими кошельками, будут удалены{% endtrans %}">
+        {% trans %}Удалить с содержимым{% endtrans %}</a>
     </div>
 
   </form>

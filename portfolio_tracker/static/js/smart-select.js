@@ -25,7 +25,7 @@ function UpdateSmartSelects($element = $("body")) {
     $select.wrap('<div class="smart-select-box"></div>');
     $('<div>', {
         class: 'smart-select' + (selectClass ? ' ' + selectClass : ''),
-        text: selectedOption.length ? selectedOption.text() : $select.attr('data-placeholder') || ' '
+        text: selectedOption.length ? selectedOption.text() : $select.attr('data-placeholder') || '-'
     }).insertAfter($select);
 
 
@@ -101,13 +101,27 @@ function GetOptions($select) {
   $.get($select.attr('data-url'), function (data) {
     data = $.parseJSON(data);
 
+    if (data.message) { // Error
+      var selectList = $select.next('.smart-select').next('.smart-select__list');
+      selectList.empty();
+      $('<div>', {
+        class: 'smart-select__item',
+        html: data.message 
+      })
+      .appendTo(selectList);
+      selectList.fadeIn(50);
+      return false;
+    } 
+
     $select.empty().append($('<option>', {value: '', text: ''}));
 
     for (let i = 0; i < data.length; i++) {
       var $newOption = $('<option>', {
         value: data[i].value,
         text: data[i].text
-      }).data('subtext', data[i].subtext)
+      })
+      .data('subtext', data[i].subtext)
+      .data('info', data[i].info)
 
       $select.append($newOption);
       if (data[i].value == selectedOptionValue) {
@@ -116,6 +130,7 @@ function GetOptions($select) {
     }
     $select.parent().find('.smart-select__list').empty();
     GenerateSelect($select);
+
   })
 }
 

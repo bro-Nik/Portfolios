@@ -2,35 +2,44 @@
 
 {% if not only_content %}
   {% extends "base.html" %}
-  {% block title %}{% trans %}Settings{% endtrans %}{% endblock %}
+  {% block title %}{% trans %}Настройки{% endtrans %}{% endblock %}
 {% endif %}
 
 {% block content %}
 <div class="mb-5">
   <div class="row xs-mb-3">
     <div class="col-auto">
-      <h1>{% trans %}Settings{% endtrans %}</h1>
+      <h1>{% trans %}Настройки{% endtrans %}</h1>
     </div>
   </div>
   {% include 'flash_messages.html' %}
 </div>
 
 <nav class="nav nav-underline market-menu mb-5">
-  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_profile') }}" href="{{ url_for('.settings_profile') }}">{% trans %}Profile{% endtrans %}</a>
-  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_export_import') }}" href="{{ url_for('.settings_export_import') }}">{% trans %}Export{% endtrans %}/{% trans %}Import{% endtrans %}</a>
+  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_profile') }}" href="{{ url_for('.settings_profile') }}">{% trans %}Профиль{% endtrans %}</a>
+  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_export_import') }}" href="{{ url_for('.settings_export_import') }}">{% trans %}Экспорт{% endtrans %}/{% trans %}Импорт{% endtrans %}</a>
 </nav>
 
 <div class="row">
   <div class="col-auto">
+    {% if current_user.info.last_visit %}
+      <p>{% trans %}Последняя активность: {% endtrans %}{{ current_user.info.last_visit|user_date }}</p>
+    {% endif %}
+
     <span class="">{{ current_user.email }}</span>
 
     <br>
     <form id="UserActions" class="d-grid" action="{{ url_for('user.user_action') }}">
-      <a class="link-danger open-modal-confirmation" data-title="{% trans %}Delete all profile data?{% endtrans %}" data-form="#UserActions" data-action="delete_data">
-        {% trans %}Clear profile{% endtrans %}
+      <a class="open-modal-confirmation" data-title="{% trans %}Пересчитаются все активы?{% endtrans %}"
+        data-text="{% trans %}Пересчитаются все активы на основе транзакций{% endtrans %}"
+        data-form="#UserActions" data-action="update_assets">
+        {% trans %}Пересчитать активы{% endtrans %}
       </a>
-      <a class="link-danger open-modal-confirmation" data-title="{% trans %}Delete profile?{% endtrans %}" data-form="#UserActions" data-action="delete_user">
-        {% trans %}Delete profile{% endtrans %}
+      <a class="link-danger open-modal-confirmation" data-title="{% trans %}Удалить все данные из профиля?{% endtrans %}" data-form="#UserActions" data-action="delete_data">
+        {% trans %}Очистить профиль{% endtrans %}
+      </a>
+      <a class="link-danger open-modal-confirmation" data-title="{% trans %}Удалить профиль?{% endtrans %}" data-form="#UserActions" data-action="delete_user">
+        {% trans %}Удалить профиль{% endtrans %}
       </a>
     </form>
   </div>

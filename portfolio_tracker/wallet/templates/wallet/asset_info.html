@@ -25,22 +25,26 @@
 
     <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal focus" type="button" data-modal-id="WalletInOutferModal"
-        data-url="{{ url_for('.transaction', asset_id=asset.id) }}">
-        {% trans %}Add transfer{% endtrans %}
+        data-url="{{ url_for('.transaction', wallet_id=asset.wallet_id, ticker_id=ticker.id) }}">
+        {% trans %}Добавить транзакцию{% endtrans %}
       </button>
       <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-        {% trans %}More{% endtrans %}
+        {% trans %}Еще{% endtrans %}
       </button>
       <div class="dropdown-menu">
-        <button class="dropdown-item open-modal" type="button" data-modal-id="AssetSettingsModal"
-          data-url="">
-          {% trans %}Edit asset{% endtrans %}
-        </button>
-
-        <form id="AssetActions" action="">
+        <form id="AssetActions" action="{{ url_for('wallet.assets_action', wallet_id=asset.wallet_id) }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
-            type="button" data-form="#AssetActions">
-            {% trans %}Remove asset{% endtrans %}
+            type="button" data-form="#AssetActions"
+            {% if asset.is_empty() %}
+              data-title="{% trans name=asset.ticker.name %}Удалить актив {{ name }}?{% endtrans %}"
+              data-action="delete"
+            {% else %}
+              data-title="{% trans name=asset.ticker.name %}Удалить актив {{ name }} с содержимым?{% endtrans %}"
+              data-text="{% trans %}Все транзакции в активе будут удалены{% endtrans %}"
+              data-action="delete_with_contents"
+            {% endif %}
+            data-id="{{ asset.id }}" data-pre-need-clean="true">
+            {% trans %}Удалить актив{% endtrans %}
           </button>
         </form>
       </div>
@@ -49,164 +53,166 @@
   {% include 'flash_messages.html' %}
 </div>
 
-{% if asset.all_transactions %}
+{% if asset.transactions %}
   <div class="row mb-5 xs-mb-3">
 
     <div class="col-auto">
-      <p class="small-text">{% trans %}Quantity{% endtrans %}</p>
+      <p class="small-text">{% trans %}Количество{% endtrans %}</p>
       <span class="text-average">{{ asset.quantity|other_currency(ticker.symbol) }}</span>
     </div>
 
     <div class="col-auto">
-      <p class="small-text">{% trans %}Cost now{% endtrans %}</p>
-      <span class="text-average">
-        {{ asset.cost_now|user_currency }}</span>
+      <p class="small-text">{% trans %}Стоимость сейчас{% endtrans %}</p>
+      <span class="text-average">{{ asset.cost_now|user_currency('big') }}</span>
     </div>
 
     <div class="col-auto">
-      <p class="small-text">{% trans %}Money in orders{% endtrans %}</p>
-      <span class="text-average"> {{ asset.in_orders|user_currency }}</span>
+      <p class="small-text">{% trans %}В ордерах на продажу{% endtrans %}</p>
+      <span class="text-average"> {{ asset.sell_orders|other_currency(ticker.symbol) }}</span>
     </div>
 
     <div class="col-auto">
-      <p class="small-text">{% trans %}Asset in orders{% endtrans %}</p>
-      <span class="text-average"> {{ asset.asset_in_orders|other_currency(ticker.symbol) }}</span>
+      <p class="small-text">{% trans %}В ордерах на покупку{% endtrans %}</p>
+      <span class="text-average"> {{ asset.buy_orders|user_currency('big') }}</span>
     </div>
 
   </div>
 
 <div class="big-table pt-3 pb-3">
-  <form id="TransactionsForm" action="{{ url_for('.transactions_action') }}">
+  <form id="WalletAssetTransactionsForm" action="{{ url_for('.transactions_action', wallet_id=asset.wallet_id, ticker_id=ticker.id) }}">
     <table class="table table-sm align-middle">
       <thead>
         <tr>
           <th class="main-tab-checkbox">
             <input class="form-check-input check-all" type="checkbox">
           </th>
-          <th>{% trans %}Type{% endtrans %}</th>
+          <th>{% trans %}Тип{% endtrans %}</th>
           <th>{% trans %}Связь{% endtrans %}</th>
-          <th>{% trans %}Price{% endtrans %}</th>
-          <th>{% trans %}Amount{% endtrans %}</th>
-          <th>{% trans %}Comment{% endtrans %}</th>
+          <th>{% trans %}Цена{% endtrans %}</th>
+          <th>{% trans %}Количество{% endtrans %}</th>
+          <th>{% trans %}Комментарий{% endtrans %}</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
-        {% for transaction in asset.all_transactions|sort(reverse=true, attribute="date") %}
-        {% if transaction.asset %}
-          {% set url = url_for('portfolio.transaction', asset_id=transaction.asset_id, transaction_id=transaction.id) %}
-        {% else %}
-          {% set url = url_for('wallet.transaction', asset_id=transaction.wallet_asset_id, transaction_id=transaction.id) %}
-        {% endif %}
+        {% for transaction in asset.transactions|sort(reverse=true, attribute="date") %}
+          {% if transaction.portfolio_asset %}
+            {% set url = url_for('portfolio.transaction', portfolio_id=transaction.portfolio_id, ticker_id=ticker.id, transaction_id=transaction.id) %}
+          {% else %}
+            {% set url = url_for('wallet.transaction', wallet_id=asset.wallet_id, ticker_id=asset.ticker_id, transaction_id=transaction.id) %}
+          {% endif %}
+          {% set quantity = transaction.quantity %}
+          {% set color = 'text-green' if quantity > 0 else 'text-red' %}
 
-        <tr class="{{ 'table-order' if transaction.order }}">
+          <tr class="{{ 'table-order' if transaction.order }}">
 
-          <td>
-            <input class="form-check-input to-check" type="checkbox" value="{{ transaction.id }}">
-          </td>
+            <td>
+              <input class="form-check-input to-check" type="checkbox" value="{{ transaction.id }}">
+            </td>
 
-          <td>
-            <div class="open-modal" data-modal-id="TransactionModal"
-              data-url="{{ url }}">
-              <span class="{{ transaction.color }}">{{ transaction.type_name }}</span>
-              {{ '(' + gettext('Order') + ')' if transaction.order }}
-              <br>
-              <span class="small-text">{{ transaction.date|user_date }}</span>
-            </div>
-          </td>
+            <td>
+              <div class="open-modal" data-modal-id="TransactionModal" data-url="{{ url }}">
+                <span class="{{ color }}">{{ gettext(transaction.type) }}</span>
+                {{ '(' + gettext('Ордер') + ')' if transaction.order }}<br>
+                <span class="small-text">{{ transaction.date|user_date }}</span>
+              </div>
+            </td>
 
-          <td>
-            {% if transaction.asset %}
-              <span class="link-secondary open-modal" data-modal-id="AssetInfoModal" data-url="{{ url_for('portfolio.asset_info', market=transaction.asset.portfolio.market, asset_id=transaction.asset_id) }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0zM1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5z" /></svg>
-                {{ transaction.asset.portfolio.name }}
-              </span>
-            {% else %}
-              {% if transaction.related %}
-                <span class="link-secondary open-modal" data-modal-id="Wallet2AssetInfoModal"
-                  data-url="{{ url_for('.asset_info', asset_id=transaction.related.wallet_asset_id) }}">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M12.136.326A1.5 1.5 0 0 1 14 1.78V3h.5A1.5 1.5 0 0 1 16 4.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.432-1.499L12.136.326zM5.562 3H13V1.78a.5.5 0 0 0-.621-.484L5.562 3zM1.5 4a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z" /></svg>
-                  {{ transaction.related.wallet_asset.wallet.name }}
+            <td>
+              {% if transaction.portfolio_asset %}
+                <span class="link-secondary open-modal" data-modal-id="AssetInfoModal"
+                  data-url="{{ url_for('portfolio.asset_info', portfolio_id=transaction.portfolio_id, ticker_id=transaction.ticker_id) }}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0zM1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5z" /></svg>
+                  {{ transaction.portfolio.name }}
                 </span>
               {% else %}
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M12.136.326A1.5 1.5 0 0 1 14 1.78V3h.5A1.5 1.5 0 0 1 16 4.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.432-1.499L12.136.326zM5.562 3H13V1.78a.5.5 0 0 0-.621-.484L5.562 3zM1.5 4a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z" /></svg>
-                Удален
+                {% if transaction.related_transaction %}
+                  <span class="link-secondary open-modal" data-modal-id="Wallet2AssetInfoModal"
+                    {% set transaction2 = transaction.related_transaction %}
+                    data-url="{{ url_for('wallet.asset_info', wallet_id=transaction2.wallet_id, ticker_id=transaction2.ticker_id) }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M12.136.326A1.5 1.5 0 0 1 14 1.78V3h.5A1.5 1.5 0 0 1 16 4.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.432-1.499L12.136.326zM5.562 3H13V1.78a.5.5 0 0 0-.621-.484L5.562 3zM1.5 4a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z" /></svg>
+                    {{ transaction2.wallet.name }}
+                  </span>
+                {% else %}
+                  <span class="text-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M12.136.326A1.5 1.5 0 0 1 14 1.78V3h.5A1.5 1.5 0 0 1 16 4.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.432-1.499L12.136.326zM5.562 3H13V1.78a.5.5 0 0 0-.621-.484L5.562 3zM1.5 4a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z" /></svg>
+                    Удален
+                  </span>
+                {% endif %}
               {% endif %}
-            {% endif %}
-          </td>
+            </td>
 
-          <td>
-            {# transaction from portfolio #}
-            {% if transaction.asset %}
-              {% if current_user.currency != transaction.against_ticker.symbol %}
-                {{ transaction.price|smart_round|other_currency(transaction.against_ticker.symbol) }}
+            <td>
+              {# transaction from portfolio #}
+              {% if transaction.portfolio_asset %}
+                {% if current_user.currency != transaction.quote_ticker.symbol %}
+                  {{ transaction.price|other_currency(transaction.quote_ticker.symbol) }}
+                  <br>
+                {% endif %}
+                {{ transaction.price_usd|user_currency }}
+              {# transaction from wallet #}
+              {% else %}
+              -
+              {% endif %}
+            </td>
+
+            <td>
+              {# transaction from portfolio #}
+              {% if transaction.portfolio_asset %}
+                {% if current_user.currency != transaction.quote_ticker.symbol %}
+                {{ '+' if transaction.quantity2 > 0 }}{{ transaction.quantity2|other_currency(transaction.quote_ticker.symbol, 'big') }}
+                  <br>
+                {% endif %}
+                {{ '+' if transaction.quantity2 > 0 }}{{ (transaction.quantity * transaction.price_usd * -1)|user_currency('big') }}
                 <br>
+                <span class="text-average small-text {{ color }}">
+                  {{ '+' if transaction.quantity > 0 }}{{ transaction.quantity|smart_round|other_currency(ticker.symbol) }}
+                </span>
+              {# transaction from wallet #}
+              {% else %}
+                <span class="text-average small-text {{ color }}">
+                  {{ transaction.quantity|other_currency(ticker.symbol) }}
+                </span>
               {% endif %}
-              {{ transaction.price|smart_round|user_currency }}
-            {# transaction from wallet #}
-            {% else %}
-            -
-            {% endif %}
-          </td>
+            </td>
 
-          <td>
-            {# transaction from portfolio #}
-            {% if transaction.asset %}
-              {% if current_user.currency != transaction.against_ticker.symbol %}
-                {{ '-' if transaction.type[0] == '+' else '+' }}{{ transaction.amount|abs|smart_int|other_currency(transaction.against_ticker.symbol) }}
-                <br>
-              {% endif %}
-              {{ '-' if transaction.type[0] == '+' else '+' }}{{ (transaction.quantity * transaction.price_usd)|abs|user_currency }}
-              <br>
-              <span class="text-average small-text {{ transaction.color }}">
-                {{ transaction.type[0] }}{{ transaction.quantity|abs|smart_round|other_currency(ticker.symbol) }}
-              </span>
-            {# transaction from wallet #}
-            {% else %}
-              <span class="text-average small-text {{ transaction.color }}">
-                {{ transaction.type[0] }}{{ transaction.amount|abs|smart_round|other_currency(ticker.symbol) }}
-              </span>
-            {% endif %}
-          </td>
+            <td>
+              <div class="d-flex comment">
+                <span class="text-truncate">{{ transaction.comment if transaction.comment }}</span>
+              </div>
+            </td>
 
-          <td>
-            <div class="d-flex comment">
-              <span class="text-truncate">{{ transaction.comment if transaction.comment }}</span>
-            </div>
-          </td>
-
-          <td class="align-middle text-end">
-            <div class="d-flex justify-content-end">
-              {% if transaction.order %}
-                <a class="link-secondary open-modal-confirmation" data-id="{{ transaction.id }}"
-                  data-title="{% trans %}Did the order work?{% endtrans %}"
-                  data-text="{% trans %}The order will be marked as worked{% endtrans %}"
-                  data-action="convert_to_transaction"
-                  title="{% trans %}The order worked{% endtrans %}">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.235.235 0 0 1 .02-.022z"/></svg>
-                </a>
-              {% endif %}
-              <div class="dropdown dropstart">
-                <a href="#" class="link-secondary" role="button" id="dropdownAction"
-                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-	                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
-                </a>
-                <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                  <a class="dropdown-item open-modal" data-modal-id="TransactionModal"
-                    data-url="">
-                    {% trans %}Edit transaction{% endtrans %}
+            <td class="align-middle text-end">
+              <div class="d-flex justify-content-end">
+                {% if transaction.order %}
+                  <a class="link-secondary open-modal-confirmation" data-id="{{ transaction.id }}"
+                    data-title="{% trans %}Ордер сработал?{% endtrans %}"
+                    data-text="{% trans %}Ордер будет помечен как выполненный{% endtrans %}"
+                    data-action="convert_to_transaction"
+                    title="{% trans %}Ордер сработал{% endtrans %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.235.235 0 0 1 .02-.022z"/></svg>
                   </a>
-                  <a class="dropdown-item link-danger open-modal-confirmation" 
-                    data-action="delete" data-id="{{ transaction.id }}"
-                    data-title="{% trans %}Remove transaction?{% endtrans %}"
-                    data-text="{% trans %}Are you sure you want to remove this transaction?{% endtrans %}">
-                    {% trans %}Remove transaction{% endtrans %}
+                {% endif %}
+                <div class="dropdown dropstart">
+                  <a href="#" class="link-secondary" role="button" id="dropdownAction"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
                   </a>
+                  <div class="dropdown-menu" aria-labelledby="dropdownAction">
+                    <a class="dropdown-item open-modal" data-modal-id="TransactionModal"
+                      data-url="{{ url }}">{% trans %}Изменить транзакцию{% endtrans %}
+                    </a>
+                    <a class="dropdown-item link-danger open-modal-confirmation" 
+                      data-action="delete" data-id="{{ transaction.id }}"
+                      data-title="{% trans %}Удалить транзакцию?{% endtrans %}"
+                      data-text="{% trans %}Вы уверены, что хотите удалить эту транзакцию?{% endtrans %}">
+                      {% trans %}Удалить транзакцию{% endtrans %}
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
-          </td>
-        </tr>
+            </td>
+          </tr>
         {% endfor %}
       </tbody>
     </table>
@@ -214,18 +220,18 @@
     <!-- Actions buttons -->
     <div class="sticky-bottom-buttons">
       <a class="open-modal-confirmation" data-action="delete"
-        data-title="{% trans %}Remove transactions?{% endtrans %}"
-        data-text="{% trans %}Are you sure you want to remove these transactions?{% endtrans %}">
-        {% trans %}Remove{% endtrans %}</a>
+        data-title="{% trans %}Удалить транзакции?{% endtrans %}"
+        data-text="{% trans %}Вы уверены, что хотите удалить эти транзакции?{% endtrans %}">
+        {% trans %}Удалить{% endtrans %}</a>
     </div>
 
   </form>
 </div>
 {% else %}
-  <div class="nothing-box">{% trans %}There's nothing yet...{% endtrans %}</div>
+  <div class="nothing-box">{% trans %}Пока ничего нет...{% endtrans %}</div>
 {% endif %}
 
-<div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Add comment') }}"
+<div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Добавить комментарий') }}"
   data-url="">
   <span class="convert-data"></span>
 </div>

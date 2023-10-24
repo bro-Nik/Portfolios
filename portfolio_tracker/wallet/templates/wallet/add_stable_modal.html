@@ -1,13 +1,13 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = gettext('Add asset') %}
+{% set modal_title = gettext('Добавить актив') %}
 
 {% block content %}
 
 <div id="AssetsGeneralBox" class="add-tickers-box">
   <div class="search">
-    <input class="border rounded-3 w-100 mb-3 px-3 focus" placeholder="{% trans %}Search{% endtrans %}"></input>
+    <input class="border rounded-3 w-100 mb-3 px-3 focus" placeholder="{% trans %}Поиск{% endtrans %}"></input>
   </div> 
   <div id="AssetsBox" class="overflow-y-auto">
     <div id="AssetsList" class="hover-child-color" data-page="1">
@@ -84,7 +84,7 @@ $('#AssetsBox').scroll(function(){
 
 $('#AssetsList').on("click", '.select-asset', function () {
 
-  var ticker_id = "?ticker_id=" + $(this).data('ticker-id'),
+  var ticker_id = "&ticker_id=" + $(this).data('ticker-id'),
     market = "&market=" + $(this).data('market'),
     url = "{{ url_for('.stable_add', wallet_id=wallet_id) }}" + ticker_id + market,
     $modal = $(this).closest('.modal'),
@@ -94,7 +94,7 @@ $('#AssetsList').on("click", '.select-asset', function () {
   $.get(url).done(function (data) {
     if (data) {
       $modal.addClass('not-update').modal('hide');
-      LoadToModal('AssetInfoModal', data, true, pre_modal_id);
+      LoadToModal('WalletAssetInfoModal', data, true, pre_modal_id);
     } else {
       $modal.attr('data-pre-need-update', true).modal('hide');
     }

@@ -9,3 +9,4 @@ celerybeat-schedule
 dump.rdb
 pyrightconfig.json
 messages.pot
+test.py

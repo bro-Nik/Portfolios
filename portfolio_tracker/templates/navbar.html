@@ -6,7 +6,7 @@
       <span class="fs-4">Portfolios</span>
     </a>
     <span class="link-secondary open-modal d-flex align-items-center" data-modal-id="WorkedAlertsModal"
-      data-url="{{ url_for('whitelist.tickers', status='worked', modal=True) }}">
+      data-url="{{ url_for('watchlist.assets', status='worked', modal=True) }}">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z" /></svg>
       <div id="WorkedAlertsCount" class="position-relative"></div>
     </span>
@@ -18,21 +18,21 @@
       <a href="{{ url_for('portfolio.portfolios') }}" aria-current="page"
         class="nav-link {{ 'active' if request.blueprint == 'portfolio' else 'link-body-emphasis' }}">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0zM1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5z" /></svg>
-        {% trans %}Portfolios{% endtrans %}
+        {% trans %}Портфели{% endtrans %}
       </a>
     </li>
     <li>
       <a href="{{ url_for('wallet.wallets') }}"
         class="nav-link {{ 'active' if request.blueprint == 'wallet' else 'link-body-emphasis' }}">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M12.136.326A1.5 1.5 0 0 1 14 1.78V3h.5A1.5 1.5 0 0 1 16 4.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.432-1.499L12.136.326zM5.562 3H13V1.78a.5.5 0 0 0-.621-.484L5.562 3zM1.5 4a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z" /></svg>
-        {% trans %}Wallets{% endtrans %}
+        {% trans %}Кошельки{% endtrans %}
       </a>
     </li>
     <li>
-      <a href="{{ url_for('whitelist.tickers') }}"
-        class="nav-link {{ 'active' if request.blueprint == 'whitelist' else 'link-body-emphasis' }}">
+      <a href="{{ url_for('watchlist.assets') }}"
+        class="nav-link {{ 'active' if request.blueprint == 'watchlist' else 'link-body-emphasis' }}">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z" /><path d="M2.242 2.194a.27.27 0 0 1 .516 0l.162.53c.035.115.14.194.258.194h.551c.259 0 .37.333.164.493l-.468.363a.277.277 0 0 0-.094.3l.173.569c.078.256-.213.462-.423.3l-.417-.324a.267.267 0 0 0-.328 0l-.417.323c-.21.163-.5-.043-.423-.299l.173-.57a.277.277 0 0 0-.094-.299l-.468-.363c-.206-.16-.095-.493.164-.493h.55a.271.271 0 0 0 .259-.194l.162-.53zm0 4a.27.27 0 0 1 .516 0l.162.53c.035.115.14.194.258.194h.551c.259 0 .37.333.164.493l-.468.363a.277.277 0 0 0-.094.3l.173.569c.078.255-.213.462-.423.3l-.417-.324a.267.267 0 0 0-.328 0l-.417.323c-.21.163-.5-.043-.423-.299l.173-.57a.277.277 0 0 0-.094-.299l-.468-.363c-.206-.16-.095-.493.164-.493h.55a.271.271 0 0 0 .259-.194l.162-.53zm0 4a.27.27 0 0 1 .516 0l.162.53c.035.115.14.194.258.194h.551c.259 0 .37.333.164.493l-.468.363a.277.277 0 0 0-.094.3l.173.569c.078.255-.213.462-.423.3l-.417-.324a.267.267 0 0 0-.328 0l-.417.323c-.21.163-.5-.043-.423-.299l.173-.57a.277.277 0 0 0-.094-.299l-.468-.363c-.206-.16-.095-.493.164-.493h.55a.271.271 0 0 0 .259-.194l.162-.53z" /></svg>
-        {% trans %}Whitelist{% endtrans %}
+        {% trans %}Избранное{% endtrans %}
       </a>
     </li>
     <li>
@@ -40,45 +40,46 @@
       <a href="{{ url_for('admin.index') }}"
         class="nav-link {{ 'active' if request.blueprint == 'admin' else 'link-body-emphasis' }}">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z" /></svg>
-        {% trans %}Admin{% endtrans %}
+        {% trans %}Админ{% endtrans %}
       </a>
       {% endif %}
     </li>
   </ul>
-  <div class="d-flex">
+
+  <div class="d-flex align-items-center">
     <div>
-      <select class="form-select border-0 bg-transparent"
+      <select class="form-select border-0 link-secondary bg-transparent"
         data-url="{{ url_for('user.ajax_locales') }}"
         data-action-url="{{ url_for('user.change_locale') }}">
         <option selected value="{{ current_user.locale }}">{{ current_user.locale|upper }}</option>
       </select>
     </div>
     <div>
-      <select class="form-select border-0 bg-transparent"
+      <select class="form-select border-0 link-secondary bg-transparent"
         data-url="{{ url_for('wallet.ajax_currencies') }}"
         data-action-url="{{ url_for('user.change_currency') }}">
         <option selected value="{{ current_user.currency }}">{{ current_user.currency|upper }}</option>
       </select>
     </div>
-
   </div>
+
   <hr>
   <div class="dropdown">
     <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle link-secondary"
-      data-bs-toggle="dropdown" aria-expanded="false">
+      data-bs-toggle="dropdown" aria-expanded="false" title="{{ current_user.email[0 : current_user.email.find("@")] }}">
       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-person-circle me-2" viewBox="0 0 16 16"><path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/></svg>
       <strong>{{ current_user.email[0 : current_user.email.find("@")] }}</strong>
     </a>
-    <ul class="dropdown-menu text-small shadow" style="">
+    <ul class="dropdown-menu" style="">
       {% if current_user.type != 'demo' %}
       <li>
         <a class="dropdown-item" href="{{ url_for('user.settings_export_import') }}">
-          {% trans %}Export{% endtrans %}/{% trans %}Import{% endtrans %}
+          {% trans %}Экспорт{% endtrans %}/{% trans %}Импорт{% endtrans %}
         </a>
       </li>
       <li>
         <a class="dropdown-item" href="{{ url_for('user.settings_profile') }}">
-          {% trans %}Settings{% endtrans %}
+          {% trans %}Настройки{% endtrans %}
         </a>
       </li>
       <li>
@@ -86,12 +87,12 @@
       </li>
       <li>
         <a class="dropdown-item" href="{{ url_for('user.logout') }}">
-          {% trans %}Log out{% endtrans %}
+          {% trans %}Выход{% endtrans %}
         </a>
       </li>
       {% else %}
         <li>
-          <a class="dropdown-item" href="{{ url_for('user.register') }}">{% trans %}Sign Up{% endtrans %}</a>
+          <a class="dropdown-item" href="{{ url_for('user.register') }}">{% trans %}Регистрация{% endtrans %}</a>
         </li>
       {% endif %}
     </ul>

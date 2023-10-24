@@ -1,13 +1,13 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = gettext('Add asset') %}
+{% set modal_title = gettext('Добавить актив') %}
 
 {% block content %}
 
 <div id="AssetsGeneralBox" class="add-tickers-box">
   <div class="search">
-    <input class="border rounded-3 w-100 mb-3 px-3 focus" placeholder="{% trans %}Search{% endtrans %}"></input>
+    <input class="border rounded-3 w-100 mb-3 px-3 focus" placeholder="{% trans %}Поиск{% endtrans %}"></input>
   </div> 
   <div id="AssetsBox" class="overflow-y-auto">
     <div id="AssetsList" class="hover-child-color" data-page="1">
@@ -82,15 +82,16 @@ $('#AssetsBox').scroll(function(){
 });
 	
 // For portfolio or for whitelist
-{% set url = url_for('.asset_add', portfolio_id=portfolio_id) if portfolio_id else url_for('whitelist.add_ticker') %}
+{% set url = url_for('portfolio.asset_add', portfolio_id=portfolio_id) if portfolio_id else url_for('watchlist.asset_add') %}
 
 $('#AssetsList').on("click", '.select-asset', function () {
 
-  var ticker_id = "?ticker_id=" + $(this).attr('data-ticker-id'),
-    url = "{{ url }}" + ticker_id,
+  var ticker_id = $(this).attr('data-ticker-id'),
+    url = "{{ url }}",
     $modal = $(this).closest('.modal'),
     pre_modal_id = $modal.attr('data-pre-modal-id');
 
+    url += (url.indexOf("?") > 0 ? "&" : "?") + "ticker_id=" + ticker_id;
 
   $.get(url).done(function (data) {
     if (data) {

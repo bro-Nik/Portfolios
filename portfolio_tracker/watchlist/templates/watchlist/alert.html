@@ -1,0 +1,81 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+
+{% set modal_title = gettext('Изменить уведомление') if alert else gettext('Добавить уведомление') %}
+
+{% if alert %}
+  {% set selected_ticker = alert.price_ticker %}
+{% else %}
+  {% set selected_ticker = current_user.currency_ticker %}
+{% endif %}
+
+{% block content %}
+<form data-url="{{ url_for('watchlist.alert_update', ticker_id=watchlist_asset.ticker_id, asset_id=asset_id, alert_id=alert.id) }}">
+  <div class="row g-2">
+
+    <div class="col-md-12">
+      <div id="alertPrice" class="mb-1">
+        <label class="d-flex form-label h7">{% trans %}Цена{% endtrans %}
+          <span class="small-text ms-auto">
+            Цена сейчас: <span class="price-now"></span>
+          </span>
+        </label>
+        <div class="input-group mb-1">
+          <div class="col-3">
+            <select name="price_ticker_id" class="form-select" tabindex="-1"
+              data-url="{{ url_for('.ajax_stable_assets', ticker_id=watchlist_asset.ticker_id) }}" required {{ 'disabled' if alert.transaction }}>
+              <option selected value="{{ selected_ticker.id }}"
+                data-info="{{ selected_ticker.get_price() * watchlist_asset.price }}">
+                {{ selected_ticker.symbol|upper }}</option>
+            </select>
+          </div>
+          <input type="number" step="any" min="0.000001" class="form-control focus"
+            value="{{ alert.price if alert else watchlist_asset.price }}"
+            name="price" autocomplete="off" required {{ 'disabled' if alert.transaction }}>
+        </div>
+        <span class="small-text alert-price-info"></span>
+      </div>
+    </div>
+
+    <span class="mb-3 cursor-pointer text-primary show-more">+ {% trans %}Комментарий{% endtrans %}</span>
+
+    <div class="show-more-content" style="display: none;">
+      <div class="col-md-12">
+        <div class="mb-3">
+          <label class="form-label h7">{% trans %}Комментарий{% endtrans %}</label>
+          <textarea class="form-control" name="comment">{{ alert.comment if alert.comment }}</textarea>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
+</form>
+
+<script>
+  $('#alertPrice').on('input', 'input[name=price]', function () {
+    var $selected = $('select[name=price_ticker_id] option:selected'),
+      price_now = +$selected.data('info'),
+      symbol = $selected.text(),
+      alert_price = +$(this).val(),
+      up = "{{ gettext('Когда цена выше') }}",
+      down = "{{ gettext('Когда цена ниже') }}";
+
+    if (alert_price > price_now) {
+      $('#alertPrice .alert-price-info').text(up + ' ' + alert_price + ' ' + symbol);
+    } else {
+      $('#alertPrice .alert-price-info').text(down + ' ' + alert_price + ' ' + symbol);
+    }
+  })
+
+  $('#alertPrice').on('change', 'select[name=price_ticker_id]', function () {
+    var $selected = $(this).find('option:selected'),
+      price_now = +$selected.data('info'),
+      symbol = $selected.text();
+    $('#alertPrice').find('.price-now').text(price_now + ' ' + symbol)
+    $('#alertPrice').find('input[name=price]').trigger('input');
+  })
+  $('#alertPrice select[name=price_ticker_id]').trigger('change');
+
+</script>
+{% endblock %}

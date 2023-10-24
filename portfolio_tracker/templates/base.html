@@ -35,8 +35,8 @@
           <div class="modal-text px-5 text-center text-muted small-text"></div>
           <div class="modal-body d-flex gap-2 justify-content-center">
             <button class="btn btn-danger rounded-3 action" type="button"
-              data-bs-dismiss="modal"><strong>{{ gettext('Yes')}}</strong></button>
-            <button class="btn rounded-3" type="button" data-bs-dismiss="modal" aria-label="Close">{{ gettext('Cancel')}}</button>
+              data-bs-dismiss="modal"><strong>{{ gettext('Да')}}</strong></button>
+            <button class="btn rounded-3" type="button" data-bs-dismiss="modal" aria-label="Close">{{ gettext('Отмена')}}</button>
           </div>
         </div>
       </div>
@@ -45,15 +45,16 @@
   </div>
 
   <div id="footer">{% block footer %}{% endblock %}</div>
+
 </div>
 <script>
   var trans = {
-    btn_save: "{{ gettext('Save') }}",
-    btn_cancel: "{{ gettext('Cancel') }}",
-    selected: "{{ gettext('Selected:') }}",
-    search: "{{ gettext('Search') }}",
-    loading: "{{ gettext('Loading...') }}",
-    nothing_found: "{{ gettext('Nothing found') }}"
+    btn_save: "{{ gettext('Сохранить') }}",
+    btn_cancel: "{{ gettext('Отмена') }}",
+    selected: "{{ gettext('Отмечено:') }}",
+    search: "{{ gettext('Поиск') }}",
+    loading: "{{ gettext('Загрузка...') }}",
+    nothing_found: "{{ gettext('Ничего не найдено') }}"
   }
 </script>
 
@@ -69,8 +70,8 @@
   function updateAlerts() {
     $('#WorkedAlertsCount').load("{{ url_for('worked_alerts_count') }}");
   }
-  updateAlerts();
-  setInterval(updateAlerts,10000);
+  //updateAlerts();
+  //setInterval(updateAlerts,10000);
 </script>
 
 </body>

@@ -2,42 +2,42 @@
 
 {% if not only_content %}
   {% extends "base.html" %}
-  {% block title %}{% trans %}Settings{% endtrans %}{% endblock %}
+  {% block title %}{% trans %}Настройки{% endtrans %}{% endblock %}
 {% endif %}
 
 {% block content %}
 <div class="mb-5">
   <div class="row xs-mb-3">
     <div class="col-auto">
-      <h1>{% trans %}Settings{% endtrans %}</h1>
+      <h1>{% trans %}Настройки{% endtrans %}</h1>
     </div>
   </div>
   {% include 'flash_messages.html' %}
 </div>
 
 <nav class="nav nav-underline market-menu mb-5">
-  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_profile') }}" href="{{ url_for('.settings_profile') }}">{% trans %}Profile{% endtrans %}</a>
-  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_export_import') }}" href="{{ url_for('.settings_export_import') }}">{% trans %}Export{% endtrans %}/{% trans %}Import{% endtrans %}</a>
+  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_profile') }}" href="{{ url_for('.settings_profile') }}">{% trans %}Профиль{% endtrans %}</a>
+  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_export_import') }}" href="{{ url_for('.settings_export_import') }}">{% trans %}Экспорт{% endtrans %}/{% trans %}Импорт{% endtrans %}</a>
 </nav>
 
 <div>
-  <h6>{% trans %}Export{% endtrans %}</h6>
+  <h6>{% trans %}Экспорт{% endtrans %}</h6>
   <div class="row">
     <div class="col-md-12 mb-3">
-      <a class="text-decoration-none" href="{{ url_for('.export_data')}}">{% trans %}Download{% endtrans %}</a>
+      <a class="text-decoration-none" href="{{ url_for('.export_data')}}">{% trans %}Скачать{% endtrans %}</a>
     </div>
   </div>
 </div>
 
 <div>
-  <h6>{% trans %}Import{% endtrans %}</h6>
+  <h6>{% trans %}Импорт{% endtrans %}</h6>
   <form method="post" action="{{ url_for('user.import_data_post') }}">
     <div class="row">
       <div class="col-md-12 mb-3">
         <textarea class="form-control" name="import" rows="15"></textarea>
       </div>
     </div>
-    <button class="btn btn-primary btn-sm" type="submit">{% trans %}Import{% endtrans %}</button>
+    <button class="btn btn-primary btn-sm" type="submit">{% trans %}Импорт{% endtrans %}</button>
   </form>
 </div>
 

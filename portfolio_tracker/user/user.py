@@ -1,22 +1,20 @@
-from hashlib import new
 import json
 from flask import Response, jsonify, render_template, redirect, send_file, url_for, request, flash, session, Blueprint
 from flask_babel import gettext
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.urls import url_parse
 from datetime import datetime
 import requests
-import pickle
 
 from portfolio_tracker.app import db, login_manager, redis, app
 from portfolio_tracker.general_functions import float_
-from portfolio_tracker.models import Alert, Asset, Portfolio, Transaction, User, WalletAsset, WalletTransaction, WhitelistTicker, userInfo, Wallet
-from portfolio_tracker.wallet.wallet import get_wallet_asset
-from portfolio_tracker.whitelist.whitelist import get_whitelist_ticker
+from portfolio_tracker.models import Alert, Asset, Portfolio, Ticker, Transaction, User, WalletAsset, WatchlistAsset, userInfo, Wallet
+from portfolio_tracker.watchlist.watchlist import get_watchlist_asset
 
 
 login_manager.login_view = 'user.login'
-login_manager.login_message = gettext('Please log in to access this page')
+login_manager.login_message = gettext('Пожалуйста, войдите, чтобы получить доступ к этой странице')
 login_manager.login_message_category = 'danger'
 
 
@@ -37,11 +35,11 @@ def register():
         password2 = request.form.get('password2')
 
         if not (email and password and password2):
-            flash(gettext('Fill in your Email, password and confirmation password'), 'danger')
+            flash(gettext('Заполните адрес электронной почты, пароль и подтверждение пароля'), 'danger')
         elif get_user(email):
-            flash(gettext('This Email address is already in use'), 'danger')
+            flash(gettext('Данный почтовый ящик уже используется'), 'danger')
         elif password != password2:
-            flash(gettext('Password and confirmation password do not match'), 'danger')
+            flash(gettext('Пароли не совпадают'), 'danger')
         else:
             hash_password = generate_password_hash(password)
             new_user = User(email=email,
@@ -50,14 +48,15 @@ def register():
                             currency='usd')
             db.session.add(new_user)
 
-            new_user.wallets.append(Wallet(name=gettext('Default Wallet')))
             new_user.info = userInfo(first_visit=datetime.now())
+            create_first_wallet(new_user)
 
             db.session.commit()
 
             return redirect(url_for('.login'))
 
     return render_template('user/register.html', locale=get_locale())
+
 
 
 @user.route('/login', methods=['GET', 'POST'])
@@ -70,18 +69,18 @@ def login():
         password = request.form.get('password')
 
         if not email or not password:
-            flash(gettext('Enter your Email and password'), 'danger')
+            flash(gettext('Введити адрес электронной почты и пароль'), 'danger')
 
         user = get_user(email)
         if user and check_password_hash(user.password, password):
             login_user(user, remember=request.form.get('remember-me')) 
             new_visit()
-            if request.args.get('next'):
-                return redirect(request.args.get('next'))
-            else:
-                return redirect(url_for('portfolio.portfolios'))
+            next_page = request.args.get('next')
+            if not next_page or url_parse(next_page).netloc != '':
+                next_page = redirect(url_for('portfolio.portfolios'))
+            return redirect(next_page)
         else:
-            flash(gettext('Invalid Email or password'), 'danger')
+            flash(gettext('Неверный адрес электронной почты или пароль'), 'danger')
 
     return render_template('user/login.html', locale=get_locale())
 
@@ -114,49 +113,62 @@ def user_action():
     action = data.get('action')
 
     if action == 'delete_user':
-        user_delete_def(current_user.id)
+        user_delete_def(current_user.id, 'delete_user')
         return {'redirect': str(url_for('.login'))}
 
     elif action == 'delete_data':
+        user_delete_def(current_user.id)
+        create_first_wallet(current_user)
+        flash(gettext('Профиль очищен'), 'success')
+
+    elif action == 'update_assets':
+        for wallet in current_user.wallets:
+            for asset in wallet.wallet_assets:
+                asset.quantity = 0
+                asset.buy_orders = 0
+                asset.sell_orders = 0
+                for transaction in asset.transactions:
+                    if transaction.type not in ('Buy', 'Sell'):
+                        transaction.update_dependencies()
         for portfolio in current_user.portfolios:
             for asset in portfolio.assets:
+                asset.quantity = 0
+                asset.in_orders = 0
+                asset.amount = 0
                 for transaction in asset.transactions:
-                    db.session.delete(transaction)
-                db.session.delete(asset)
-            db.session.delete(portfolio)
-        for wallet in current_user.wallets:
-            db.session.delete(wallet)
-        for whitelist_ticker in current_user.whitelist_tickers:
-            for alert in whitelist_ticker.alerts:
-                db.session.delete(alert)
-            db.session.delete(whitelist_ticker)
+                    transaction.update_dependencies()
 
-        create_first_wallet()
+        db.session.commit()
+        flash(gettext('Активы пересчитаны'), 'success')
+
+        
 
     db.session.commit()
-    flash(gettext('Profile cleared'), 'success')
 
     return ''
 
 
-def create_first_wallet():
-    wallet = Wallet(name=gettext('Default Wallet'))
-    wallet.wallet_assets.append(WalletAsset(ticker_id='cu-usd'))
-    current_user.wallets.append(wallet)
+def create_first_wallet(user):
+    wallet = Wallet(name=gettext('Кошелек по умолчанию'))
+    asset = WalletAsset(ticker_id=app.config['CURRENCY_PREFIX'] + 'usd')
+    wallet.wallet_assets.append(asset)
+    user.wallets.append(wallet)
 
 
-def user_delete_def(user_id):
+def user_delete_def(user_id, action=''):
     user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar()
 
     # alerts
-    for ticker in user.whitelist_tickers:
-        for alert in ticker.alerts:
+    for asset in user.watchlist:
+        for alert in asset.alerts:
             db.session.delete(alert)
-        db.session.delete(ticker)
+        db.session.delete(asset)
 
     # wallets
-    for walllet in user.wallets:
-        db.session.delete(walllet)
+    for wallet in user.wallets:
+        for asset in wallet.wallet_assets:
+            db.session.delete(asset)
+        db.session.delete(wallet)
 
     # portfolios, assets, transactions
     for portfolio in user.portfolios:
@@ -173,14 +185,15 @@ def user_delete_def(user_id):
             db.session.delete(asset)
         db.session.delete(portfolio)
 
-    # user info
-    if user.info:
-        db.session.delete(user.info)
-        db.session.commit()
+    if action == 'delete_user':
+        # user info
+        if user.info:
+            db.session.delete(user.info)
+            db.session.commit()
 
-    # user
-    db.session.delete(user)
-    db.session.commit()
+        # user
+        db.session.delete(user)
+        db.session.commit()
 
 
 def new_visit():
@@ -341,6 +354,8 @@ def export_data():
 @user.route('/import_post', methods=['POST'])
 @login_required
 def import_data_post():
+    from portfolio_tracker.wallet.wallet import get_wallet, get_wallet_asset
+
     # For import to demo user
     if request.args.get('demo_user') and current_user.type == 'admin':
         user = db.session.execute(db.select(User).
@@ -353,7 +368,7 @@ def import_data_post():
     try:
         data = json.loads(request.form['import'])
     except:
-        flash(gettext('Error reading data'), 'danger')
+        flash(gettext('Ошибка чтения данных'), 'danger')
         return redirect(url)
 
     old_prefixes = data['prefixes']
@@ -384,18 +399,22 @@ def import_data_post():
         wallet['new_id'] = new_wallet.id
 
         for asset in wallet['assets']:
-            new_asset = WalletAsset(ticker_id=asset['ticker_id'])
-            new_wallet.wallet_assets.append(new_asset)
+            new_asset = get_wallet_asset(new_wallet, asset['ticker_id'], True)
 
             for transaction in asset['transactions']:
-                new_transaction = WalletTransaction(
-                    wallet_asset_id=new_asset.id,
-                    related_transaction=transaction['related_transaction'],
+                new_transaction = Transaction(
                     date=transaction['date'],
-                    amount=transaction['amount'],
-                    type=transaction['type']
+                    ticker_id=new_asset.ticker_id,
+                    quantity=transaction['amount'],
+                    wallet_id=new_wallet.id,
+                    related_transaction_id=transaction['related_transaction']
                     )
-                new_asset.wallet_transactions.append(new_transaction)
+                if new_transaction.related_transaction_id:
+                    new_transaction.type = 'TransferIn' if transaction['type'] == '+1' else 'TransferOut'
+                else:
+                    new_transaction.type = 'Input' if transaction['type'] == '+1' else 'Output'
+
+                new_wallet.transactions.append(new_transaction)
                 db.session.commit()
                 transaction['new_id'] = new_transaction.id
                 wallet_transactions.append(new_transaction)
@@ -403,8 +422,8 @@ def import_data_post():
     db.session.commit()
 
     for transaction in wallet_transactions:
-        related = get_new_transaction_id(transaction.related_transaction)
-        transaction.related_transaction = related
+        related = get_new_transaction_id(transaction.related_transaction_id)
+        transaction.related_transaction_id = related
 
 
     for portfolio in data['portfolios']:
@@ -413,6 +432,7 @@ def import_data_post():
                                   name=portfolio['name'],
                                   comment=portfolio['comment'])
         db.session.add(new_portfolio)
+        db.session.commit()
 
         old_prefix_len = len(old_prefixes[new_portfolio.market])
         prefix = prefixes[new_portfolio.market]
@@ -422,92 +442,112 @@ def import_data_post():
                               percent=float_(asset['percent'], 0),
                               comment=asset['comment'])
             new_portfolio.assets.append(new_asset)
+            db.session.commit()
 
             for transaction in asset['transactions']:
                 wallet_id = get_new_wallet_id(transaction['wallet_id'])
-                wallet_asset = get_wallet_asset(ticker_id=new_asset.ticker_id,
-                                                wallet_id=wallet_id,
+                wallet = get_wallet(wallet_id)
+                wallet_asset = get_wallet_asset(wallet, new_asset.ticker_id,
                                                 create=True)
                 new_transaction = Transaction(
-                    wallet_asset_id=wallet_asset.id,
-                    against_ticker_id='cu-usd',
                     date=transaction['date'],
+                    ticker_id=new_asset.ticker_id,
+                    ticker2_id='cu-usd',
                     quantity=transaction['quantity'],
+                    quantity2=transaction['amount'],
                     price=transaction['price'],
                     price_usd=transaction['price'],
-                    amount=transaction['amount'],
-                    type=transaction['type'],
                     comment=transaction['comment'],
                     wallet_id=wallet_id,
+                    portfolio_id=new_portfolio.id,
                     order=transaction['order']
                     )
+                new_transaction.type = 'Buy' if transaction['type'] == '+1' else 'Sell'
+
                 new_asset.transactions.append(new_transaction)
 
                 if new_transaction.order:
-                    ticker = get_whitelist_ticker(new_transaction.asset.ticker_id, True)
+                    watchlist_asset = get_watchlist_asset(new_asset.ticker_id, True)
                     new_transaction.alert.append(Alert(
-                        asset_id=new_transaction.asset_id,
+                        asset_id=new_asset.id,
                         date=new_transaction.date,
-                        whitelist_ticker_id=ticker.id,
+                        watchlist_asset_id=watchlist_asset.id,
                         price=new_transaction.price,
+                        price_usd=new_transaction.price,
+                        price_ticker_id='cu-usd',
                         type='down' if new_transaction.type == '+' else 'up',
                         status='on'
                     ))
 
-
             for alert in asset['alerts']:
-                ticker = get_whitelist_ticker(alert['ticker_id'], True)
+                watchlist_asset = get_watchlist_asset(new_asset.ticker_id, True)
                 new_alert = Alert(
                     date=alert['date'],
-                    whitelist_ticker_id=ticker.id,
+                    asset_id=new_asset.id,
+                    watchlist_asset_id=watchlist_asset.id,
                     price=alert['price'],
+                    price_usd=alert['price'],
+                    price_ticker_id='cu-usd',
                     type=alert['type'],
                     comment=alert['comment'],
                     status=alert['status']
                     )
-                new_asset.alerts.append(new_alert)
+                db.session.add(new_alert)
 
     db.session.commit()
 
 
-    for whitelist_ticker in data['whitelist_tickers']:
-        new_ticker = get_whitelist_ticker(whitelist_ticker.get('ticker_id'), True)
-        new_ticker.comment = whitelist_ticker.get('comment', '')
-        
-        for alert in whitelist_ticker.get('alerts'):
-            new_alert = Alert(
-                date=alert.get('date'),
-                price=alert.get('price'),
-                type=alert.get('type'),
-                comment=alert.get('comment'),
-                status=alert.get('status')
-                )
-            new_ticker.alerts.append(new_alert)
-            
+    # for ticker in data['whitelist_tickers']:
+    #     watchlist_asset = get_watchlist_asset(ticker.get('ticker_id'), True)
+    #     watchlist_asset.comment = ticker.get('comment', '')
+    #     
+    #     for alert in ticker.get('alerts'):
+    #         new_alert = Alert(
+    #             date=alert.get('date'),
+    #             watchlist_asset_id=watchlist_asset.id,
+    #             price=alert.get('price'),
+    #             price_usd=alert.get('price'),
+    #             price_ticker_id='cu-usd',
+    #             type=alert.get('type'),
+    #             comment=alert.get('comment'),
+    #             status=alert.get('status')
+    #             )
+    #         watchlist_asset.alerts.append(new_alert)
+    #         
+    # db.session.commit()
+
+
+    # for portfolio in user.portfolios:
+    #     for transaction in portfolio.transactions:
+    #         transaction.update_dependencies()
+    for wallet in user.wallets:
+        for transaction in wallet.transactions:
+            transaction.update_dependencies()
     db.session.commit()
 
-    flash(gettext('Import completed'), 'success')
+
+    flash(gettext('Импорт заверщен'), 'success')
 
     return redirect(url)
 
 
 def get_locale():
-    if current_user.is_authenticated:
-        if current_user.type == 'demo':
-            return session.get('locale')
-        return current_user.locale if current_user.locale else session.get('locale')
-    elif session.get('locale'):
-        return session.get('locale')
+    if current_user.is_authenticated and current_user.type != 'demo':
+        return current_user.locale or session.get('locale')
+    # if current_user.is_authenticated:
+    #     if current_user.type == 'demo':
+    #         return session.get('locale')
+    #     return current_user.locale or session.get('locale')
+    # elif session.get('locale'):
+    #     return session.get('locale')
 
-    return request.accept_languages.best_match(['en', 'ru'])
+    return session.get('locale') or request.accept_languages.best_match(['en', 'ru'])
 
 
 def get_currency():
-    currency = session.get('currency')
-    currency = currency if currency else 'usd'
-    if current_user.type == 'demo':
-        return currency
-    return current_user.currency if current_user.currency else currency
+    if current_user.is_authenticated and current_user.type != 'demo':
+        return current_user.currency
+    return session.get('currency', 'usd')
 
 app.add_template_filter(get_currency)
 
@@ -539,9 +579,11 @@ def change_locale():
 
 @user.route('/change_currency', methods=['GET'])
 def change_currency():
-    currency = request.args.get('value')
+    currency = request.args.get('value', 'usd')
     if current_user.is_authenticated and current_user.type != 'demo':
         current_user.currency = currency
+        prefix = app.config['CURRENCY_PREFIX']
+        current_user.currency_ticker_id = prefix + currency
         db.session.commit()
     else:
         session['currency'] = currency

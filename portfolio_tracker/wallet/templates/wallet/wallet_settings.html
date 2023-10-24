@@ -1,22 +1,28 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-{% set modal_title = gettext('Edit wallet') if wallet else gettext('Add wallet') %}
+{% set modal_title = gettext('Изменить кошелек') if wallet else gettext('Добавить кошелек') %}
 
 {% block content %}
 <form data-url="{{ url_for('.wallet_settings_update', wallet_id=wallet.id if wallet) }}">
   <div class="row g-2">
     <div class="col-md-12">
       <div class="mb-3">
-        <label class="form-label h7">{% trans %}Name{% endtrans %}</label>
+        <label class="form-label h7">{% trans %}Название{% endtrans %}</label>
         <input type="text" class="form-control rounded-3 focus" name="name" value="{{ wallet.name if wallet }}" autocomplete="off" required>
       </div>
     </div>
-    <div class="col-md-12">
-      <div class="mb-3">
-        <label class="form-label h7">{% trans %}Comment{% endtrans %}</label>
-        <textarea class="form-control" name="comment">{{ wallet.comment if wallet }}</textarea>
+
+    <span class="mb-3 cursor-pointer text-primary show-more">+ {% trans %}Комментарий{% endtrans %}</span>
+
+    <div class="show-more-content" style="display: none;">
+      <div class="col-md-12">
+        <div class="mb-3">
+          <label class="form-label h7">{% trans %}Комментарий{% endtrans %}</label>
+          <textarea class="form-control" name="comment">{{ wallet.comment if wallet }}</textarea>
+        </div>
       </div>
     </div>
+
   </div>
   <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
 </form>

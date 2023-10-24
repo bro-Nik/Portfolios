@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>{% trans %}Sign Up{% endtrans %}</title>
+  <title>{% trans %}Регистрация{% endtrans %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" />
   <link href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" rel="stylesheet">
@@ -39,10 +39,10 @@
       </a>
 
       <div class="d-flex align-items-center gap-2 mb-3">
-        <h1 class="h3 fw-normal">{% trans %}Sign Up{% endtrans %}</h1>
+        <h1 class="h3 fw-normal">{% trans %}Регистрация{% endtrans %}</h1>
         <div class="ms-auto d-flex gap-3">
-          <a class="text-decoration-none" href="{{ url_for('.login') }}">{% trans %}Login{% endtrans %}</a>
-          <a class="text-decoration-none" href="{{ url_for('.demo_user') }}">{% trans %}Demo{% endtrans %}</a>
+          <a class="text-decoration-none" href="{{ url_for('.login') }}">{% trans %}Вход{% endtrans %}</a>
+          <a class="text-decoration-none" href="{{ url_for('.demo_user') }}">{% trans %}Демо{% endtrans %}</a>
         </div>
       </div>
 
@@ -51,14 +51,14 @@
       </div>
 
       <div class="mb-1">
-        <input type="password" class="form-control" placeholder="{% trans %}Password{% endtrans %}" name="password" required>
+        <input type="password" class="form-control" placeholder="{% trans %}Пароль{% endtrans %}" name="password" required>
       </div>
 
       <div class="mb-3">
-        <input type="password" class="form-control" placeholder="{% trans %}Confirm password{% endtrans %}" name="password2" required>
+        <input type="password" class="form-control" placeholder="{% trans %}Подтвердить пароль{% endtrans %}" name="password2" required>
       </div>
 
-      <button class="w-100 btn btn-sm btn-primary" type="submit">{% trans %}Sign Up{% endtrans %}</button>
+      <button class="w-100 btn btn-sm btn-primary" type="submit">{% trans %}Регистрация{% endtrans %}</button>
 
     </form>
   </main>

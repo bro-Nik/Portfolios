@@ -30,7 +30,6 @@ $(function () {
         posting = $.post(url, $form.serialize());
 
       $form.closest('.modal').data('pre-need-update', true);
-      alert($form.closest('.modal').data('pre-need-update'))
 
       posting.done(function (data) {
         UpdateConvertTo($box, $form.find('.convert-data').val());

@@ -24,10 +24,9 @@ def demo_user_change(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if current_user.type == 'demo':
-            flash(gettext('Demo user cannot make changes'), 'warning')
+            flash(gettext('Демо юзер не может вносить изменения'), 'warning')
             return ''
         return f(*args, **kwargs)
     return decorated_function
-
 
 

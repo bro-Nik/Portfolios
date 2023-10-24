@@ -56,6 +56,24 @@
     </div>
   </div>
 
+  <div id="Curruncy">
+    <div class="mb-3">
+      <span class="text-average">Curruncy</span>
+    </div>
+    <div class="d-flex gap-3">
+      <span class="small-text">Тикеры - 
+        <span class="text-average tickers-count"></span>
+        <span class="tickers-task"></span>
+        <span class="tickers-btn" data-action="currency_tickers_"></span>
+      </span>
+      <span class="small-text">Цены - 
+        <span class="text-average price-when-update"></span>
+        <span class="price-task"></span>
+        <span class="price-btn" data-action="currency_price_"></span>
+      </span>
+    </div>
+  </div>
+
   <div>
     <div class="mb-3">
       <span class="text-average">Уведомления</span>
@@ -133,10 +151,12 @@
 
     request.done(function(data) {
       var c = data.crypto,
-        s = data.stocks;
+        s = data.stocks,
+        cu = data.currency;
 
       var cryptoWork = TaskWork(c.task_tickers_id, c.task_tickers_state) || TaskWork(c.task_price_id, c.task_price_state);
       var stocksWork = TaskWork(s.task_tickers_id, s.task_tickers_state) || TaskWork(s.task_price_id, s.task_price_state) || TaskWork(s.task_image_id, s.task_image_state);
+      var currencyWork = TaskWork(cu.task_tickers_id, cu.task_tickers_state) || TaskWork(cu.task_price_id, cu.task_price_state);
 
       $('#AdminsCount').html(data.admins_count);
       $('#UsersCount').html(data.users_count);
@@ -157,6 +177,15 @@
       GetBtn(stocksWork, TaskWork(s.task_tickers_id, s.task_tickers_state), $('#Stocks .tickers-btn'));
       GetBtn(stocksWork, TaskWork(s.task_price_id, s.task_price_state), $('#Stocks .price-btn'));
       GetBtn(stocksWork, TaskWork(s.task_image_id, s.task_image_state), $('#Stocks .image-btn'));
+
+      $('#Curruncy .tickers-count').html(cu.tickers_count);
+      $('#Curruncy .tickers-task').html('(' + cu.task_tickers_state + ')');
+      $('#Curruncy .price-when-update').html(cu.price_when_update);
+      $('#Curruncy .price-task').html('(' + cu.task_price_state + ')');
+      //$('#Curruncy .image-task').html('(' + s.task_image_state + ')');
+      GetBtn(currencyWork, TaskWork(cu.task_tickers_id, cu.task_tickers_state), $('#Curruncy .tickers-btn'));
+      GetBtn(stocksWork, TaskWork(cu.task_price_id, cu.task_price_state), $('#Curruncy .price-btn'));
+      //GetBtn(stocksWork, TaskWork(s.task_image_id, s.task_image_state), $('#Stocks .image-btn'));
 
       $('.alerts-task').html('(' + data.task_alerts_state + ')');
       GetBtn(TaskWork(data.task_alerts_id, data.task_alerts_state), TaskWork(data.task_alerts_id, data.task_alerts_state), $('.alerts-btn'));
