@@ -4,10 +4,10 @@ from flask import flash, render_template, request, Blueprint, url_for
 from flask_babel import gettext
 from flask_login import login_required, current_user
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import get_price, int_
+from portfolio_tracker.general_functions import get_price
 from portfolio_tracker.jinja_filters import other_currency, user_currency
 from portfolio_tracker.models import Ticker, Transaction, Wallet, WalletAsset
-from portfolio_tracker.user.user import create_first_wallet
+from portfolio_tracker.user.utils import from_user_datetime
 from portfolio_tracker.wraps import demo_user_change
 
 
@@ -22,7 +22,6 @@ def get_wallet(wallet_id):
         for wallet in current_user.wallets:
             if wallet.id == int(wallet_id):
                 return wallet
-    return None
 
 
 def get_wallet_has_asset(ticker_id):
@@ -32,7 +31,6 @@ def get_wallet_has_asset(ticker_id):
             asset.update_price()
             if asset.free > 0:
                 return wallet
-    return None
 
 
 def get_wallet_asset(wallet, ticker_id, create=False):
@@ -46,7 +44,6 @@ def get_wallet_asset(wallet, ticker_id, create=False):
                 wallet.wallet_assets.append(asset)
                 db.session.commit()
                 return asset
-    return None
 
 
 def get_transaction(asset, transaction_id):
@@ -54,7 +51,6 @@ def get_transaction(asset, transaction_id):
         for transaction in asset.transactions:
             if transaction.id == int(transaction_id):
                 return transaction
-    return None
 
 
 class AllWallets:
@@ -98,7 +94,7 @@ def wallets_action():
 
     db.session.commit()
     if not current_user.wallets:
-        create_first_wallet(current_user)
+        current_user.create_first_wallet()
         db.session.commit()
     return ''
 
@@ -186,7 +182,7 @@ def asset_info():
     asset.update_price()
 
     page = 'stable_' if asset.ticker.stable else ''
-    return render_template('wallet/' + page + 'asset_info.html', asset=asset)
+    return render_template('wallet/{}asset_info.html'.format(page), asset=asset)
 
 
 @wallet.route('/add_stable_modal', methods=['GET'])
@@ -210,7 +206,7 @@ def stable_add_tickers():
         query = query.filter(Ticker.name.contains(search)
                              | Ticker.symbol.contains(search))
 
-    tickers = query.paginate(page=int_(request.args.get('page'), 1),
+    tickers = query.paginate(page=request.args.get('page', 1, type=int),
                              per_page=per_page,
                              error_out=False)
     if tuple(tickers):
@@ -246,7 +242,7 @@ def transaction():
     if not transaction:
         transaction = Transaction(
             type='Input' if asset.ticker.stable else 'TransferOut',
-            date=datetime.today().isoformat(sep='T', timespec='minutes')
+            date=datetime.utcnow()
         )
     return render_template('wallet/transaction.html',
                            asset=asset,
@@ -275,9 +271,9 @@ def transaction_update():
         wallet.transactions.append(transaction)
 
     transaction.type = request.form['type']
-    type = 1 if 'In' in transaction.type else -1
-    transaction.date = datetime.strptime(request.form['date'], '%Y-%m-%d')
-    transaction.quantity = float(request.form['quantity']) * type
+    t_type = 1 if 'In' in transaction.type else -1
+    transaction.date = from_user_datetime(request.form['date'])
+    transaction.quantity = float(request.form['quantity']) * t_type
     db.session.commit()
     transaction.update_dependencies()
 
@@ -291,7 +287,7 @@ def transaction_update():
             db.session.add(transaction2)
 
         transaction2.wallet_id = wallet2.id
-        transaction2.type = 'TransferOut' if type == 1 else 'TransferIn'
+        transaction2.type = 'TransferOut' if t_type == 1 else 'TransferIn'
         transaction2.date = transaction.date
         transaction2.quantity = transaction.quantity * -1
         db.session.commit()

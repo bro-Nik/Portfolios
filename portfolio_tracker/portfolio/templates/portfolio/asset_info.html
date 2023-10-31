@@ -150,7 +150,7 @@
               <span class="{{ color }}">{{ gettext(transaction.type) }}</span>
               {{ '(' + gettext('Ордер') + ')' if transaction.order }}
               <br>
-              <span class="small-text">{{ transaction.date|user_date }}</span>
+              <span class="small-text">{{ transaction.date|user_datetime }}</span>
             </div>
           </td>
 

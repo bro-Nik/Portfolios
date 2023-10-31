@@ -120,7 +120,7 @@
                     <div class="open-modal d-grid name" data-modal-id="BodyModal"
                       data-url="{{ url_for('.other_body', portfolio_id=asset.portfolio_id, asset_id=asset.id, body_id=body.id) }}">
                       <span class="text-truncate" title="{{ body.name }}">{{ body.name }}</span>
-                      <span class="small-text">{{ body.date|user_date }}</span>
+                      <span class="small-text">{{ body.date|user_datetime }}</span>
                     </div>
                   </td>
 
@@ -214,7 +214,7 @@
                       data-url="{{ url_for('.other_transaction', portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
                       <span class="{{ color }}">{{ gettext(transaction.type) }}</span>
                       <br>
-                      <span class="small-text">{{ transaction.date|user_date }}</span>
+                      <span class="small-text">{{ transaction.date|user_datetime }}</span>
                     </div>
                   </td>
 

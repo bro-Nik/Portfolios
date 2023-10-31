@@ -6,25 +6,12 @@ from flask_login import current_user
 from portfolio_tracker.app import redis
 
 
-def int_(number, default=0):
-    try:
-        return int(number)
-    except:
-        return default
-
-
-def float_(number, default=0):
-    try:
-        return float(number)
-    except:
-        return default
-
-
-def redis_decode_or_other(key, default=''):
+def redis_decode(key, default=''):
     key = redis.get(key)
-    if not key:
-        return default
-    return key.decode()
+    if key:
+        return key.decode()
+
+    return default
 
 
 def get_price_list(market=None):

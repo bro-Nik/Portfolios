@@ -64,7 +64,7 @@
             </select>
           </div>
           <input type="number" step="any" class="form-control focus" placeholder="0,00"
-            name="price" autocomplete="off" value="{{ transaction.price|long_number }}" required>
+            name="price" autocomplete="off" value="{{ transaction.price|long_number if transaction.price }}" required>
         </div>
       </div>
     </div>
@@ -111,7 +111,7 @@
     <div class="col-md-6">
       <div class="mb-1">
         <label class="form-label h7">{% trans %}Дата{% endtrans %}</label>
-        <input class="form-control" name="date" type="datetime-local" value="{{ transaction.date }}" required>
+        <input class="form-control" name="date" type="datetime-local" value="{{ transaction.date|user_datetime(not_format=1) }}" required>
       </div>
     </div>
 

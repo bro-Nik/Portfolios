@@ -49,12 +49,12 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Свободно{% endtrans %}</p>
-      <span class="text-average">{{ asset.free|other_currency(ticker.symbol) }}</span>
+      <span class="text-average">{{ asset.free|other_currency(ticker.symbol, 'big') }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-      <span class="text-average">{{ asset.buy_orders|other_currency(ticker.symbol) }}</span>
+      <span class="text-average">{{ asset.buy_orders|other_currency(ticker.symbol, 'big') }}</span>
     </div>
 
   </div>
@@ -94,12 +94,12 @@
           <td>
             <div class="open-modal" data-modal-id="TransactionModal" data-url="{{ url }}">
               <span class="{{ color }}">{{ gettext(transaction.type) }}</span>
-              {{ '(' + gettext('Ордер') + ')' if transaction.order }}
               {% if transaction.portfolio_asset %}
                 <span class="text-muted">{{ transaction.base_ticker.symbol|upper }}</span>
               {% endif %}
+              {{ '(' + gettext('Ордер') + ')' if transaction.order }}
               <br>
-              <span class="small-text">{{ transaction.date|user_date }}</span>
+              <span class="small-text">{{ transaction.date|user_datetime }}</span>
             </div>
           </td>
 
@@ -134,7 +134,7 @@
 
           <td>
             <span class="text-average {{ color }}">
-              {{ '+' if quantity > 0 }}{{ quantity|other_currency(ticker.symbol) }}
+              {{ '+' if quantity > 0 }}{{ quantity|other_currency(ticker.symbol, 'big') }}
             </span>
           </td>
 

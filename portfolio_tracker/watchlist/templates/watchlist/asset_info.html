@@ -66,7 +66,7 @@
                 {{ gettext('Выше') if alert.type == 'up' else gettext('Ниже') }}
                 {{ alert.price_usd|user_currency }}  
                 <br>
-                <span class="small-text">{{ alert.date|user_date }}</span>
+                <span class="small-text">{{ alert.date|user_datetime }}</span>
               </div>
             </td>
               

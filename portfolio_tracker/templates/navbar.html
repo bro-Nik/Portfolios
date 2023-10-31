@@ -1,7 +1,7 @@
 {# jinja #}
 <div class="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary" style="width: 250px">
   <div class="d-flex gap-2">
-    <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto1 link-body-emphasis text-decoration-none">
+    <a href="{{ url_for('page.index') }}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto1 link-body-emphasis text-decoration-none">
       <img class="mb-0 me-2" src="{{ url_for('static', filename='favicon.png') }}" alt="" width="32" height="32" />
       <span class="fs-4">Portfolios</span>
     </a>
@@ -86,13 +86,13 @@
         <hr class="dropdown-divider" />
       </li>
       <li>
-        <a class="dropdown-item" href="{{ url_for('user.logout') }}">
+        <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
           {% trans %}Выход{% endtrans %}
         </a>
       </li>
       {% else %}
         <li>
-          <a class="dropdown-item" href="{{ url_for('user.register') }}">{% trans %}Регистрация{% endtrans %}</a>
+          <a class="dropdown-item" href="{{ url_for('auth.register') }}">{% trans %}Регистрация{% endtrans %}</a>
         </li>
       {% endif %}
     </ul>

@@ -3,7 +3,7 @@ import os
 import requests
 from io import BytesIO
 from PIL import Image, ImageDraw
-from flask import Response, render_template, redirect, send_file, url_for, request, Blueprint
+from flask import Response, current_app, render_template, redirect, send_file, url_for, request, Blueprint
 from flask_login import current_user
 from sqlalchemy import func
 import time
@@ -12,11 +12,10 @@ import pickle
 from pycoingecko import CoinGeckoAPI
 from celery.result import AsyncResult
 
-from portfolio_tracker.general_functions import get_price_list, redis_decode_or_other, when_updated
-from portfolio_tracker.models import Asset, Portfolio, PriceHistory, Ticker, Transaction, User, Wallet, WalletAsset, WatchlistAsset
-from portfolio_tracker.user.user import user_delete_def
+from portfolio_tracker.general_functions import get_price_list, redis_decode, when_updated
+from portfolio_tracker.models import Asset, Portfolio, PriceHistory, Ticker, Transaction, User, Wallet, WalletAsset, WatchlistAsset 
 from portfolio_tracker.wraps import admin_only
-from portfolio_tracker.app import app, db, celery, redis
+from portfolio_tracker.app import db, celery, redis
 
 
 admin = Blueprint('admin', __name__, template_folder='templates', static_folder='static')
@@ -97,15 +96,15 @@ def index_detail():
             select = select.filter_by(type=type)
         return db.session.execute(select).scalar()
 
-    task_crypto_tickers = AsyncResult(redis_decode_or_other('crypto_tickers_task_id', ''))
-    task_crypto_price = AsyncResult(redis_decode_or_other('crypto_price_task_id', ''))
-    task_stocks_tickers = AsyncResult(redis_decode_or_other('stocks_tickers_task_id', ''))
-    task_stocks_price = AsyncResult(redis_decode_or_other('stocks_price_task_id', ''))
-    task_stocks_image = AsyncResult(redis_decode_or_other('stocks_image_task_id', ''))
-    task_alerts = AsyncResult(redis_decode_or_other('alerts_task_id', ''))
+    task_crypto_tickers = AsyncResult(redis_decode('crypto_tickers_task_id', ''))
+    task_crypto_price = AsyncResult(redis_decode('crypto_price_task_id', ''))
+    task_stocks_tickers = AsyncResult(redis_decode('stocks_tickers_task_id', ''))
+    task_stocks_price = AsyncResult(redis_decode('stocks_price_task_id', ''))
+    task_stocks_image = AsyncResult(redis_decode('stocks_image_task_id', ''))
+    task_alerts = AsyncResult(redis_decode('alerts_task_id', ''))
 
-    task_currency_tickers = AsyncResult(redis_decode_or_other('currency_tickers_task_id', ''))
-    task_currency_price = AsyncResult(redis_decode_or_other('currency_price_task_id', ''))
+    task_currency_tickers = AsyncResult(redis_decode('currency_tickers_task_id', ''))
+    task_currency_price = AsyncResult(redis_decode('currency_price_task_id', ''))
 
     return {
         "users_count": get_users_count(),
@@ -118,7 +117,7 @@ def index_detail():
             "task_tickers_state": state(task_crypto_tickers),
             "task_price_id": task_crypto_price.id,
             "task_price_state": state(task_crypto_price),
-            "price_when_update": when_updated(redis_decode_or_other('update-crypto'), '-')
+            "price_when_update": when_updated(redis_decode('update-crypto'), '-')
         },
         "stocks": {
             "tickers_count": get_tickers_count('stocks'),
@@ -128,7 +127,7 @@ def index_detail():
             "task_price_state": state(task_stocks_price),
             "task_image_id": task_stocks_image.id,
             "task_image_state": state(task_stocks_image),
-            "price_when_update": when_updated(redis_decode_or_other('update-stocks'), '-')
+            "price_when_update": when_updated(redis_decode('update-stocks'), '-')
         },
         "currency": {
             "tickers_count": get_tickers_count('currency'),
@@ -138,7 +137,7 @@ def index_detail():
             "task_price_state": state(task_currency_price),
             # "task_image_id": task_stocks_image.id,
             # "task_image_state": state(task_stocks_image),
-            "price_when_update": when_updated(redis_decode_or_other('update-currency'), '-')
+            "price_when_update": when_updated(redis_decode('update-currency'), '-')
         },
     }
 
@@ -257,17 +256,16 @@ def users_action():
     ids = data['ids']
 
     for user_id in ids:
+        user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar()
         if action == 'user_to_admin':
-            user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar()
             user.type = 'admin'
             db.session.commit()
         elif action == 'admin_to_user':
-            user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar()
             user.type = ''
             db.session.commit()
 
         elif action == 'delete':
-            user_delete_def(user_id)
+            user.delete()
 
     return ''
 
@@ -346,10 +344,12 @@ def tickers_detail():
 
     for ticker in tickers:
         modal = '<span class="open-modal" data-modal-id="TickerSettingsModal"'
-        modal += ' data-url="' + url_for('.ticker_settings', market=market, ticker_id=ticker.id) + '">'
-        modal += ticker.id + '</span>'
+        ' data-url={}>{}</span>"'.format(
+            url_for('.ticker_settings', market=market, ticker_id=ticker.id),
+            ticker.id)
          
-        t = {"checkbox": '<input class="form-check-input to-check" type="checkbox" value="' + ticker.id + '">',
+        t = {"checkbox": '<input class="form-check-input to-check"'
+                         'type="checkbox" value="{}">'.format(ticker.id),
              "id": modal,
              "symbol": ticker.symbol,
              "name": ticker.name,
@@ -409,7 +409,7 @@ def active_tasks_action(task_id):
 def load_stocks_images(self):
     self.update_state(state='LOADING')
     print('Start load stocks images')
-    key = 'apiKey=' + app.config['API_KEY_POLYGON']
+    key = current_app.config['API_KEY_POLYGON']
 
     tickers = db.session.execute(
         db.select(Ticker).filter(Ticker.market == 'stocks',
@@ -417,12 +417,12 @@ def load_stocks_images(self):
 
     for ticker in tickers:
         id = ticker.id.upper()
-        url = 'https://api.polygon.io/v3/reference/tickers/' + id + '?' + key
+        url = 'https://api.polygon.io/v3/reference/tickers/{}?apiKey={}'.format(id, key)
         time.sleep(15)
         try:
             r = requests.get(url)
             result = r.json()
-            url = result['results']['branding']['icon_url'] + '?' + key
+            url = result['results']['branding']['icon_url'] + '?apiKey={}'.format(key)
         except:
             return None
         time.sleep(15)
@@ -495,15 +495,15 @@ def load_stocks_tickers(self):
     self.update_state(state='LOADING')
     print('Load stocks tickers')
 
-    key = 'apiKey=' + app.config['API_KEY_POLYGON']
+    key = app.config['API_KEY_POLYGON']
     tickers = get_tickers('stocks')
     tickers_in_base = [ticker.id for ticker in tickers]
     prefix = app.config['STOCKS_PREFIX']
     new_tickers = False
 
     date = datetime.now().date()
-    url = 'https://api.polygon.io/v3/reference/tickers?market=stocks&date=' + \
-        str(date) + '&active=true&order=asc&limit=1000&' + key 
+    url = 'https://api.polygon.io/v3/reference/tickers?market=stocks&date={}'
+    '&active=true&order=asc&limit=1000&apiKey={}'.format(str(date), key)
 
     while url:
         response = requests.get(url)
@@ -528,7 +528,7 @@ def load_stocks_tickers(self):
         db.session.commit()
 
         next_url = data.get('next_url')
-        url = next_url + '&' + key if next_url else None
+        url = next_url + '&apiKey={}'.format(key) if next_url else None
         print('Stocks next url')
         time.sleep(15)
 
@@ -543,12 +543,12 @@ def load_currency_tickers(self):
     self.update_state(state='LOADING')
     print('Load currency tickers')
 
-    key = 'access_key=' + app.config['API_KEY_CURRENCYLAYER']
+    key = app.config['API_KEY_CURRENCYLAYER']
     prefix = app.config['CURRENCY_PREFIX']
     tickers_in_base = [ticker.id for ticker in get_tickers('currency')]
     new_tickers = False
 
-    url = 'http://api.currencylayer.com/list?' + key 
+    url = 'http://api.currencylayer.com/list?access_key={}'.format(key) 
 
     response = requests.get(url)
     data = response.json()
@@ -578,7 +578,7 @@ def load_currency_tickers(self):
 
 
 def load_ticker_image(url, market, ticker_id):
-    path = app.config['UPLOAD_FOLDER'] + '/images/tickers/' + market
+    path =  '{}/images/tickers/{}'.format(app.config['UPLOAD_FOLDER'], market)
     os.makedirs(path, exist_ok=True)
 
     try:
@@ -647,14 +647,14 @@ def price_list_stocks_def(self):
     ''' Запрос цен у Polygon фондовый рынок '''
     self.update_state(state='WORK')
 
-    update_stocks = redis_decode_or_other('update-stocks', '')
+    update_stocks = redis_decode('update-stocks', '')
 
     if update_stocks == str(datetime.now().date()):
         price_list_stocks_def.retry()
         return ''
 
     price_list = get_price_list('stocks')
-    key = 'apiKey=' + app.config['API_KEY_POLYGON']
+    key = app.config['API_KEY_POLYGON']
     prefix = app.config['STOCKS_PREFIX']
 
     day = 0
@@ -666,8 +666,9 @@ def price_list_stocks_def(self):
             time.sleep(60)
 
         date = datetime.now().date() - timedelta(days=day)
-        url = 'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/' + \
-            str(date) + '?adjusted=true&include_otc=false&' + key
+        url = 'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/{}'
+        '?adjusted=true&include_otc=false&apiKey={}'.format(str(date), key)
+        
         response = requests.get(url)
         data = response.json()
 
@@ -690,17 +691,17 @@ def price_list_currency_def(self):
     ''' Запрос цен валюты '''
     self.update_state(state='WORK')
 
-    update_currency = redis_decode_or_other('update-currency', '')
+    update_currency = redis_decode('update-currency', '')
 
     if update_currency == str(datetime.now().date()):
         price_list_stocks_def.retry()
         return ''
 
     price_list = get_price_list('currency')
-    key = 'access_key=' + app.config['API_KEY_CURRENCYLAYER']
+    key = app.config['API_KEY_CURRENCYLAYER']
     prefix = app.config['CURRENCY_PREFIX']
 
-    url = 'http://api.currencylayer.com/live?' + key
+    url = 'http://api.currencylayer.com/live?access_key={}'.format(key)
     response = requests.get(url)
     data = response.json()
     while not data.get('success') == True:
@@ -725,18 +726,19 @@ def price_list_currency_def(self):
 @admin_only
 def price_list_currency_def2():
 
-    update = redis_decode_or_other('update-currency', '')
+    update = redis_decode('update-currency', '')
     if update == str(datetime.now().date()):
         # price_list_stocks_def.retry()
         return ''
 
     price_list = get_price_list('currency')
-    key = 'access_key=' + app.config['API_KEY_CURRENCYLAYER']
+    key = app.config['API_KEY_CURRENCYLAYER']
     prefix = app.config['CURRENCY_PREFIX']
 
     ids = [ticker.id[len(prefix):] for ticker in get_tickers('currency')]
     ids_str = ','.join(ids)
-    url = 'http://apilayer.net/api/live?' + key + '&currencies=' + ids_str + '&source=USD&format=1'
+    url = 'http://apilayer.net/api/live?access_key={}&currencies={}'
+    '&source=USD&format=1'.format(key, ids_str)
 
     response = requests.get(url)
     data = response.json()

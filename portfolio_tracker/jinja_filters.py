@@ -1,11 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import math
 from babel.numbers import format_decimal
 from babel.dates import format_date, format_datetime
+from flask import current_app
 from flask_babel import Locale
 from flask_login import current_user
-from portfolio_tracker.app import app
+import time
+# from portfolio_tracker.app import app
 from portfolio_tracker.general_functions import get_price_list
+from portfolio_tracker.main import bp
 
 
 def smart_int(number):
@@ -16,7 +19,8 @@ def smart_int(number):
         return int(number)
     return number
 
-app.add_template_filter(smart_int)
+# current_app.add_template_filter(smart_int)
+bp.add_app_template_filter(smart_int)
 
 
 def smart_round(number):
@@ -39,7 +43,7 @@ def smart_round(number):
     except:  # строка не является float / int
         return 0
 
-app.add_template_filter(smart_round)
+bp.add_app_template_filter(smart_round)
 
 
 # def big_round(number):
@@ -68,7 +72,7 @@ def number_group(number):
     return long_number(number) if (0 < number < 0.0005) else '{:,}'.format(number).replace(',', ' ')
 
 
-app.add_template_filter(number_group)
+bp.add_app_template_filter(number_group)
 
 
 def long_number(number):
@@ -76,14 +80,14 @@ def long_number(number):
     return '{:.18f}'.format(number).rstrip('0') if number < 0.0005 else number
 
 
-app.add_template_filter(long_number)
+bp.add_app_template_filter(long_number)
 
 
-def user_currency(number, param=''):
+def user_currency(number, param=None):
     currency = current_user.currency
     locale = current_user.locale
     price_list = get_price_list()
-    price_currency_to_usd = price_list.get(app.config['CURRENCY_PREFIX'] + currency, 1)
+    price_currency_to_usd = price_list.get(current_app.config['CURRENCY_PREFIX'] + currency, 1)
     number *= price_currency_to_usd
 
     # round
@@ -110,7 +114,7 @@ def user_currency(number, param=''):
         force_frac = (length, length)
     return pattern.apply(number, locale, currency=currency, force_frac=force_frac)
 
-app.add_template_filter(user_currency)
+bp.add_app_template_filter(user_currency)
 
 
 def other_currency(number, currency, param=''):
@@ -135,21 +139,17 @@ def other_currency(number, currency, param=''):
         force_frac = (length, length)
     return pattern.apply(number, locale, currency=currency.upper(), force_frac=force_frac)
 
-app.add_template_filter(other_currency)
+bp.add_app_template_filter(other_currency)
 
 
-def user_date(date):
-    if type(date) == str:
-        try:
-            date = datetime.strptime(date, '%Y-%m-%d')
-        except:
-            return date
+def user_datetime(date, not_format=False):
     locale = current_user.locale.upper()
-    
-    # return format_date(date, locale=locale)
+    date = date - timedelta(seconds=time.timezone)
+    if not_format:
+        return date.isoformat(sep='T', timespec='minutes')
     return format_datetime(date, locale=locale)
 
-app.add_template_filter(user_date)
+bp.add_app_template_filter(user_datetime)
 
 
 def ticker_currency(number):
@@ -157,4 +157,4 @@ def ticker_currency(number):
     
     return format_decimal(number, locale=locale)
 
-app.add_template_filter(ticker_currency)
+bp.add_app_template_filter(ticker_currency)

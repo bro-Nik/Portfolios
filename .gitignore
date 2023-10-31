@@ -2,6 +2,7 @@
 *instance/
 .idea/
 __pycache__/
+logs/
 portfolio_tracker/__pycache__/
 portfolio_tracker/static/images
 .env

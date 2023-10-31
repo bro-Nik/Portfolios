@@ -23,7 +23,7 @@
 <div class="row">
   <div class="col-auto">
     {% if current_user.info.last_visit %}
-      <p>{% trans %}Последняя активность: {% endtrans %}{{ current_user.info.last_visit|user_date }}</p>
+      <p>{% trans %}Последняя активность: {% endtrans %}{{ current_user.info.last_visit|user_datetime }}</p>
     {% endif %}
 
     <span class="">{{ current_user.email }}</span>

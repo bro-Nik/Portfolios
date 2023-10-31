@@ -4,16 +4,15 @@ from flask_babel import gettext
 from flask_login import current_user
 
 from portfolio_tracker.app import db
-from portfolio_tracker.models import User
 
 def admin_only(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if current_user.is_authenticated:
-            admins_in_base = db.session.execute(db.select(User).filter_by(type='admin')).scalar()
-            if admins_in_base:
-                if current_user.type != 'admin':
-                    abort(404)
+            # admins_in_base = db.session.execute(db.select(User).filter_by(type='admin')).scalar()
+            # if admins_in_base:
+            if current_user.type != 'admin':
+                abort(404)
             return f(*args, **kwargs)
         else:
             return redirect(url_for('user.login') + '?next=' + request.url)

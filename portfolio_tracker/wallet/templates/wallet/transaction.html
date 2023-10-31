@@ -69,7 +69,7 @@
     <div class="col-md-12">
       <div class="mb-3">
         <label class="form-label h7">{% trans %}Дата{% endtrans %}</label>
-        <input class="form-control" name="date" type="date" value="{{ transaction.date }}" required>
+        <input class="form-control" name="date" type="datetime-local" value="{{ transaction.date|user_datetime(not_format=1) }}" required>
       </div>
     </div>
 
