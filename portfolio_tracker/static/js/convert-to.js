@@ -17,8 +17,8 @@ $(function () {
       })
     }).append(`
       <div class="position-right d-flex gap-1">
-        <button class="btn btn-primary btn-sm submit" type="button">` + trans.btn_save + `</button>
-        <button class="btn btn-light btn-sm cancel" type="button">` + trans.btn_cancel + `</button>
+        <button class="btn btn-primary btn-sm submit" type="button">${trans.btn_save}</button>
+        <button class="btn btn-light btn-sm cancel" type="button">${trans.btn_cancel}</button>
       </div>
       `);
 
@@ -53,9 +53,9 @@ function UpdateConvertTo($box, data) {
   if (data == undefined) {
     data = $box.find('.convert-data').text();
   }
-  $box.removeClass('active').empty().append(`<span class="convert-data">` + data + `</span>`);
+  $box.removeClass('active').empty().append(`<span class="convert-data">${data}</span>`);
 
   if (!$box.find('.convert-data').text().length) {
-    $box.append(`<span>` + $box.data('placeholder') + `</span>`);
+    $box.append(`<span>${$box.data('placeholder')}</span>`);
   }
 }

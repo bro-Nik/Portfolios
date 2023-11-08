@@ -1,78 +1,26 @@
 import json
 from datetime import datetime
-from flask import flash, render_template, request, Blueprint, url_for
+from flask import flash, render_template, request, url_for
 from flask_babel import gettext
 from flask_login import login_required, current_user
 from portfolio_tracker.app import db
 from portfolio_tracker.general_functions import get_price
 from portfolio_tracker.jinja_filters import other_currency, user_currency
-from portfolio_tracker.models import Ticker, Transaction, Wallet, WalletAsset
-from portfolio_tracker.user.utils import from_user_datetime
+from portfolio_tracker.models import Ticker, Transaction
+from portfolio_tracker.wallet.utils import AllWallets, create_new_wallet, \
+    create_new_transaction, get_transaction, get_wallet, get_wallet_asset, \
+    last_wallet_transaction
 from portfolio_tracker.wraps import demo_user_change
+from portfolio_tracker.wallet import bp
 
 
-wallet = Blueprint('wallet',
-                   __name__,
-                   template_folder='templates',
-                   static_folder='static')
-
-
-def get_wallet(wallet_id):
-    if wallet_id:
-        for wallet in current_user.wallets:
-            if wallet.id == int(wallet_id):
-                return wallet
-
-
-def get_wallet_has_asset(ticker_id):
-    for wallet in current_user.wallets:
-        asset = get_wallet_asset(wallet, ticker_id)
-        if asset:
-            asset.update_price()
-            if asset.free > 0:
-                return wallet
-
-
-def get_wallet_asset(wallet, ticker_id, create=False):
-    if wallet and ticker_id:
-        for asset in wallet.wallet_assets:
-            if asset.ticker_id == ticker_id:
-                return asset
-        else:
-            if create:
-                asset = WalletAsset(ticker_id=ticker_id)
-                wallet.wallet_assets.append(asset)
-                db.session.commit()
-                return asset
-
-
-def get_transaction(asset, transaction_id):
-    if transaction_id and asset:
-        for transaction in asset.transactions:
-            if transaction.id == int(transaction_id):
-                return transaction
-
-
-class AllWallets:
-    def __init__(self):
-        self.cost_now = 0
-        self.in_orders = 0
-        self.free = 0
-
-        for wallet in current_user.wallets:
-            wallet.update_price()
-            self.cost_now += wallet.cost_now
-            self.in_orders += wallet.in_orders
-            self.free += wallet.free
-
-
-@wallet.route('', methods=['GET'])
+@bp.route('', methods=['GET'])
 @login_required
 def wallets():
     return render_template('wallet/wallets.html', all_wallets=AllWallets())
 
 
-@wallet.route('/action', methods=['POST'])
+@bp.route('/action', methods=['POST'])
 @login_required
 @demo_user_change
 def wallets_action():
@@ -88,7 +36,7 @@ def wallets_action():
         if 'delete' in action:
             if 'with_contents' not in action and not wallet.is_empty():
                 flash(gettext('Кошелек %(name)s не пустой',
-                               name=wallet.name), 'danger')
+                              name=wallet.name), 'danger')
             else:
                 wallet.delete()
 
@@ -99,40 +47,26 @@ def wallets_action():
     return ''
 
 
-@wallet.route('/wallet_settings', methods=['GET'])
+@bp.route('/wallet_settings', methods=['GET'])
 @login_required
 def wallet_settings():
     wallet = get_wallet(request.args.get('wallet_id'))
     return render_template('wallet/wallet_settings.html', wallet=wallet)
 
 
-@wallet.route('/wallet_settings_update', methods=['POST'])
+@bp.route('/wallet_settings_update', methods=['POST'])
 @login_required
 @demo_user_change
 def wallet_settings_update():
-    name = request.form.get('name')
     wallet = get_wallet(request.args.get('wallet_id'))
-
     if not wallet:
-        user_wallets = current_user.wallets
-        names = [i.name for i in user_wallets]
-        if name in names:
-            n = 2
-            while str(name) + str(n) in names:
-                n += 1
-            name = str(name) + str(n)
-        wallet = Wallet(user_id=current_user.id)
-        db.session.add(wallet)
+        wallet = create_new_wallet()
 
-    if name is not None:
-        wallet.name = name
-    wallet.comment = request.form.get('comment')
-
-    db.session.commit()
+    wallet.edit(request.form)
     return ''
 
 
-@wallet.route('/wallet_info', methods=['GET'])
+@bp.route('/wallet_info', methods=['GET'])
 @login_required
 def wallet_info():
     """ Wallet page """
@@ -144,7 +78,7 @@ def wallet_info():
     return render_template('wallet/wallet_info.html', wallet=wallet)
 
 
-@wallet.route('/assets_action', methods=['POST'])
+@bp.route('/assets_action', methods=['POST'])
 @login_required
 @demo_user_change
 def assets_action():
@@ -171,7 +105,7 @@ def assets_action():
     return ''
 
 
-@wallet.route('/asset_info', methods=['GET'])
+@bp.route('/asset_info', methods=['GET'])
 @login_required
 def asset_info():
     wallet = get_wallet(request.args.get('wallet_id'))
@@ -182,25 +116,25 @@ def asset_info():
     asset.update_price()
 
     page = 'stable_' if asset.ticker.stable else ''
-    return render_template('wallet/{}asset_info.html'.format(page), asset=asset)
+    return render_template(f'wallet/{page}asset_info.html', asset=asset)
 
 
-@wallet.route('/add_stable_modal', methods=['GET'])
+@bp.route('/add_stable_modal', methods=['GET'])
 @login_required
 def stable_add_modal():
     return render_template('wallet/add_stable_modal.html',
                            wallet_id=request.args.get('wallet_id'))
 
 
-@wallet.route('/add_stable_tickers', methods=['GET'])
+@bp.route('/add_stable_tickers', methods=['GET'])
 @login_required
 def stable_add_tickers():
     per_page = 20
     search = request.args.get('search')
 
-    query = (Ticker.query.filter(Ticker.stable == True)
-        .order_by(Ticker.id))
-        # .order_by(Ticker.market_cap_rank.nulls_last(), Ticker.id))
+    query = (Ticker.query.filter(Ticker.stable is True)
+             .order_by(Ticker.id))
+    # .order_by(Ticker.market_cap_rank.nulls_last(), Ticker.id))
 
     if search:
         query = query.filter(Ticker.name.contains(search)
@@ -215,21 +149,19 @@ def stable_add_tickers():
     return 'end'
 
 
-@wallet.route('/add_stable', methods=['GET'])
+@bp.route('/add_stable', methods=['GET'])
 @login_required
 def stable_add():
     wallet = get_wallet(request.args.get('wallet_id'))
     asset = get_wallet_asset(wallet, request.args.get('ticker_id'), create=True)
-    if not asset:
-        return ''
 
     return str(url_for('.asset_info',
+                       only_content=request.args.get('only_content'),
                        wallet_id=asset.wallet_id,
-                       ticker_id=asset.ticker_id,
-                       only_content=request.args.get('only_content')))
+                       ticker_id=asset.ticker_id)) if asset else ''
 
 
-@wallet.route('/transaction', methods=['GET'])
+@bp.route('/transaction', methods=['GET'])
 @login_required
 def transaction():
     wallet = get_wallet(request.args.get('wallet_id'))
@@ -249,7 +181,7 @@ def transaction():
                            transaction=transaction)
 
 
-@wallet.route('/transaction_update', methods=['POST'])
+@bp.route('/transaction_update', methods=['POST'])
 @login_required
 @demo_user_change
 def transaction_update():
@@ -260,47 +192,45 @@ def transaction_update():
 
     transaction = get_transaction(asset, request.args.get('transaction_id'))
     transaction2 = None
+
     if transaction:
         transaction.update_dependencies('cancel')
+
         if transaction.related_transaction:
             transaction2 = transaction.related_transaction
             transaction2.update_dependencies('cancel')
 
     else:
-        transaction = Transaction(ticker_id=asset.ticker_id)
-        wallet.transactions.append(transaction)
+        transaction = create_new_transaction(asset)
 
-    transaction.type = request.form['type']
-    t_type = 1 if 'In' in transaction.type else -1
-    transaction.date = from_user_datetime(request.form['date'])
-    transaction.quantity = float(request.form['quantity']) * t_type
-    db.session.commit()
+    transaction.edit(request.form)
     transaction.update_dependencies()
 
     # Связанная транзакция
     wallet2 = get_wallet(request.form.get('wallet_id'))
-    get_wallet_asset(wallet2, asset.ticker_id, create=True)
+    asset2 = get_wallet_asset(wallet2, asset.ticker_id, create=True)
 
-    if wallet2:
+    if wallet2 and asset2:
         if not transaction2:
-            transaction2 = Transaction(ticker_id=asset.ticker_id)
-            db.session.add(transaction2)
+            transaction2 = create_new_transaction(asset2)
 
-        transaction2.wallet_id = wallet2.id
-        transaction2.type = 'TransferOut' if t_type == 1 else 'TransferIn'
-        transaction2.date = transaction.date
-        transaction2.quantity = transaction.quantity * -1
-        db.session.commit()
+        transaction2.edit({
+            'type': 'TransferOut' if transaction.type == 'TransferIn' else 'TransferIn',
+            'date': transaction.date,
+            'quantity': transaction.quantity * -1
+        })
+
         transaction2.update_dependencies()
 
-        transaction.related_transaction_id = transaction2.id
-        transaction2.related_transaction_id = transaction.id
+        transaction.related_transaction.append(transaction2)
+        # transaction.related_transaction_id = transaction2.id
+        # transaction2.related_transaction_id = transaction.id
 
     db.session.commit()
     return ''
 
 
-@wallet.route('/transactions_action', methods=['POST'])
+@bp.route('/transactions_action', methods=['POST'])
 @login_required
 @demo_user_change
 def transactions_action():
@@ -323,7 +253,7 @@ def transactions_action():
     return ''
 
 
-@wallet.route('/ajax_wallets_to_sell', methods=['GET'])
+@bp.route('/ajax_wallets_to_sell', methods=['GET'])
 @login_required
 def get_wallets_to_sell():
     ticker_id = request.args['ticker_id']
@@ -341,8 +271,7 @@ def get_wallets_to_sell():
                 result.append({'value': str(wallet.id),
                                'text': wallet.name,
                                'sort': asset.free,
-                               'subtext': '(' + quantity + ')'}) 
-
+                               'subtext': f'({quantity})'})
 
     if result:
         result = sorted(result,
@@ -353,7 +282,7 @@ def get_wallets_to_sell():
     return json.dumps(result)
 
 
-@wallet.route('/ajax_wallets_to_buy', methods=['GET'])
+@bp.route('/ajax_wallets_to_buy', methods=['GET'])
 @login_required
 def get_wallets_to_buy():
     result = []
@@ -364,7 +293,7 @@ def get_wallets_to_buy():
         result.append({'value': str(wallet.id),
                        'text': wallet.name,
                        'sort': wallet.free,
-                       'subtext': '(~ ' + user_currency(wallet.free, 'big') + ')'})
+                       'subtext': f"(~ {user_currency(wallet.free, 'big')})"})
 
     result = sorted(result,
                     key=lambda wallet: wallet.get('sort'), reverse=True)
@@ -372,7 +301,7 @@ def get_wallets_to_buy():
     return json.dumps(result)
 
 
-@wallet.route('/ajax_wallets_to_transfer_out', methods=['GET'])
+@bp.route('/ajax_wallets_to_transfer_out', methods=['GET'])
 @login_required
 def get_wallets_to_transfer_out():
     wallet_id = request.args['wallet_id']
@@ -395,10 +324,10 @@ def get_wallets_to_transfer_out():
 
             quantity = other_currency(asset.free, asset.ticker.symbol)
             sort = asset.free
-        walet_info = {'value': str(wallet.id), 'text': wallet.name, 'sort': sort}
+        info = {'value': str(wallet.id), 'text': wallet.name, 'sort': sort}
         if sort > 0:
-            walet_info['subtext'] = '(' + str(quantity) + ')'
-        result.append(walet_info)
+            info['subtext'] = f"({quantity})"
+        result.append(info)
 
     if result:
         result = sorted(result,
@@ -407,7 +336,7 @@ def get_wallets_to_transfer_out():
     return json.dumps(result)
 
 
-@wallet.route('/ajax_wallet_stable_assets', methods=['GET'])
+@bp.route('/ajax_wallet_stable_assets', methods=['GET'])
 @login_required
 def ajax_wallet_stable_assets():
     result = []
@@ -430,8 +359,8 @@ def ajax_wallet_stable_assets():
         for asset in stables:
             result.append({'value': asset.ticker.id,
                            'text': asset.ticker.symbol.upper(),
-                           'subtext': '(~ ' + str(int(asset.free)) + ')',
-                           'info': get_price(asset.ticker_id)}) 
+                           'subtext': f'(~ {int(asset.free)})',
+                           'info': get_price(asset.ticker_id)})
 
     if not result:
         result = {'message': gettext('Нет активов в кошельке')}
@@ -439,7 +368,7 @@ def ajax_wallet_stable_assets():
     return json.dumps(result)
 
 
-@wallet.route('/ajax_currencies', methods=['GET'])
+@bp.route('/ajax_currencies', methods=['GET'])
 @login_required
 def ajax_currencies():
     result = []
@@ -449,25 +378,6 @@ def ajax_currencies():
     for currency in currencies:
         result.append({'value': str(currency.id[3:]),
                        'text': currency.symbol.upper(),
-                       'subtext': currency.name}) 
+                       'subtext': currency.name})
 
     return json.dumps(result, ensure_ascii=False)
-
-
-def last_wallet(transaction_type):
-    date = wallet = None
-
-    for wallet in current_user.wallets:
-        transaction = last_wallet_transaction(wallet, transaction_type)
-        if transaction:
-            if not date or date < transaction.date:
-                date = transaction.date
-                wallet = wallet
-    return wallet
-
-
-def last_wallet_transaction(wallet, transaction_type):
-    for transaction in wallet.transactions:
-        if transaction.type.lower() == transaction_type.lower():
-            return transaction
-    return None

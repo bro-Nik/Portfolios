@@ -200,6 +200,8 @@
       disabled = $('#TransactionForm input[name=type]:checked').val() == 'Sell' && free_asset <= 0,
       $form = $('#TransactionForm');
 
+    $.get("{{ url_for('.change_session_param', name='transaction_calculation_type') }}" + '&value=' + to_show);
+
     $form.find('span[data-type=' + to_show + ']').addClass('visually-hidden');
     $form.find('[data-type=' + to_show + '] input').attr('disabled', disabled).attr('required', true);
     $form.find('span[data-type=' + to_hide + ']').removeClass('visually-hidden');

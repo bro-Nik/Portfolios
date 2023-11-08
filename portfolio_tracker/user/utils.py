@@ -4,6 +4,7 @@ from flask_login import current_user
 from datetime import datetime, timedelta
 
 from portfolio_tracker.app import db
+from portfolio_tracker.settings import LANGUAGES
 # from portfolio_tracker.models import User
 
 
@@ -13,19 +14,19 @@ def get_demo_user():
 
 
 def from_user_datetime(date):
-    if type(date) == str:
+    if type(date) is str:
         date = datetime.strptime(date, '%Y-%m-%dT%H:%M')
     return date + timedelta(seconds=time.timezone)
 
 
 def get_locale():
-    if current_app.testing:
-        return 'ru'
+    # if current_app.testing:
+    #     return 'ru'
 
     u = current_user
     if u.is_authenticated and u.type != 'demo' and u.locale:
         return u.locale
-    return session.get('locale') or request.accept_languages.best_match(['en', 'ru'])
+    return session.get('locale') or request.accept_languages.best_match(LANGUAGES.keys())
 
 
 def get_currency():
@@ -36,5 +37,8 @@ def get_currency():
 
 
 def get_timezone():
+    if current_app.testing:
+        return None
+
     if current_user.is_authenticated:
         return current_user.timezone

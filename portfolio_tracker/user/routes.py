@@ -1,10 +1,13 @@
 import json
-from flask import Response, render_template, redirect, url_for, request, flash, session
+from json.decoder import JSONDecodeError
+from flask import Response, g, render_template, redirect, url_for, request, \
+    flash, session
 from flask_babel import gettext
 from flask_login import login_user, login_required, current_user
 from datetime import datetime
 
 from portfolio_tracker.app import db
+from portfolio_tracker.settings import LANGUAGES
 from portfolio_tracker.user import bp
 from portfolio_tracker.user.utils import get_locale, get_demo_user
 
@@ -60,9 +63,11 @@ def export_data():
         user = current_user
 
     filename = f'portfolios_export ({datetime.now().date()}).txt'
+
     return Response(json.dumps(user.export_data()),
                     mimetype='application/json',
-		            headers={'Content-disposition': 'attachment; filename={}'.format(filename)})
+                    headers={'Content-disposition':
+                             f'attachment; filename={filename}'})
 
 
 @bp.route('/import_post', methods=['POST'])
@@ -76,12 +81,18 @@ def import_data_post():
         user = current_user
         url = url_for('.settings_export_import')
 
-    try:
-        data = json.loads(request.form['import'])
-        user.import_data(data)
-        flash(gettext('Импорт заверщен'), 'success')
-    except:
-        flash(gettext('Ошибка чтения данных'), 'danger')
+    file = request.files['file']
+    if file:
+        data = file.read()
+
+        try:
+            data = json.loads(data)
+            user.import_data(data)
+            flash(gettext('Импорт заверщен'), 'success')
+        except (JSONDecodeError, ValueError):
+            flash(gettext('Ошибка чтения данных'), 'danger')
+        except Exception:
+            flash(gettext('Неизвестная ошибка'), 'danger')
 
     return redirect(url)
 
@@ -89,8 +100,9 @@ def import_data_post():
 @bp.route('/ajax_locales', methods=['GET'])
 @login_required
 def ajax_locales():
-    result = [{'value': 'en', 'text': 'EN', 'subtext': 'English'},
-              {'value': 'ru', 'text': 'RU', 'subtext': 'Русский'}]
+    result = []
+    for id, lang in LANGUAGES.items():
+        result.append({'value': id, 'text': id.upper(), 'subtext': lang})
 
     return json.dumps(result, ensure_ascii=False)
 
@@ -101,6 +113,7 @@ def change_locale():
     if current_user.is_authenticated and current_user.type != 'demo':
         current_user.change_locale(locale)
         db.session.commit()
+        
     else:
         session['locale'] = locale
     return ''

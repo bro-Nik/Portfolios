@@ -437,6 +437,18 @@ td div.comment {
     white-space: nowrap;
 }
 
+.smart-select__search {
+    display: block;
+    padding: 0 0.5rem;
+    white-space: nowrap;
+    margin-bottom: 1rem;
+}
+
+.smart-select__search input {
+    padding: 0.3rem 1.2rem;
+    outline: 0;
+}
+
 .smart-select__item .subtext {
     margin-left: 0.5rem;
     font-weight: 300;

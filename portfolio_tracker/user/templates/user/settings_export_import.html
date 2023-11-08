@@ -31,13 +31,15 @@
 
 <div>
   <h6>{% trans %}Импорт{% endtrans %}</h6>
-  <form method="post" action="{{ url_for('user.import_data_post') }}">
+  <form method="post" action="{{ url_for('user.import_data_post') }}" enctype="multipart/form-data">
     <div class="row">
       <div class="col-md-12 mb-3">
-        <textarea class="form-control" name="import" rows="15"></textarea>
+        <div class="input-group">
+          <input type="file" name="file" class="form-control" aria-label="Upload">
+          <button class="btn btn-outline-secondary" type="submit">{% trans %}Импорт{% endtrans %}</button>
+        </div>
       </div>
     </div>
-    <button class="btn btn-primary btn-sm" type="submit">{% trans %}Импорт{% endtrans %}</button>
   </form>
 </div>
 

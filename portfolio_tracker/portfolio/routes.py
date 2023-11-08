@@ -2,16 +2,17 @@ import json
 from datetime import datetime
 from flask import flash, render_template, session, url_for, request
 from flask_babel import gettext
-from flask_login import login_required, current_user
+from flask_login import login_required
 
 from portfolio_tracker.app import db
 from portfolio_tracker.general_functions import get_price, get_price_list
 from portfolio_tracker.models import Ticker, OtherAsset, \
         OtherTransaction, OtherBody, Transaction
-from portfolio_tracker.portfolio.utils import AllPortfolios, asset_settings_edit, get_asset, get_other_asset, get_portfolio, portfolio_settings_edit
-# from portfolio_tracker.user.utils import from_user_datetime
-from portfolio_tracker.wallet.wallet import get_transaction, get_wallet_has_asset, last_wallet, last_wallet_transaction
-# from portfolio_tracker.watchlist.watchlist import get_watchlist_asset
+from portfolio_tracker.portfolio.utils import AllPortfolios, \
+    create_new_portfolio, create_new_transaction, get_asset, get_other_asset, \
+    get_portfolio
+from portfolio_tracker.wallet.utils import get_transaction, \
+    get_wallet_has_asset, last_wallet, last_wallet_transaction
 from portfolio_tracker.wraps import demo_user_change
 from portfolio_tracker.portfolio import bp
 
@@ -54,7 +55,7 @@ def portfolios_action():
 def portfolio_settings():
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     return render_template('portfolio/portfolio_settings.html',
-                            portfolio=portfolio)
+                           portfolio=portfolio)
 
 
 @bp.route('/portfolio_settings_update', methods=['POST'])
@@ -63,7 +64,10 @@ def portfolio_settings():
 def portfolio_settings_update():
     """ Add or change portfolio """
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-    portfolio_settings_edit(portfolio, request.form)
+    if not portfolio:
+        portfolio = create_new_portfolio(request.form)
+
+    portfolio.edit(request.form)
     return ''
 
 
@@ -123,10 +127,10 @@ def asset_add_tickers(market):
     search = request.args.get('search')
 
     query = (Ticker.query.filter(Ticker.market == market)
-        # .order_by(Ticker.id))
-        # .order_by(Ticker.market_cap_rank.nulls_last(), Ticker.id))
-        .order_by(Ticker.market_cap_rank.is_(None),
-                  Ticker.market_cap_rank.asc()))
+             .order_by(Ticker.market_cap_rank.is_(None),
+                       Ticker.market_cap_rank.asc()))
+    # .order_by(Ticker.id))
+    # .order_by(Ticker.market_cap_rank.nulls_last(), Ticker.id))
 
     if search:
         query = query.filter(Ticker.name.contains(search)
@@ -149,13 +153,11 @@ def asset_add():
     ticker_id = request.args.get('ticker_id')
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_asset(portfolio, ticker_id=ticker_id, create=True)
-    if not asset:
-        return ''
 
     return str(url_for('.asset_info',
-                portfolio_id=asset.portfolio_id,
-                only_content=request.args.get('only_content'),
-                ticker_id=asset.ticker_id))
+                       only_content=request.args.get('only_content'),
+                       portfolio_id=asset.portfolio_id,
+                       ticker_id=asset.ticker_id)) if asset else ''
 
 
 @bp.route('/asset_settings', methods=['GET'])
@@ -173,7 +175,8 @@ def asset_settings_update():
     """ Change asset """
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_asset(portfolio, request.args.get('ticker_id'))
-    asset_settings_edit(asset, request.form)
+    if asset:
+        asset.edit(request.form)
     return ''
 
 
@@ -244,11 +247,9 @@ def transaction():
         if transaction.order and transaction.type == 'Sell':
             asset.free -= transaction.quantity
     else:
-        transaction = Transaction(
-            type='Buy',
-            date=datetime.utcnow(),
-            price = asset.price
-        )
+        transaction = Transaction(type='Buy', date=datetime.utcnow(),
+                                  price=asset.price)
+
     if not hasattr(transaction, 'wallet_buy'):
         transaction.wallet_buy = last_wallet('buy')
     if not hasattr(transaction, 'wallet_sell'):
@@ -284,11 +285,9 @@ def transaction_update():
     if transaction:
         transaction.update_dependencies('cancel')
     else:
-        transaction = Transaction(portfolio_id=asset.portfolio_id)
-        asset.transactions.append(transaction)
-        db.session.commit()
+        transaction = create_new_transaction(asset)
 
-    transaction.update(request.form)
+    transaction.edit(request.form)
     transaction.update_dependencies()
 
     return ''
@@ -520,17 +519,26 @@ def change_table_sort():
     return ''
 
 
+@bp.route('/change_session_param', methods=['GET'])
+@login_required
+def change_session_param():
+    name = request.args.get('name')
+    value = request.args.get('value')
+
+    session[name] = value
+    return ''
+
+
 @bp.route('/ajax_stable', methods=['GET'])
 @login_required
 def ajax_stable_assets():
     result = []
-    tickers = db.session.execute(db.select(Ticker).filter_by(stable=True)).scalars()
+    tickers = db.session.execute(
+        db.select(Ticker).filter_by(stable=True)).scalars()
+
     for ticker in tickers:
-        result.append({'value': ticker.id,
-                       'text': ticker.symbol.upper()}) 
+        result.append({'value': ticker.id, 'text': ticker.symbol.upper()})
     else:
         result = {'message': 'Нет тикеров'}
 
     return json.dumps(result)
-
-

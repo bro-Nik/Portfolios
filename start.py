@@ -1,6 +1,4 @@
-# from portfolio_tracker.app import app
-from celery import Celery
-
-from portfolio_tracker.app import create_app
+from portfolio_tracker.app import create_app, init_celery, celery
 
 app = create_app()
+init_celery(app, celery)

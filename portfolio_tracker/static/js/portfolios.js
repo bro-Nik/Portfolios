@@ -26,7 +26,7 @@ $(function () {
     } else {
       $box_actions.removeClass("active");
     }
-    $box_actions.find(".checks-count").text(checked_count + " / " + all_count);
+    $box_actions.find(".checks-count").text(`${checked_count} / ${all_count}`);
     $form.find(".check-all").prop("checked", checked_count > 0);
   });
 
@@ -92,7 +92,7 @@ $(function () {
     if ($btn.attr("data-form")) {
       $modal.find(".action").attr("data-form", $btn.attr("data-form"));
     } else {
-      $modal.find(".action").attr("data-form", "#" + $btn.closest("form").attr("id"));
+      $modal.find(".action").attr("data-form", `#${$btn.closest("form").attr("id")}`);
     }
 
     // if modal then update
@@ -159,7 +159,7 @@ $(function () {
     // Fade
     if (!$modal.find(".modal-fullscreen").length) {
       $("body").append(
-        '<div class="modal-backdrop fade show" style="z-index: ' + (z_index - 1) + ';"></div>'
+        `<div class="modal-backdrop fade show" style="z-index: ${z_index - 1};"></div>`
       );
     }
   });
@@ -260,7 +260,7 @@ $(function () {
 function LoadToPage(url) {
   if (!url) {
     url = $(location).attr('href');
-    url += (url.indexOf("?") > 0 ? "&" : "?") + "only_content=true";
+    url += `${url.indexOf("?") > 0 ? "&" : "?"}only_content=true`;
   }
   $('#content').load(url, function () {
     UpdateScripts($('#content'));
@@ -278,7 +278,7 @@ function LoadToModal(modal_id, url, pre_need_update, pre_modal_id) {
     // load only content
     if ($modal.find(".modal-fullscreen").length) {
       var $loadIn = $modal.find(".modal-body").empty();
-      url += (url.indexOf("?") > 0 ? "&" : "?") + "only_content=true";
+      url += `${url.indexOf("?") > 0 ? "&" : "?"}only_content=true`;
     } else {
       var $loadIn = $modal.empty();
     }
@@ -318,14 +318,15 @@ function PageUpdate($modal) {
   var this_need_update = $modal.attr("data-this-need-update"),
     pre_need_update = $modal.attr("data-pre-need-update"),
     pre_need_clean = $modal.attr("data-pre-need-clean"),
-    pre_modal_id = $modal.attr("data-pre-modal-id");
+    pre_modal_id = $modal.attr("data-pre-modal-id"),
+    $pre_modal = $(`#${pre_modal_id}`);
 
   if (pre_need_clean == 'true') {
-    $('#' + pre_modal_id).attr('data-pre-need-update', true);
-    $('#' + pre_modal_id).modal('hide');
+    $pre_modal.attr('data-pre-need-update', true);
+    $pre_modal.modal('hide');
   } else if (pre_need_update == 'true') {
     if (pre_modal_id) {
-      LoadToModal(pre_modal_id, $("#" + pre_modal_id).attr("data-url"), true);
+      LoadToModal(pre_modal_id, $pre_modal.attr("data-url"), true);
     } else {
       LoadToPage();
     }
@@ -371,7 +372,7 @@ function UpdateTables($element = $("body")) {
       url = $(this).closest('table').data('sort-url');
 
     if (tab_name && field && sort_order && url) {
-      url += '?tab_name=' + tab_name + '&field=' + field + '&sort_order=' + sort_order;
+      url += `?tab_name=${tab_name}&field=${field}&sort_order=${sort_order}`;
       $.get(url)
     }
   })
@@ -394,7 +395,7 @@ function CreateStickyBottomActions($element) {
     <div class="sticky-bottom actions">
       <div class="col-12">
         <div class="bg-white h-100 d-flex gap-2 align-items-center align-items-center">
-          <span class="ms-5">` + trans.selected + `</span>
+          <span class="ms-5">${trans.selected}</span>
           <span class="checks-count"></span>
           <a class="ms-3 decheck-all">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>

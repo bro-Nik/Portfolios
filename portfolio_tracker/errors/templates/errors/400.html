@@ -1,0 +1,19 @@
+{% set only_content = request.args.get('only_content') %}
+
+{% if not only_content %}
+    {% extends "base.html" %}
+    {% block title %}{% trans %}Ошибка{% endtrans %}{% endblock %}
+{% endif %}
+
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block content %}
+<div class="h-100 d-flex align-items-center">
+    <div class="w-100">
+        <h1 class="text-center">{% trans %}Некорректный запрос{% endtrans %}</h1>
+        <p class="text-center lead">{% trans %}Ошибка 400{% endtrans %}</p>
+    </div>
+</div>
+
+{% endblock %}

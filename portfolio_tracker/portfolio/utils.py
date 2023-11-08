@@ -1,22 +1,12 @@
-# import json
-# from datetime import datetime
-# from flask import flash, render_template, session, url_for, request, Blueprint
-# from flask_babel import gettext
-from flask_login import login_required, current_user
+from flask_login import current_user
 
 from portfolio_tracker.app import db
-# from portfolio_tracker.general_functions import get_price, get_price_list
-from portfolio_tracker.models import Details, Portfolio, Asset
-        # OtherTransaction, OtherBody, Transaction
-# from portfolio_tracker.user.utils import from_user_datetime
-# from portfolio_tracker.wallet.wallet import get_wallet_has_asset, last_wallet, last_wallet_transaction
-# from portfolio_tracker.watchlist.watchlist import get_watchlist_asset
-# from portfolio_tracker.wraps import demo_user_change
+from portfolio_tracker.models import Details, Portfolio, Asset, Transaction
 
 
-def get_portfolio(id):
+def get_portfolio(id, user=current_user):
     if id:
-        for portfolio in current_user.portfolios:
+        for portfolio in user.portfolios:
             if portfolio.id == int(id):
                 return portfolio
 
@@ -28,10 +18,7 @@ def get_asset(portfolio, ticker_id, create=False):
                 return asset
         else:
             if create:
-                asset = Asset(ticker_id=ticker_id)
-                portfolio.assets.append(asset)
-                db.session.commit()
-                return asset
+                return create_new_asset(portfolio, ticker_id)
 
 
 def get_other_asset(portfolio, asset_id):
@@ -55,40 +42,24 @@ def get_other_body(asset, body_id):
                 return body
 
 
-def portfolio_settings_edit(portfolio, form, user=current_user):
-    name = form.get('name')
-    comment = form.get('comment')
-    market = form.get('market')
-    percent = form.get('percent') or 0
+def create_new_portfolio(form, user=current_user):
+    portfolio = Portfolio(market=form.get('market'))
+    user.portfolios.append(portfolio)
+    return portfolio
 
-    if portfolio is None:
-        user_portfolios = user.portfolios
-        names = [i.name for i in user_portfolios if i.market == market]
-        if name in names:
-            n = 2
-            while str(name) + str(n) in names:
-                n += 1
-            name = str(name) + str(n)
-        portfolio = Portfolio(market=market)
-        user.portfolios.append(portfolio)
 
-    if name is not None:
-        portfolio.name = name
-    portfolio.percent = percent
-    portfolio.comment = comment
+def create_new_asset(portfolio, ticker_id):
+    asset = Asset(ticker_id=ticker_id)
+    portfolio.assets.append(asset)
     db.session.commit()
+    return asset
 
 
-def asset_settings_edit(asset, form):
-    if asset:
-        comment = form.get('comment')
-        percent = form.get('percent')
-
-        if comment != None:
-            asset.comment = comment
-        if percent != None:
-            asset.percent = percent
-        db.session.commit()
+def create_new_transaction(asset):
+    transaction = Transaction(portfolio_id=asset.portfolio_id)
+    asset.transactions.append(transaction)
+    db.session.commit()
+    return transaction
 
 
 class AllPortfolios(Details):

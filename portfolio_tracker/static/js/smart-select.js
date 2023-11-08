@@ -24,7 +24,7 @@ function UpdateSmartSelects($element = $("body")) {
     $select.addClass('visually-hidden');
     $select.wrap('<div class="smart-select-box"></div>');
     $('<div>', {
-        class: 'smart-select' + (selectClass ? ' ' + selectClass : ''),
+        class: `smart-select${(selectClass ? ` ${selectClass}` : '')}`,
         text: selectedOption.length ? selectedOption.text() : $select.attr('data-placeholder') || '-'
     }).insertAfter($select);
 
@@ -65,24 +65,54 @@ function UpdateSmartSelects($element = $("body")) {
   });
 }
 
+function SearchSelect($select, search) {
+  selectList = $select.next('.smart-select').next('.smart-select__list');
+  selectList.css('min-width', selectList.width()) 
+  selectList.css('min-height', selectList.height()) 
+
+  $select.parent().find('.smart-select__item').each(function () {
+    var text = $(this).text().toLowerCase();
+    if (!text.includes(search)) {
+      $(this).attr('style', 'display: none')
+    } else {
+      $(this).removeAttr('style')
+    }
+  });
+
+}
+
 function GenerateSelect($select) {
   var options_list = $select.parent().find('.smart-select__item').length,
     selectList = $select.next('.smart-select').next('.smart-select__list');
 
   if (!options_list) {
+
+    // Search
+    if ($select.find('option').length >= 5) {
+      selectList.append($('<div>', {
+          class: 'smart-select__search',
+          html: $('<input>', {
+              class: 'border rounded-3 w-100',
+          }).on("input", function () {
+              SearchSelect($select, $(this).val());
+            })
+      }));
+    }
+
+
     var selectOption = $select.find('option'),
       selectOptionLength = selectOption.length;
 
     for (let i = 0; i < selectOptionLength; i++) {
       if (selectOption.eq(i).val() && selectOption.eq(i).text()) {
-        var is_selected = selectOption.eq(i).prop('selected') ? ' selected' : '';
-
-        var text = '<span class="text">' + selectOption.eq(i).text() + '</span>';
+        var text = `<span class="text">${selectOption.eq(i).text()}</span>`;
         if (selectOption.eq(i).data('subtext')) {
-          text += '<span class="subtext">' + selectOption.eq(i).data('subtext') + '</span>';
+          text += `<span class="subtext">${selectOption.eq(i).data('subtext')}</span>`;
         }
+
+        var is_selected = selectOption.eq(i).prop('selected') ? ' selected' : '';
         $('<div>', {
-          class: 'smart-select__item' + is_selected,
+          class: `smart-select__item ${is_selected}`,
           html: text 
         })
         .attr('data-value', selectOption.eq(i).val())
@@ -94,6 +124,7 @@ function GenerateSelect($select) {
   // selectList.slideDown(50);
   // selectList.slideToggle(100);
   selectList.fadeIn(50);
+  selectList.find('.smart-select__search input').focus();
 }
 
 function GetOptions($select) {
@@ -154,7 +185,7 @@ function ClickInSelect($select){
     selectHead.removeClass('on');
 
     if ($select.data('action-url')) {
-      $.get($select.data('action-url') + '?value=' + chooseItem)
+      $.get(`${$select.data('action-url')}?value=${chooseItem}`)
       .done(function (data) {
         location. reload();
       });

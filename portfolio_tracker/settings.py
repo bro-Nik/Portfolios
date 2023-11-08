@@ -19,9 +19,19 @@ class Config:
 
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER')
     ALLOWED_EXTENSIONS = os.environ.get('ALLOWED_EXTENSIONS')
+    MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 1024))
 
     BABEL_TRANSLATION_DIRECTORIES = os.environ.get('BABEL_TRANSLATION_DIRECTORIES')
 
     CRYPTO_PREFIX = os.environ.get('CRYPTO_PREFIX')
     STOCKS_PREFIX = os.environ.get('STOCKS_PREFIX')
     CURRENCY_PREFIX = os.environ.get('CURRENCY_PREFIX')
+
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
+    RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
+
+
+LANGUAGES = {
+    'ru': 'Русский',
+    'en': 'English',
+}

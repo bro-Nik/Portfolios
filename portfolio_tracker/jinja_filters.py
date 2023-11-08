@@ -7,7 +7,7 @@ from flask_babel import Locale
 from flask_login import current_user
 import time
 # from portfolio_tracker.app import app
-from portfolio_tracker.general_functions import get_price_list
+from portfolio_tracker.general_functions import get_price, get_price_list
 from portfolio_tracker.main import bp
 
 
@@ -86,8 +86,8 @@ bp.add_app_template_filter(long_number)
 def user_currency(number, param=None):
     currency = current_user.currency
     locale = current_user.locale
-    price_list = get_price_list()
-    price_currency_to_usd = price_list.get(current_app.config['CURRENCY_PREFIX'] + currency, 1)
+
+    price_currency_to_usd = 1 / get_price(current_user.currency_ticker_id)
     number *= price_currency_to_usd
 
     # round

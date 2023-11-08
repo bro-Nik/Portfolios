@@ -1,45 +1,16 @@
 import json
-from flask import render_template, session, url_for, request, Blueprint
+from flask import render_template, session, url_for, request
 from flask_login import login_required, current_user
-from datetime import datetime
 
 from portfolio_tracker.general_functions import get_price_list
-from portfolio_tracker.models import Alert, Ticker, WatchlistAsset
+from portfolio_tracker.models import Ticker, WatchlistAsset
+from portfolio_tracker.watchlist.utils import create_new_alert, get_alert, get_watchlist_asset
 from portfolio_tracker.wraps import demo_user_change
 from portfolio_tracker.app import db
+from portfolio_tracker.watchlist import bp
 
 
-watchlist = Blueprint('watchlist',
-                      __name__,
-                      template_folder='templates',
-                      static_folder='static')
-
-
-def get_watchlist_asset(ticker_id, create=False):
-    # if not current_user:
-    # current_user = db.session.execute(db.select(User).filter_by(id=5)).scalar()
-    if ticker_id:
-        for asset in current_user.watchlist:
-            if asset.ticker_id == ticker_id:
-                return asset
-        else:
-            if create:
-                asset = WatchlistAsset(ticker_id=ticker_id)
-                current_user.watchlist.append(asset)
-                db.session.commit()
-                return asset
-    return None
-
-
-def get_alert(whitelist_asset, alert_id):
-    if whitelist_asset and alert_id:
-        for alert in whitelist_asset.alerts:
-            if alert.id == int(alert_id):
-                return alert
-    return None
-
-
-@watchlist.route('/', methods=['GET'])
+@bp.route('/', methods=['GET'])
 @login_required
 def assets():
     market = request.args.get('market')
@@ -51,12 +22,13 @@ def assets():
         market = session.get('watchlist_market', 'crypto')
 
     select = (db.select(WatchlistAsset).distinct()
-        .filter_by(user_id=current_user.id))
+              .filter_by(user_id=current_user.id)
+              .join(WatchlistAsset.ticker).filter_by(market=market))
 
     if status:
         select = select.join(WatchlistAsset.alerts).filter_by(status=status)
 
-    select = select.join(WatchlistAsset.ticker).filter_by(market=market)
+    # select = select.join(WatchlistAsset.ticker).filter_by(market=market)
     tickers = db.session.execute(select).scalars()
 
     return render_template('watchlist/assets.html',
@@ -65,7 +37,7 @@ def assets():
                            market=market)
 
 
-@watchlist.route('/action', methods=['POST'])
+@bp.route('/action', methods=['POST'])
 @login_required
 @demo_user_change
 def assets_action():
@@ -93,54 +65,48 @@ def assets_action():
     return ''
 
 
-@watchlist.route('/add_asset', methods=['GET'])
+@bp.route('/add_asset', methods=['GET'])
 @login_required
 @demo_user_change
 def asset_add():
     """ Add to Tracking list """
-    watchlist_asset = get_watchlist_asset(request.args.get('ticker_id'), True)
-    if not watchlist_asset:
-        return ''
+    asset = get_watchlist_asset(request.args.get('ticker_id'), True)
 
     return str(url_for('.asset_info',
-                        ticker_id=watchlist_asset.ticker_id,
-                        only_content=request.args.get('only_content')))
+                       only_content=request.args.get('only_content'),
+                       ticker_id=asset.ticker_id)) if asset else ''
 
 
-@watchlist.route('/watchlist_asset_update', methods=['POST'])
+@bp.route('/watchlist_asset_update', methods=['POST'])
 @login_required
 @demo_user_change
 def watchlist_asset_update():
-    watchlist_asset = get_watchlist_asset(request.args.get('ticker_id'), True)
-    if watchlist_asset:
-        comment = request.form.get('comment')
-        if comment is not None:
-            watchlist_asset.comment = comment
-        db.session.commit()
+    asset = get_watchlist_asset(request.args.get('ticker_id'), True)
+    if asset:
+        asset.edit(request.form)
     return ''
 
 
-@watchlist.route('/asset_info', methods=['GET'])
+@bp.route('/asset_info', methods=['GET'])
 @login_required
 def asset_info():
     # Если из портфеля, то не создавать, пока нет уведомлений
     need_create = not request.args.get('asset_id')
 
     ticker_id = request.args.get('ticker_id')
-    watchlist_asset = get_watchlist_asset(ticker_id, need_create)
-    if not watchlist_asset:
-        watchlist_asset = WatchlistAsset()
+    asset = get_watchlist_asset(ticker_id, need_create)
+    if not asset:
         ticker = db.session.execute(db.select(Ticker)
                                     .filter_by(id=ticker_id)).scalar()
-        watchlist_asset.ticker = ticker
+        asset = WatchlistAsset(ticker=ticker)
+        # asset.ticker = ticker
 
-    watchlist_asset.update_price()
+    asset.update_price()
 
-    return render_template('watchlist/asset_info.html',
-                           watchlist_asset=watchlist_asset)
+    return render_template('watchlist/asset_info.html', watchlist_asset=asset)
 
 
-@watchlist.route('/alerts_action', methods=['POST'])
+@bp.route('/alerts_action', methods=['POST'])
 @login_required
 @demo_user_change
 def alerts_action():
@@ -167,21 +133,17 @@ def alerts_action():
 
         # Turn off
         elif action == 'turn_off':
-            if not alert.transaction_id:
-                alert.status = 'off'
+            alert.turn_off()
 
         # Turn on
         elif action == 'turn_on':
-            if alert.transaction_id and alert.status != 'on':
-                alert.transaction_id = None
-                alert.asset_id = None
-            alert.status = 'on'
+            alert.turn_on()
 
     db.session.commit()
     return ''
 
 
-@watchlist.route('/alert', methods=['GET'])
+@bp.route('/alert', methods=['GET'])
 @login_required
 def alert():
     watchlist_asset = get_watchlist_asset(request.args.get('ticker_id'))
@@ -197,7 +159,7 @@ def alert():
                            alert=alert)
 
 
-@watchlist.route('/alert_update', methods=['POST'])
+@bp.route('/alert_update', methods=['POST'])
 @login_required
 @demo_user_change
 def alert_update():
@@ -208,24 +170,16 @@ def alert_update():
 
     alert = get_alert(watchlist_asset, request.args.get('alert_id'))
     if not alert:
-        alert = Alert(date=datetime.now().date(),
-                      asset_id=request.args.get('asset_id'))
-        watchlist_asset.alerts.append(alert)
+        alert = create_new_alert(watchlist_asset)
 
-    price_list = get_price_list()
-    alert.price = float(request.form['price'])
-    alert.price_ticker_id = request.form['price_ticker_id']
-    alert.price_usd = alert.price / price_list.get(alert.price_ticker_id, 1)
-    alert.comment = request.form['comment']
-
-    asset_price = price_list.get(watchlist_asset.ticker_id, 1)
-    alert.type = 'down' if asset_price >= alert.price_usd else 'up'
+    alert.asset_id = request.args.get('asset_id')
+    alert.edit(request.form)
 
     db.session.commit()
     return ''
 
 
-@watchlist.route('/ajax_stable', methods=['GET'])
+@bp.route('/ajax_stable', methods=['GET'])
 @login_required
 def ajax_stable_assets():
     result = []
@@ -237,7 +191,7 @@ def ajax_stable_assets():
     for ticker in tickers:
         result.append({'value': ticker.id,
                        'text': ticker.symbol.upper(),
-                       'info': price_list.get(ticker.id, 1) * asset_price}) 
+                       'info': price_list.get(ticker.id, 1) * asset_price})
 
     if not result:
         result = {'message': 'Нет тикеров'}
