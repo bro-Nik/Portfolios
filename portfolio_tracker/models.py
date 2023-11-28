@@ -112,7 +112,7 @@ class Transaction(db.Model):
             alert.price_ticker_id = self.ticker2_id
             alert.date = self.date
             alert.transaction_id = self.id
-            alert.asset_id = self.asset_id
+            alert.asset_id = self.portfolio_asset.id
             alert.comment = self.comment
 
             asset_price = get_price(self.ticker_id, 1)
@@ -483,8 +483,8 @@ class WatchlistAsset(db.Model):
     def is_empty(self):
         return not (self.alerts or self.comment)
 
-    def update_price(self):
-        self.price = get_price(self.ticker_id, 0)
+    # def update_price(self):
+    #     self.price = get_price(self.ticker_id, 0)
 
     def delete(self):
         for alert in self.alerts:

@@ -11,6 +11,8 @@ from portfolio_tracker.general_functions import get_price, get_price_list
 from portfolio_tracker.main import bp
 
 
+bp.add_app_template_filter(get_price)
+
 def smart_int(number):
     ''' Float без точки, если оно целое '''
     if not number:

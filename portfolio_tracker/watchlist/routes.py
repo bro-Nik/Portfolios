@@ -2,7 +2,7 @@ import json
 from flask import render_template, session, url_for, request
 from flask_login import login_required, current_user
 
-from portfolio_tracker.general_functions import get_price_list
+from portfolio_tracker.general_functions import get_price, get_price_list
 from portfolio_tracker.models import Ticker, WatchlistAsset
 from portfolio_tracker.watchlist.utils import create_new_alert, get_alert, get_watchlist_asset
 from portfolio_tracker.wraps import demo_user_change
@@ -99,9 +99,8 @@ def asset_info():
         ticker = db.session.execute(db.select(Ticker)
                                     .filter_by(id=ticker_id)).scalar()
         asset = WatchlistAsset(ticker=ticker)
-        # asset.ticker = ticker
 
-    asset.update_price()
+    asset.price = get_price(ticker_id)
 
     return render_template('watchlist/asset_info.html', watchlist_asset=asset)
 
@@ -146,11 +145,13 @@ def alerts_action():
 @bp.route('/alert', methods=['GET'])
 @login_required
 def alert():
-    watchlist_asset = get_watchlist_asset(request.args.get('ticker_id'))
-    if not watchlist_asset:
+    ticker_id = request.args.get('ticker_id')
+    if not ticker_id:
         return ''
 
-    watchlist_asset.update_price()
+    watchlist_asset = get_watchlist_asset(ticker_id, True)
+    watchlist_asset.price = get_price(ticker_id)
+
     alert = get_alert(watchlist_asset, request.args.get('alert_id'))
 
     return render_template('watchlist/alert.html',

@@ -9,5 +9,6 @@ portfolio_tracker/static/images
 celerybeat-schedule
 dump.rdb
 pyrightconfig.json
+.pylintrc
 messages.pot
 test.py

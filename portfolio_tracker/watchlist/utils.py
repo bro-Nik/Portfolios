@@ -1,5 +1,6 @@
 from flask_login import current_user
 from portfolio_tracker.models import Alert, WatchlistAsset
+from portfolio_tracker.app import db
 
 
 def get_watchlist_asset(ticker_id, create=False, user=current_user):
@@ -7,9 +8,9 @@ def get_watchlist_asset(ticker_id, create=False, user=current_user):
         for asset in user.watchlist:
             if asset.ticker_id == ticker_id:
                 return asset
-        else:
-            if create:
-                return create_new_watchlist_asset(ticker_id, user)
+
+        if create:
+            return create_new_watchlist_asset(ticker_id, user)
 
 
 def get_alert(whitelist_asset, alert_id):

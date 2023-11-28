@@ -25,7 +25,7 @@
             <select name="price_ticker_id" class="form-select" tabindex="-1"
               data-url="{{ url_for('.ajax_stable_assets', ticker_id=watchlist_asset.ticker_id) }}" required {{ 'disabled' if alert.transaction }}>
               <option selected value="{{ selected_ticker.id }}"
-                data-info="{{ selected_ticker.get_price() * watchlist_asset.price }}">
+                data-info="{{ selected_ticker.id|get_price * watchlist_asset.price }}">
                 {{ selected_ticker.symbol|upper }}</option>
             </select>
           </div>
