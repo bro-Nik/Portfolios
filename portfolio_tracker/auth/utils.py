@@ -1,5 +1,3 @@
-"""Логика авторизации"""
-
 from datetime import datetime
 
 from portfolio_tracker.app import db, login_manager

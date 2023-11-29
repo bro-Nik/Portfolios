@@ -1,10 +1,6 @@
-"""Роуты авторизации"""
-
-
 from flask import render_template, redirect, url_for, request, flash
 from flask_babel import gettext
 from flask_login import login_user, login_required, logout_user, current_user
-from werkzeug.urls import url_parse
 
 from portfolio_tracker.auth import bp
 from portfolio_tracker.auth.utils import create_new_user, find_user
@@ -78,7 +74,7 @@ def login():
                 user.new_login()
 
                 next_page = request.args.get('next')
-                if not next_page or url_parse(next_page).netloc != '':
+                if not next_page:
                     next_page = url_for('portfolio.portfolios')
                 return redirect(next_page)
 

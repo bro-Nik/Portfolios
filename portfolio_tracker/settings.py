@@ -10,6 +10,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
     SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
     FLASK_DEBUG = os.environ.get('FLASK_DEBUG')
+    FLASK_RUN_PORT = os.environ.get('FLASK_RUN_PORT')
 
     API_KEY_POLYGON = os.environ.get('API_KEY_POLYGON')
     API_KEY_CURRENCYLAYER = os.environ.get('API_KEY_CURRENCYLAYER')
