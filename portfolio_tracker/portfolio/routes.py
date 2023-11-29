@@ -10,7 +10,7 @@ from portfolio_tracker.models import Ticker, OtherAsset, \
         OtherTransaction, OtherBody, Transaction
 from portfolio_tracker.portfolio.utils import AllPortfolios, \
     create_new_portfolio, create_new_transaction, get_asset, get_other_asset, \
-    get_portfolio
+    get_other_body, get_portfolio
 from portfolio_tracker.wallet.utils import get_transaction, \
     get_wallet_has_asset, last_wallet, last_wallet_transaction
 from portfolio_tracker.wraps import demo_user_change
@@ -20,7 +20,7 @@ from portfolio_tracker.portfolio import bp
 @bp.route('/', methods=['GET'])
 @login_required
 def portfolios():
-    """ Portfolios page """
+    """Portfolios page."""
     return render_template('portfolio/portfolios.html',
                            all_portfolios=AllPortfolios())
 
@@ -29,13 +29,13 @@ def portfolios():
 @login_required
 @demo_user_change
 def portfolios_action():
-    """ Action portfolio """
+    """Action portfolio."""
     data = json.loads(request.data) if request.data else {}
     ids = data['ids']
     action = data['action']
 
-    for id in ids:
-        portfolio = get_portfolio(id)
+    for portfolio_id in ids:
+        portfolio = get_portfolio(portfolio_id)
         if not portfolio:
             continue
 
@@ -53,6 +53,7 @@ def portfolios_action():
 @bp.route('/portfolio_settings', methods=['GET'])
 @login_required
 def portfolio_settings():
+    """Portfolio settings."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     return render_template('portfolio/portfolio_settings.html',
                            portfolio=portfolio)
@@ -62,7 +63,7 @@ def portfolio_settings():
 @login_required
 @demo_user_change
 def portfolio_settings_update():
-    """ Add or change portfolio """
+    """Portfolio settings update."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     if not portfolio:
         portfolio = create_new_portfolio(request.form)
@@ -74,22 +75,21 @@ def portfolio_settings_update():
 @bp.route('/<int:portfolio_id>', methods=['GET'])
 @login_required
 def portfolio_info(portfolio_id):
-    """ Portfolio page """
+    """Portfolio page."""
     portfolio = get_portfolio(portfolio_id)
     if not portfolio:
         return ''
 
     page = 'other_' if portfolio.market == 'other' else ''
     return render_template(f'portfolio/{page}portfolio_info.html',
-                           portfolio=portfolio,
-                           all_portfolios=AllPortfolios())
+                           portfolio=portfolio, all_portfolios=AllPortfolios())
 
 
 @bp.route('/assets_action', methods=['POST'])
 @login_required
 @demo_user_change
 def assets_action():
-    """ Asset action """
+    """Asset action."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
 
     data = json.loads(request.data) if request.data else {}
@@ -115,6 +115,7 @@ def assets_action():
 @bp.route('/<string:market>/add_asset_modal', methods=['GET'])
 @login_required
 def asset_add_modal(market):
+    """Modal window to add asset."""
     return render_template('portfolio/add_asset_modal.html',
                            market=market,
                            portfolio_id=request.args.get('portfolio_id'))
@@ -123,23 +124,18 @@ def asset_add_modal(market):
 @bp.route('/<string:market>/add_asset_tickers', methods=['GET'])
 @login_required
 def asset_add_tickers(market):
-    per_page = 20
-    search = request.args.get('search')
-
+    """Tickers to modal window to add asset."""
     query = (Ticker.query.filter(Ticker.market == market)
              .order_by(Ticker.market_cap_rank.is_(None),
                        Ticker.market_cap_rank.asc()))
-    # .order_by(Ticker.id))
-    # .order_by(Ticker.market_cap_rank.nulls_last(), Ticker.id))
 
-    if search:
-        query = query.filter(Ticker.name.contains(search)
-                             | Ticker.symbol.contains(search))
+    if (search := request.args.get('search')):
+        query = query.filter(Ticker.name.contains(search) or
+                             Ticker.symbol.contains(search))
 
-    tickers = query.paginate(page=request.args.get('page', 1, type=int),
-                             per_page=per_page,
-                             error_out=False)
-    if tuple(tickers):
+    tickers = tuple(query.paginate(page=request.args.get('page', 1, type=int),
+                                   per_page=20, error_out=False))
+    if tickers:
         return render_template('portfolio/add_asset_tickers.html',
                                tickers=tickers)
     return 'end'
@@ -149,7 +145,7 @@ def asset_add_tickers(market):
 @login_required
 @demo_user_change
 def asset_add():
-    """ Add asset to portfolio """
+    """Add asset to portfolio."""
     ticker_id = request.args.get('ticker_id')
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_asset(portfolio, ticker_id=ticker_id, create=True)
@@ -163,6 +159,7 @@ def asset_add():
 @bp.route('/asset_settings', methods=['GET'])
 @login_required
 def asset_settings():
+    """Asset settings."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_asset(portfolio, request.args.get('ticker_id'))
     return render_template('portfolio/asset_settings.html', asset=asset)
@@ -172,7 +169,7 @@ def asset_settings():
 @login_required
 @demo_user_change
 def asset_settings_update():
-    """ Change asset """
+    """Asset settings update."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_asset(portfolio, request.args.get('ticker_id'))
     if asset:
@@ -183,7 +180,7 @@ def asset_settings_update():
 @bp.route('/asset_info')
 @login_required
 def asset_info():
-    """ Asset page """
+    """Asset page."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     if not portfolio:
         return ''
@@ -207,6 +204,7 @@ def asset_info():
 @login_required
 @demo_user_change
 def transactions_action():
+    """Transactions action."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_asset(portfolio, request.args.get('ticker_id'))
 
@@ -214,8 +212,8 @@ def transactions_action():
     action = data['action']
     ids = data['ids']
 
-    for id in ids:
-        transaction = get_transaction(asset, id)
+    for transaction_id in ids:
+        transaction = get_transaction(asset, transaction_id)
         if not transaction:
             continue
 
@@ -229,9 +227,10 @@ def transactions_action():
     return ''
 
 
-@bp.route('/transaction', methods=['GET'])
+@bp.route('/transaction_info')
 @login_required
-def transaction():
+def transaction_info():
+    """Transaction info."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_asset(portfolio, request.args.get('ticker_id'))
     if not asset:
@@ -255,16 +254,14 @@ def transaction():
     if not hasattr(transaction, 'wallet_sell'):
         transaction.wallet_sell = get_wallet_has_asset(asset.ticker_id)
 
-    last_transaction = last_wallet_transaction(
-        transaction.wallet or transaction.wallet_buy,
-        transaction.type
-    )
+    last_transaction = last_wallet_transaction(transaction.wallet or
+                                               transaction.wallet_buy,
+                                               transaction.type)
     if last_transaction:
         transaction.quote_ticker = last_transaction.quote_ticker
         transaction.quote_ticker.price = get_price(transaction.quote_ticker.id, 1)
 
     calculation_type = session.get('transaction_calculation_type', 'amount')
-
     return render_template('portfolio/transaction.html',
                            transaction=transaction,
                            asset=asset,
@@ -275,7 +272,7 @@ def transaction():
 @login_required
 @demo_user_change
 def transaction_update():
-    """ Add or change transaction """
+    """Add transaction or change transaction info."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_asset(portfolio, request.args.get('ticker_id'))
     if not asset:
@@ -299,7 +296,7 @@ def transaction_update():
 @login_required
 @demo_user_change
 def other_asset_action():
-    """ Other assets action """
+    """Other assets action."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
 
@@ -326,6 +323,7 @@ def other_asset_action():
 @bp.route('/other_asset/transaction_action', methods=['POST'])
 @login_required
 def other_transaction_action():
+    """Other transaction action."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
 
@@ -349,6 +347,7 @@ def other_transaction_action():
 @bp.route('/other_asset/body_action', methods=['POST'])
 @login_required
 def other_body_action():
+    """Other body action."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
 
@@ -372,6 +371,7 @@ def other_body_action():
 @bp.route('/<int:portfolio_id>/other_asset_settings', methods=['GET'])
 @login_required
 def other_asset_settings(portfolio_id):
+    """Other asset settings."""
     portfolio = get_portfolio(portfolio_id)
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
     return render_template('portfolio/other_asset_settings.html',
@@ -383,8 +383,11 @@ def other_asset_settings(portfolio_id):
 @login_required
 @demo_user_change
 def other_asset_settings_update(portfolio_id):
-    """ Add other asset to portfolio """
+    """Other asset settings update."""
     portfolio = get_portfolio(portfolio_id)
+    if not portfolio:
+        return ''
+
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
     if not asset:
         asset = OtherAsset(portfolio_id=portfolio_id)
@@ -401,9 +404,9 @@ def other_asset_settings_update(portfolio_id):
     asset.name = name
     comment = request.form.get('comment')
     percent = request.form.get('percent')
-    if comment != None:
+    if comment is None:
         asset.comment = comment
-    if percent != None:
+    if percent is None:
         asset.percent = percent or 0
 
     db.session.commit()
@@ -413,6 +416,7 @@ def other_asset_settings_update(portfolio_id):
 @bp.route('/other_asset_transaction', methods=['GET'])
 @login_required
 def other_transaction():
+    """Other transaction info."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
     if not asset:
@@ -430,7 +434,7 @@ def other_transaction():
 @login_required
 @demo_user_change
 def other_transaction_update():
-    """ Add or change transaction of other asset """
+    """Other transaction info update."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
     if not asset:
@@ -443,13 +447,12 @@ def other_transaction_update():
         transaction = OtherTransaction()
         asset.transactions.append(transaction)
 
-    price_list = get_price_list()
     transaction.type = request.form['type']
-    type = 1 if transaction.type == 'Profit' else -1
+    sign = 1 if transaction.type == 'Profit' else -1
     transaction.amount_ticker_id = request.form['amount_ticker_id']
-    transaction.amount_with_ticker = float(request.form['amount']) * type
+    transaction.amount_with_ticker = float(request.form['amount']) * sign
     transaction.amount = (transaction.amount_with_ticker
-                          / price_list.get(transaction.amount_ticker_id))
+                          / get_price(transaction.amount_ticker_id))
     transaction.comment = request.form['comment']
     transaction.date = request.form['date']
 
@@ -457,28 +460,27 @@ def other_transaction_update():
     transaction.update_dependencies()
     db.session.commit()
     session['other_asset_page'] = 'transactions'
-    
     return ''
 
 
 @bp.route('/other_asset_body', methods=['GET'])
 @login_required
 def other_body():
+    """Other body info."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
     body = get_other_body(asset, request.args.get('body_id'))
 
     return render_template('portfolio/other_body.html',
-                           asset=asset,
-                           date=datetime.now().date(),
-                           body=body)
+                           asset=asset, body=body,
+                           date=datetime.now().date())
 
 
 @bp.route('/other_asset_body_update', methods=['POST'])
 @login_required
 @demo_user_change
 def other_body_update():
-    """ Add or change body of other asset """
+    """Other body info update."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
     if not asset:
@@ -495,9 +497,11 @@ def other_body_update():
     body.name = request.form['name']
     body.amount_ticker_id = request.form['amount_ticker_id']
     body.amount_with_ticker = float(request.form['amount'])
-    body.amount = body.amount_with_ticker / price_list.get(body.amount_ticker_id, 1)
+    body.amount = (body.amount_with_ticker /
+                   price_list.get(body.amount_ticker_id, 1))
     body.cost_now_with_ticker = float(request.form['cost_now'])
-    body.cost_now = body.cost_now_with_ticker / price_list.get(body.amount_ticker_id, 1)
+    body.cost_now = (body.cost_now_with_ticker /
+                     price_list.get(body.amount_ticker_id, 1))
     body.comment = request.form['comment']
     body.date = request.form['date']
 
@@ -511,6 +515,7 @@ def other_body_update():
 @bp.route('/change_table_sort', methods=['GET'])
 @login_required
 def change_table_sort():
+    """Изменение пользовательской сортировки таблицы."""
     tab_name = request.args.get('tab_name')
     field = request.args.get('field')
     sort_order = request.args.get('sort_order')
@@ -522,6 +527,7 @@ def change_table_sort():
 @bp.route('/change_session_param', methods=['GET'])
 @login_required
 def change_session_param():
+    """Шаблонная функции изменения параметров в сессии."""
     name = request.args.get('name')
     value = request.args.get('value')
 
@@ -532,6 +538,7 @@ def change_session_param():
 @bp.route('/ajax_stable', methods=['GET'])
 @login_required
 def ajax_stable_assets():
+    """Возвращает список стабильных активов."""
     result = []
     tickers = db.session.execute(
         db.select(Ticker).filter_by(stable=True)).scalars()

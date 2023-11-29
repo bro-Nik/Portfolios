@@ -89,7 +89,7 @@ def user_currency(number, param=None):
     currency = current_user.currency
     locale = current_user.locale
 
-    price_currency_to_usd = 1 / get_price(current_user.currency_ticker_id)
+    price_currency_to_usd = 1 / (get_price(current_user.currency_ticker_id) | 1)
     number *= price_currency_to_usd
 
     # round

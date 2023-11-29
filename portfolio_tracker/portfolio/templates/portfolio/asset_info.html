@@ -40,7 +40,7 @@
 
     <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal focus" type="button" data-modal-id="TransactionModal"
-        data-url="{{ url_for('.transaction', portfolio_id=asset.portfolio_id, ticker_id=asset.ticker_id) }}">
+        data-url="{{ url_for('.transaction_info', portfolio_id=asset.portfolio_id, ticker_id=asset.ticker_id) }}">
         {% trans %}Добавить транзакцию{% endtrans %}
       </button>
       <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
@@ -146,7 +146,7 @@
 
           <td>
             <div class="open-modal" data-modal-id="TransactionModal"
-              data-url="{{ url_for('.transaction', portfolio_id=asset.portfolio_id, ticker_id=asset.ticker_id, transaction_id=transaction.id) }}">
+              data-url="{{ url_for('.transaction_info', portfolio_id=asset.portfolio_id, ticker_id=asset.ticker_id, transaction_id=transaction.id) }}">
               <span class="{{ color }}">{{ gettext(transaction.type) }}</span>
               {{ '(' + gettext('Ордер') + ')' if transaction.order }}
               <br>

@@ -10,6 +10,7 @@ from tests import app
 
 
 class TestPortfolioUtils(unittest.TestCase):
+    """Класс для тестирования функций портфелей"""
     def setUp(self):
         self.app = app
         self.app_context = self.app.app_context()
