@@ -20,8 +20,8 @@ def from_user_datetime(date):
 
 
 def get_locale():
-    # if current_app.testing:
-    #     return 'ru'
+    if current_app.testing:
+        return 'ru'
 
     u = current_user
     if u.is_authenticated and u.type != 'demo' and u.locale:

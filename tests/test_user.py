@@ -33,23 +33,6 @@ class TestUser(unittest.TestCase):
         db.session.remove()
         db.drop_all()
 
-    def test_create_new_user(self):
-        u = User.create_new_user('test2@test2', 'dog')
-        self.assertEqual(db.session.execute(
-            db.select(User).filter_by(id=2)).scalar(), u)
-
-        self.assertEqual(len(u.wallets), 1)
-        self.assertEqual(u.currency, 'usd')
-        self.assertEqual(u.currency_ticker_id,
-                         current_app.config['CURRENCY_PREFIX'] + u.currency)
-        self.assertEqual(u.locale, 'en')
-        self.assertTrue(u.info)
-
-    def test_password_hashing(self):
-        self.u.set_password('cat')
-        self.assertFalse(self.u.check_password('dog'))
-        self.assertTrue(self.u.check_password('cat'))
-
     def test_update_assets(self):
         db.session.add(Transaction(ticker_id='btc', quantity=0.5,
                                    ticker2_id='usdt', quantity2=13000,

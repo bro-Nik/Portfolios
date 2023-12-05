@@ -2,7 +2,7 @@ from datetime import datetime
 from flask import current_app, flash, request, session
 from flask_babel import gettext
 from flask_login import UserMixin
-from werkzeug.security import check_password_hash, generate_password_hash
+# from werkzeug.security import check_password_hash, generate_password_hash
 import requests
 
 from portfolio_tracker.app import db
@@ -577,11 +577,11 @@ class User(db.Model, UserMixin):
     #     db.session.add(new_user)
     #     return new_user
 
-    def set_password(self, password):
-        self.password = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password, password)
+    # def set_password(self, password):
+    #     self.password = generate_password_hash(password)
+    #
+    # def check_password(self, password):
+    #     return check_password_hash(self.password, password)
 
     def change_currency(self, currency='usd'):
         self.currency = currency
