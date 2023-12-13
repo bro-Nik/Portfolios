@@ -163,7 +163,7 @@ def stable_add():
 
 @bp.route('/transaction', methods=['GET'])
 @login_required
-def transaction():
+def transaction_info():
     wallet = get_wallet(request.args.get('wallet_id'))
     asset = get_wallet_asset(wallet, request.args.get('ticker_id'))
     if not asset:

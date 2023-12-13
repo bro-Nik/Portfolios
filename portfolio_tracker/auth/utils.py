@@ -72,7 +72,7 @@ def login(form: dict) -> bool | None:
 
     else:
         user = find_user(email)
-        if user and check_password(user, password):
+        if user and check_password(user.password, password):
             login_user(user, form.get('remember-me', False, type=bool))
             user.new_login()
 

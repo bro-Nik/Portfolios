@@ -1,7 +1,7 @@
 import pickle
 from datetime import datetime
 from babel.dates import format_date
-from flask import g
+from flask import current_app, g
 from flask_login import current_user
 from portfolio_tracker.app import redis
 
@@ -27,6 +27,8 @@ def get_price_list(market=None):
     price_list = getattr(g, 'price_list', None)
     if price_list is None:
         price_list = get_for('crypto') | get_for('stocks') | get_for('currency')
+        # USD
+        price_list[current_app.config['CURRENCY_PREFIX'] + 'usd'] = 1
         g.price_list = price_list
 
     return price_list

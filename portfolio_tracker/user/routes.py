@@ -1,15 +1,16 @@
 import json
+from datetime import datetime
 from json.decoder import JSONDecodeError
-from flask import Response, g, render_template, redirect, url_for, request, \
+
+from flask import Response, render_template, redirect, url_for, request, \
     flash, session
 from flask_babel import gettext
 from flask_login import login_user, login_required, current_user
-from datetime import datetime
 
 from portfolio_tracker.app import db
 from portfolio_tracker.settings import LANGUAGES
-from portfolio_tracker.user import bp
-from portfolio_tracker.user.utils import get_locale, get_demo_user
+from portfolio_tracker.user.utils import get_demo_user, get_locale
+from . import bp
 
 
 @bp.route('/user_action', methods=['POST'])
@@ -22,7 +23,7 @@ def user_action():
         current_user.delete()
         return {'redirect': str(url_for('auth.login'))}
 
-    elif action == 'delete_data':
+    if action == 'delete_data':
         current_user.cleare()
         current_user.create_first_wallet()
         flash(gettext('Профиль очищен'), 'success')
@@ -44,6 +45,7 @@ def demo_user():
 @bp.route('/settings_profile')
 @login_required
 def settings_profile():
+    # return render_template('user/settings_profile.html', locale=None)
     return render_template('user/settings_profile.html', locale=get_locale())
 
 
@@ -113,7 +115,7 @@ def change_locale():
     if current_user.is_authenticated and current_user.type != 'demo':
         current_user.change_locale(locale)
         db.session.commit()
-        
+
     else:
         session['locale'] = locale
     return ''

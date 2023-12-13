@@ -1,14 +1,11 @@
 from datetime import datetime
-from flask import current_app, flash, request, session
+from flask import current_app, request
 from flask_babel import gettext
 from flask_login import UserMixin
-# from werkzeug.security import check_password_hash, generate_password_hash
 import requests
 
 from portfolio_tracker.app import db
 from portfolio_tracker.general_functions import get_price
-from portfolio_tracker.user.utils import from_user_datetime
-# from portfolio_tracker.watchlist.utils import get_watchlist_asset
 
 
 class Details:
@@ -71,10 +68,12 @@ class Transaction(db.Model):
                                           uselist=False)
 
     def edit(self, form):
+        from portfolio_tracker.user.utils import from_user_datetime
+
         self.type = form['type']
         t_type = 1 if self.type in ('Buy', 'Input', 'TransferIn') else -1
         self.date = from_user_datetime(form['date'])
-        self.comment = form['comment']
+        self.comment = form.get('comment')
 
         # Portfolio transaction
         if self.type in ('Buy', 'Sell'):
@@ -549,39 +548,7 @@ class PriceHistory(db.Model):
                              backref=db.backref('history', lazy=True))
 
 
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(255), nullable=False, unique=True)
-    password = db.Column(db.String(255), nullable=False)
-    type = db.Column(db.String(255))
-    locale = db.Column(db.String(32))
-    timezone = db.Column(db.String(32))
-    currency = db.Column(db.String(32))
-    currency_ticker_id = db.Column(db.String(32), db.ForeignKey('ticker.id'))
-    # Relationships
-    info = db.relationship('UserInfo',
-                           backref=db.backref('user', lazy=True),
-                           uselist=False)
-    currency_ticker = db.relationship('Ticker', uselist=False)
-
-    # @staticmethod
-    # def create_new_user(email, password):
-    #     new_user = User(email=email)
-    #     new_user.set_password(password)
-    #     new_user.change_currency()
-    #     new_user.change_locale()
-    #     new_user.create_first_wallet()
-    #
-    #     new_user.info = UserInfo()
-    #
-    #     db.session.add(new_user)
-    #     return new_user
-
-    # def set_password(self, password):
-    #     self.password = generate_password_hash(password)
-    #
-    # def check_password(self, password):
-    #     return check_password_hash(self.password, password)
+class UserUtilsMixin:
 
     def change_currency(self, currency='usd'):
         self.currency = currency
@@ -837,6 +804,22 @@ class User(db.Model, UserMixin):
                 asset.alerts.append(alert)
 
         db.session.commit()
+
+
+class User(db.Model, UserMixin, UserUtilsMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), nullable=False, unique=True)
+    password = db.Column(db.String(255), nullable=False)
+    type = db.Column(db.String(255))
+    locale = db.Column(db.String(32))
+    timezone = db.Column(db.String(32))
+    currency = db.Column(db.String(32))
+    currency_ticker_id = db.Column(db.String(32), db.ForeignKey('ticker.id'))
+    # Relationships
+    info = db.relationship('UserInfo',
+                           backref=db.backref('user', lazy=True),
+                           uselist=False)
+    currency_ticker = db.relationship('Ticker', uselist=False)
 
 
 class UserInfo(db.Model):

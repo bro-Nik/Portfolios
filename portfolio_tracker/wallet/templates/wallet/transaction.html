@@ -1,7 +1,7 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = gettext('Изменить транзакцию') if transaction else gettext('Добавить транзакцию') %}
+{% set modal_title = gettext('Изменить транзакцию') if transaction.id else gettext('Добавить транзакцию') %}
 
 
 {% block content %}

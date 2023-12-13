@@ -68,8 +68,10 @@ def create_new_wallet_asset(wallet, ticker_id):
 
 
 def create_new_transaction(asset):
-    transaction = Transaction(wallet_id=asset.wallet_id)
-    asset.transactions.append(transaction)
+    transaction = Transaction(wallet_id=asset.wallet_id,
+                              ticker_id=asset.ticker_id)
+    # asset.transactions.append(transaction)
+    db.session.add(transaction)
     # db.session.commit()
     return transaction
 

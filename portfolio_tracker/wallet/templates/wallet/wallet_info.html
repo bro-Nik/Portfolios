@@ -146,7 +146,7 @@
                         </a>
                         <div class="dropdown-menu" aria-labelledby="dropdownAction">
                           <a class="dropdown-item open-modal" data-modal-id="WalletInOutferModal"
-                            data-url="{{ url_for('.transaction', wallet_id=wallet.id, ticker_id=ticker.id) }}">
+                            data-url="{{ url_for('.transaction_info', wallet_id=wallet.id, ticker_id=ticker.id) }}">
                             {% trans %}Отправить{% endtrans %}
                           </a>
                           <a class="dropdown-item link-danger open-modal-confirmation"
@@ -257,7 +257,7 @@
                         </a>
                         <div class="dropdown-menu" aria-labelledby="dropdownAction">
                           <a class="dropdown-item open-modal" data-modal-id="WalletInOutferModal"
-                            data-url="{{ url_for('.transaction', wallet_id=wallet.id, ticker_id=ticker.id) }}">
+                            data-url="{{ url_for('.transaction_info', wallet_id=wallet.id, ticker_id=ticker.id) }}">
                             {% trans %}Добавить транзакцию{% endtrans %}
                           </a>
                         </div>
