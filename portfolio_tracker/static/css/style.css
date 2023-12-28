@@ -336,6 +336,7 @@ form {
 }
 .convert-text {
     margin-top: 2rem;
+    white-space: pre-wrap;
 }
 .convert-text form {
     display: flex;
@@ -463,7 +464,7 @@ td div.comment {
     background-color: #f1f5f9;
 }
 
-.input-group:not(.has-validation) .smart-select {
+.input-group:not(.has-validation) .smart-select, .input-group:not(.has-validation) select {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
 }

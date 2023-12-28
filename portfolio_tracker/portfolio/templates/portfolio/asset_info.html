@@ -207,7 +207,7 @@
                 </a>
                 <div class="dropdown-menu" aria-labelledby="dropdownAction">
                   <a class="dropdown-item open-modal" data-modal-id="TransactionModal"
-                    data-url="{{ url_for('.transaction', portfolio_id=asset.portfolio_id, ticker_id=asset.ticker_id, transaction_id=transaction.id) }}">
+                    data-url="{{ url_for('.transaction_info', portfolio_id=asset.portfolio_id, ticker_id=asset.ticker_id, transaction_id=transaction.id) }}">
                     {% trans %}Изменить транзакцию{% endtrans %}
                   </a>
                   <a class="dropdown-item link-danger open-modal-confirmation" 

@@ -1,21 +1,16 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
-{% set modal_title = gettext('Изменить транзакцию') if transaction else gettext('Добавить транзакцию') %}
+{% set modal_title = gettext('Изменить транзакцию') if transaction.id else gettext('Добавить транзакцию') %}
 
-{% if transaction %}
-  {% set quote_ticker = transaction.amount_ticker %}
-{% else %}
-  {% set quote_ticker = current_user.last_quote_ticker('other_portfolio') %}
-{% endif %}
 
 {% block content %}
 <form data-url="{{ url_for('.other_transaction_update',portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
 
   <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
-    <input type="radio" class="btn-check" name="type" value="Profit" id="btnplus" {{ 'checked' if not transaction or transaction.type == 'Profit'}}>
+    <input type="radio" class="btn-check" name="type" value="Profit" id="btnplus" {{ 'checked' if transaction.type == 'Profit'}}>
     <label class="btn btn-sm" for="btnplus">{% trans %}Прибыль{% endtrans %}</label>
 
-    <input type="radio" class="btn-check" name="type" value="Loss" id="btnminus" {{ 'checked' if transaction and transaction.type == 'Loss'}}>
+    <input type="radio" class="btn-check" name="type" value="Loss" id="btnminus" {{ 'checked' if transaction.type == 'Loss'}}>
     <label class="btn btn-sm" for="btnminus">{% trans %}Убыток{% endtrans %}</label>
   </div>
 
@@ -28,13 +23,11 @@
           <div class="col-3">
             <select name="amount_ticker_id" class="form-select"
               data-url="{{ url_for('.ajax_stable_assets') }}" required>
-              {% if quote_ticker %}
-                <option selected value="{{ quote_ticker.id }}">{{ quote_ticker.symbol|upper }}</option>
-              {% endif %}
+              <option selected value="{{ transaction.amount_ticker.id }}">{{ transaction.amount_ticker.symbol|upper }}</option>
             </select>
           </div>
           <input type="number" step="any" class="form-control focus" autocomplete="off"
-                 placeholder="0,00" name="amount" value="{{ transaction.amount|smart_int if transaction }}" required>
+                 placeholder="0,00" name="amount" value="{{ transaction.amount|abs|smart_int if transaction.amount }}" required>
         </div>
       </div>
     </div>
@@ -42,7 +35,7 @@
     <div class="col-md-6">
       <div class="mb-1">
         <label class="form-label h7">{% trans %}Дата{% endtrans %}</label>
-        <input class="form-control" name="date" type="date" value="{{ transaction.date if transaction else date }}" required>
+        <input class="form-control" name="date" type="datetime-local" value="{{ transaction.date|user_datetime(not_format=1) }}" required>
       </div>
     </div>
 
@@ -52,7 +45,7 @@
       <div class="col-md-12">
         <div class="mb-3">
           <label class="form-label h7">{% trans %}Комментарий{% endtrans %}</label>
-          <textarea class="form-control" name="comment">{{ transaction.comment if transaction }}</textarea>
+          <textarea class="form-control" name="comment">{{ transaction.comment if transaction.comment }}</textarea>
         </div>
       </div>
     </div>

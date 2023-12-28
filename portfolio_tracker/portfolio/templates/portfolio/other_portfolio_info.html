@@ -111,18 +111,18 @@
                 </div>
               </td>
 
-              <td>{{ '$' + asset.total_spent|number_group if asset.total_spent else '-' }}</td>
+              <td>{{ asset.amount|user_currency('big') if asset.amount else '-' }}</td>
 
               <td>
                 <span class="{{ asset.color }}">
-                  {{ '$' + asset.cost_now|number_group if asset.cost_now else '-' }}
+                  {{ asset.cost_now|user_currency('big') if asset.cost_now else '-' }}
                 </span>
               </td>
 
               <td>
                 {% if asset.cost_now %}
                   <span class="text-average {{ asset.color }}">
-                    {{ '-' if asset.profit < 0 }}${{ asset.profit|number_group }}
+                    {{ '-' if asset.profit < 0 }}{{ asset.profit|user_currency('big') }}
                     {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
                   </span>
                 {% else %}
@@ -131,8 +131,8 @@
               </td>
 
               <td>
-                {% if portfolio.total_spent and not asset.is_empty %}
-                  {{ (asset.total_spent / portfolio.total_spent * 100)|round(1, 'common')|smart_int }}% /
+                {% if portfolio.amount and not asset.is_empty() %}
+                  {{ (asset.amount / portfolio.amount * 100)|round(1, 'common')|smart_int }}% /
                 {% else %}
                   - /
                 {% endif %}

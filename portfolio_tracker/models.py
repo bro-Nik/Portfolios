@@ -5,11 +5,16 @@ from flask_login import UserMixin
 import requests
 
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import get_price
+from portfolio_tracker.general_functions import get_price, from_user_datetime
 
 
-class Details:
+class DetailsMixin:
     def update_details(self):
+        if not hasattr(self, 'cost_now'):
+            self.cost_now = 0
+        if not hasattr(self, 'amount'):
+            self.amount = 0
+
         self.profit = self.cost_now - self.amount
         self.color = ''
 
@@ -68,8 +73,6 @@ class Transaction(db.Model):
                                           uselist=False)
 
     def edit(self, form):
-        from portfolio_tracker.user.utils import from_user_datetime
-
         self.type = form['type']
         t_type = 1 if self.type in ('Buy', 'Input', 'TransferIn') else -1
         self.date = from_user_datetime(form['date'])
@@ -162,7 +165,7 @@ class Transaction(db.Model):
         db.session.delete(self)
 
 
-class Asset(db.Model, Details):
+class Asset(db.Model, DetailsMixin):
     id = db.Column(db.Integer, primary_key=True)
     ticker_id = db.Column(db.String(256), db.ForeignKey('ticker.id'))
     portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
@@ -214,7 +217,7 @@ class Asset(db.Model, Details):
         db.session.delete(self)
 
 
-class OtherAsset(db.Model, Details):
+class OtherAsset(db.Model, DetailsMixin):
     id = db.Column(db.Integer, primary_key=True)
     portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
     name = db.Column(db.String(255))
@@ -225,6 +228,26 @@ class OtherAsset(db.Model, Details):
     # Relationships
     portfolio = db.relationship('Portfolio',
                                 backref=db.backref('other_assets', lazy=True))
+
+    def edit(self, portfolio, form):
+        name = form.get('name')
+        comment = form.get('comment')
+        percent = form.get('percent')
+
+        if name is not None:
+            if self.name != name:
+                n = 2
+                while name in [i.name for i in portfolio.other_assets]:
+                    name = request.form['name'] + str(n)
+                    n += 1
+
+        if name:
+            self.name = name
+        if comment is not None:
+            self.comment = comment
+        if percent is not None:
+            self.percent = percent or 0
+        db.session.commit()
 
     def is_empty(self):
         return not (self.bodies or self.transactions)
@@ -242,8 +265,8 @@ class OtherTransaction(db.Model):
     date = db.Column(db.DateTime)
     asset_id = db.Column(db.Integer, db.ForeignKey('other_asset.id'))
     amount = db.Column(db.Float)
-    amount_with_ticker = db.Column(db.Float)
     amount_ticker_id = db.Column(db.String(32), db.ForeignKey('ticker.id'))
+    amount_usd = db.Column(db.Float)
     type = db.Column(db.String(24))
     comment = db.Column(db.String(1024))
     # Relationships
@@ -251,13 +274,24 @@ class OtherTransaction(db.Model):
                             backref=db.backref('transactions', lazy=True))
     amount_ticker = db.relationship('Ticker', uselist=False)
 
+    def edit(self, form):
+        self.type = form['type']
+        t_type = 1 if self.type == 'Profit' else -1
+        self.amount_ticker_id = form['amount_ticker_id']
+        self.amount = float(form['amount']) * t_type
+        self.amount_usd = self.amount * get_price(self.amount_ticker_id)
+        self.comment = form['comment']
+        self.date = from_user_datetime(form['date'])
+
+        db.session.commit()
+
     def update_dependencies(self, param=''):
         if param in ('cancel', ):
             direction = -1
         else:
             direction = 1
 
-        self.asset.cost_now += self.amount * direction
+        self.asset.cost_now += self.amount_usd * direction
 
     def delete(self):
         self.update_dependencies('cancel')
@@ -270,15 +304,21 @@ class OtherBody(db.Model):
     date = db.Column(db.DateTime)
     asset_id = db.Column(db.Integer, db.ForeignKey('other_asset.id'))
     amount = db.Column(db.Float)
-    amount_with_ticker = db.Column(db.Float)
+    amount_usd = db.Column(db.Float)
     amount_ticker_id = db.Column(db.String(32), db.ForeignKey('ticker.id'))
     cost_now = db.Column(db.Float)
-    cost_now_ticker = db.Column(db.Float)
+    cost_now_usd = db.Column(db.Float)
+    cost_now_ticker_id = db.Column(db.String(32), db.ForeignKey('ticker.id'))
     comment = db.Column(db.String(1024))
     # Relationships
     asset = db.relationship('OtherAsset',
                             backref=db.backref('bodies', lazy=True))
-    amount_ticker = db.relationship('Ticker', uselist=False)
+    amount_ticker = db.relationship('Ticker',
+                                    foreign_keys=[amount_ticker_id],
+                                    viewonly=True)
+    cost_now_ticker = db.relationship('Ticker',
+                                      foreign_keys=[cost_now_ticker_id],
+                                      viewonly=True)
 
     def update_dependencies(self, param=''):
         if param in ('cancel',):
@@ -286,8 +326,21 @@ class OtherBody(db.Model):
         else:
             direction = 1
 
-        self.asset.amount += self.amount * direction
-        self.asset.cost_now += self.cost_now * direction
+        self.asset.amount += self.amount_usd * direction
+        self.asset.cost_now += self.cost_now_usd * direction
+
+    def edit(self, form):
+        self.name = form['name']
+        self.amount_ticker_id = form['amount_ticker_id']
+        self.amount = float(form['amount'])
+        self.amount_usd = self.amount * get_price(self.amount_ticker_id, 1)
+        self.cost_now_ticker_id = form['cost_now_ticker_id']
+        self.cost_now = float(form['cost_now'])
+        self.cost_now_usd = self.cost_now * get_price(self.cost_now_ticker_id, 1)
+        self.comment = form['comment']
+        self.date = from_user_datetime(form['date'])
+
+        db.session.commit()
 
     def delete(self):
         self.update_dependencies('cancel')
@@ -404,7 +457,7 @@ class WalletAsset(db.Model):
         db.session.delete(self)
 
 
-class Portfolio(db.Model, Details):
+class Portfolio(db.Model, DetailsMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     market = db.Column(db.String(32))

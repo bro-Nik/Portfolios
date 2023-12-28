@@ -2,13 +2,13 @@ import json
 from datetime import datetime
 from flask import flash, render_template, session, url_for, request
 from flask_babel import gettext
-from flask_login import login_required
+from flask_login import current_user, login_required
 
 from portfolio_tracker.app import db
 from portfolio_tracker.general_functions import get_price, get_price_list
 from portfolio_tracker.models import Ticker, OtherAsset, \
         OtherTransaction, OtherBody, Transaction
-from portfolio_tracker.portfolio.utils import AllPortfolios, \
+from portfolio_tracker.portfolio.utils import AllPortfolios, actions_on_assets, actions_on_other_assets, actions_on_other_body, actions_on_other_transactions, actions_on_portfolios, actions_on_transactions, create_new_other_asset, create_new_other_body, create_new_other_transaction, \
     create_new_portfolio, create_new_transaction, get_asset, get_other_asset, \
     get_other_body, get_portfolio
 from portfolio_tracker.wallet.utils import get_transaction, \
@@ -31,22 +31,8 @@ def portfolios():
 def portfolios_action():
     """Action portfolio."""
     data = json.loads(request.data) if request.data else {}
-    ids = data['ids']
-    action = data['action']
 
-    for portfolio_id in ids:
-        portfolio = get_portfolio(portfolio_id)
-        if not portfolio:
-            continue
-
-        if 'delete' in action:
-            if 'with_contents' not in action and not portfolio.is_empty():
-                flash(gettext('В портфеле %(name)s есть транзакции',
-                              name=portfolio.name), 'danger')
-            else:
-                portfolio.delete()
-
-    db.session.commit()
+    actions_on_portfolios(data['ids'], data['action'])
     return ''
 
 
@@ -91,24 +77,9 @@ def portfolio_info(portfolio_id):
 def assets_action():
     """Asset action."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-
     data = json.loads(request.data) if request.data else {}
-    ids = data['ids']
-    action = data['action']
 
-    for ticker_id in ids:
-        asset = get_asset(portfolio, ticker_id)
-        if not asset:
-            continue
-
-        if 'delete' in action:
-            if 'with_contents' not in action and not asset.is_empty():
-                flash(gettext('В активе %(name)s есть транзакции',
-                              name=asset.ticker.name), 'danger')
-            else:
-                asset.delete()
-
-    db.session.commit()
+    actions_on_assets(portfolio, data['ids'], data['action'])
     return ''
 
 
@@ -116,8 +87,7 @@ def assets_action():
 @login_required
 def asset_add_modal(market):
     """Modal window to add asset."""
-    return render_template('portfolio/add_asset_modal.html',
-                           market=market,
+    return render_template('portfolio/add_asset_modal.html', market=market,
                            portfolio_id=request.args.get('portfolio_id'))
 
 
@@ -207,23 +177,9 @@ def transactions_action():
     """Transactions action."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_asset(portfolio, request.args.get('ticker_id'))
-
     data = json.loads(request.data) if request.data else {}
-    action = data['action']
-    ids = data['ids']
 
-    for transaction_id in ids:
-        transaction = get_transaction(asset, transaction_id)
-        if not transaction:
-            continue
-
-        if action == 'delete':
-            transaction.delete()
-
-        elif action == 'convert_to_transaction':
-            transaction.convert_order_to_transaction()
-
-    db.session.commit()
+    actions_on_transactions(asset, data['ids'], data['action'])
     return ''
 
 
@@ -263,8 +219,7 @@ def transaction_info():
 
     calculation_type = session.get('transaction_calculation_type', 'amount')
     return render_template('portfolio/transaction.html',
-                           transaction=transaction,
-                           asset=asset,
+                           transaction=transaction, asset=asset,
                            calculation_type=calculation_type)
 
 
@@ -286,7 +241,6 @@ def transaction_update():
 
     transaction.edit(request.form)
     transaction.update_dependencies()
-
     return ''
 
 
@@ -298,25 +252,9 @@ def transaction_update():
 def other_asset_action():
     """Other assets action."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_other_asset(portfolio, request.args.get('asset_id'))
-
     data = json.loads(request.data) if request.data else {}
-    ids = data['ids']
-    action = data['action']
 
-    for asset_id in ids:
-        asset = get_other_asset(portfolio, asset_id)
-        if not asset:
-            continue
-
-        if 'delete' in action:
-            if 'with_contents' not in action and not asset.is_empty():
-                flash(gettext('Актив %(name)s не пустой',
-                              name=asset.name), 'danger')
-            else:
-                asset.delete()
-
-    db.session.commit()
+    actions_on_other_assets(portfolio, data['ids'], data['action'])
     return ''
 
 
@@ -326,20 +264,9 @@ def other_transaction_action():
     """Other transaction action."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
-
     data = json.loads(request.data) if request.data else {}
-    ids = data['ids']
-    action = data['action']
 
-    for transaction_id in ids:
-        transaction = get_transaction(asset, transaction_id)
-        if not transaction:
-            continue
-
-        if action == 'delete':
-            db.session.delete(transaction)
-
-    db.session.commit()
+    actions_on_other_transactions(asset, data['ids'], data['action'])
     session['other_asset_page'] = 'transactions'
     return ''
 
@@ -350,20 +277,9 @@ def other_body_action():
     """Other body action."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
-
     data = json.loads(request.data) if request.data else {}
-    action = data['action']
-    ids = data['ids']
 
-    for body_id in ids:
-        body = get_other_body(asset, body_id)
-        if not body:
-            continue
-
-        if action == 'delete':
-            db.session.delete(body)
-
-    db.session.commit()
+    actions_on_other_body(asset, data['ids'], data['action'])
     session['other_asset_page'] = 'bodies'
     return ''
 
@@ -374,42 +290,24 @@ def other_asset_settings(portfolio_id):
     """Other asset settings."""
     portfolio = get_portfolio(portfolio_id)
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
-    return render_template('portfolio/other_asset_settings.html',
-                           asset=asset,
+    return render_template('portfolio/other_asset_settings.html', asset=asset,
                            portfolio_id=portfolio_id)
 
 
-@bp.route('/<int:portfolio_id>/other_asset_update', methods=['POST'])
+@bp.route('/other_asset_update', methods=['POST'])
 @login_required
 @demo_user_change
-def other_asset_settings_update(portfolio_id):
+def other_asset_settings_update():
     """Other asset settings update."""
-    portfolio = get_portfolio(portfolio_id)
+    portfolio = get_portfolio(request.args.get('portfolio_id'))
     if not portfolio:
         return ''
 
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
     if not asset:
-        asset = OtherAsset(portfolio_id=portfolio_id)
-        db.session.add(asset)
+        asset = create_new_other_asset(portfolio)
 
-    name = request.form.get('name')
-
-    if asset.name != name:
-        n = 2
-        while name in [i.name for i in portfolio.other_assets]:
-            name = request.form['name'] + str(n)
-            n += 1
-
-    asset.name = name
-    comment = request.form.get('comment')
-    percent = request.form.get('percent')
-    if comment is None:
-        asset.comment = comment
-    if percent is None:
-        asset.percent = percent or 0
-
-    db.session.commit()
+    asset.edit(portfolio, request.form)
     return ''
 
 
@@ -424,10 +322,16 @@ def other_transaction():
 
     transaction = get_transaction(asset, request.args.get('transaction_id'))
 
+    if not transaction:
+        transaction = OtherTransaction(type='Profit', date=datetime.utcnow())
+
+        if asset.transactions:
+            transaction.amount_ticker = asset.transactions[-1].amount_ticker
+        else:
+            transaction.amount_ticker = current_user.currency_ticker
+
     return render_template('portfolio/other_transaction.html',
-                           asset=asset,
-                           date=datetime.now().date(),
-                           transaction=transaction)
+                           asset=asset, transaction=transaction)
 
 
 @bp.route('/other_asset_transaction_update', methods=['POST'])
@@ -444,19 +348,9 @@ def other_transaction_update():
     if transaction:
         transaction.update_dependencies('cancel')
     else:
-        transaction = OtherTransaction()
-        asset.transactions.append(transaction)
+        transaction = create_new_other_transaction(asset)
 
-    transaction.type = request.form['type']
-    sign = 1 if transaction.type == 'Profit' else -1
-    transaction.amount_ticker_id = request.form['amount_ticker_id']
-    transaction.amount_with_ticker = float(request.form['amount']) * sign
-    transaction.amount = (transaction.amount_with_ticker
-                          / get_price(transaction.amount_ticker_id))
-    transaction.comment = request.form['comment']
-    transaction.date = request.form['date']
-
-    db.session.commit()
+    transaction.edit(request.form)
     transaction.update_dependencies()
     db.session.commit()
     session['other_asset_page'] = 'transactions'
@@ -469,11 +363,21 @@ def other_body():
     """Other body info."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
-    body = get_other_body(asset, request.args.get('body_id'))
+    if not asset:
+        return ''
 
-    return render_template('portfolio/other_body.html',
-                           asset=asset, body=body,
-                           date=datetime.now().date())
+    body = get_other_body(asset, request.args.get('body_id'))
+    if not body:
+        body = OtherBody(date=datetime.utcnow())
+
+        if asset.bodies:
+            body.amount_ticker = asset.bodies[-1].amount_ticker
+            body.cost_now_ticker = asset.bodies[-1].cost_now_ticker
+        else:
+            body.amount_ticker = current_user.currency_ticker
+            body.cost_now_ticker = current_user.currency_ticker
+
+    return render_template('portfolio/other_body.html', asset=asset, body=body)
 
 
 @bp.route('/other_asset_body_update', methods=['POST'])
@@ -490,22 +394,9 @@ def other_body_update():
     if body:
         body.update_dependencies('cancel')
     else:
-        body = OtherBody(asset_id=asset.id)
-        db.session.add(body)
+        body = create_new_other_body(asset)
 
-    price_list = get_price_list()
-    body.name = request.form['name']
-    body.amount_ticker_id = request.form['amount_ticker_id']
-    body.amount_with_ticker = float(request.form['amount'])
-    body.amount = (body.amount_with_ticker /
-                   price_list.get(body.amount_ticker_id, 1))
-    body.cost_now_with_ticker = float(request.form['cost_now'])
-    body.cost_now = (body.cost_now_with_ticker /
-                     price_list.get(body.amount_ticker_id, 1))
-    body.comment = request.form['comment']
-    body.date = request.form['date']
-
-    db.session.commit()
+    body.edit(request.form)
     body.update_dependencies()
     db.session.commit()
     session['other_asset_page'] = 'bodies'
@@ -545,7 +436,7 @@ def ajax_stable_assets():
 
     for ticker in tickers:
         result.append({'value': ticker.id, 'text': ticker.symbol.upper()})
-    else:
+    if not result:
         result = {'message': 'Нет тикеров'}
 
     return json.dumps(result)

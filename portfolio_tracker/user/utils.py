@@ -1,6 +1,3 @@
-import time
-from datetime import datetime, timedelta
-
 from flask import current_app, request, session
 from flask_login import current_user
 
@@ -11,12 +8,6 @@ from portfolio_tracker.models import User
 
 def get_demo_user() -> User:
     return db.session.execute(db.select(User).filter_by(type='demo')).scalar()
-
-
-def from_user_datetime(date: datetime | str) -> datetime:
-    if isinstance(date, str):
-        date = datetime.strptime(date, '%Y-%m-%dT%H:%M')
-    return date + timedelta(seconds=time.timezone)
 
 
 def get_locale() -> str | None:

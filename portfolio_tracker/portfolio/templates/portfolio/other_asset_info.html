@@ -69,7 +69,7 @@
     <div class="col-auto">
       <p class="small-text">{% trans %}Доля от портфеля{% endtrans %}</p>
       <span class="text-average">
-        {{ (asset.amount / asset.portfolio.amount * 100)|round(1, 'common')|smart_int|string + '%' if asset.portfolio.amount else '' }} /
+        {{ (asset.amount / asset.portfolio.amount * 100)|round(1, 'common')|smart_int|string + '%' if asset.portfolio.amount else '-' }} /
         {{ asset.percent|smart_int|string + '%' if asset.percent else '-' }}
       </span>
     </div>
@@ -125,16 +125,22 @@
                   </td>
 
                   <td>
-                    {{ body.amount|user_currency }}
+                    {{ body.amount_usd|user_currency('big') }}
                     {% if current_user.currency_ticker_id != body.amount_ticker_id %}
-                      <span class="small-text">({{ body.amount_with_ticker|other_currency(body.amount_ticker.symbol) }})</span>
+                      <br>
+                      <span class="text-average small-text text-muted">
+                        {{ body.amount|other_currency(body.amount_ticker.symbol) }}
+                      </span>
                     {% endif %}
                   </td>
 
                   <td>
-                    {{ body.cost_now|user_currency }}
-                    {% if current_user.currency_ticker_id != body.amount_ticker_id %}
-                      <span class="small-text">({{ body.cost_now|other_currency(body.amount_ticker.symbol) }})</span>
+                    {{ body.cost_now_usd|user_currency('big') }}
+                    {% if current_user.currency_ticker_id != body.cost_now_ticker_id %}
+                      <br>
+                      <span class="text-average small-text text-muted">
+                        {{ body.cost_now|other_currency(body.cost_now_ticker.symbol, param='big') }}<br>
+                      </span>
                     {% endif %}
                   </td>
 
@@ -219,11 +225,20 @@
                   </td>
 
                   <td>
-                    <span class="text-average {{ color }}">
-                      {{ transaction.amount|user_currency }}
+                    {% if transaction.amount < 0 %}
+                      <span class="text-red">-
+                    {% else %}
+                      <span class="text-green">+
+                    {% endif %}
+
+                    {{ transaction.amount_usd|abs|user_currency('big') }}
                     </span>
+
                     {% if current_user.currency_ticker_id != transaction.amount_ticker_id %}
-                      <span class="small-text ms-2">({{ transaction.amount_with_ticker|other_currency(transaction.amount_ticker.symbol) }})</span>
+                      <br>
+                      <span class="text-average small-text text-muted">
+                        {{ transaction.amount|abs|other_currency(transaction.amount_ticker.symbol) }}<br>
+                      </span>
                     {% endif %}
                   </td>
 

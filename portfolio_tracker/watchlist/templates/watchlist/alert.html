@@ -2,6 +2,7 @@
 {% set modal_fullscreen = False %}
 
 {% set modal_title = gettext('Изменить уведомление') if alert else gettext('Добавить уведомление') %}
+{% set disabled_if_order = 'disabled' if alert.transaction else '' %}
 
 {% if alert %}
   {% set selected_ticker = alert.price_ticker %}
@@ -21,9 +22,10 @@
           </span>
         </label>
         <div class="input-group mb-1">
-          <div class="col-3">
+        <div class="col-3">
             <select name="price_ticker_id" class="form-select" tabindex="-1"
-              data-url="{{ url_for('.ajax_stable_assets', ticker_id=watchlist_asset.ticker_id) }}" required {{ 'disabled' if alert.transaction }}>
+              data-url="{{ url_for('.ajax_stable_assets', ticker_id=watchlist_asset.ticker_id) }}"
+              required {{ disabled_if_order }}>
               <option selected value="{{ selected_ticker.id }}"
                 data-info="{{ selected_ticker.id|get_price * watchlist_asset.price }}">
                 {{ selected_ticker.symbol|upper }}</option>
@@ -31,7 +33,7 @@
           </div>
           <input type="number" step="any" min="0.000001" class="form-control focus"
             value="{{ alert.price if alert else watchlist_asset.price }}"
-            name="price" autocomplete="off" required {{ 'disabled' if alert.transaction }}>
+            name="price" autocomplete="off" required {{ disabled_if_order }}>
         </div>
         <span class="small-text alert-price-info"></span>
       </div>
@@ -43,13 +45,16 @@
       <div class="col-md-12">
         <div class="mb-3">
           <label class="form-label h7">{% trans %}Комментарий{% endtrans %}</label>
-          <textarea class="form-control" name="comment">{{ alert.comment if alert.comment }}</textarea>
+          <textarea class="form-control" name="comment" {{ disabled_if_order }}>{{ alert.comment if alert.comment }}</textarea>
         </div>
       </div>
     </div>
 
   </div>
-  <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
+  <button class="btn btn-primary rounded-3 w-100" type="submit" {{ disabled_if_order }}>{{ modal_title }}</button>
+  {% if disabled_if_order %}
+    <span class="small-text text-danger">{% trans %}Это уведомление на ордер, его нельзя изменить{% endtrans %}</span>
+  {% endif %}
 </form>
 
 <script>

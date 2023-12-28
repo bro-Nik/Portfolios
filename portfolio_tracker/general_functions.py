@@ -1,5 +1,6 @@
+import time
 import pickle
-from datetime import datetime
+from datetime import datetime, timedelta
 from babel.dates import format_date
 from flask import current_app, g
 from flask_login import current_user
@@ -37,6 +38,12 @@ def get_price_list(market=None):
 def get_price(ticker_id, default=0):
     price_list = get_price_list()
     return price_list.get(ticker_id, default)
+
+
+def from_user_datetime(date: datetime | str) -> datetime:
+    if isinstance(date, str):
+        date = datetime.strptime(date, '%Y-%m-%dT%H:%M')
+    return date + timedelta(seconds=time.timezone)
 
 
 def when_updated(when_updated, default=''):

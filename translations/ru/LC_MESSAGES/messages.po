@@ -37,3 +37,9 @@ msgstr "Поступление"
 msgid "TransferOut"
 msgstr "Отправка"
 
+msgid "Profit"
+msgstr "Прибыль"
+
+msgid "Loss"
+msgstr "Убыток"
+

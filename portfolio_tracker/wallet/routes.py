@@ -129,23 +129,26 @@ def stable_add_modal():
 @bp.route('/add_stable_tickers', methods=['GET'])
 @login_required
 def stable_add_tickers():
-    per_page = 20
     search = request.args.get('search')
 
-    query = (Ticker.query.filter(Ticker.stable is True)
+    query = (Ticker.query.filter(Ticker.stable == True)
              .order_by(Ticker.id))
     # .order_by(Ticker.market_cap_rank.nulls_last(), Ticker.id))
 
     if search:
         query = query.filter(Ticker.name.contains(search)
                              | Ticker.symbol.contains(search))
+    print(query.all())
 
     tickers = query.paginate(page=request.args.get('page', 1, type=int),
-                             per_page=per_page,
+                             per_page=20,
                              error_out=False)
     if tuple(tickers):
+        print('tuple')
+        print(tuple(tickers))
         return render_template('wallet/add_stable_tickers.html',
                                tickers=tickers)
+    print('end')
     return 'end'
 
 

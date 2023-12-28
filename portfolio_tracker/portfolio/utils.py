@@ -1,7 +1,9 @@
+from flask import flash
+from flask_babel import gettext
 from flask_login import current_user
 
 from portfolio_tracker.app import db
-from portfolio_tracker.models import Details, OtherAsset, OtherBody, \
+from portfolio_tracker.models import DetailsMixin, OtherAsset, OtherBody, OtherTransaction, \
     Portfolio, Asset, Transaction
 
 
@@ -71,6 +73,14 @@ def create_new_asset(portfolio: Portfolio, ticker_id: str) -> Asset:
     return asset
 
 
+def create_new_other_asset(portfolio: Portfolio) -> OtherAsset:
+    """Возвращает новый актив пита другой"""
+    asset = OtherAsset()
+    portfolio.other_assets.append(asset)
+    db.session.commit()
+    return asset
+
+
 def create_new_transaction(asset: Asset) -> Transaction:
     """Возвращает новую транзакцию."""
     transaction = Transaction(portfolio_id=asset.portfolio_id)
@@ -79,7 +89,110 @@ def create_new_transaction(asset: Asset) -> Transaction:
     return transaction
 
 
-class AllPortfolios(Details):
+def create_new_other_transaction(asset: OtherAsset) -> OtherTransaction:
+    """Возвращает новую транзакцию."""
+    transaction = OtherTransaction()
+    asset.transactions.append(transaction)
+    db.session.commit()
+    return transaction
+
+
+def create_new_other_body(asset: OtherAsset) -> OtherBody:
+    """Возвращает новое тело актива."""
+    body = OtherBody()
+    asset.bodies.append(body)
+    db.session.commit()
+    return body
+
+
+def actions_on_portfolios(ids, action):
+    for portfolio_id in ids:
+        portfolio = get_portfolio(portfolio_id)
+        if not portfolio:
+            continue
+
+        if 'delete' in action:
+            if 'with_contents' not in action and not portfolio.is_empty():
+                flash(gettext('В портфеле %(name)s есть транзакции',
+                              name=portfolio.name), 'danger')
+            else:
+                portfolio.delete()
+
+    db.session.commit()
+
+
+def actions_on_assets(portfolio, ids, action):
+    for ticker_id in ids:
+        asset = get_asset(portfolio, ticker_id)
+        if not asset:
+            continue
+
+        if 'delete' in action:
+            if 'with_contents' not in action and not asset.is_empty():
+                flash(gettext('В активе %(name)s есть транзакции',
+                              name=asset.ticker.name), 'danger')
+            else:
+                asset.delete()
+
+    db.session.commit()
+
+
+def actions_on_transactions(asset, ids, action):
+    for transaction_id in ids:
+        transaction = get_transaction(asset, transaction_id)
+        if not transaction:
+            continue
+
+        if action == 'delete':
+            transaction.delete()
+
+        elif action == 'convert_to_transaction':
+            transaction.convert_order_to_transaction()
+
+    db.session.commit()
+
+
+def actions_on_other_assets(portfolio, ids, action):
+    for asset_id in ids:
+        asset = get_other_asset(portfolio, asset_id)
+        if not asset:
+            continue
+
+        if 'delete' in action:
+            if 'with_contents' not in action and not asset.is_empty():
+                flash(gettext('Актив %(name)s не пустой',
+                              name=asset.name), 'danger')
+            else:
+                asset.delete()
+
+    db.session.commit()
+
+
+def actions_on_other_transactions(asset, ids, action):
+    for transaction_id in ids:
+        transaction = get_transaction(asset, transaction_id)
+        if not transaction:
+            continue
+
+        if action == 'delete':
+            transaction.delete()
+
+    db.session.commit()
+
+
+def actions_on_other_body(asset, ids, action):
+    for body_id in ids:
+        body = get_other_body(asset, body_id)
+        if not body:
+            continue
+
+        if action == 'delete':
+            body.delete()
+
+    db.session.commit()
+
+
+class AllPortfolios(DetailsMixin):
     """Класс объединяет все портфели пользователя."""
 
     def __init__(self):
