@@ -1,211 +1,155 @@
 import os
-from pycoingecko import CoinGeckoAPI
-import requests
+import time
+import pickle
+from datetime import datetime, timedelta
 from io import BytesIO
+import requests
+
 from PIL import Image
 from flask import current_app
-import time
-from datetime import datetime, timedelta
-import pickle
-from portfolio_tracker.admin.utils import get_tickers
 
+from portfolio_tracker.app import db, celery, redis
 from portfolio_tracker.general_functions import get_price_list, redis_decode
 from portfolio_tracker.models import PriceHistory, Ticker, WatchlistAsset
-from portfolio_tracker.app import db, celery, redis
+from portfolio_tracker.admin import currencylayer, polygon, coingecko
+from portfolio_tracker.admin.utils import add_prefix, get_ticker, get_tickers, remove_prefix, task_log
 
-cg = CoinGeckoAPI()
+
+def ticker_in_base(ticker_id, tickers):
+    for ticker in tickers:
+        if ticker.id == ticker_id:
+            return ticker
 
 
-@celery.task(bind=True, name='load_stocks_images')
-def load_stocks_images(self):
+@celery.task(bind=True, name='stocks_load_images')
+def stocks_load_images(self):
     self.update_state(state='LOADING')
-    print('Start load stocks images')
+    market = 'stocks'
+    task_log('Start load stocks images', market)
 
-    prefix = current_app.config['STOCKS_PREFIX']
-    key = current_app.config['API_KEY_POLYGON']
-
-    # tickers = db.session.execute(
-    #     db.select(Ticker).filter(Ticker.market == 'stocks',
-    #                              Ticker.image.is_(None))).scalars()
     tickers = db.session.execute(
-        db.select(Ticker).filter(Ticker.market == 'stocks')).scalars()
-
-    def get_image_url(url):
-        try:
-            r = requests.get(url)
-            result = r.json()
-            url = f"{result['results']['branding']['icon_url']}?apiKey={key}"
-            return url
-        except Exception:
-            return None
+        db.select(Ticker).filter_by(market=market, image=None)).scalars()
 
     for ticker in tickers:
-        id = ticker.id.upper()[len(prefix):]
-        url = f'https://api.polygon.io/v3/reference/tickers/{id}?apiKey={key}'
-        time.sleep(15)
-
-        image_url = get_image_url(url)
+        ticker_id = remove_prefix(ticker.id, market)
+        image_url = polygon.get_image_url(ticker_id)
         if image_url:
-            time.sleep(15)
-            ticker.image = load_image(image_url, 'stocks', id)
+            ticker.image = load_image(image_url, market, ticker_id)
             db.session.commit()
-    print('End load stocks images')
+    task_log('End load stocks images', market)
 
 
-@celery.task(bind=True, name='crypto_tickers')
-def crypto_tickers(self):
-    ''' загрузка тикеров с https://www.coingecko.com/ru/api/ '''
+@celery.task(bind=True, name='crypto_load_tickers')
+def crypto_load_tickers(self):
     self.update_state(state='LOADING')
-    print('Load crypto tickers')
+    market = 'crypto'
+    task_log('Загрузка тикеров - Старт', market)
 
-    tickers = tuple(get_tickers('crypto'))
-    prefix = current_app.config['CRYPTO_PREFIX']
-
-    def ticker_in_base(id):
-        for ticker in tickers:
-            if ticker.id == id:
-                return ticker
-
+    tickers = list(get_tickers('crypto'))
     page = 1
-    new_tickers = {}
-    query = True
-    while query != []:
-        try:
-            query = cg.get_coins_markets('usd', per_page='200', page=page)
-            query[0]['id']
-            print('Crypto page ' + str(page))
-        except Exception:
-            print('not query... sleep...')
-            time.sleep(60)
-            continue
 
-        for coin in query:
-            id = prefix + coin['id'].lower()
-            if id in new_tickers:
-                continue
+    while True:
+        data = coingecko.get_tickers(page)
+        if not data:
+            break
 
-            ticker = ticker_in_base(id)
+        for coin in data:
+            ticker_id = add_prefix(coin['id'], market)
+
+            ticker = ticker_in_base(ticker_id, tickers)
             if not ticker:
-                ticker = Ticker(
-                    id=id,
-                    market='crypto',
-                    name=coin.get('name'),
-                    symbol=coin.get('symbol'),
-                    image=load_image(coin.get('image'), 'crypto', id)
-                )
+                ticker = Ticker(id=ticker_id, market=market)
                 db.session.add(ticker)
-                new_tickers[id] = 0
+                tickers.append(ticker)
 
-            elif not ticker.image:
-                ticker.image = load_image(coin.get('image'), 'crypto', id)
+            if not ticker.image:
+                ticker.image = load_image(coin.get('image'), market, ticker_id)
 
             ticker.market_cap_rank = coin.get('market_cap_rank')
+            ticker.name = coin.get('name')
+            ticker.symbol = coin.get('symbol')
 
         db.session.commit()
-
         page += 1
-        time.sleep(10)
 
-    print('crypto end')
+    task_log('Загрузка тикеров - Конец', market)
 
 
-@celery.task(bind=True, name='stocks_tickers')
-def stocks_tickers(self):
+@celery.task(bind=True, name='stocks_load_tickers')
+def stocks_load_tickers(self):
     ''' загрузка тикеров с https://polygon.io/ '''
     self.update_state(state='LOADING')
-    print('Load stocks tickers')
+    market = 'stocks'
+    task_log('Start load stocks tickers', market)
 
-    key = current_app.config['API_KEY_POLYGON']
-    tickers = get_tickers('stocks')
-    tickers_in_base = [ticker.id for ticker in tickers]
-    prefix = current_app.config['STOCKS_PREFIX']
-    new_tickers = False
+    tickers = list(get_tickers(market))
+    url = None
 
-    date = datetime.now().date()
-    url = (f'https://api.polygon.io/v3/reference/tickers?market=stocks&'
-           f'date={date}&active=true&order=asc&limit=1000&apiKey={key}')
+    while True:
+        data = polygon.get_tickers(url)
+        if not data:
+            break
 
-    while url:
-        response = requests.get(url)
-        data = response.json()
-        if not data.get('results'):
-            print('stocks Error :', data)
-            time.sleep(15)
-            continue
+        for stock in data:
+            ticker_id = add_prefix(stock['ticker'], market)
+            ticker = ticker_in_base(ticker_id, tickers)
 
-        for ticker in data['results']:
-            id = prefix + ticker['ticker'].lower()
-            if id not in tickers_in_base:
-                new_ticker = Ticker(
-                    id=id,
-                    name=ticker['name'],
-                    symbol=ticker['ticker'],
-                    market='stocks'
-                )
-                db.session.add(new_ticker)
-                tickers_in_base.append(id)
-                new_tickers = True
+            if not ticker:
+                ticker = Ticker(id=ticker_id, market=market)
+                db.session.add(ticker)
+                tickers.append(ticker)
+
+            ticker.name = stock['name']
+            ticker.symbol = stock['ticker']
         db.session.commit()
 
-        next_url = data.get('next_url')
-        url = f'{next_url}&apiKey={key}' if next_url else None
-        print('Stocks next url')
-        time.sleep(15)
+        url = data.get('next_url')
+        if not url:
+            break
+        task_log('Load stocks tickers - next url', market)
 
-    if new_tickers:
-        redis.delete(*['update_stocks'])
-    print('stocks tickers end')
+    redis.delete(*['update_stocks'])
+    task_log('End load stocks tickers', market)
 
 
-@celery.task(bind=True, name='currency_tickers')
-def currency_tickers(self):
-    ''' загрузка тикеров с https://currencylayer.com '''
+@celery.task(bind=True, name='currency_load_tickers')
+def currency_load_tickers(self):
     self.update_state(state='LOADING')
-    print('Load currency tickers')
+    market = 'currency'
+    task_log('Start load currency tickers', market)
 
-    key = current_app.config['API_KEY_CURRENCYLAYER']
-    prefix = current_app.config['CURRENCY_PREFIX']
-    tickers_in_base = [ticker.id for ticker in get_tickers('currency')]
-    new_tickers = False
+    data = currencylayer.get_currencies()
+    if data:
+        tickers = list(get_tickers(market))
 
-    url = f'http://api.currencylayer.com/list?access_key={key}'
+        for currency in data:
+            ticker_id = add_prefix(market, currency)
+            ticker = ticker_in_base(ticker_id, tickers)
+            if not ticker:
+                ticker = Ticker(id=ticker_id, market=market, stable=True)
+                db.session.add(ticker)
+                tickers.append(ticker)
 
-    response = requests.get(url)
-    data = response.json()
-    while data['success'] is not True:
-        print('currency Error :', data)
-        time.sleep(15)
+            ticker.name = data[currency]
+            ticker.symbol = currency
 
-    tickers = data['currencies']
-    for ticker in tickers:
-        id = prefix + ticker.lower()
-        if id not in tickers_in_base:
-            new_ticker = Ticker(
-                id=id,
-                name=tickers[ticker],
-                symbol=ticker,
-                market='currency',
-                stable=True
-            )
-            db.session.add(new_ticker)
-            tickers_in_base.append(id)
-            new_tickers = True
-    db.session.commit()
+        db.session.commit()
 
-    if new_tickers:
         redis.delete(*['update_currency'])
-    print('currency tickers end')
+
+    task_log('End load currency tickers', market)
 
 
-@celery.task(bind=True, name='prices_crypto', default_retry_delay=0,
+@celery.task(bind=True, name='crypto_load_prices', default_retry_delay=0,
              max_retries=None, ignore_result=True)
-def prices_crypto(self):
+def crypto_load_prices(self):
     ''' Запрос цен у КоинГеко криптовалюта '''
     self.update_state(state='WORK')
+    market = 'crypto'
+    task_log('Загрузка цен - Старт', market)
 
-    prefix = current_app.config['CRYPTO_PREFIX']
     price_list = get_price_list('crypto')
-    ids = [ticker.id[len(prefix):] for ticker in get_tickers('crypto')]
+    ids = [remove_prefix(ticker.id, market) for ticker in get_tickers(market)]
 
     # Делаем запросы кусками
     while ids:
@@ -214,108 +158,58 @@ def prices_crypto(self):
             ids_str += ',' + ids[0]
             ids.pop(0)
 
-        data = ''
-        while data == '':
-            try:
-                data = cg.get_price(vs_currencies='usd', ids=ids_str)
-                print("New page")
-            except Exception:
-                print("Соединение отклонено сервером... Сплю. ZZzzzz")
-                time.sleep(15)
-
-        for id in data:
-            price_list[prefix + id] = data[id].get('usd', 0)
-
-        if price_list:
+        new_price_list = coingecko.get_prices(ids_str)
+        if new_price_list:
+            price_list = price_list | new_price_list
             redis.set('price_list_crypto', pickle.dumps(price_list))
-        time.sleep(17)
 
-    print("End load crypto price")
-    prices_crypto.retry()
+    task_log('Загрузка цен - Конец', market)
+    crypto_load_prices.retry()
 
 
-@celery.task(bind=True, name='prices_stocks', default_retry_delay=300,
+@celery.task(bind=True, name='stocks_load_prices', default_retry_delay=300,
              max_retries=None, ignore_result=True)
-def prices_stocks(self):
+def stocks_load_prices(self):
     ''' Запрос цен у Polygon фондовый рынок '''
     self.update_state(state='WORK')
 
     update_stocks = redis_decode('update-stocks', '')
+    if update_stocks != str(datetime.now().date()):
+        market = 'stocks'
+        task_log('Start load stocks prices', market)
 
-    if update_stocks == str(datetime.now().date()):
-        prices_stocks.retry()
-        return ''
+        new_price_list = polygon.get_prices()
+        if new_price_list:
+            price_list = get_price_list(market) | new_price_list
+            redis.set('price_list_stocks', pickle.dumps(price_list))
+            redis.set('update-stocks', str(datetime.now().date()))
 
-    price_list = get_price_list('stocks')
-    key = current_app.config['API_KEY_POLYGON']
-    prefix = current_app.config['STOCKS_PREFIX']
-
-    day = 0
-    data = {}
-    while not data.get('results'):
-        day += 1
-        # задержка на бесплатном тарифе
-        if day % 4 == 0:
-            time.sleep(60)
-
-        date = datetime.now().date() - timedelta(days=day)
-        url = (f'https://api.polygon.io/v2/aggs/grouped/locale/us/market/'
-               f'stocks/{date}?adjusted=true&include_otc=false&apiKey={key}')
-
-        response = requests.get(url)
-        data = response.json()
-
-    for ticker in data['results']:
-        # вчерашняя цена закрытия, т.к. бесплатно
-        id = ticker['T'].lower()
-        price_list[prefix + id] = ticker['c']
-
-    if price_list:
-        redis.set('update-stocks', str(datetime.now().date()))
-        redis.set('price_list_stocks', pickle.dumps(price_list))
-
-    print("End load stocks price")
-    prices_stocks.retry()
+        task_log('End load stocks prices', market)
+    stocks_load_prices.retry()
 
 
-@celery.task(bind=True, name='prices_currency', default_retry_delay=300,
+@celery.task(bind=True, name='currency_load_prices', default_retry_delay=300,
              max_retries=None, ignore_result=True)
-def prices_currency(self):
+def currency_load_prices(self):
     ''' Запрос цен валюты '''
     self.update_state(state='WORK')
 
     update_currency = redis_decode('update-currency', '')
+    if update_currency != str(datetime.now().date()):
+        market = 'currency'
+        task_log('Start load currency prices', market)
 
-    if update_currency == str(datetime.now().date()):
-        prices_currency.retry()
-        return ''
+        new_price_list = currencylayer.get_prices()
+        if new_price_list:
+            price_list = get_price_list(market) | new_price_list
+            redis.set('price_list_currency', pickle.dumps(price_list))
+            redis.set('update-currency', str(datetime.now().date()))
 
-    price_list = get_price_list('currency')
-    key = current_app.config['API_KEY_CURRENCYLAYER']
-    prefix = current_app.config['CURRENCY_PREFIX']
-
-    url = f'http://api.currencylayer.com/live?access_key={key}'
-    response = requests.get(url)
-    data = response.json()
-    while data.get('success') is not True:
-        print('currency Error :', data)
-        time.sleep(15)
-
-    price_list[prefix + 'usd'] = 1
-
-    for ticker in data['quotes']:
-        id = ticker[3:].lower()
-        price_list[prefix + id] = 1 / data['quotes'][ticker]
-
-    if price_list:
-        redis.set('update-currency', str(datetime.now().date()))
-        redis.set('price_list_currency', pickle.dumps(price_list))
-
-    print('End load currency price')
-    prices_currency.retry()
+        task_log('End load currency prices', market)
+    currency_load_prices.retry()
 
 
-@celery.task(bind=True, name='alerts_update', default_retry_delay=180,
+@celery.task(bind=True, name='alerts_update', default_retry_delay=300,
              max_retries=None, ignore_result=True)
 def alerts_update(self):
     ''' Функция собирает уведомления и проверяет нет ли сработавших '''
@@ -344,66 +238,40 @@ def alerts_update(self):
     alerts_update.retry()
 
 
-@celery.task()
+# @celery.task(bind=True, name='currency_history', ignore_result=True)
+# def load_currency_history(self):
 def load_currency_history():
-    key = current_app.config['API_KEY_CURRENCYLAYER']
-    prefix = current_app.config['CURRENCY_PREFIX']
 
-    tickers = tuple(get_tickers('currency'))
+    date = datetime.now().date()
+    market = 'currency'
+    tickers = tuple(get_tickers(market))
 
-    url = f'http://api.currencylayer.com/historical?access_key={key}&date='
-
-    def get_ticker(id):
-        for ticker in tickers:
-            if ticker.id == id:
-                return ticker
-
-    def get_data(date):
-        response = requests.get(url + str(date))
-        return response.json()
-
-    day = 1
-    history = True
-    date = datetime.now().date() - timedelta(days=day)
-    while history:
-        day += 1
-        date = datetime.now().date() - timedelta(days=day)
+    # ToDO потом убрать
+    n = 0
+    while n <= 3:
+        date = date - timedelta(days=1)
         history = db.session.execute(db.select(PriceHistory)
                                      .filter_by(date=date)).scalar()
-        print(date, ' history', bool(history))
-
-    n = 0
-    while n <= 300:
-        date = date - timedelta(days=1)
-        data = get_data(date)
-        while data.get('success') is not True:
-            print('currency Error :', data)
-            time.sleep(15)
-            data = get_data(date)
-
-        if not data['quotes']:
+        if history:
             continue
 
-        for ticker in data['quotes']:
-            id = prefix + ticker[3:].lower()
-            ticker_in_base = get_ticker(id)
+        data = currencylayer.get_historical(date)
+        n += 1
 
-            if ticker_in_base:
-                ticker_history = db.session.execute(
-                    db.select(PriceHistory)
-                    .filter_by(date=date,
-                               ticker_id=ticker_in_base.id)).scalar()
-                if ticker_history:
-                    continue
+        if not data:
+            return None
 
-                db.session.add(
-                    PriceHistory(date=date, ticker_id=ticker_in_base.id,
-                                 price_usd=1 / data['quotes'][ticker]))
+        for currency in data:
+            ticker_id = add_prefix(currency[len('USD'):], market)
+            ticker = ticker_in_base(ticker_id, tickers)
+
+            if ticker:
+                price = ticker.get_price(date)
+                if not price:
+                    ticker.set_price(date, 1 / data[currency])
 
         db.session.commit()
         print(str(date), ' loaded. Next currency history')
-        time.sleep(15)
-        n += 1
     print('End currency history')
 
 
@@ -411,6 +279,8 @@ def load_image(url, market, ticker_id):
     upload_folder = current_app.config['UPLOAD_FOLDER']
     path = f'{upload_folder}/images/tickers/{market}'
     os.makedirs(path, exist_ok=True)
+
+    ticker_id = remove_prefix(ticker_id, market)
 
     try:
         r = requests.get(url)

@@ -186,6 +186,7 @@ class Asset(db.Model, DetailsMixin):
 
         if comment is not None:
             self.comment = comment
+        print(comment)
         if percent is not None:
             self.percent = percent
         db.session.commit()
@@ -355,6 +356,26 @@ class Ticker(db.Model):
     market_cap_rank = db.Column(db.Integer)
     market = db.Column(db.String(32))
     stable = db.Column(db.Boolean)
+
+    def get_price(self, date):
+        if date:
+            for day in self.history:
+                if day.date == date:
+                    return day.price_usd
+        else:
+            return get_price(self.id)
+
+    def set_price(self, date, price):
+        d = None
+        for day in self.history:
+            if day.date == date:
+                d = day
+                break
+
+        if not d:
+            d = PriceHistory(date=date)
+            self.history.append(d)
+        d.price_usd = price
 
     def edit(self, form):
         self.id = form.get('id')

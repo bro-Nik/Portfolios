@@ -1,17 +1,18 @@
-from datetime import datetime, timedelta
+import time
+from datetime import timedelta
 import math
 from babel.numbers import format_decimal
-from babel.dates import format_date, format_datetime
-from flask import current_app
+from babel.dates import format_datetime
+from flask import Blueprint
 from flask_babel import Locale
 from flask_login import current_user
-import time
-# from portfolio_tracker.app import app
-from portfolio_tracker.general_functions import get_price, get_price_list
-from portfolio_tracker.main import bp
+from portfolio_tracker.general_functions import get_price
 
+
+bp = Blueprint('jinja_filters', __name__, template_folder='templates')
 
 bp.add_app_template_filter(get_price)
+
 
 def smart_int(number):
     ''' Float без точки, если оно целое '''

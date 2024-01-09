@@ -8,92 +8,37 @@
 
   <div>
     <div class="mb-3">
-      <span class="text-average">Пользователи</span>
+      <h6>Пользователи</h6>
     </div>
-    <div class="d-flex gap-3">
-      <span class="small-text">Пользователи - <span id="UsersCount" class="text-average"></span></span>
-      <span class="small-text">Администраторы - <span id="AdminsCount" class="text-average"></span></span>
-    </div>
-  </div>
-
-  <div id="Crypto">
-    <div class="mb-3">
-      <span class="text-average">Crypto</span>
-    </div>
-    <div class="d-flex gap-3">
-      <span class="small-text">Тикеры - 
-        <span class="text-average tickers-count"></span>
-        <span class="tickers-task"></span>
-        <span class="tickers-btn" data-action="crypto_tickers_"></span>
-      </span>
-      <span class="small-text">Цены - 
-        <span class="text-average price-when-update"></span>
-        <span class="price-task"></span>
-        <span class="price-btn" data-action="crypto_price_"></span>
-      </span>
-    </div>
-  </div>
-
-  <div id="Stocks">
-    <div class="mb-3">
-      <span class="text-average">Stocks</span>
-    </div>
-    <div class="d-flex gap-3">
-      <span class="small-text">Тикеры - 
-        <span class="text-average tickers-count"></span>
-        <span class="tickers-task"></span>
-        <span class="tickers-btn" data-action="stocks_tickers_"></span>
-      </span>
-      <span class="small-text">Цены - 
-        <span class="text-average price-when-update"></span>
-        <span class="price-task"></span>
-        <span class="price-btn" data-action="stocks_price_"></span>
-      </span>
-      <span class="small-text">Иконки - 
-        <span class="image-task"></span>
-        <span class="image-btn" data-action="stocks_image_"></span>
-      </span>
-    </div>
-  </div>
-
-  <div id="Curruncy">
-    <div class="mb-3">
-      <span class="text-average">Curruncy</span>
-    </div>
-    <div class="d-flex gap-3">
-      <span class="small-text">Тикеры - 
-        <span class="text-average tickers-count"></span>
-        <span class="tickers-task"></span>
-        <span class="tickers-btn" data-action="currency_tickers_"></span>
-      </span>
-      <span class="small-text">Цены - 
-        <span class="text-average price-when-update"></span>
-        <span class="price-task"></span>
-        <span class="price-btn" data-action="currency_price_"></span>
-      </span>
+    <div class="d-flex gap-3 small-text">
+      <div>Пользователи - <span class="text-average">{{ info.users_count }}</span></div>
+      <div>Администраторы - <span class="text-average">{{ info.admins_count }}</span></div>
     </div>
   </div>
 
   <div>
     <div class="mb-3">
-      <span class="text-average">Уведомления</span>
+      <h6>Последнее обновление цен</h6>
     </div>
-    <div class="d-flex gap-3">
-      <span class="small-text">Уведомления - 
-        <span class="alerts-task"></span>
-        <span class="alerts-btn" data-action="alerts_"></span>
-      </span>
+    <div class="d-flex gap-3 small-text">
+      <div>Crypto - <span class="text-average">{{ info.crypto_update }}</span></div>
+      <div>Stocks - <span class="text-average">{{ info.stocks_update }}</span></div>
+      <div>Currency - <span class="text-average">{{ info.currency_update }}</span></div>
     </div>
   </div>
 
   <div>
     <div class="mb-3">
-      <span class="text-average">Redis</span>
+      <h6>Задачи</h6>
+    </div>
+    <div class="tasks-box small-text"></div>
+  </div>
+
+  <div>
+    <div class="mb-3">
+      <h6>Redis</h6>
     </div>
     <div class="d-grid">
-      <a class="small-text text-decoration-none" href="{{ url_for('.index_action', action='redis_delete_all_tasks') }}">
-          Удалить все задачи
-      </a>
       <a class="small-text text-decoration-none" href="{{ url_for('.index_action', action='redis_delete_price_lists') }}">
           Удалить прайс листы
       </a>
@@ -110,91 +55,23 @@
 {% block after_scripts %}
 <script>
 
-  function AdminDetailsUpdate() {
-    var url = "{{ url_for('.index_detail') }}",
-      action_url = "{{ url_for('.index_action') }}",
-      is_off = ['Остановлено', 'Готово', 'PENDING', 'FAILURE'],
-      turn_on = 'Запустить',
-      turn_off = 'Остановить',
-      request = $.get(url);
+  function UpdateTasks() {
+    var $box = $('.tasks-box'),
+      request = $.get("{{ url_for('.tasks') }}");
+    $box.empty().append(`<div class="spinner-border spinner-border-sm text-secondary"></div>`);
 
-    function GetBtn(market_work, this_task_work, $btn) {
-      var action = $btn.attr('data-action');
+    request.done(function(tasks) {
+      $box.empty();
 
-      if (market_work && this_task_work) {
-        var result = $('<a>', {
-          class: 'small-text text-decoration-none',
-          href: action_url + '?action=' + action + 'stop',
-          text: turn_off
-        })
-      } else if (market_work && !this_task_work) {
-        var result = $('<span>', {
-          class: 'small-text',
-          text: turn_on
-        })
-      } else {
-        var result = $('<a>', {
-          class: 'small-text text-decoration-none',
-          href: action_url + '?action=' + action + 'start',
-          text: turn_on
-        })
+      for (let i = 0; i < tasks.length; i++) {
+        var status = "";
+        if (tasks[i].task_id) status = ` - <span class="text-average">Работает</span>`;
+        $box.append(`<div><span>${tasks[i].name}</span><span class="ms-auto">${status}</span></div>`);
       }
-      $btn.empty().append(result);
-    }
-
-    function TaskWork(task_id, task_state) {
-      return !!(task_id && !is_off.includes(task_state));
-    }
-
-    request.done(function(data) {
-      var c = data.crypto,
-        s = data.stocks,
-        cu = data.currency;
-
-      var cryptoWork = TaskWork(c.task_tickers_id, c.task_tickers_state) || TaskWork(c.task_price_id, c.task_price_state);
-      var stocksWork = TaskWork(s.task_tickers_id, s.task_tickers_state) || TaskWork(s.task_price_id, s.task_price_state) || TaskWork(s.task_image_id, s.task_image_state);
-      var currencyWork = TaskWork(cu.task_tickers_id, cu.task_tickers_state) || TaskWork(cu.task_price_id, cu.task_price_state);
-
-      $('#AdminsCount').html(data.admins_count);
-      $('#UsersCount').html(data.users_count);
-
-      $('#Crypto .tickers-count').html(c.tickers_count);
-      $('#Crypto .tickers-task').html(`(${c.task_tickers_state})`);
-      $('#Crypto .price-when-update').html(c.price_when_update);
-      $('#Crypto .price-task').html(`(${c.task_price_state})`);
-      GetBtn(cryptoWork, TaskWork(c.task_tickers_id, c.task_tickers_state), $('#Crypto .tickers-btn'));
-      GetBtn(cryptoWork, TaskWork(c.task_price_id, c.task_price_state), $('#Crypto .price-btn'));
-
-
-      $('#Stocks .tickers-count').html(s.tickers_count);
-      $('#Stocks .tickers-task').html(`(${s.task_tickers_state})`);
-      $('#Stocks .price-when-update').html(s.price_when_update);
-      $('#Stocks .price-task').html(`(${s.task_price_state})`);
-      $('#Stocks .image-task').html(`(${s.task_image_state})`);
-      GetBtn(stocksWork, TaskWork(s.task_tickers_id, s.task_tickers_state), $('#Stocks .tickers-btn'));
-      GetBtn(stocksWork, TaskWork(s.task_price_id, s.task_price_state), $('#Stocks .price-btn'));
-      GetBtn(stocksWork, TaskWork(s.task_image_id, s.task_image_state), $('#Stocks .image-btn'));
-
-      $('#Curruncy .tickers-count').html(cu.tickers_count);
-      $('#Curruncy .tickers-task').html(`(${cu.task_tickers_state})`);
-      $('#Curruncy .price-when-update').html(cu.price_when_update);
-      $('#Curruncy .price-task').html(`(${cu.task_price_state})`);
-      //$('#Curruncy .image-task').html(`(${s.task_image_state})`);
-      GetBtn(currencyWork, TaskWork(cu.task_tickers_id, cu.task_tickers_state), $('#Curruncy .tickers-btn'));
-      GetBtn(stocksWork, TaskWork(cu.task_price_id, cu.task_price_state), $('#Curruncy .price-btn'));
-      //GetBtn(stocksWork, TaskWork(s.task_image_id, s.task_image_state), $('#Stocks .image-btn'));
-
-      $('.alerts-task').html(`(${data.task_alerts_state})`);
-      GetBtn(TaskWork(data.task_alerts_id, data.task_alerts_state), TaskWork(data.task_alerts_id, data.task_alerts_state), $('.alerts-btn'));
-    })
-    request.fail(function(data) {
-      clearTimeout(adminUpdateTimerId);
     })
   }
 
-  AdminDetailsUpdate();
-  clearTimeout(adminUpdateTimerId);
-  var adminUpdateTimerId = setInterval(AdminDetailsUpdate, 10000);
+  UpdateTasks();
 </script>
 
 {% endblock %}

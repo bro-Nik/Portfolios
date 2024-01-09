@@ -1,3 +1,4 @@
+import time
 from flask import flash
 from flask_babel import gettext
 from flask_login import current_user
@@ -196,6 +197,7 @@ class AllPortfolios(DetailsMixin):
     """Класс объединяет все портфели пользователя."""
 
     def __init__(self):
+        # start_time = time.time()
         self.amount = 0
         self.cost_now = 0
         self.in_orders = 0
@@ -206,3 +208,5 @@ class AllPortfolios(DetailsMixin):
             self.cost_now += portfolio.cost_now
             self.in_orders += portfolio.in_orders
         self.update_details()
+        # elapsed_time = time.time() - start_time
+        # print(f'Time - {elapsed_time}')

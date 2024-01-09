@@ -350,9 +350,12 @@ def ajax_wallet_stable_assets():
         last_transaction = last_wallet_transaction(wallet, last_type)
         if last_transaction:
             ticker = last_transaction.quote_ticker
-            result = {'value': ticker.id,
-                      'text': ticker.symbol.upper(),
-                      'info': get_price(ticker.id)}
+        else:
+            ticker = current_user.currency_ticker
+
+        result = {'value': ticker.id,
+                  'text': ticker.symbol.upper(),
+                  'info': get_price(ticker.id)}
         return json.dumps(result)
 
     if wallet:

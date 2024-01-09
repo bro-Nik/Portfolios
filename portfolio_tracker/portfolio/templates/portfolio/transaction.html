@@ -190,7 +190,7 @@
       text = $selected.text() || '-';
 
     $('#TransactionForm .amount-symbol').text(text);
-    $('#TransactionForm input[name=price]').val({{ asset.price }} / ticker_price);
+    $('#TransactionForm input[name=price]').val({{ transaction.price_usd or asset.price }} / ticker_price).trigger('input');
   })
 
   $('#TransactionForm').on('click', '.calculation-type span', function () {

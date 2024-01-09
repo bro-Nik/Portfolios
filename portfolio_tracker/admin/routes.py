@@ -2,137 +2,41 @@ import json
 from flask import render_template, redirect, url_for, request
 from celery.result import AsyncResult
 
-from portfolio_tracker.admin.utils import get_ticker, get_tickers, \
-    get_tickers_count, get_user, get_users_count, task_state
+from portfolio_tracker.admin.utils import get_task_log, get_ticker, get_tickers, \
+    get_tickers_count, get_user, get_users_count, task_log_name, task_state
 from portfolio_tracker.general_functions import get_price_list, redis_decode, \
     when_updated
+from portfolio_tracker.jinja_filters import user_datetime
 from portfolio_tracker.models import User
 from portfolio_tracker.wraps import admin_only
 from portfolio_tracker.app import db, celery, redis
 from portfolio_tracker.admin import bp
-from portfolio_tracker.admin.tasks import alerts_update, crypto_tickers, \
-    currency_tickers, load_stocks_images, prices_crypto, prices_currency, \
-    prices_stocks, stocks_tickers
+from portfolio_tracker.admin.tasks import alerts_update, crypto_load_tickers, \
+    currency_load_tickers, load_currency_history, stocks_load_images, crypto_load_prices, currency_load_prices, \
+    stocks_load_prices, stocks_load_tickers
 
 
 @bp.route('/', methods=['GET'])
 @admin_only
 def index():
-    return render_template('admin/index.html')
-
-
-@bp.route('/index_detail', methods=['GET'])
-@admin_only
-def index_detail():
-    crypto_tickers = AsyncResult(redis_decode('crypto_tickers_task_id', ''))
-    crypto_price = AsyncResult(redis_decode('crypto_price_task_id', ''))
-    stocks_tickers = AsyncResult(redis_decode('stocks_tickers_task_id', ''))
-    stocks_price = AsyncResult(redis_decode('stocks_price_task_id', ''))
-    stocks_image = AsyncResult(redis_decode('stocks_image_task_id', ''))
-    alerts = AsyncResult(redis_decode('alerts_task_id', ''))
-
-    currency_tickers = AsyncResult(redis_decode('currency_tickers_task_id', ''))
-    currency_price = AsyncResult(redis_decode('currency_price_task_id', ''))
-
-    return {
+    info = {
         "users_count": get_users_count(),
         "admins_count": get_users_count('admin'),
-        "task_alerts_id": alerts.id,
-        "task_alerts_state": task_state(alerts),
-        "crypto": {
-            "tickers_count": get_tickers_count('crypto'),
-            "task_tickers_id": crypto_tickers.id,
-            "task_tickers_state": task_state(crypto_tickers),
-            "task_price_id": crypto_price.id,
-            "task_price_state": task_state(crypto_price),
-            "price_when_update": when_updated(redis_decode('update-crypto'), '-')
-        },
-        "stocks": {
-            "tickers_count": get_tickers_count('stocks'),
-            "task_tickers_id": stocks_tickers.id,
-            "task_tickers_state": task_state(stocks_tickers),
-            "task_price_id": stocks_price.id,
-            "task_price_state": task_state(stocks_price),
-            "task_image_id": stocks_image.id,
-            "task_image_state": task_state(stocks_image),
-            "price_when_update": when_updated(redis_decode('update-stocks'), '-')
-        },
-        "currency": {
-            "tickers_count": get_tickers_count('currency'),
-            "task_tickers_id": currency_tickers.id,
-            "task_tickers_state": task_state(currency_tickers),
-            "task_price_id": currency_price.id,
-            "task_price_state": task_state(currency_price),
-            "price_when_update": when_updated(redis_decode('update-currency'), '-')
-        },
+        "crypto_update": when_updated(redis_decode('update-crypto'), 'Нет'),
+        "stocks_update": when_updated(redis_decode('update-stocks'), 'Нет'),
+        "currency_update": when_updated(redis_decode('update-currency'), 'Нет')
     }
+    return render_template('admin/index.html', info=info)
 
 
 @bp.route('/index_action', methods=['GET'])
 @admin_only
 def index_action():
-
-    def task_stop(key):
-        task_id = redis.get(key)
-        if task_id:
-            celery.control.revoke(task_id.decode(), terminate=True)
-            redis.delete(key)
-            redis.delete('celery-task-meta-' + str(task_id.decode()))
-
     action = request.args.get('action')
-    if action == 'crypto_tickers_start':
-        task_stop('crypto_tickers_task_id')
-        redis.set('crypto_tickers_task_id', str(crypto_tickers.delay().id))
-    elif action == 'stocks_tickers_start':
-        task_stop('stocks_tickers_task_id')
-        redis.set('stocks_tickers_task_id', str(stocks_tickers.delay().id))
-    elif action == 'currency_tickers_start':
-        task_stop('currency_tickers_task_id')
-        redis.set('currency_tickers_task_id', str(currency_tickers.delay().id))
-    if action == 'crypto_price_start':
-        task_stop('crypto_price_task_id')
-        redis.set('crypto_price_task_id', str(prices_crypto.delay().id))
-    elif action == 'stocks_price_start':
-        task_stop('stocks_price_task_id')
-        redis.set('stocks_price_task_id', str(prices_stocks.delay().id))
-    elif action == 'currency_price_start':
-        task_stop('currency_price_task_id')
-        redis.set('currency_price_task_id', str(prices_currency.delay().id))
-    elif action == 'stocks_image_start':
-        task_stop('stocks_images_task_id')
-        redis.set('stocks_images_task_id', str(load_stocks_images.delay().id))
-    elif action == 'alerts_start':
-        task_stop('alerts_task_id')
-        redis.set('alerts_task_id', str(alerts_update.delay().id))
 
-    elif action == 'crypto_tickers_stop':
-        task_stop('crypto_tickers_task_id')
-    elif action == 'stocks_tickers_stop':
-        task_stop('stocks_tickers_task_id')
-    elif action == 'currency_tickers_stop':
-        task_stop('currency_tickers_task_id')
-    elif action == 'crypto_price_stop':
-        task_stop('crypto_price_task_id')
-    elif action == 'stocks_price_stop':
-        task_stop('stocks_price_task_id')
-    elif action == 'currency_price_stop':
-        task_stop('currency_price_task_id')
-    elif action == 'stocks_image_stop':
-        task_stop('stocks_images_task_id')
-    elif action == 'alerts_stop':
-        task_stop('alerts_task_id')
-
-    elif action == 'redis_delete_all':
+    if action == 'redis_delete_all':
         keys = redis.keys('*')
         redis.delete(*keys)
-    elif action == 'redis_delete_all_tasks':
-        keys = ['crypto_price_task_id', 'stocks_price_task_id',
-                'alerts_task_id', 'crypto_tickers_task_id',
-                'stocks_tickers_task_id', 'stocks_images_task_id']
-        redis.delete(*keys)
-        k = redis.keys('celery-task-meta-*')
-        if k:
-            redis.delete(*k)
 
     elif action == 'redis_delete_price_lists':
         keys = ['price_list_crypto', 'price_list_stocks', 'update-crypto',
@@ -163,8 +67,8 @@ def users_detail():
             "email": user.email,
             "type": user.type,
             "portfolios": len(user.portfolios),
-            "first_visit": user.info.first_visit if user.info else '',
-            "last_visit": user.info.last_visit if user.info else '',
+            "first_visit": user_datetime(user.info.first_visit) if user.info else '',
+            "last_visit": user_datetime(user.info.last_visit) if user.info else '',
             "country": user.info.country if user.info else '',
             "city": user.info.city if user.info else ''
         })
@@ -293,3 +197,102 @@ def active_tasks():
 def active_tasks_action(task_id):
     celery.control.revoke(task_id, terminate=True)
     return redirect(url_for('.active_tasks'))
+
+
+# @bp.route('/history', methods=['GET'])
+# @admin_only
+# def load_cur_history():
+#     # load_currency_history.delay()
+#     load_currency_history()
+#     return 'Start'
+
+
+@bp.route('/crypto', methods=['GET'])
+@admin_only
+def crypto():
+    return render_template('admin/crypto.html')
+
+
+@bp.route('/crypto_detail', methods=['GET'])
+@admin_only
+def crypto_detail():
+    crypto_tickers = AsyncResult(redis_decode('crypto_tickers_task_id', ''))
+    crypto_price = AsyncResult(redis_decode('crypto_price_task_id', ''))
+
+    return {
+        "tickers_count": get_tickers_count('crypto'),
+        "price_when_update": when_updated(redis_decode('update-crypto'), 'Нет'),
+        "task_tickers_id": crypto_tickers.id,
+        "task_tickers_state": task_state(crypto_tickers),
+        "task_price_id": crypto_price.id,
+        "task_price_state": task_state(crypto_price)
+        }
+
+
+@bp.route('/tasks', methods=['GET'])
+@admin_only
+def tasks():
+    to_filter = request.args.get('filter')
+
+    i = celery.control.inspect()
+    active = i.active()
+    scheduled = i.scheduled()
+    registered = i.registered()
+
+    tasks_list = []
+    tasks_names = []
+    if active:
+        for server in active:
+            for task in active[server]:
+                tasks_list.append({'name': task['name'],
+                                   'task_id': task['id']})
+                tasks_names.append(task['name'])
+
+    if scheduled:
+        for server in scheduled:
+            for task in scheduled[server]:
+                tasks_list.append({'name': task['request']['name'],
+                                   'task_id': task['request']['id']})
+                tasks_names.append(task['request']['name'])
+
+    if registered:
+        for server in registered:
+            for task in registered[server]:
+                if task not in tasks_names:
+                    tasks_list.append({'name': task, 'task_id': ''})
+    if to_filter:
+        tasks_list = list(filter(lambda task: to_filter in task['name'], tasks_list))
+    return tasks_list
+
+
+@bp.route('/crypto_logs', methods=['GET'])
+@admin_only
+def crypto_logs():
+    logs = get_task_log('crypto')
+    loaded_logs_count = request.args.get('loaded_logs_count', 0, type=int)
+
+    if len(logs) - loaded_logs_count > 0:
+        logs = sorted(logs, key=lambda log: log.get('time'))
+        return logs[loaded_logs_count:]
+
+    return []
+
+
+@bp.route('/tasks_action', methods=['GET'])
+@admin_only
+def tasks_action():
+    action = request.args.get('action')
+    task = request.args.get('task')
+
+    if action and task:
+        if action == 'stop':
+            celery.control.revoke(task, terminate=True)
+            # redis.delete(key)
+            # redis.delete('celery-task-meta-' + str(task_id.decode()))
+
+        elif action == 'start':
+            task = globals().get(task)
+            if task:
+                task.delay()
+
+    return ''

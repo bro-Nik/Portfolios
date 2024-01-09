@@ -143,7 +143,9 @@ def asset_settings_update():
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_asset(portfolio, request.args.get('ticker_id'))
     if asset:
+        print('asset here')
         asset.edit(request.form)
+    print(asset)
     return ''
 
 
@@ -210,12 +212,16 @@ def transaction_info():
     if not hasattr(transaction, 'wallet_sell'):
         transaction.wallet_sell = get_wallet_has_asset(asset.ticker_id)
 
-    last_transaction = last_wallet_transaction(transaction.wallet or
-                                               transaction.wallet_buy,
-                                               transaction.type)
-    if last_transaction:
-        transaction.quote_ticker = last_transaction.quote_ticker
-        transaction.quote_ticker.price = get_price(transaction.quote_ticker.id, 1)
+    if not transaction.quote_ticker:
+        last_transaction = last_wallet_transaction(transaction.wallet or
+                                                   transaction.wallet_buy,
+                                                   transaction.type)
+        if last_transaction:
+            transaction.quote_ticker = last_transaction.quote_ticker
+        else:
+            transaction.quote_ticker = current_user.currency_ticker
+
+    transaction.quote_ticker.price = get_price(transaction.quote_ticker.id, 1)
 
     calculation_type = session.get('transaction_calculation_type', 'amount')
     return render_template('portfolio/transaction.html',

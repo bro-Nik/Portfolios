@@ -30,13 +30,13 @@
       <div class="mb-3">
         <label class="d-flex form-label h7">{% trans %}Количество{% endtrans %}
           <span class="small-text ms-auto out visually-hidden">
-            <span class="{{ 'text-red' if not asset.free > 0 }}">Свободно: {{ asset.free }}</span>
+            <span class="{{ 'text-red' if not asset.free > 0 }}">Свободно: {{ asset.free|long_number }}</span>
             {% if asset.free > 0 %}
               <span class="ms-3 link-primary">
-                <span class="paste-into-input" data-value="{{ asset.free * 0.25 }}">25%</span>
-                <span class="paste-into-input" data-value="{{ asset.free * 0.5 }}">50%</span>
-                <span class="paste-into-input" data-value="{{ asset.free * 0.75 }}">75%</span>
-                <span class="paste-into-input" data-value="{{ asset.free }}">100%</span>
+                <span class="paste-into-input" data-value="{{ (asset.free * 0.25)|long_number }}">25%</span>
+                <span class="paste-into-input" data-value="{{ (asset.free * 0.5)|long_number }}">50%</span>
+                <span class="paste-into-input" data-value="{{ (asset.free * 0.75)|long_number }}">75%</span>
+                <span class="paste-into-input" data-value="{{ asset.free|long_number }}">100%</span>
               </span>
             {% endif %}
           </span>
@@ -80,7 +80,7 @@
   $('#TransferForm').on('change', 'input[name=type]', function () {
     var $form = $(this).closest('form'),
       type = $(this).val(),
-      asset_free = +{{ asset.free }};
+      asset_free = +{{ asset.free|long_number }};
 
     if ('TransferOut'.includes(type)) {
       $form.find('.wallet').slideDown(500).find('select').attr('required', true);

@@ -36,8 +36,7 @@ def get_price_list(market=None):
 
 
 def get_price(ticker_id, default=0):
-    price_list = get_price_list()
-    return price_list.get(ticker_id, default)
+    return get_price_list().get(ticker_id, default)
 
 
 def from_user_datetime(date: datetime | str) -> datetime:

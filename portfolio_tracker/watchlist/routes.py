@@ -184,15 +184,14 @@ def alert_update():
 @login_required
 def ajax_stable_assets():
     result = []
-    price_list = get_price_list()
     tickers = db.session.execute(db.select(Ticker).filter_by(stable=True)).scalars()
 
-    asset_price = price_list.get(request.args['ticker_id'], 0)
+    asset_price = get_price(request.args['ticker_id'], 0)
 
     for ticker in tickers:
         result.append({'value': ticker.id,
                        'text': ticker.symbol.upper(),
-                       'info': price_list.get(ticker.id, 1) * asset_price})
+                       'info': get_price(ticker.id, 1) * asset_price})
 
     if not result:
         result = {'message': 'Нет тикеров'}

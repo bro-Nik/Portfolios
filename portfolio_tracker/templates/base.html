@@ -68,10 +68,10 @@
 
 <script>
   function updateAlerts() {
-    $('#WorkedAlertsCount').load("{{ url_for('main.worked_alerts_count') }}");
+    $('#WorkedAlertsCount').load("{{ url_for('api.worked_alerts_count') }}");
   }
-  //updateAlerts();
-  //setInterval(updateAlerts,10000);
+  updateAlerts();
+  setInterval(updateAlerts,10000);
 </script>
 
 </body>

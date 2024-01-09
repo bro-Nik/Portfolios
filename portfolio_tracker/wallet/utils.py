@@ -45,13 +45,15 @@ def last_wallet(transaction_type, user=current_user):
             if not date or date < transaction.date:
                 date = transaction.date
                 result = wallet
-    return result
+
+    return result if result else user.wallets[-1]
 
 
 def last_wallet_transaction(wallet, transaction_type):
-    for transaction in wallet.transactions:
-        if transaction.type.lower() == transaction_type.lower():
-            return transaction
+    if wallet:
+        for transaction in wallet.transactions:
+            if transaction.type.lower() == transaction_type.lower():
+                return transaction
 
 
 def create_new_wallet(user=current_user):
