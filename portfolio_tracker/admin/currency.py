@@ -109,7 +109,7 @@ def load_history():
     n = 0
     while n <= 3:
 
-        # Поиск последних исторических данных в базе
+        # Поиск даты для которой нет истории
         date -= timedelta(days=1)
         history = db.session.execute(db.select(PriceHistory)
                                      .filter_by(date=date)).scalar()
@@ -133,10 +133,9 @@ def load_history():
             external_id = currency[len('USD'):]
             ticker = find_ticker_in_base(external_id, tickers, MARKET)
 
-            if ticker:
-                price = ticker.get_price(date)
-                if not price:
-                    ticker.set_price(date, 1 / data[currency])
+            price = data[currency]
+            if ticker and price:
+                ticker.set_price(date, 1 / price)
 
         db.session.commit()
     task_log('Загрузка истории - Конец', MARKET)

@@ -4,7 +4,6 @@ from flask import flash, render_template, request, url_for
 from flask_babel import gettext
 from flask_login import login_required, current_user
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import get_price
 from portfolio_tracker.jinja_filters import other_currency, user_currency
 from portfolio_tracker.models import Ticker, Transaction
 from portfolio_tracker.wallet.utils import AllWallets, create_new_wallet, \
@@ -355,7 +354,7 @@ def ajax_wallet_stable_assets():
 
         result = {'value': ticker.id,
                   'text': ticker.symbol.upper(),
-                  'info': get_price(ticker.id)}
+                  'info': ticker.price}
         return json.dumps(result)
 
     if wallet:
@@ -366,7 +365,7 @@ def ajax_wallet_stable_assets():
             result.append({'value': asset.ticker.id,
                            'text': asset.ticker.symbol.upper(),
                            'subtext': f'(~ {int(asset.free)})',
-                           'info': get_price(asset.ticker_id)})
+                           'info': asset.ticker.price})
 
     if not result:
         result = {'message': gettext('Нет активов в кошельке')}

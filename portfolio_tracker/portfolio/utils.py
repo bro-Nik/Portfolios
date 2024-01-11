@@ -1,12 +1,10 @@
-import time
 from flask import flash
 from flask_babel import gettext
 from flask_login import current_user
 
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import get_price
-from portfolio_tracker.models import DetailsMixin, OtherAsset, OtherBody, OtherTransaction, \
-    Portfolio, Asset, Ticker, Transaction
+from portfolio_tracker.models import DetailsMixin, OtherAsset, OtherBody, \
+    OtherTransaction, Portfolio, Asset, Transaction
 
 
 def get_portfolio(portfolio_id: int | float | str | None,

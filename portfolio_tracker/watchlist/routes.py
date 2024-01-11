@@ -2,7 +2,6 @@ import json
 from flask import render_template, session, url_for, request
 from flask_login import login_required, current_user
 
-from portfolio_tracker.general_functions import get_price, get_price_list
 from portfolio_tracker.models import Ticker, WatchlistAsset
 from portfolio_tracker.watchlist.utils import create_new_alert, get_alert, get_watchlist_asset
 from portfolio_tracker.wraps import demo_user_change
@@ -100,7 +99,7 @@ def asset_info():
                                     .filter_by(id=ticker_id)).scalar()
         asset = WatchlistAsset(ticker=ticker)
 
-    asset.price = get_price(ticker_id)
+    asset.price = asset.ticker.price
 
     return render_template('watchlist/asset_info.html', watchlist_asset=asset)
 
@@ -150,8 +149,6 @@ def alert():
         return ''
 
     watchlist_asset = get_watchlist_asset(ticker_id, True)
-    watchlist_asset.price = get_price(ticker_id)
-
     alert = get_alert(watchlist_asset, request.args.get('alert_id'))
 
     return render_template('watchlist/alert.html',
@@ -184,14 +181,16 @@ def alert_update():
 @login_required
 def ajax_stable_assets():
     result = []
-    tickers = db.session.execute(db.select(Ticker).filter_by(stable=True)).scalars()
+    stables = db.session.execute(db.select(Ticker).filter_by(stable=True)).scalars()
 
-    asset_price = get_price(request.args['ticker_id'], 0)
+    ticker = db.session.execute(
+        db.select(Ticker).filter_by(id=request.args['ticker_id'])).scalar()
+    asset_price = ticker.price
 
-    for ticker in tickers:
-        result.append({'value': ticker.id,
-                       'text': ticker.symbol.upper(),
-                       'info': get_price(ticker.id, 1) * asset_price})
+    for stable in stables:
+        result.append({'value': stable.id,
+                       'text': stable.symbol.upper(),
+                       'info': stable.price * asset_price})
 
     if not result:
         result = {'message': 'Нет тикеров'}

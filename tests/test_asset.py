@@ -1,7 +1,6 @@
 import unittest
 
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import get_price
 from portfolio_tracker.models import Asset, Portfolio, Transaction, User
 from tests import app
 
@@ -58,7 +57,7 @@ class TestAssetModel(unittest.TestCase):
 
         a.update_price()
 
-        self.assertEqual(a.price, get_price(a.ticker_id))
+        self.assertEqual(a.price, a.ticker.price)
         self.assertEqual(a.cost_now, a.price * 10)
 
     def test_asset_delete(self):

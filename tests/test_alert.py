@@ -1,10 +1,7 @@
-from datetime import datetime
 import unittest
 
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import get_price, get_price_list
-from portfolio_tracker.models import Alert, Asset, Portfolio, Ticker, Transaction, User, Wallet, WalletAsset, WatchlistAsset
-from portfolio_tracker.watchlist.utils import create_new_alert, create_new_watchlist_asset, get_alert, get_watchlist_asset
+from portfolio_tracker.models import Alert, User, WatchlistAsset
 from tests import app
 
 
@@ -28,10 +25,10 @@ class TestAlertModel(unittest.TestCase):
         u.watchlist.append(asset)
         db.session.commit()
 
-        alert.edit({'price': 10, 'price_ticker_id': 'usdt', 'comment': 'Comment'})
+        alert.edit({'price': 10, 'price_ticker_id': 'usd', 'comment': 'Comment'})
 
         self.assertEqual(alert.price, 10)
-        self.assertEqual(alert.price_usd, 10 / get_price('usdt', 1))
+        self.assertEqual(alert.price_usd, 10 / 1)
         self.assertEqual(alert.price_ticker_id, 'usdt')
         self.assertEqual(alert.comment, 'Comment')
 

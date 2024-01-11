@@ -2,9 +2,7 @@ from datetime import datetime
 import unittest
 
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import get_price
-from portfolio_tracker.models import Asset, OtherAsset, Portfolio, Transaction, User, Wallet
-from portfolio_tracker.portfolio.utils import create_new_portfolio, get_asset, get_portfolio, get_transaction
+from portfolio_tracker.models import Asset, Portfolio, Transaction, User, Wallet
 from tests import app
 
 
@@ -36,7 +34,7 @@ class TestTransactionModel(unittest.TestCase):
     def test_transaction_edit(self):
         t = self.t1
         t.edit({'type': 'Buy', 'date': datetime.utcnow(), 'comment': 'Comment',
-                'ticker2_id': 'usdt', 'price': 26000.00, 'buy_wallet_id': 1,
+                'ticker2_id': 'usd', 'price': 26000.00, 'buy_wallet_id': 1,
                 'order': True, 'quantity': 0.5})
 
         self.assertEqual(t.type, 'Buy')
@@ -44,7 +42,7 @@ class TestTransactionModel(unittest.TestCase):
         self.assertEqual(t.ticker_id, 'btc')
         self.assertEqual(t.ticker2_id, 'usdt')
         self.assertEqual(t.price, 26000.00)
-        self.assertEqual(t.price_usd, 26000.00 * get_price('usdt', 1))
+        self.assertEqual(t.price_usd, 26000.00)
         self.assertEqual(t.wallet_id, 1)
         self.assertEqual(t.order, True)
         self.assertEqual(t.quantity, 0.5)

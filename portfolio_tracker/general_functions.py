@@ -15,30 +15,6 @@ def redis_decode(key, default=''):
     return default
 
 
-def get_price_list(market=None):
-    ''' Общая функция сбора цен '''
-    def get_for(market):
-        price_list_key = 'price_list_' + market
-        price_list = redis.get(price_list_key)
-        return pickle.loads(price_list) if price_list else {}
-
-    if market:
-        return get_for(market)
-
-    price_list = getattr(g, 'price_list', None)
-    if price_list is None:
-        price_list = get_for('crypto') | get_for('stocks') | get_for('currency')
-        # USD
-        price_list[current_app.config['CURRENCY_PREFIX'] + 'usd'] = 1
-        g.price_list = price_list
-
-    return price_list
-
-
-def get_price(ticker_id, default=0):
-    return get_price_list().get(ticker_id, default)
-
-
 def from_user_datetime(date: datetime | str) -> datetime:
     if isinstance(date, str):
         date = datetime.strptime(date, '%Y-%m-%dT%H:%M')

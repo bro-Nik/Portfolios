@@ -1,10 +1,9 @@
 import json
 from flask import render_template, redirect, url_for, request
 
-from portfolio_tracker.admin.utils import get_task_log, get_ticker, get_tickers, \
-    get_tickers_count, get_user, get_users_count
-from portfolio_tracker.general_functions import get_price_list, redis_decode, \
-    when_updated
+from portfolio_tracker.admin.utils import get_task_log, get_ticker, \
+    get_tickers, get_tickers_count, get_user, get_users_count
+from portfolio_tracker.general_functions import redis_decode, when_updated
 from portfolio_tracker.jinja_filters import user_datetime
 from portfolio_tracker.models import User
 from portfolio_tracker.wraps import admin_only
@@ -32,11 +31,6 @@ def index_action():
 
     if action == 'redis_delete_all':
         keys = redis.keys('*')
-        redis.delete(*keys)
-
-    elif action == 'redis_delete_price_lists':
-        keys = ['price_list_crypto', 'price_list_stocks', 'update-crypto',
-                'update-stocks']
         redis.delete(*keys)
 
     return redirect(url_for('.index'))
@@ -136,7 +130,6 @@ def tickers():
 @admin_only
 def tickers_detail():
     tickers = tuple(get_tickers(request.args['market']))
-    price_list = get_price_list()
 
     result = {"total": len(tickers),
               "totalNotFiltered": len(tickers),
@@ -152,7 +145,7 @@ def tickers_detail():
                    f'"TickerModal" data-url={url}>{ticker.id}</span>'),
             "symbol": ticker.symbol,
             "name": ticker.name,
-            "price": price_list.get(ticker.id, 0),
+            "price": ticker.price,
             "market_cap_rank": ticker.market_cap_rank or ''
         })
 

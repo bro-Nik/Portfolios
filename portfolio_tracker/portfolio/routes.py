@@ -1,14 +1,16 @@
 import json
 from datetime import datetime
-from flask import flash, render_template, session, url_for, request
-from flask_babel import gettext
+from flask import render_template, session, url_for, request
 from flask_login import current_user, login_required
 
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import get_price, get_price_list
-from portfolio_tracker.models import Ticker, OtherAsset, \
+from portfolio_tracker.models import Ticker, \
         OtherTransaction, OtherBody, Transaction
-from portfolio_tracker.portfolio.utils import AllPortfolios, actions_on_assets, actions_on_other_assets, actions_on_other_body, actions_on_other_transactions, actions_on_portfolios, actions_on_transactions, create_new_other_asset, create_new_other_body, create_new_other_transaction, \
+from portfolio_tracker.portfolio.utils import AllPortfolios, \
+    actions_on_assets, actions_on_other_assets, actions_on_other_body, \
+    actions_on_other_transactions, actions_on_portfolios, \
+    actions_on_transactions, create_new_other_asset, create_new_other_body, \
+    create_new_other_transaction, \
     create_new_portfolio, create_new_transaction, get_asset, get_other_asset, \
     get_other_body, get_portfolio
 from portfolio_tracker.wallet.utils import get_transaction, \
@@ -220,8 +222,6 @@ def transaction_info():
             transaction.quote_ticker = last_transaction.quote_ticker
         else:
             transaction.quote_ticker = current_user.currency_ticker
-
-    transaction.quote_ticker.price = get_price(transaction.quote_ticker.id, 1)
 
     calculation_type = session.get('transaction_calculation_type', 'amount')
     return render_template('portfolio/transaction.html',

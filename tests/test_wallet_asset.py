@@ -1,7 +1,6 @@
 import unittest
 
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import get_price
 from portfolio_tracker.models import Ticker, Transaction, User, Wallet, WalletAsset
 from tests import app
 
@@ -35,7 +34,6 @@ class TestWalletAssetModel(unittest.TestCase):
     def test_asset_update_price(self):
         self.a.update_price()
 
-        self.assertEqual(self.a.price, get_price('btc'))
         self.assertEqual(self.a.cost_now, self.a.price * 10)
         self.assertEqual(self.a.free, 10)
 

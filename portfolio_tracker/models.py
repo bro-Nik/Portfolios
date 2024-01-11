@@ -5,16 +5,17 @@ from flask_login import UserMixin
 import requests
 
 from portfolio_tracker.app import db
-from portfolio_tracker.general_functions import get_price, from_user_datetime
+from portfolio_tracker.general_functions import from_user_datetime
 
 
 class DetailsMixin:
-    def update_details(self):
-        if not hasattr(self, 'cost_now'):
-            self.cost_now = 0
-        if not hasattr(self, 'amount'):
-            self.amount = 0
+    def __init__(self):
+        self.price = 0
+        self.cost_now = 0
+        self.in_orders = 0
+        self.amount = 0
 
+    def update_details(self):
         self.profit = self.cost_now - self.amount
         self.color = ''
 
@@ -82,7 +83,8 @@ class Transaction(db.Model):
         if self.type in ('Buy', 'Sell'):
             self.ticker2_id = form['ticker2_id']
             self.price = float(form['price'])
-            self.price_usd = self.price * get_price(self.ticker2_id, 1)
+            db.session.commit()
+            self.price_usd = self.price * self.quote_ticker.price
             self.wallet_id = form[self.type.lower() + '_wallet_id']
             self.order = bool(form.get('order'))
             if form.get('quantity') is not None:
@@ -117,8 +119,7 @@ class Transaction(db.Model):
             alert.asset_id = self.portfolio_asset.id
             alert.comment = self.comment
 
-            asset_price = get_price(self.ticker_id, 1)
-            alert.type = 'down' if asset_price >= alert.price_usd else 'up'
+            alert.type = 'down' if self.base_ticker.price >= alert.price_usd else 'up'
         db.session.commit()
 
     def update_dependencies(self, param=''):
@@ -280,7 +281,8 @@ class OtherTransaction(db.Model):
         t_type = 1 if self.type == 'Profit' else -1
         self.amount_ticker_id = form['amount_ticker_id']
         self.amount = float(form['amount']) * t_type
-        self.amount_usd = self.amount * get_price(self.amount_ticker_id)
+        db.session.commit()
+        self.amount_usd = self.amount * self.amount_ticker.price
         self.comment = form['comment']
         self.date = from_user_datetime(form['date'])
 
@@ -332,12 +334,16 @@ class OtherBody(db.Model):
 
     def edit(self, form):
         self.name = form['name']
-        self.amount_ticker_id = form['amount_ticker_id']
         self.amount = float(form['amount'])
-        self.amount_usd = self.amount * get_price(self.amount_ticker_id, 1)
-        self.cost_now_ticker_id = form['cost_now_ticker_id']
         self.cost_now = float(form['cost_now'])
-        self.cost_now_usd = self.cost_now * get_price(self.cost_now_ticker_id, 1)
+
+        self.amount_ticker_id = form['amount_ticker_id']
+        self.cost_now_ticker_id = form['cost_now_ticker_id']
+
+        db.session.commit()
+        self.amount_usd = self.amount * self.amount_ticker.price
+        self.cost_now_usd = self.cost_now * self.cost_now_ticker.price
+
         self.comment = form['comment']
         self.date = from_user_datetime(form['date'])
 
@@ -358,13 +364,11 @@ class Ticker(db.Model):
     market = db.Column(db.String(32))
     stable = db.Column(db.Boolean)
 
-    def get_price(self, date):
+    def get_history_price(self, date):
         if date:
             for day in self.history:
                 if day.date == date:
                     return day.price_usd
-        else:
-            return get_price(self.id)
 
     def set_price(self, date, price):
         d = None
@@ -462,10 +466,10 @@ class WalletAsset(db.Model):
                              backref=db.backref('ticker_wallets', lazy=True))
 
     def is_empty(self):
-        return not (self.transactions)
+        return not(self.transactions)
 
     def update_price(self):
-        self.price = get_price(self.ticker_id, 0)
+        self.price = self.ticker.price
         self.cost_now = self.quantity * self.price
 
         if self.ticker.stable:
@@ -524,7 +528,7 @@ class Portfolio(db.Model, DetailsMixin):
             asset.update_price()
             asset.update_details()
             self.amount += asset.amount
-            self.cost_now += asset.quantity * asset.ticker.price
+            self.cost_now += asset.cost_now
             self.in_orders += asset.in_orders
 
         for asset in self.other_assets:
@@ -557,9 +561,6 @@ class WatchlistAsset(db.Model):
     def is_empty(self):
         return not (self.alerts or self.comment)
 
-    # def update_price(self):
-    #     self.price = get_price(self.ticker_id, 0)
-
     def delete(self):
         for alert in self.alerts:
             alert.delete()
@@ -591,10 +592,12 @@ class Alert(db.Model):
     def edit(self, form):
         self.price = float(form['price'])
         self.price_ticker_id = form['price_ticker_id']
-        self.price_usd = self.price / get_price(self.price_ticker_id, 1)
+        db.session.commit()
+
+        self.price_usd = self.price / self.price_ticker.price
         self.comment = form['comment']
 
-        asset_price = get_price(self.watchlist_asset.ticker_id, 0)
+        asset_price = self.watchlist_asset.ticker.price
         self.type = 'down' if asset_price >= self.price_usd else 'up'
 
         db.session.commit()

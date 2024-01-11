@@ -6,19 +6,16 @@ from babel.dates import format_datetime
 from flask import Blueprint
 from flask_babel import Locale
 from flask_login import current_user
-from portfolio_tracker.general_functions import get_price
 
 
 bp = Blueprint('jinja_filters', __name__, template_folder='templates')
-
-bp.add_app_template_filter(get_price)
 
 
 def smart_int(number):
     ''' Float без точки, если оно целое '''
     if not number:
         return 0
-    elif int(number) == number:
+    if int(number) == number:
         return int(number)
     return number
 
@@ -90,7 +87,7 @@ def user_currency(number, param=None):
     currency = current_user.currency
     locale = current_user.locale
 
-    price_currency_to_usd = 1 / (get_price(current_user.currency_ticker_id, 1))
+    price_currency_to_usd = 1 / (current_user.currency_ticker.price)
     number *= price_currency_to_usd
 
     # round
