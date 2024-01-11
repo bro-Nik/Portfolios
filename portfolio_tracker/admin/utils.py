@@ -40,11 +40,14 @@ def add_prefix(ticker_id, market):
     return (get_prefix(market) + ticker_id).lower()
 
 
-def get_tickers(market=None):
+def get_tickers(market=None, without_image=None):
     select = db.select(Ticker).order_by(Ticker.market_cap_rank.is_(None),
                                         Ticker.market_cap_rank.asc())
     if market:
         select = select.filter_by(market=market)
+    if without_image:
+        select = select.filter_by(image=None)
+
     return db.session.execute(select).scalars()
 
 
@@ -58,26 +61,6 @@ def get_ticker(id):
         return db.session.execute(db.select(Ticker).filter_by(id=id)).scalar()
 
 
-def task_state(task):
-    if task.id:
-        if task.state in ['WORK']:
-            return 'Работает'
-        elif task.state in ['RETRY']:
-            return 'Ожидает'
-        elif task.state == 'LOADING':
-            return 'Загрузка'
-        elif task.state == 'REVOKED':
-            return 'Остановлено'
-        elif task.state == 'SUCCESS':
-            return 'Готово'
-        elif task.state == 'FAILURE':
-            return 'Ошибка'
-        else:
-            return task.state
-    else:
-        return ''
-
-
 def get_tickers_count(market):
     return db.session.execute(db.select(func.count()).select_from(Ticker)
                               .filter_by(market=market)).scalar()
@@ -88,3 +71,45 @@ def get_users_count(type=None):
     if type:
         select = select.filter_by(type=type)
     return db.session.execute(select).scalar()
+
+
+def find_ticker_in_base(external_id, tickers, market, create=None):
+    if external_id:
+        ticker_id = add_prefix(external_id, market)
+
+        for ticker in tickers:
+            if ticker.id == ticker_id:
+                return ticker
+
+        if create:
+            ticker = Ticker(id=ticker_id, market=market)
+            db.session.add(ticker)
+            tickers.append(ticker)
+            return ticker
+
+
+def load_image(url, market, ticker_id):
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    path = f'{upload_folder}/images/tickers/{market}'
+    os.makedirs(path, exist_ok=True)
+
+    ticker_id = remove_prefix(ticker_id, market)
+
+    try:
+        r = requests.get(url)
+        original_img = Image.open(BytesIO(r.content))
+        filename = f'{ticker_id}.{original_img.format}'.lower()
+    except Exception:
+        return None
+
+    def resize_image(px):
+        size = (px, px)
+        path_local = os.path.join(path, str(px))
+        os.makedirs(path_local, exist_ok=True)
+        path_saved = os.path.join(path_local, filename)
+        original_img.resize(size).save(path_saved)
+
+    resize_image(24)
+    resize_image(40)
+
+    return filename

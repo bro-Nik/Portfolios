@@ -1,9 +1,8 @@
 import json
 from flask import render_template, redirect, url_for, request
-from celery.result import AsyncResult
 
 from portfolio_tracker.admin.utils import get_task_log, get_ticker, get_tickers, \
-    get_tickers_count, get_user, get_users_count, task_log_name, task_state
+    get_tickers_count, get_user, get_users_count
 from portfolio_tracker.general_functions import get_price_list, redis_decode, \
     when_updated
 from portfolio_tracker.jinja_filters import user_datetime
@@ -11,9 +10,6 @@ from portfolio_tracker.models import User
 from portfolio_tracker.wraps import admin_only
 from portfolio_tracker.app import db, celery, redis
 from portfolio_tracker.admin import bp
-from portfolio_tracker.admin.tasks import alerts_update, crypto_load_tickers, \
-    currency_load_tickers, load_currency_history, stocks_load_images, crypto_load_prices, currency_load_prices, \
-    stocks_load_prices, stocks_load_tickers
 
 
 @bp.route('/', methods=['GET'])
@@ -216,16 +212,9 @@ def crypto():
 @bp.route('/crypto_detail', methods=['GET'])
 @admin_only
 def crypto_detail():
-    crypto_tickers = AsyncResult(redis_decode('crypto_tickers_task_id', ''))
-    crypto_price = AsyncResult(redis_decode('crypto_price_task_id', ''))
-
     return {
         "tickers_count": get_tickers_count('crypto'),
-        "price_when_update": when_updated(redis_decode('update-crypto'), 'Нет'),
-        "task_tickers_id": crypto_tickers.id,
-        "task_tickers_state": task_state(crypto_tickers),
-        "task_price_id": crypto_price.id,
-        "task_price_state": task_state(crypto_price)
+        "price_when_update": when_updated(redis_decode('update-crypto'), 'Нет')
         }
 
 
@@ -260,6 +249,7 @@ def tasks():
             for task in registered[server]:
                 if task not in tasks_names:
                     tasks_list.append({'name': task, 'task_id': ''})
+
     if to_filter:
         tasks_list = list(filter(lambda task: to_filter in task['name'], tasks_list))
     return tasks_list
@@ -287,12 +277,13 @@ def tasks_action():
     if action and task:
         if action == 'stop':
             celery.control.revoke(task, terminate=True)
-            # redis.delete(key)
-            # redis.delete('celery-task-meta-' + str(task_id.decode()))
 
         elif action == 'start':
-            task = globals().get(task)
-            if task:
-                task.delay()
+            task = celery.signature(task)
+            task.delay()
+            # task = globals().get(task)
+            # print(task)
+            # if task:
+            #     task.delay()
 
     return ''

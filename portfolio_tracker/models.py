@@ -202,7 +202,7 @@ class Asset(db.Model, DetailsMixin):
         return free
 
     def update_price(self):
-        self.price = get_price(self.ticker_id, 0)
+        self.price = self.ticker.price
         self.cost_now = self.quantity * self.price
 
     def delete(self):
@@ -354,6 +354,7 @@ class Ticker(db.Model):
     symbol = db.Column(db.String(124))
     image = db.Column(db.String(1024))
     market_cap_rank = db.Column(db.Integer)
+    price = db.Column(db.Float, default=0)
     market = db.Column(db.String(32))
     stable = db.Column(db.Boolean)
 
@@ -523,7 +524,7 @@ class Portfolio(db.Model, DetailsMixin):
             asset.update_price()
             asset.update_details()
             self.amount += asset.amount
-            self.cost_now += asset.cost_now
+            self.cost_now += asset.quantity * asset.ticker.price
             self.in_orders += asset.in_orders
 
         for asset in self.other_assets:
