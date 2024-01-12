@@ -1,8 +1,10 @@
+import requests
 from datetime import datetime
+
 from flask import current_app, request
 from flask_babel import gettext
 from flask_login import UserMixin
-import requests
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from portfolio_tracker.app import db
 from portfolio_tracker.general_functions import from_user_datetime
@@ -627,6 +629,13 @@ class PriceHistory(db.Model):
 
 
 class UserUtilsMixin:
+    def set_password(self, password):
+        """Изменение пароля пользователя."""
+        self.password = generate_password_hash(password)
+
+    def check_password(self, password):
+        """Проверка пароля пользователя."""
+        return check_password_hash(self.password, password)
 
     def change_currency(self, currency='usd'):
         self.currency = currency
@@ -913,3 +922,16 @@ class UserInfo(db.Model):
     last_visit = db.Column(db.DateTime, default=datetime.utcnow)
     country = db.Column(db.String(255))
     city = db.Column(db.String(255))
+
+
+# class UserExternalMixin():
+#     type = db.Column(db.String(255))
+#     locale = db.Column(db.String(32))
+#     timezone = db.Column(db.String(32))
+#     currency = db.Column(db.String(32))
+#     currency_ticker_id = db.Column(db.String(32), db.ForeignKey('ticker.id'))
+#     # Relationships
+#     info = db.relationship('UserInfo',
+#                            backref=db.backref('user', lazy=True),
+#                            uselist=False)
+#     currency_ticker = db.relationship('Ticker', uselist=False)

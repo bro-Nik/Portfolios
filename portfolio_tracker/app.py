@@ -66,9 +66,6 @@ def register_blueprints(app):
     from portfolio_tracker.page import bp as page_bp
     app.register_blueprint(page_bp)
 
-    from portfolio_tracker.auth import bp as auth_bp
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-
     from portfolio_tracker.api import bp as api_bp
     app.register_blueprint(api_bp)
 

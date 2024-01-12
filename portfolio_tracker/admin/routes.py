@@ -7,17 +7,15 @@ from portfolio_tracker.jinja_filters import user_datetime
 from portfolio_tracker.models import User
 from portfolio_tracker.wraps import admin_only
 from portfolio_tracker.app import db, celery, redis
-from portfolio_tracker.admin import bp
-from portfolio_tracker.admin.utils import check_market, get_task_log, \
-    get_ticker, get_tickers, get_tickers_count, get_user, get_users_count
+from . import bp, utils
 
 
 @bp.route('/', methods=['GET'])
 @admin_only
 def index():
     info = {
-        "users_count": get_users_count(),
-        "admins_count": get_users_count('admin'),
+        "users_count": utils.get_users_count(),
+        "admins_count": utils.get_users_count('admin'),
         "crypto_update": when_updated(redis_decode('update-crypto'), 'Нет'),
         "stocks_update": when_updated(redis_decode('update-stocks'), 'Нет'),
         "currency_update": when_updated(redis_decode('update-currency'), 'Нет')
@@ -52,6 +50,9 @@ def users_detail():
               "totalNotFiltered": len(users),
               "rows": []}
     for user in users:
+        if user.type == 'demo':
+            continue
+
         result['rows'].append({
             "id": (f'<input class="form-check-input to-check" type="checkbox" '
                    f'value="{user.id}">'),
@@ -76,7 +77,7 @@ def users_action():
     ids = data['ids']
 
     for user_id in ids:
-        user = get_user(user_id)
+        user = utils.get_user(user_id)
         if not user:
             continue
 
@@ -109,7 +110,7 @@ def tickers_action():
     ids = data['ids']
 
     for ticker_id in ids:
-        ticker = get_ticker(ticker_id)
+        ticker = utils.get_ticker(ticker_id)
         if not ticker:
             continue
 
@@ -131,7 +132,7 @@ def tickers_page():
 @bp.route('/tickers_detail', methods=['GET'])
 @admin_only
 def tickers_detail():
-    tickers = get_tickers(check_market(request.args.get('market')))
+    tickers = utils.get_tickers(request.args.get('market'))
 
     result = {"total": len(tickers),
               "totalNotFiltered": len(tickers),
@@ -157,14 +158,14 @@ def tickers_detail():
 @bp.route('/tickers/settings', methods=['GET'])
 @admin_only
 def ticker_settings():
-    ticker = get_ticker(request.args.get('ticker_id'))
+    ticker = utils.get_ticker(request.args.get('ticker_id'))
     return render_template('admin/ticker_settings.html', ticker=ticker)
 
 
 @bp.route('/tickers/settings_update', methods=['POST'])
 @admin_only
 def ticker_settings_update():
-    ticker = get_ticker(request.args.get('ticker_id'))
+    ticker = utils.get_ticker(request.args.get('ticker_id'))
     if ticker:
         ticker.edit(request.form)
 
@@ -200,7 +201,7 @@ def crypto():
 @admin_only
 def crypto_detail():
     return {
-        "tickers_count": get_tickers_count('crypto'),
+        "tickers_count": utils.get_tickers_count('crypto'),
         "price_when_update": when_updated(redis_decode('update-crypto'), 'Нет')
         }
 
@@ -246,7 +247,7 @@ def tasks():
 @bp.route('/crypto_logs', methods=['GET'])
 @admin_only
 def crypto_logs():
-    logs = get_task_log('crypto')
+    logs = utils.get_task_log('crypto')
     loaded_logs_count = request.args.get('loaded_logs_count', 0, type=int)
 
     if len(logs) - loaded_logs_count > 0:

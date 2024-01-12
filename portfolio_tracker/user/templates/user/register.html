@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>{% trans %}Вход{% endtrans %}</title>
+  <title>{% trans %}Регистрация{% endtrans %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" />
   <link href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" rel="stylesheet">
@@ -18,9 +18,8 @@
   </style>
 </head>
 
-<body class="d-flex align-items-center flex-column">
+<body class="d-flex align-items-center">
   <main class="m-auto">
-
     <form method="post">
       {% with messages = get_flashed_messages(('error', 'info')) %}
         {% if messages %}
@@ -40,9 +39,9 @@
       </a>
 
       <div class="d-flex align-items-center gap-2 mb-3">
-        <h1 class="h3 fw-normal">{% trans %}Вход{% endtrans %}</h1>
+        <h1 class="h3 fw-normal">{% trans %}Регистрация{% endtrans %}</h1>
         <div class="ms-auto d-flex gap-3">
-          <a class="text-decoration-none" href="{{ url_for('auth.register') }}">{% trans %}Регистрация{% endtrans %}</a>
+          <a class="text-decoration-none" href="{{ url_for('user.login') }}">{% trans %}Вход{% endtrans %}</a>
           <a class="text-decoration-none" href="{{ url_for('user.demo_user') }}">{% trans %}Демо{% endtrans %}</a>
         </div>
       </div>
@@ -51,21 +50,18 @@
         <input type="email" class="form-control" placeholder="{% trans %}Email{% endtrans %}" name="email" required>
       </div>
 
-      <div class="mb-3">
+      <div class="mb-1">
         <input type="password" class="form-control" placeholder="{% trans %}Пароль{% endtrans %}" name="password" required>
       </div>
 
-      <div class="checkbox mb-3 ms-1 me-1 d-flex justify-content-between">
-        <label>
-          <input type="checkbox" value="True" name="remember-me" checked>
-          {% trans %}Запомнить меня{% endtrans %}
-        </label>
+      <div class="mb-3">
+        <input type="password" class="form-control" placeholder="{% trans %}Подтвердить пароль{% endtrans %}" name="password2" required>
       </div>
 
-      <button class="w-100 btn btn-sm btn-primary" type="submit">{% trans %}Вход{% endtrans %}</button>
+      <button class="w-100 btn btn-sm btn-primary" type="submit">{% trans %}Регистрация{% endtrans %}</button>
 
     </form>
   </main>
-</body>
 
+</body>
 </html>

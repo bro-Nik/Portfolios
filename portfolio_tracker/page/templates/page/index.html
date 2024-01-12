@@ -35,8 +35,8 @@
             </a>
           {% else %}
             <div>
-              <a href="{{ url_for('auth.login') }}" class="text-decoration-none fw-medium">{% trans %}Вход{% endtrans %}</a> /
-              <a href="{{ url_for('auth.register') }}" class="text-decoration-none fw-medium">{% trans %}Регистрация{% endtrans %}</a>
+              <a href="{{ url_for('user.login') }}" class="text-decoration-none fw-medium">{% trans %}Вход{% endtrans %}</a> /
+              <a href="{{ url_for('user.register') }}" class="text-decoration-none fw-medium">{% trans %}Регистрация{% endtrans %}</a>
             </div>
             <a href="{{ url_for('user.demo_user') }}" class="text-decoration-none fw-medium">{% trans %}Демо{% endtrans %}</a>
           {% endif %}

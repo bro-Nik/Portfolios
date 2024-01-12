@@ -1,16 +1,56 @@
 import json
 from datetime import datetime
-from json.decoder import JSONDecodeError
 
 from flask import Response, render_template, redirect, url_for, request, \
     flash, session
 from flask_babel import gettext
-from flask_login import login_user, login_required, current_user
+from flask_login import login_user, login_required, current_user, logout_user
 
 from portfolio_tracker.app import db
 from portfolio_tracker.settings import LANGUAGES
-from portfolio_tracker.user.utils import get_demo_user, get_locale
-from . import bp
+from . import bp, utils
+
+
+@bp.route('/logout')
+@login_required
+def logout():
+    """Выводит пользователя из системы."""
+    logout_user()
+    return redirect(url_for('.login'))
+
+
+@bp.after_request
+def redirect_to_signin(response):
+    """Перекидывает на странизу авторизации."""
+    if response.status_code == 401:
+        return redirect(f"{url_for('.login')}?next={request.url}")
+
+    return response
+
+
+@bp.route('/register', methods=['GET', 'POST'])
+def register():
+    """Отдает страницу регистрации и принимает форму регистрации."""
+    if request.method == 'POST':
+        if utils.register(request.form):
+            return redirect(url_for('.login'))
+
+    return render_template('auth/register.html', locale=utils.get_locale())
+
+
+@bp.route('/login', methods=['GET', 'POST'])
+def login():
+    """Отдает страницу входа и принимает форму входа."""
+    if current_user.is_authenticated and current_user.type != 'demo':
+        return redirect(url_for('portfolio.portfolios'))
+
+    if request.method == 'POST':
+        if utils.login(request.form) is True:
+            next_page = request.args.get('next',
+                                         url_for('portfolio.portfolios'))
+            return redirect(next_page)
+
+    return render_template('user/login.html')
 
 
 @bp.route('/user_action', methods=['POST'])
@@ -38,15 +78,14 @@ def user_action():
 
 @bp.route("/demo_user")
 def demo_user():
-    login_user(get_demo_user())
+    login_user(utils.get_demo_user())
     return redirect(url_for('portfolio.portfolios'))
 
 
 @bp.route('/settings_profile')
 @login_required
 def settings_profile():
-    # return render_template('user/settings_profile.html', locale=None)
-    return render_template('user/settings_profile.html', locale=get_locale())
+    return render_template('user/settings_profile.html')
 
 
 @bp.route('/settings_export_import', methods=['GET'])
@@ -60,9 +99,11 @@ def settings_export_import():
 def export_data():
     # For export to demo user
     if request.args.get('demo_user') and current_user.type == 'admin':
-        user = get_demo_user()
+        user = utils.get_demo_user()
     else:
         user = current_user
+    if not user:
+        return ''
 
     filename = f'portfolios_export ({datetime.now().date()}).txt'
 
@@ -77,11 +118,14 @@ def export_data():
 def import_data_post():
     # For import to demo user
     if request.args.get('demo_user') and current_user.type == 'admin':
-        user = get_demo_user()
+        user = utils.get_demo_user()
         url = url_for('admin.demo_user', )
     else:
         user = current_user
         url = url_for('.settings_export_import')
+
+    if not user:
+        return ''
 
     file = request.files['file']
     if file:
@@ -91,7 +135,7 @@ def import_data_post():
             data = json.loads(data)
             user.import_data(data)
             flash(gettext('Импорт заверщен'), 'success')
-        except (JSONDecodeError, ValueError):
+        except (json.decoder.JSONDecodeError, ValueError):
             flash(gettext('Ошибка чтения данных'), 'danger')
         except Exception:
             flash(gettext('Неизвестная ошибка'), 'danger')

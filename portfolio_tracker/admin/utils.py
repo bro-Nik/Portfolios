@@ -1,26 +1,20 @@
 import os
 from datetime import datetime
 import pickle
-from typing import Literal
-from typing import TypeAlias
+from typing import Literal, TypeAlias
 from io import BytesIO
+import requests
 
 from flask import current_app
-import requests
 from sqlalchemy import func
 from PIL import Image
 
 from portfolio_tracker.general_functions import redis_decode
-from portfolio_tracker.models import Ticker, User
-from portfolio_tracker.app import db, redis
+from portfolio_tracker.models import db, Ticker, User
+from portfolio_tracker.app import redis
 
 
 Market: TypeAlias = Literal['crypto', 'stocks', 'currency']
-
-
-def check_market(market):
-    if market in ('crypto', 'stocks', 'currency'):
-        return market
 
 
 def get_prefix(market: Market) -> str:
@@ -56,7 +50,7 @@ def add_prefix(ticker_id: str, market: Market) -> str:
     return (get_prefix(market) + ticker_id).lower()
 
 
-def get_tickers(market: Market | None = None,
+def get_tickers(market: str | None = None,
                 without_image: bool = False) -> list[Ticker]:
     select = db.select(Ticker).order_by(Ticker.market_cap_rank.is_(None),
                                         Ticker.market_cap_rank.asc())
