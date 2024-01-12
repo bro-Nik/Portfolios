@@ -1,4 +1,6 @@
 import time
+from collections.abc import Callable
+
 from pycoingecko import CoinGeckoAPI
 
 from portfolio_tracker.admin.utils import get_tickers, remove_prefix, \
@@ -10,12 +12,12 @@ cg = CoinGeckoAPI()
 MARKET = 'crypto'
 
 
-def get_data(func, *args, **kwargs):
-    max_attempts = 5  # Допустимое количество попыток
-    minute_calls = 30  # Допустимое количество вызовов в минуту
+def get_data(func: Callable, *args, **kwargs) -> dict | None:
+    attempts: int = 5  # Допустимое количество попыток
+    minute_calls: int | None = 30  # Допустимое количество вызовов в минуту
 
-    while max_attempts > 0:
-        max_attempts -= 1
+    while attempts > 0:
+        attempts -= 1
 
         # Задержка, если ограничено количество вызовов в минуту
         if minute_calls:
@@ -26,28 +28,32 @@ def get_data(func, *args, **kwargs):
             task_log('Удачный запрос', MARKET)
             return data
         except Exception as error:
-            task_log(f'Неудачный запрос (осталось {max_attempts} попыток) - {error}', MARKET)
+            task_log(f'Неудача (осталось попыток:{attempts})-{error}', MARKET)
+            # ToDo доработать ошибки
+            raise
 
 
-def load_prices():
+def load_prices() -> None:
     task_log('Загрузка цен - Старт', MARKET)
 
-    tickers = list(get_tickers(MARKET))
-    max_len = 2048 - len(f'{cg.api_base_url}simple/price?ids=&vs_currencies=usd')
+    tickers = get_tickers(MARKET)
+    url = f'{cg.api_base_url}simple/price?vs_currencies=usd&ids='
+    max_len = 2048 - len(url)
     tickers_to_do = []
 
     while tickers:
 
         # Разбиение запроса до допустимой длины
         ids = ''
-        while len(f'{ids},{remove_prefix(tickers[0].id, MARKET)}') < max_len and tickers:
+        while (len(f'{ids},{remove_prefix(tickers[0].id, MARKET)}') < max_len
+               and tickers):
             ids += ',' + remove_prefix(tickers[0].id, MARKET)
             tickers_to_do.append(tickers.pop(0))
 
         # Получение данных
         data = get_data(cg.get_price, vs_currencies='usd', ids=ids)
         if not data:
-            return None
+            return
 
         # Сохранение данных
         for ticker in tickers_to_do:
@@ -60,10 +66,10 @@ def load_prices():
     task_log('Загрузка цен - Конец', MARKET)
 
 
-def load_tickers():
+def load_tickers() -> None:
     task_log('Загрузка тикеров - Старт', MARKET)
 
-    tickers = list(get_tickers('crypto'))
+    tickers = get_tickers(MARKET)
     page = 1
 
     while True:

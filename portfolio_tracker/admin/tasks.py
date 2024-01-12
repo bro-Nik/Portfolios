@@ -3,10 +3,10 @@ from portfolio_tracker.admin import currency, stocks, crypto
 from portfolio_tracker.models import WatchlistAsset
 
 
-@celery.task(name='crypto_load_prices', default_retry_delay=300)
-def crypto_load_prices():
+@celery.task(bind=True, name='crypto_load_prices', default_retry_delay=300)
+def crypto_load_prices(self):
     crypto.load_prices()
-    crypto_load_prices.retry()
+    self.retry()
 
 
 @celery.task(name='crypto_load_tickers')
@@ -24,10 +24,10 @@ def stocks_load_tickers():
     stocks.load_tickers()
 
 
-@celery.task(name='stocks_load_prices', default_retry_delay=300)
-def stocks_load_prices():
+@celery.task(bind=True, name='stocks_load_prices', default_retry_delay=300)
+def stocks_load_prices(self):
     stocks.load_prices()
-    stocks_load_prices.retry()
+    self.retry()
 
 
 @celery.task(name='currency_load_tickers')
@@ -35,10 +35,10 @@ def currency_load_tickers():
     currency.load_tickers()
 
 
-@celery.task(name='currency_load_prices', default_retry_delay=300)
-def currency_load_prices():
+@celery.task(bind=True, name='currency_load_prices', default_retry_delay=300)
+def currency_load_prices(self):
     currency.load_prices()
-    currency_load_prices.retry()
+    self.retry()
 
 
 @celery.task(name='currency_load_history')
@@ -46,8 +46,8 @@ def currency_load_history():
     currency.load_history()
 
 
-@celery.task(name='alerts_update', default_retry_delay=300)
-def alerts_update():
+@celery.task(bind=True, name='alerts_update', default_retry_delay=300)
+def alerts_update(self):
     # Отслеживаемые тикеры
     tracked_tickers = db.session.execute(db.select(WatchlistAsset)).scalars()
 
@@ -65,4 +65,4 @@ def alerts_update():
                 alert.status = 'worked'
 
     db.session.commit()
-    alerts_update.retry()
+    self.retry()

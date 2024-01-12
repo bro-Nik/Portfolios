@@ -1,14 +1,15 @@
 import json
+
 from flask import render_template, redirect, url_for, request
 
-from portfolio_tracker.admin.utils import get_task_log, get_ticker, \
-    get_tickers, get_tickers_count, get_user, get_users_count
 from portfolio_tracker.general_functions import redis_decode, when_updated
 from portfolio_tracker.jinja_filters import user_datetime
 from portfolio_tracker.models import User
 from portfolio_tracker.wraps import admin_only
 from portfolio_tracker.app import db, celery, redis
 from portfolio_tracker.admin import bp
+from portfolio_tracker.admin.utils import check_market, get_task_log, \
+    get_ticker, get_tickers, get_tickers_count, get_user, get_users_count
 
 
 @bp.route('/', methods=['GET'])
@@ -38,7 +39,7 @@ def index_action():
 
 @bp.route('/users', methods=['GET'])
 @admin_only
-def users():
+def users_page():
     return render_template('admin/users.html')
 
 
@@ -57,8 +58,8 @@ def users_detail():
             "email": user.email,
             "type": user.type,
             "portfolios": len(user.portfolios),
-            "first_visit": user_datetime(user.info.first_visit) if user.info else '',
-            "last_visit": user_datetime(user.info.last_visit) if user.info else '',
+            "first_visit": user_datetime(user.info.first_visit),
+            "last_visit": user_datetime(user.info.last_visit),
             "country": user.info.country if user.info else '',
             "city": user.info.city if user.info else ''
         })
@@ -74,20 +75,21 @@ def users_action():
     action = data.get('action')
     ids = data['ids']
 
-    for id in ids:
-        user = get_user(id)
+    for user_id in ids:
+        user = get_user(user_id)
         if not user:
             continue
 
         if action == 'user_to_admin':
-            user.type = 'admin'
-            db.session.commit()
+            user.make_admin()
+
         elif action == 'admin_to_user':
-            user.type = ''
-            db.session.commit()
+            user.unmake_admin()
 
         elif action == 'delete':
             user.delete()
+
+        db.session.commit()
 
     return ''
 
@@ -106,8 +108,8 @@ def tickers_action():
     action = data.get('action')
     ids = data['ids']
 
-    for id in ids:
-        ticker = get_ticker(id)
+    for ticker_id in ids:
+        ticker = get_ticker(ticker_id)
         if not ticker:
             continue
 
@@ -121,7 +123,7 @@ def tickers_action():
 
 @bp.route('/tickers', methods=['GET'])
 @admin_only
-def tickers():
+def tickers_page():
     return render_template('admin/tickers.html',
                            market=request.args.get('market', 'crypto'))
 
@@ -129,7 +131,7 @@ def tickers():
 @bp.route('/tickers_detail', methods=['GET'])
 @admin_only
 def tickers_detail():
-    tickers = tuple(get_tickers(request.args['market']))
+    tickers = get_tickers(check_market(request.args.get('market')))
 
     result = {"total": len(tickers),
               "totalNotFiltered": len(tickers),
@@ -188,14 +190,6 @@ def active_tasks_action(task_id):
     return redirect(url_for('.active_tasks'))
 
 
-# @bp.route('/history', methods=['GET'])
-# @admin_only
-# def load_cur_history():
-#     # load_currency_history.delay()
-#     load_currency_history()
-#     return 'Start'
-
-
 @bp.route('/crypto', methods=['GET'])
 @admin_only
 def crypto():
@@ -244,7 +238,8 @@ def tasks():
                     tasks_list.append({'name': task, 'task_id': ''})
 
     if to_filter:
-        tasks_list = list(filter(lambda task: to_filter in task['name'], tasks_list))
+        tasks_list = list(filter(lambda task: to_filter in task['name'],
+                                 tasks_list))
     return tasks_list
 
 
@@ -274,9 +269,5 @@ def tasks_action():
         elif action == 'start':
             task = celery.signature(task)
             task.delay()
-            # task = globals().get(task)
-            # print(task)
-            # if task:
-            #     task.delay()
 
     return ''

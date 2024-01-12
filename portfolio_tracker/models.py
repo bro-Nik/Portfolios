@@ -708,6 +708,12 @@ class UserUtilsMixin:
         db.session.delete(self)
         db.session.commit()
 
+    def make_admin(self):
+        self.type = 'admin'
+
+    def unmake_admin(self):
+        self.type = ''
+
     def export_data(self):
         prefixes = {
             'crypto': current_app.config['CRYPTO_PREFIX'],

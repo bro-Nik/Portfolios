@@ -3,12 +3,12 @@
     href="{{ url_for('.index') }}">Главная</a>
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.crypto') }}"
     href="{{ url_for('.crypto') }}">Crypto</a>
-  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.users') }}"
-    href="{{ url_for('.users') }}">Пользователи</a>
+  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.users_page') }}"
+    href="{{ url_for('.users_page') }}">Пользователи</a>
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.imports') }}"
     href="{{ url_for('.imports') }}">Импорты</a>
-  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.tickers') }}"
-    href="{{ url_for('.tickers') }}">Тикеры</a>
+  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.tickers_page') }}"
+    href="{{ url_for('.tickers_page') }}">Тикеры</a>
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.active_tasks') }}"
     href="{{ url_for('.active_tasks') }}">Активные задачи</a>
 </nav>
