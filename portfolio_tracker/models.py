@@ -1,9 +1,11 @@
+from typing import List
 import requests
 from datetime import datetime
 
 from flask import current_app, request
 from flask_babel import gettext
 from flask_login import UserMixin
+from sqlalchemy.orm import Mapped
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from portfolio_tracker.app import db
@@ -12,10 +14,9 @@ from portfolio_tracker.general_functions import from_user_datetime
 
 class DetailsMixin:
     def __init__(self):
-        self.price = 0
+        self.amount = 0
         self.cost_now = 0
         self.in_orders = 0
-        self.amount = 0
 
     def update_details(self):
         self.profit = self.cost_now - self.amount
@@ -46,14 +47,10 @@ class Transaction(db.Model):
     wallet_id = db.Column(db.Integer, db.ForeignKey('wallet.id'))
     portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
     order = db.Column(db.Boolean)
-    related_transaction_id = db.Column(db.Integer, db.ForeignKey('transaction.id'))
+    related_transaction_id = db.Column(db.Integer,
+                                       db.ForeignKey('transaction.id'))
+
     # Relationships
-    portfolio_asset = db.relationship(
-        "Asset",
-        primaryjoin="and_(Asset.ticker_id == foreign(Transaction.ticker_id), "
-                    "Asset.portfolio_id == Transaction.portfolio_id)",
-        backref=db.backref('transactions', lazy=True)
-    )
     wallet_asset = db.relationship(
         "WalletAsset",
         primaryjoin="and_(or_(WalletAsset.ticker_id == foreign(Transaction.ticker_id), "
@@ -180,8 +177,12 @@ class Asset(db.Model, DetailsMixin):
     # Relationships
     ticker = db.relationship('Ticker',
                              backref=db.backref('assets', lazy=True))
-    portfolio = db.relationship('Portfolio',
-                                backref=db.backref('assets', lazy=True))
+    transactions: Mapped[List[Transaction]] = db.relationship(
+        "Transaction",
+        primaryjoin="and_(Asset.ticker_id == foreign(Transaction.ticker_id), "
+                    "Asset.portfolio_id == Transaction.portfolio_id)",
+        backref=db.backref('portfolio_asset', lazy=True)
+    )
 
     def edit(self, form):
         comment = form.get('comment')
@@ -221,49 +222,6 @@ class Asset(db.Model, DetailsMixin):
         db.session.delete(self)
 
 
-class OtherAsset(db.Model, DetailsMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
-    name = db.Column(db.String(255))
-    percent = db.Column(db.Float, default=0)
-    amount = db.Column(db.Float, default=0)
-    cost_now = db.Column(db.Float, default=0)
-    comment = db.Column(db.String(1024), default='')
-    # Relationships
-    portfolio = db.relationship('Portfolio',
-                                backref=db.backref('other_assets', lazy=True))
-
-    def edit(self, portfolio, form):
-        name = form.get('name')
-        comment = form.get('comment')
-        percent = form.get('percent')
-
-        if name is not None:
-            if self.name != name:
-                n = 2
-                while name in [i.name for i in portfolio.other_assets]:
-                    name = request.form['name'] + str(n)
-                    n += 1
-
-        if name:
-            self.name = name
-        if comment is not None:
-            self.comment = comment
-        if percent is not None:
-            self.percent = percent or 0
-        db.session.commit()
-
-    def is_empty(self):
-        return not (self.bodies or self.transactions)
-
-    def delete(self):
-        for body in self.bodies:
-            body.delete()
-        for transaction in self.transactions:
-            transaction.delete()
-        db.session.delete(self)
-
-
 class OtherTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.DateTime)
@@ -274,8 +232,8 @@ class OtherTransaction(db.Model):
     type = db.Column(db.String(24))
     comment = db.Column(db.String(1024))
     # Relationships
-    asset = db.relationship('OtherAsset',
-                            backref=db.backref('transactions', lazy=True))
+    # asset = db.relationship('OtherAsset',
+    #                         backref=db.backref('transactions', lazy=True))
     amount_ticker = db.relationship('Ticker', uselist=False)
 
     def edit(self, form):
@@ -316,8 +274,6 @@ class OtherBody(db.Model):
     cost_now_ticker_id = db.Column(db.String(32), db.ForeignKey('ticker.id'))
     comment = db.Column(db.String(1024))
     # Relationships
-    asset = db.relationship('OtherAsset',
-                            backref=db.backref('bodies', lazy=True))
     amount_ticker = db.relationship('Ticker',
                                     foreign_keys=[amount_ticker_id],
                                     viewonly=True)
@@ -353,6 +309,52 @@ class OtherBody(db.Model):
 
     def delete(self):
         self.update_dependencies('cancel')
+        db.session.delete(self)
+
+
+class OtherAsset(db.Model, DetailsMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
+    name = db.Column(db.String(255))
+    percent = db.Column(db.Float, default=0)
+    amount = db.Column(db.Float, default=0)
+    cost_now = db.Column(db.Float, default=0)
+    comment = db.Column(db.String(1024), default='')
+
+    # Relationships
+    transactions: Mapped[List[OtherTransaction]] = db.relationship('OtherTransaction',
+                            backref=db.backref('asset', lazy=True))
+    bodies: Mapped[List[OtherBody]] = db.relationship('OtherBody',
+                            backref=db.backref('asset', lazy=True))
+
+    def edit(self, portfolio, form):
+        name = form.get('name')
+        comment = form.get('comment')
+        percent = form.get('percent')
+
+        if name is not None:
+            if self.name != name:
+                n = 2
+                while name in [i.name for i in portfolio.other_assets]:
+                    name = request.form['name'] + str(n)
+                    n += 1
+
+        if name:
+            self.name = name
+        if comment is not None:
+            self.comment = comment
+        if percent is not None:
+            self.percent = percent or 0
+        db.session.commit()
+
+    def is_empty(self):
+        return not (self.bodies or self.transactions)
+
+    def delete(self):
+        for body in self.bodies:
+            body.delete()
+        for transaction in self.transactions:
+            transaction.delete()
         db.session.delete(self)
 
 
@@ -492,9 +494,12 @@ class Portfolio(db.Model, DetailsMixin):
     name = db.Column(db.String(255))
     comment = db.Column(db.String(1024))
     percent = db.Column(db.Float, default=0)
+
     # Relationships
-    user = db.relationship('User',
-                           backref=db.backref('portfolios', lazy=True))
+    assets: Mapped[List['Asset']] = db.relationship('Asset',
+                                                  backref=db.backref('portfolio', lazy=True))
+    other_assets: Mapped[List['OtherAsset']] = db.relationship('OtherAsset',
+                                backref=db.backref('portfolio', lazy=True))
 
     def edit(self, form):
         name = form.get('name')
@@ -909,10 +914,12 @@ class User(db.Model, UserMixin, UserUtilsMixin):
     currency = db.Column(db.String(32))
     currency_ticker_id = db.Column(db.String(32), db.ForeignKey('ticker.id'))
     # Relationships
-    info = db.relationship('UserInfo',
+    info: Mapped['UserInfo'] = db.relationship('UserInfo',
                            backref=db.backref('user', lazy=True),
                            uselist=False)
     currency_ticker = db.relationship('Ticker', uselist=False)
+    portfolios: Mapped[List[Portfolio]] = db.relationship('Portfolio',
+                                 backref=db.backref('user', lazy=True))
 
 
 class UserInfo(db.Model):

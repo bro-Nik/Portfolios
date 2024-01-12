@@ -35,16 +35,16 @@
         <div class="buy">
           <select name="buy_wallet_id" class="form-select" data-placeholder="-"
             data-url="{{ url_for('wallet.get_wallets_to_buy') }}">
-            {% if transaction.wallet_buy %}
-              <option selected value="{{ transaction.wallet_buy.id }}">{{ transaction.wallet_buy.name }}</option>
+            {% if wallet_buy %}
+              <option selected value="{{ wallet_buy.id }}">{{ wallet_buy.name }}</option>
             {% endif %}
           </select>
         </div>
         <div class="sell">
           <select name="sell_wallet_id" class="form-select" data-placeholder="-"
             data-url="{{ url_for('wallet.get_wallets_to_sell', ticker_id=asset.ticker_id) }}">
-            {% if transaction.wallet_sell %}
-              <option selected value="{{ transaction.wallet_sell.id }}">{{ transaction.wallet_sell.name }}</option>
+            {% if wallet_sell %}
+              <option selected value="{{ wallet_sell.id }}">{{ wallet_sell.name }}</option>
             {% endif %}
           </select>
         </div>

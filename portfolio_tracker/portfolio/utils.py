@@ -1,20 +1,18 @@
+from typing import Any, Iterable
 from flask import flash
 from flask_babel import gettext
 from flask_login import current_user
 
-from portfolio_tracker.app import db
-from portfolio_tracker.models import DetailsMixin, OtherAsset, OtherBody, \
-    OtherTransaction, Portfolio, Asset, Transaction
+from portfolio_tracker.models import db, DetailsMixin, OtherAsset, OtherBody, \
+    OtherTransaction, Portfolio, Asset, Transaction, User
 
 
-def get_portfolio(portfolio_id: int | float | str | None,
-                  user=current_user) -> Portfolio | None:
+def get_portfolio(portfolio_id: int | str | None,
+                  user: User = current_user  # type: ignore
+                  ) -> Portfolio | None:
     """Возвращает портфель"""
     if portfolio_id:
-        portfolio_id = int(portfolio_id)
-        for portfolio in user.portfolios:
-            if portfolio.id == portfolio_id:
-                return portfolio
+        return find_by_id(user.portfolios, int(portfolio_id))
 
 
 def get_asset(portfolio: Portfolio | None,
@@ -30,37 +28,45 @@ def get_asset(portfolio: Portfolio | None,
 
 
 def get_other_asset(portfolio: Portfolio | None,
-                    asset_id: int | float | str | None) -> OtherAsset | None:
+                    asset_id: int | str | None) -> OtherAsset | None:
     """Возвращает актив (other)"""
     if portfolio and asset_id:
-        asset_id = int(asset_id)
-        for asset in portfolio.other_assets:
-            if asset.id == asset_id:
-                return asset
+        return find_by_id(portfolio.other_assets, int(asset_id))
 
 
-def get_transaction(asset: Asset, transaction_id: int | float | str | None
-                    ) -> Transaction | None:
+def find_by_id(iterable: Iterable, search_id: int) -> Any:
+    for item in iterable:
+        if item.id == search_id:
+            return item
+
+
+def get_transaction(asset: Asset | None,
+                    transaction_id: int | str | None) -> Transaction | None:
     """Возвращает транзакцию"""
     if asset and transaction_id:
-        transaction_id = int(transaction_id)
-        for transaction in asset.transactions:
-            if transaction.id == transaction_id:
-                return transaction
+        return find_by_id(asset.transactions, int(transaction_id))
 
 
-def get_other_body(asset: Asset,
-                   body_id: int | float | str | None) -> OtherBody | None:
+def get_other_transaction(asset: OtherAsset | None,
+                          transaction_id: int | str | None
+                          ) -> OtherTransaction | None:
+    if asset and transaction_id:
+        return find_by_id(asset.transactions, int(transaction_id))
+
+
+def get_other_body(asset: OtherAsset | None,
+                   body_id: int | str | None) -> OtherBody | None:
     """Возвращает тело актива"""
     if asset and body_id:
-        for body in asset.bodies:
-            if body.id == int(body_id):
-                return body
+        return find_by_id(asset.bodies, int(body_id))
 
 
-def create_new_portfolio(form: dict, user=current_user) -> Portfolio:
+def create_new_portfolio(form: dict,
+                         user: User = current_user  # type: ignore
+                         ) -> Portfolio:
     """Возвращает новый портфель"""
-    portfolio = Portfolio(market=form.get('market'))
+    portfolio = Portfolio()
+    portfolio.market = form.get('market')
     user.portfolios.append(portfolio)
     return portfolio
 
@@ -105,7 +111,7 @@ def create_new_other_body(asset: OtherAsset) -> OtherBody:
     return body
 
 
-def actions_on_portfolios(ids, action):
+def actions_on_portfolios(ids: list[int | str | None], action: str) -> None:
     for portfolio_id in ids:
         portfolio = get_portfolio(portfolio_id)
         if not portfolio:
@@ -121,7 +127,8 @@ def actions_on_portfolios(ids, action):
     db.session.commit()
 
 
-def actions_on_assets(portfolio, ids, action):
+def actions_on_assets(portfolio: Portfolio | None, ids: list[str | None],
+                      action: str) -> None:
     for ticker_id in ids:
         asset = get_asset(portfolio, ticker_id)
         if not asset:
@@ -137,7 +144,8 @@ def actions_on_assets(portfolio, ids, action):
     db.session.commit()
 
 
-def actions_on_transactions(asset, ids, action):
+def actions_on_transactions(asset: Asset | None, ids: list[int | str | None],
+                            action: str) -> None:
     for transaction_id in ids:
         transaction = get_transaction(asset, transaction_id)
         if not transaction:
@@ -147,12 +155,14 @@ def actions_on_transactions(asset, ids, action):
             transaction.delete()
 
         elif action == 'convert_to_transaction':
-            transaction.convert_order_to_transaction()
+            if hasattr(transaction, 'convert_order_to_transaction'):
+                transaction.convert_order_to_transaction()
 
     db.session.commit()
 
 
-def actions_on_other_assets(portfolio, ids, action):
+def actions_on_other_assets(portfolio: Portfolio | None,
+                            ids: list[int | str | None], action: str) -> None:
     for asset_id in ids:
         asset = get_other_asset(portfolio, asset_id)
         if not asset:
@@ -168,9 +178,11 @@ def actions_on_other_assets(portfolio, ids, action):
     db.session.commit()
 
 
-def actions_on_other_transactions(asset, ids, action):
+def actions_on_other_transactions(asset: OtherAsset | None,
+                                  ids: list[int | str | None],
+                                  action: str) -> None:
     for transaction_id in ids:
-        transaction = get_transaction(asset, transaction_id)
+        transaction = get_other_transaction(asset, transaction_id)
         if not transaction:
             continue
 
@@ -180,7 +192,9 @@ def actions_on_other_transactions(asset, ids, action):
     db.session.commit()
 
 
-def actions_on_other_body(asset, ids, action):
+def actions_on_other_body(asset: OtherAsset | None,
+                          ids: list[int | str | None],
+                          action: str) -> None:
     for body_id in ids:
         body = get_other_body(asset, body_id)
         if not body:
@@ -195,10 +209,7 @@ def actions_on_other_body(asset, ids, action):
 class AllPortfolios(DetailsMixin):
     """Класс объединяет все портфели пользователя."""
 
-    def __init__(self):
-        self.amount = 0
-        self.cost_now = 0
-        self.in_orders = 0
+    def update_price(self):
         for portfolio in current_user.portfolios:
             portfolio.update_price()
             portfolio.update_details()

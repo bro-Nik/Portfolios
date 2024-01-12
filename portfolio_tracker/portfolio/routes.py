@@ -3,28 +3,28 @@ from datetime import datetime
 from flask import render_template, session, url_for, request
 from flask_login import current_user, login_required
 
-from portfolio_tracker.app import db
-from portfolio_tracker.models import Ticker, \
-        OtherTransaction, OtherBody, Transaction
-from portfolio_tracker.portfolio.utils import AllPortfolios, \
+from portfolio_tracker.wraps import demo_user_change
+from portfolio_tracker.models import db, Ticker, OtherTransaction, OtherBody, \
+    Transaction
+from portfolio_tracker.wallet.utils import get_transaction, \
+    get_wallet_has_asset, last_wallet, last_wallet_transaction
+from . import bp
+from .utils import AllPortfolios, get_other_body, get_other_transaction, \
+    get_portfolio, create_new_other_transaction, \
     actions_on_assets, actions_on_other_assets, actions_on_other_body, \
     actions_on_other_transactions, actions_on_portfolios, \
     actions_on_transactions, create_new_other_asset, create_new_other_body, \
-    create_new_other_transaction, \
-    create_new_portfolio, create_new_transaction, get_asset, get_other_asset, \
-    get_other_body, get_portfolio
-from portfolio_tracker.wallet.utils import get_transaction, \
-    get_wallet_has_asset, last_wallet, last_wallet_transaction
-from portfolio_tracker.wraps import demo_user_change
-from portfolio_tracker.portfolio import bp
+    create_new_portfolio, create_new_transaction, get_asset, get_other_asset
 
 
 @bp.route('/', methods=['GET'])
 @login_required
 def portfolios():
     """Portfolios page."""
+    all_portfolios = AllPortfolios()
+    all_portfolios.update_price()
     return render_template('portfolio/portfolios.html',
-                           all_portfolios=AllPortfolios())
+                           all_portfolios=all_portfolios)
 
 
 @bp.route('/action', methods=['POST'])
@@ -68,9 +68,12 @@ def portfolio_info(portfolio_id):
     if not portfolio:
         return ''
 
+    all_portfolios = AllPortfolios()
+    all_portfolios.update_price()
+
     page = 'other_' if portfolio.market == 'other' else ''
     return render_template(f'portfolio/{page}portfolio_info.html',
-                           portfolio=portfolio, all_portfolios=AllPortfolios())
+                           portfolio=portfolio, all_portfolios=all_portfolios)
 
 
 @bp.route('/assets_action', methods=['POST'])
@@ -200,8 +203,12 @@ def transaction_info():
     asset.free = asset.get_free()
     transaction = get_transaction(asset, request.args.get('transaction_id'))
 
+    wallet_buy = wallet_sell = None
     if transaction:
-        exec('transaction.wallet_%s = transaction.wallet' % transaction.type.lower())
+        if transaction.type == 'Buy':
+            wallet_buy = transaction.wallet
+        else:
+            wallet_sell = transaction.wallet
 
         if transaction.order and transaction.type == 'Sell':
             asset.free -= transaction.quantity
@@ -209,14 +216,14 @@ def transaction_info():
         transaction = Transaction(type='Buy', date=datetime.utcnow(),
                                   price=asset.price)
 
-    if not hasattr(transaction, 'wallet_buy'):
-        transaction.wallet_buy = last_wallet('buy')
-    if not hasattr(transaction, 'wallet_sell'):
-        transaction.wallet_sell = get_wallet_has_asset(asset.ticker_id)
+    if not wallet_buy:
+        wallet_buy = last_wallet('buy')
+    if not wallet_sell:
+        wallet_sell = get_wallet_has_asset(asset.ticker_id)
 
     if not transaction.quote_ticker:
         last_transaction = last_wallet_transaction(transaction.wallet or
-                                                   transaction.wallet_buy,
+                                                   wallet_buy,
                                                    transaction.type)
         if last_transaction:
             transaction.quote_ticker = last_transaction.quote_ticker
@@ -226,6 +233,7 @@ def transaction_info():
     calculation_type = session.get('transaction_calculation_type', 'amount')
     return render_template('portfolio/transaction.html',
                            transaction=transaction, asset=asset,
+                           wallet_buy=wallet_buy, wallet_sell=wallet_sell,
                            calculation_type=calculation_type)
 
 
@@ -326,7 +334,8 @@ def other_transaction():
     if not asset:
         return ''
 
-    transaction = get_transaction(asset, request.args.get('transaction_id'))
+    transaction = get_other_transaction(asset,
+                                        request.args.get('transaction_id'))
 
     if not transaction:
         transaction = OtherTransaction(type='Profit', date=datetime.utcnow())
@@ -350,7 +359,8 @@ def other_transaction_update():
     if not asset:
         return ''
 
-    transaction = get_transaction(asset, request.args.get('transaction_id'))
+    transaction = get_other_transaction(asset,
+                                        request.args.get('transaction_id'))
     if transaction:
         transaction.update_dependencies('cancel')
     else:
