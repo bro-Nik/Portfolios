@@ -2,20 +2,21 @@ import json
 
 from flask import render_template, redirect, url_for, request
 
-from portfolio_tracker.general_functions import redis_decode, when_updated
-from portfolio_tracker.jinja_filters import user_datetime
-from portfolio_tracker.models import User
-from portfolio_tracker.wraps import admin_only
-from portfolio_tracker.app import db, celery, redis
-from . import bp, utils
+from ..general_functions import redis_decode, when_updated
+from ..jinja_filters import user_datetime
+from ..wraps import admin_only
+from ..app import celery, redis
+from .utils import actions_on_tickers, actions_on_users, get_all_users, \
+    get_task_log, get_ticker, get_tickers, get_tickers_count, get_users_count
+from . import bp
 
 
 @bp.route('/', methods=['GET'])
 @admin_only
 def index():
     info = {
-        "users_count": utils.get_users_count(),
-        "admins_count": utils.get_users_count('admin'),
+        "users_count": get_users_count(),
+        "admins_count": get_users_count('admin'),
         "crypto_update": when_updated(redis_decode('update-crypto'), 'Нет'),
         "stocks_update": when_updated(redis_decode('update-stocks'), 'Нет'),
         "currency_update": when_updated(redis_decode('update-currency'), 'Нет')
@@ -44,7 +45,7 @@ def users_page():
 @bp.route('/users_detail', methods=['GET'])
 @admin_only
 def users_detail():
-    users = tuple(db.session.execute(db.select(User)).scalars())
+    users = get_all_users()
 
     result = {"total": len(users),
               "totalNotFiltered": len(users),
@@ -73,25 +74,7 @@ def users_detail():
 def users_action():
     data = json.loads(request.data) if request.data else {}
 
-    action = data.get('action')
-    ids = data['ids']
-
-    for user_id in ids:
-        user = utils.get_user(user_id)
-        if not user:
-            continue
-
-        if action == 'user_to_admin':
-            user.make_admin()
-
-        elif action == 'admin_to_user':
-            user.unmake_admin()
-
-        elif action == 'delete':
-            user.delete()
-
-        db.session.commit()
-
+    actions_on_users(data['ids'], data['action'])
     return ''
 
 
@@ -106,19 +89,7 @@ def imports():
 def tickers_action():
     data = json.loads(request.data) if request.data else {}
 
-    action = data.get('action')
-    ids = data['ids']
-
-    for ticker_id in ids:
-        ticker = utils.get_ticker(ticker_id)
-        if not ticker:
-            continue
-
-        if action == 'delete':
-            ticker.delete()
-
-    db.session.commit()
-
+    actions_on_tickers(data['ids'], data['action'])
     return ''
 
 
@@ -132,7 +103,7 @@ def tickers_page():
 @bp.route('/tickers_detail', methods=['GET'])
 @admin_only
 def tickers_detail():
-    tickers = utils.get_tickers(request.args.get('market'))
+    tickers = get_tickers(request.args.get('market'))
 
     result = {"total": len(tickers),
               "totalNotFiltered": len(tickers),
@@ -158,14 +129,14 @@ def tickers_detail():
 @bp.route('/tickers/settings', methods=['GET'])
 @admin_only
 def ticker_settings():
-    ticker = utils.get_ticker(request.args.get('ticker_id'))
+    ticker = get_ticker(request.args.get('ticker_id'))
     return render_template('admin/ticker_settings.html', ticker=ticker)
 
 
 @bp.route('/tickers/settings_update', methods=['POST'])
 @admin_only
 def ticker_settings_update():
-    ticker = utils.get_ticker(request.args.get('ticker_id'))
+    ticker = get_ticker(request.args.get('ticker_id'))
     if ticker:
         ticker.edit(request.form)
 
@@ -201,7 +172,7 @@ def crypto():
 @admin_only
 def crypto_detail():
     return {
-        "tickers_count": utils.get_tickers_count('crypto'),
+        "tickers_count": get_tickers_count('crypto'),
         "price_when_update": when_updated(redis_decode('update-crypto'), 'Нет')
         }
 
@@ -247,7 +218,7 @@ def tasks():
 @bp.route('/crypto_logs', methods=['GET'])
 @admin_only
 def crypto_logs():
-    logs = utils.get_task_log('crypto')
+    logs = get_task_log('crypto')
     loaded_logs_count = request.args.get('loaded_logs_count', 0, type=int)
 
     if len(logs) - loaded_logs_count > 0:

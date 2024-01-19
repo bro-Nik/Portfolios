@@ -1,18 +1,22 @@
 import time
-import pickle
 from datetime import datetime, timedelta
+from typing import Any, Iterable
+
 from babel.dates import format_date
-from flask import current_app, g
 from flask_login import current_user
-from portfolio_tracker.app import redis
+
+from .app import redis
 
 
-def redis_decode(key, default=''):
-    key = redis.get(key)
-    if key:
-        return key.decode()
+def find_by_id(iterable: Iterable, search_id: int) -> Any:
+    for item in iterable:
+        if item.id == search_id:
+            return item
 
-    return default
+
+def redis_decode(key: str, default: str = '') -> str:
+    result = redis.get(key)
+    return result.decode() if result else default
 
 
 def from_user_datetime(date: datetime | str) -> datetime:
@@ -21,34 +25,38 @@ def from_user_datetime(date: datetime | str) -> datetime:
     return date + timedelta(seconds=time.timezone)
 
 
-def when_updated(when_updated, default=''):
-    ''' Возвращает сколько прошло от входящей даты '''
-    if not when_updated:
+def when_updated(update_date: datetime | str, default: str = '') -> str:
+    """ Возвращает сколько прошло от входящей даты """
+    if not update_date:
         return default
 
-    if type(when_updated) == str:
-        try:
-            when_updated = datetime.strptime(
-                when_updated, '%Y-%m-%d %H:%M:%S.%f')
-        except:
-            when_updated = datetime.strptime(
-                when_updated + ' 00:00:00.000000', '%Y-%m-%d %H:%M:%S.%f')
+    if isinstance(update_date, str):
+        if len(update_date) < 14:
+            update_date = datetime.strptime(f'{update_date} 00:00:00.000000',
+                                            '%Y-%m-%d %H:%M:%S.%f')
+        else:
+            update_date = datetime.strptime(update_date,
+                                            '%Y-%m-%d %H:%M:%S.%f')
 
-    delta_time = datetime.now() - when_updated
+    delta_time = datetime.now() - update_date
     date = datetime.now().date()
-    if date == datetime.date(when_updated):
+
+    if date == datetime.date(update_date):
         if delta_time.total_seconds() < 60:
             result = 'менее минуты'
-        elif 60 <= delta_time.total_seconds() < 3600:
-            result = str(int(delta_time.total_seconds() / 60)) + ' мин.'
-        else:
-            result = str(int(delta_time.total_seconds() / 3600)) + ' ч.'
-    elif 0 < (date - datetime.date(when_updated)).days < 2:
-        result = 'вчера'
-    elif 2 <= (date - datetime.date(when_updated)).days < 10:
-        result = str((date - datetime.date(when_updated)).days) + 'д. назад'
-    else:
-        result = format_date(when_updated, locale=current_user.locale.upper())
-        # result = str(datetime.strftime(when_updated, '%Y-%m-%d %H:%M'))
-    return result
 
+        elif 60 <= delta_time.total_seconds() < 3600:
+            result = f'{delta_time.total_seconds() / 60} мин.'
+
+        else:
+            result = f'{delta_time.total_seconds() / 3600} ч.'
+
+    elif 0 < (date - datetime.date(update_date)).days < 2:
+        result = 'вчера'
+
+    elif 2 <= (date - datetime.date(update_date)).days < 10:
+        result = f'{(date - datetime.date(update_date)).days} д. назад'
+
+    else:
+        result = format_date(update_date, locale=current_user.locale.upper())
+    return result

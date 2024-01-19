@@ -6,8 +6,9 @@ from flask import Response, render_template, redirect, url_for, request, \
 from flask_babel import gettext
 from flask_login import login_user, login_required, current_user, logout_user
 
-from portfolio_tracker.app import db
-from portfolio_tracker.settings import LANGUAGES
+from ..app import db
+from ..settings import LANGUAGES
+from ..wallet.utils import create_new_wallet
 from . import bp, utils
 
 
@@ -65,7 +66,8 @@ def user_action():
 
     if action == 'delete_data':
         current_user.cleare()
-        current_user.create_first_wallet()
+        # current_user.create_first_wallet()
+        create_new_wallet(current_user)  # type: ignore
         flash(gettext('Профиль очищен'), 'success')
 
     elif action == 'update_assets':
@@ -107,10 +109,10 @@ def export_data():
 
     filename = f'portfolios_export ({datetime.now().date()}).txt'
 
-    return Response(json.dumps(user.export_data()),
-                    mimetype='application/json',
-                    headers={'Content-disposition':
-                             f'attachment; filename={filename}'})
+    return Response(
+        json.dumps(user.export_data()),
+        mimetype='application/json',
+        headers={'Content-disposition': f'attachment; filename={filename}'})
 
 
 @bp.route('/import_post', methods=['POST'])
@@ -137,8 +139,9 @@ def import_data_post():
             flash(gettext('Импорт заверщен'), 'success')
         except (json.decoder.JSONDecodeError, ValueError):
             flash(gettext('Ошибка чтения данных'), 'danger')
-        except Exception:
+        except Exception as e:
             flash(gettext('Неизвестная ошибка'), 'danger')
+            print(e)
 
     return redirect(url)
 
@@ -147,8 +150,8 @@ def import_data_post():
 @login_required
 def ajax_locales():
     result = []
-    for id, lang in LANGUAGES.items():
-        result.append({'value': id, 'text': id.upper(), 'subtext': lang})
+    for loc, lang in LANGUAGES.items():
+        result.append({'value': loc, 'text': loc.upper(), 'subtext': lang})
 
     return json.dumps(result, ensure_ascii=False)
 

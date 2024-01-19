@@ -1,26 +1,30 @@
-from flask import Flask, current_app
+import os
+import logging
+from logging.handlers import RotatingFileHandler
+
+from flask import Flask
 from flask_babel import Babel, gettext
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from celery import Celery
 import redis
-import logging
-from logging.handlers import RotatingFileHandler
-import os
 
-from portfolio_tracker.settings import Config
+from .settings import Config
 
 
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = 'user.login'
-login_manager.login_message = gettext('Пожалуйста, войдите, чтобы получить доступ к этой странице')
+login_manager.login_message = gettext(
+    'Пожалуйста, войдите, чтобы получить доступ к этой странице')
 login_manager.login_message_category = 'danger'
 babel = Babel()
 celery = Celery()
 redis = redis.StrictRedis('127.0.0.1', 6379)
+
+from portfolio_tracker.user.utils import get_locale, get_timezone
 
 
 def create_app(config_class=Config):
@@ -31,9 +35,8 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    init_celery(app, celery)
+    init_celery(app)
 
-    from portfolio_tracker.user.utils import get_locale, get_timezone
     babel.init_app(app, default_locale='ru',
                    locale_selector=get_locale, timezone_selector=get_timezone)
 
@@ -88,7 +91,7 @@ def configure_logging(app):
         app.logger.info('Portfolios startup')
 
 
-def init_celery(app, celery):
+def init_celery(app):
     celery.conf.update(app.config)
     TaskBase = celery.Task
 

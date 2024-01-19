@@ -1,7 +1,7 @@
 from flask import render_template
 
-from portfolio_tracker.page import bp
-from portfolio_tracker.user.utils import get_locale
+from ..user.utils import get_locale
+from . import bp
 
 
 @bp.route('/', methods=['GET'])

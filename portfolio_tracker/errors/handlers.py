@@ -1,7 +1,7 @@
 from flask import render_template
 
-from portfolio_tracker.app import db
-from portfolio_tracker.errors import bp
+from ..app import db
+from . import bp
 
 
 @bp.app_errorhandler(404)

@@ -1,14 +1,14 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
+
 from flask import render_template, session, url_for, request
 from flask_login import current_user, login_required
 
-from portfolio_tracker.wraps import demo_user_change
-from portfolio_tracker.models import db, Ticker, OtherTransaction, OtherBody, \
-    Transaction
-from portfolio_tracker.wallet.utils import get_transaction, \
-    get_wallet_has_asset, last_wallet, last_wallet_transaction
+from ..wraps import demo_user_change
+from ..wallet.utils import get_transaction, get_wallet_has_asset, \
+    last_wallet, last_wallet_transaction
 from . import bp
+from .models import db, Ticker, OtherTransaction, OtherBody, Transaction
 from .utils import AllPortfolios, get_other_body, get_other_transaction, \
     get_portfolio, create_new_other_transaction, \
     actions_on_assets, actions_on_other_assets, actions_on_other_body, \
@@ -104,7 +104,7 @@ def asset_add_tickers(market):
              .order_by(Ticker.market_cap_rank.is_(None),
                        Ticker.market_cap_rank.asc()))
 
-    if (search := request.args.get('search')):
+    if search := request.args.get('search'):
         query = query.filter(Ticker.name.contains(search) or
                              Ticker.symbol.contains(search))
 
@@ -150,7 +150,6 @@ def asset_settings_update():
     if asset:
         print('asset here')
         asset.edit(request.form)
-    print(asset)
     return ''
 
 
@@ -213,7 +212,7 @@ def transaction_info():
         if transaction.order and transaction.type == 'Sell':
             asset.free -= transaction.quantity
     else:
-        transaction = Transaction(type='Buy', date=datetime.utcnow(),
+        transaction = Transaction(type='Buy', date=datetime.now(timezone.utc),
                                   price=asset.price)
 
     if not wallet_buy:
@@ -338,7 +337,8 @@ def other_transaction():
                                         request.args.get('transaction_id'))
 
     if not transaction:
-        transaction = OtherTransaction(type='Profit', date=datetime.utcnow())
+        transaction = OtherTransaction(type='Profit',
+                                       date=datetime.now(timezone.utc))
 
         if asset.transactions:
             transaction.amount_ticker = asset.transactions[-1].amount_ticker
@@ -384,7 +384,7 @@ def other_body():
 
     body = get_other_body(asset, request.args.get('body_id'))
     if not body:
-        body = OtherBody(date=datetime.utcnow())
+        body = OtherBody(date=datetime.now(timezone.utc))
 
         if asset.bodies:
             body.amount_ticker = asset.bodies[-1].amount_ticker

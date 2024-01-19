@@ -3,16 +3,15 @@ import time
 
 from flask import current_app
 
-from portfolio_tracker.general_functions import redis_decode
-from portfolio_tracker.models import PriceHistory, db
-from portfolio_tracker.app import redis
-from portfolio_tracker.admin.utils import get_tickers, remove_prefix, \
-    request_json, task_log, find_ticker_in_base
+from ..app import db, redis
+from ..general_functions import redis_decode
+from ..portfolio.models import PriceHistory
+from .utils import get_tickers, remove_prefix, request_json, task_log, \
+    find_ticker_in_base, Market
 
-
-MARKET = 'currency'
-BASE_URL = 'http://api.currencylayer.com/'
-PRICE_UPDATE_KEY = 'update_currency'
+MARKET: Market = 'currency'
+BASE_URL: str = 'http://api.currencylayer.com/'
+PRICE_UPDATE_KEY: str = 'update_currency'
 
 
 def get_data(url: str) -> dict | None:
@@ -33,7 +32,7 @@ def get_data(url: str) -> dict | None:
         if data and not data.get('error'):
             return data
 
-        task_log(f'Осталось попыток:{attempts})', MARKET)
+        task_log(f'Осталось попыток: {attempts})', MARKET)
 
 
 def load_prices() -> None:

@@ -1,6 +1,6 @@
-from portfolio_tracker.app import db, celery
-from portfolio_tracker.admin import currency, stocks, crypto
-from portfolio_tracker.models import WatchlistAsset
+from ..app import db, celery
+from ..watchlist.models import WatchlistAsset
+from . import currency, stocks, crypto
 
 
 @celery.task(bind=True, name='crypto_load_prices', default_retry_delay=300)

@@ -3,16 +3,14 @@ from datetime import datetime, timedelta
 
 from flask import current_app
 
-from portfolio_tracker.general_functions import redis_decode
-from portfolio_tracker.models import db
-from portfolio_tracker.app import redis
-from portfolio_tracker.admin.utils import get_tickers, \
-    load_image, remove_prefix, request_json, task_log, find_ticker_in_base
+from ..app import db, redis
+from ..general_functions import redis_decode
+from .utils import get_tickers, load_image, remove_prefix, request_json, \
+    task_log, find_ticker_in_base, Market
 
-
-MARKET = 'crypto'
-BASE_URL = 'https://api.polygon.io/'
-PRICE_UPDATE_KEY = 'update_stocks'
+MARKET: Market = 'crypto'
+BASE_URL: str = 'https://api.polygon.io/'
+PRICE_UPDATE_KEY: str = 'update_stocks'
 
 
 def get_data(url):
@@ -34,7 +32,7 @@ def get_data(url):
         if data and data.get('results'):
             return data['results']
 
-        task_log(f'Осталось попыток:{attempts})', MARKET)
+        task_log(f'Осталось попыток: {attempts})', MARKET)
 
 
 def load_prices() -> None:

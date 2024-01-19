@@ -1,9 +1,7 @@
 from functools import wraps
-from flask import session, request, redirect, url_for, abort, flash
+from flask import request, redirect, url_for, abort, flash
 from flask_babel import gettext
 from flask_login import current_user
-
-from portfolio_tracker.app import db
 
 
 def admin_only(f):
@@ -26,5 +24,3 @@ def demo_user_change(f):
             return ''
         return f(*args, **kwargs)
     return decorated_function
-
-

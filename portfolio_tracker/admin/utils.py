@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 import pickle
 from typing import Literal, TypeAlias
 from io import BytesIO
@@ -9,9 +9,10 @@ from flask import current_app
 from sqlalchemy import func
 from PIL import Image
 
-from portfolio_tracker.general_functions import redis_decode
-from portfolio_tracker.models import db, Ticker, User
-from portfolio_tracker.app import redis
+from ..app import db, redis
+from ..general_functions import redis_decode
+from ..portfolio.models import Ticker
+from ..user.models import User
 
 
 Market: TypeAlias = Literal['crypto', 'stocks', 'currency']
@@ -34,7 +35,7 @@ def get_task_log(market: Market) -> list:
 def task_log(text: str, market: Market) -> None:
     key = task_log_name(market)
     log = get_task_log(market)
-    log.append({'text': text, 'time': datetime.utcnow()})
+    log.append({'text': text, 'time': datetime.now(timezone.utc)})
     redis.set(key, pickle.dumps(log))
 
 
@@ -62,10 +63,14 @@ def get_tickers(market: str | None = None,
     return list(db.session.execute(select).scalars())
 
 
-def get_user(user_id: int | None) -> User | None:
+def get_user(user_id: int | str | None) -> User | None:
     if user_id:
         return db.session.execute(
             db.select(User).filter_by(id=user_id)).scalar()
+
+
+def get_all_users() -> tuple[User, ...]:
+    return tuple(db.session.execute(db.select(User)).scalars())
 
 
 def get_ticker(ticker_id: str | None) -> Ticker | None:
@@ -160,3 +165,33 @@ def load_image(url: str, market: Market, ticker_id: str) -> str | None:
     task_log('Загрузка иконки - Конец', market)
 
     return filename
+
+
+def actions_on_users(ids: list[int | str | None], action: str) -> None:
+    for user_id in ids:
+        user = get_user(user_id)
+        if not user:
+            continue
+
+        if action == 'user_to_admin':
+            user.make_admin()
+
+        elif action == 'admin_to_user':
+            user.unmake_admin()
+
+        elif action == 'delete':
+            user.delete()
+
+        db.session.commit()
+
+
+def actions_on_tickers(ids: list[str | None], action: str) -> None:
+    for ticker_id in ids:
+        ticker = get_ticker(ticker_id)
+        if not ticker:
+            continue
+
+        if action == 'delete':
+            ticker.delete()
+
+    db.session.commit()

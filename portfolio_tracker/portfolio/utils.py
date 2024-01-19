@@ -1,10 +1,13 @@
-from typing import Any, Iterable
+from __future__ import annotations
 from flask import flash
 from flask_babel import gettext
 from flask_login import current_user
+from portfolio_tracker.general_functions import find_by_id
 
-from portfolio_tracker.models import db, DetailsMixin, OtherAsset, OtherBody, \
-    OtherTransaction, Portfolio, Asset, Transaction, User
+from ..models import DetailsMixin
+from ..user.models import User
+from .models import db, OtherAsset, OtherBody, OtherTransaction, Portfolio, \
+    Asset, Transaction
 
 
 def get_portfolio(portfolio_id: int | str | None,
@@ -32,12 +35,6 @@ def get_other_asset(portfolio: Portfolio | None,
     """Возвращает актив (other)"""
     if portfolio and asset_id:
         return find_by_id(portfolio.other_assets, int(asset_id))
-
-
-def find_by_id(iterable: Iterable, search_id: int) -> Any:
-    for item in iterable:
-        if item.id == search_id:
-            return item
 
 
 def get_transaction(asset: Asset | None,
@@ -87,10 +84,12 @@ def create_new_other_asset(portfolio: Portfolio) -> OtherAsset:
     return asset
 
 
-def create_new_transaction(asset: Asset) -> Transaction:
+def create_new_transaction(asset: Asset | WalletAsset) -> Transaction:
     """Возвращает новую транзакцию."""
-    transaction = Transaction(portfolio_id=asset.portfolio_id)
-    asset.transactions.append(transaction)
+    transaction = Transaction(portfolio_id=asset.portfolio_id,
+                              wallet_id=asset.wallet_id,
+                              ticker_id=asset.ticker_id)
+    db.session.add(transaction)
     db.session.commit()
     return transaction
 
@@ -208,7 +207,6 @@ def actions_on_other_body(asset: OtherAsset | None,
 
 class AllPortfolios(DetailsMixin):
     """Класс объединяет все портфели пользователя."""
-
     def update_price(self):
         for portfolio in current_user.portfolios:
             portfolio.update_price()

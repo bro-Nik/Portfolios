@@ -53,7 +53,7 @@
       <div class="mb-3">
         <label class="form-label h7">{% trans %}Второй кошелек{% endtrans %}</label>
         <select name="wallet_id" class="form-select" data-placeholder="-"
-          data-url="{{ url_for('wallet.get_wallets_to_transfer_out', wallet_id=asset.wallet_id, ticker_id=asset.ticker_id) }}">
+          data-url="{{ url_for('api.wallets_to_transfer_out', wallet_id=asset.wallet_id, ticker_id=asset.ticker_id) }}">
           {% if transaction.id %}
             {% if transaction.related_transaction %}
               <option selected value="{{ transaction.related_transaction.wallet_id }}">

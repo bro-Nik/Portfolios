@@ -2,9 +2,10 @@ from flask import current_app, request, session, flash
 from flask_login import current_user, login_user
 from flask_babel import gettext
 
-from portfolio_tracker.app import login_manager
-from portfolio_tracker.settings import LANGUAGES
-from portfolio_tracker.models import db, User, UserInfo
+from ..app import login_manager
+from ..settings import LANGUAGES
+from ..wallet.utils import create_new_wallet
+from .models import db, User, UserInfo
 
 
 def find_user(email: str) -> User | None:
@@ -25,7 +26,7 @@ def create_new_user(email: str, password: str) -> User:
     new_user.set_password(password)
     new_user.change_currency()
     new_user.change_locale()
-    new_user.create_first_wallet()
+    create_new_wallet(new_user)
 
     new_user.info = UserInfo()
 

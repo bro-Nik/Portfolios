@@ -34,7 +34,7 @@
         </label>
         <div class="buy">
           <select name="buy_wallet_id" class="form-select" data-placeholder="-"
-            data-url="{{ url_for('wallet.get_wallets_to_buy') }}">
+            data-url="{{ url_for('api.wallets_to_buy') }}">
             {% if wallet_buy %}
               <option selected value="{{ wallet_buy.id }}">{{ wallet_buy.name }}</option>
             {% endif %}
@@ -42,7 +42,7 @@
         </div>
         <div class="sell">
           <select name="sell_wallet_id" class="form-select" data-placeholder="-"
-            data-url="{{ url_for('wallet.get_wallets_to_sell', ticker_id=asset.ticker_id) }}">
+            data-url="{{ url_for('api.wallets_to_sell', ticker_id=asset.ticker_id) }}">
             {% if wallet_sell %}
               <option selected value="{{ wallet_sell.id }}">{{ wallet_sell.name }}</option>
             {% endif %}
@@ -57,7 +57,6 @@
         <div class="input-group">
           <div class="" {{ ticker_box_style }}>
             <select name="ticker2_id" class="form-select" required>
-              {# data-url="{{ url_for('wallet.ajax_stable_assets', wallet_id=transaction.wallet_buy.id) }}" #}
               {% if transaction.quote_ticker %}
                 <option selected value="{{ transaction.quote_ticker.id }}">{{ transaction.quote_ticker.symbol|upper }}</option>
               {% endif %}
@@ -164,7 +163,7 @@
   $('#TransactionForm').on('change', 'select[name*=wallet_id]', function () {
     var wallet_id = $(this).val(),
       $select = $('#TransactionForm select[name=ticker2_id]'),
-      url = "{{ url_for('wallet.ajax_wallet_stable_assets')}}" + '?wallet_id=' + wallet_id;
+      url = "{{ url_for('api.wallet_stable_assets')}}" + '?wallet_id=' + wallet_id;
     $select.attr('data-url', url);
 
     //

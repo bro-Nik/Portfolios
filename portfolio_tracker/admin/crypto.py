@@ -3,13 +3,12 @@ from collections.abc import Callable
 
 from pycoingecko import CoinGeckoAPI
 
-from portfolio_tracker.admin.utils import get_tickers, remove_prefix, \
-    task_log, load_image, find_ticker_in_base
-from portfolio_tracker.models import db
-
+from ..app import db
+from .utils import get_tickers, remove_prefix, task_log, load_image, \
+    find_ticker_in_base, Market
 
 cg = CoinGeckoAPI()
-MARKET = 'crypto'
+MARKET: Market = 'crypto'
 
 
 def get_data(func: Callable, *args, **kwargs) -> dict | None:
@@ -28,7 +27,7 @@ def get_data(func: Callable, *args, **kwargs) -> dict | None:
             task_log('Удачный запрос', MARKET)
             return data
         except Exception as error:
-            task_log(f'Неудача (осталось попыток:{attempts})-{error}', MARKET)
+            task_log(f'Неудача (осталось попыток: {attempts})-{error}', MARKET)
             # ToDo доработать ошибки
             raise
 

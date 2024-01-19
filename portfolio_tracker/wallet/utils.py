@@ -1,16 +1,23 @@
+from __future__ import annotations
+
+from flask import flash
+from flask_babel import gettext
 from flask_login import current_user
-from portfolio_tracker.app import db
-from portfolio_tracker.models import Transaction, Wallet, WalletAsset
+
+from ..models import DetailsMixin
+from ..general_functions import find_by_id
+from .models import db, Wallet, WalletAsset
 
 
-def get_wallet(wallet_id, user=current_user):
+def get_wallet(wallet_id: int | str | None,
+               user: User = current_user) -> Wallet | None:  # type: ignore
     if wallet_id:
-        for wallet in user.wallets:
-            if wallet.id == int(wallet_id):
-                return wallet
+        return find_by_id(user.wallets, int(wallet_id))
 
 
-def get_wallet_has_asset(ticker_id, user=current_user):
+def get_wallet_has_asset(ticker_id: str | None,
+                         user: User = current_user  # type: ignore
+                         ) -> Wallet | None:
     for wallet in user.wallets:
         asset = get_wallet_asset(wallet, ticker_id)
         if asset:
@@ -19,24 +26,26 @@ def get_wallet_has_asset(ticker_id, user=current_user):
                 return wallet
 
 
-def get_wallet_asset(wallet, ticker_id, create=False):
+def get_wallet_asset(wallet: Wallet | None, ticker_id: str | None,
+                     create: bool = False) -> WalletAsset | None:
     if wallet and ticker_id:
         for asset in wallet.wallet_assets:
             if asset.ticker_id == ticker_id:
                 return asset
-        else:
-            if create:
-                return create_new_wallet_asset(wallet, ticker_id)
+
+        if create:
+            return create_new_wallet_asset(wallet, ticker_id)
 
 
-def get_transaction(asset, transaction_id):
+def get_transaction(asset: Asset | WalletAsset | None,
+                    transaction_id: int | str | None) -> Transaction | None:
     if transaction_id and asset:
-        for transaction in asset.transactions:
-            if transaction.id == int(transaction_id):
-                return transaction
+        return find_by_id(asset.transactions, int(transaction_id))
 
 
-def last_wallet(transaction_type, user=current_user):
+def last_wallet(transaction_type: str,
+                user: User = current_user  # type: ignore
+                ) -> Wallet:
     date = result = None
 
     for wallet in user.wallets:
@@ -49,41 +58,83 @@ def last_wallet(transaction_type, user=current_user):
     return result if result else user.wallets[-1]
 
 
-def last_wallet_transaction(wallet, transaction_type):
+def last_wallet_transaction(wallet: Wallet | None,
+                            transaction_type: str) -> Transaction | None:
     if wallet:
         for transaction in wallet.transactions:
             if transaction.type.lower() == transaction_type.lower():
                 return transaction
 
 
-def create_new_wallet(user=current_user):
-    wallet = Wallet()
+def create_new_wallet(user: User = current_user,  # type: ignore
+                      name=gettext('Кошелек по умолчанию'),
+                      **kwargs) -> Wallet:
+    wallet = Wallet(name=name, **kwargs)
+    create_new_wallet_asset(wallet, user.currency_ticker_id)
     user.wallets.append(wallet)
+
     return wallet
 
 
-def create_new_wallet_asset(wallet, ticker_id):
+def create_new_wallet_asset(wallet: Wallet, ticker_id: str) -> WalletAsset:
     asset = WalletAsset(ticker_id=ticker_id)
     wallet.wallet_assets.append(asset)
     db.session.commit()
     return asset
 
 
-def create_new_transaction(asset):
-    transaction = Transaction(wallet_id=asset.wallet_id,
-                              ticker_id=asset.ticker_id)
-    # asset.transactions.append(transaction)
-    db.session.add(transaction)
-    # db.session.commit()
-    return transaction
+def actions_on_wallets(ids: list[int | str | None], action: str) -> None:
+    for wallet_id in ids:
+        wallet = get_wallet(wallet_id)
+        if not wallet:
+            continue
+
+        if 'delete' in action:
+            if 'with_contents' not in action and not wallet.is_empty():
+                flash(gettext('Кошелек %(name)s не пустой',
+                              name=wallet.name), 'danger')
+            else:
+                wallet.delete()
+
+    db.session.commit()
+
+    if not current_user.wallets:
+        current_user.create_first_wallet()
+        db.session.commit()
 
 
-class AllWallets:
-    def __init__(self):
-        self.cost_now = 0
-        self.in_orders = 0
-        self.free = 0
+def actions_on_assets(wallet: Wallet | None, ids: list[str | None],
+                      action: str) -> None:
+    for ticker_id in ids:
+        asset = get_wallet_asset(wallet, ticker_id)
+        if not asset:
+            continue
 
+        if 'delete' in action:
+            if 'with_contents' not in action and not asset.is_empty():
+                flash(gettext('В активе %(name)s есть транзакции',
+                              name=asset.ticker.name), 'danger')
+            else:
+                asset.delete()
+
+    db.session.commit()
+
+
+def actions_on_transactions(asset: WalletAsset | None,
+                            ids: list[int | str | None], action: str) -> None:
+    for transaction_id in ids:
+        transaction = get_transaction(asset, transaction_id)
+        if not transaction:
+            continue
+
+        if 'delete' in action:
+            transaction.delete()
+
+    db.session.commit()
+
+
+class AllWallets(DetailsMixin):
+    def update_price(self):
         for wallet in current_user.wallets:
             wallet.update_price()
             self.cost_now += wallet.cost_now

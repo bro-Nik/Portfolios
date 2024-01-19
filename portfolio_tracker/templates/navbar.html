@@ -56,7 +56,7 @@
     </div>
     <div>
       <select class="form-select border-0 link-secondary bg-transparent"
-        data-url="{{ url_for('wallet.ajax_currencies') }}"
+        data-url="{{ url_for('api.all_currencies') }}"
         data-action-url="{{ url_for('user.change_currency') }}">
         <option selected value="{{ current_user.currency }}">{{ current_user.currency|upper }}</option>
       </select>
