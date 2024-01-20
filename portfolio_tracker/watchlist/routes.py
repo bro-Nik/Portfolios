@@ -1,6 +1,6 @@
 import json
 
-from flask import render_template, session, url_for, request
+from flask import abort, render_template, session, url_for, request
 from flask_login import login_required, current_user
 
 from ..wraps import demo_user_change
@@ -54,16 +54,15 @@ def asset_add():
 
     return str(url_for('.asset_info',
                        only_content=request.args.get('only_content'),
-                       ticker_id=asset.ticker_id)) if asset else ''
+                       ticker_id=asset.ticker_id)) if asset else abort(404)
 
 
 @bp.route('/watchlist_asset_update', methods=['POST'])
 @login_required
 @demo_user_change
 def watchlist_asset_update():
-    asset = get_watchlist_asset(request.args.get('ticker_id'), True)
-    if asset:
-        asset.edit(request.form)
+    asset = get_watchlist_asset(request.args.get('ticker_id'), True) or abort(404)
+    asset.edit(request.form)
     return ''
 
 
@@ -99,9 +98,7 @@ def alerts_action():
 @bp.route('/alert', methods=['GET'])
 @login_required
 def alert_info():
-    ticker_id = request.args.get('ticker_id')
-    if not ticker_id:
-        return ''
+    ticker_id = request.args.get('ticker_id') or abort(404)
 
     watchlist_asset = get_watchlist_asset(ticker_id, True)
     alert = get_alert(watchlist_asset, request.args.get('alert_id'))
@@ -117,9 +114,7 @@ def alert_info():
 @demo_user_change
 def alert_update():
     """ Add or change alert """
-    watchlist_asset = get_watchlist_asset(request.args.get('ticker_id'), True)
-    if not watchlist_asset:
-        return ''
+    watchlist_asset = get_watchlist_asset(request.args.get('ticker_id'), True) or abort(404)
 
     alert = get_alert(watchlist_asset, request.args.get('alert_id'))
     if not alert:

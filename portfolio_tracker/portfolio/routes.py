@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timezone
 
-from flask import render_template, session, url_for, request
+from flask import abort, render_template, session, url_for, request
 from flask_login import current_user, login_required
 
 from ..wraps import demo_user_change
@@ -64,9 +64,7 @@ def portfolio_settings_update():
 @login_required
 def portfolio_info(portfolio_id):
     """Portfolio page."""
-    portfolio = get_portfolio(portfolio_id)
-    if not portfolio:
-        return ''
+    portfolio = get_portfolio(portfolio_id) or abort(404)
 
     all_portfolios = AllPortfolios()
     all_portfolios.update_price()
@@ -128,7 +126,7 @@ def asset_add():
     return str(url_for('.asset_info',
                        only_content=request.args.get('only_content'),
                        portfolio_id=asset.portfolio_id,
-                       ticker_id=asset.ticker_id)) if asset else ''
+                       ticker_id=asset.ticker_id)) if asset else abort(404)
 
 
 @bp.route('/asset_settings', methods=['GET'])
@@ -136,7 +134,7 @@ def asset_add():
 def asset_settings():
     """Asset settings."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_asset(portfolio, request.args.get('ticker_id'))
+    asset = get_asset(portfolio, request.args.get('ticker_id')) or abort(404)
     return render_template('portfolio/asset_settings.html', asset=asset)
 
 
@@ -146,10 +144,8 @@ def asset_settings():
 def asset_settings_update():
     """Asset settings update."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_asset(portfolio, request.args.get('ticker_id'))
-    if asset:
-        print('asset here')
-        asset.edit(request.form)
+    asset = get_asset(portfolio, request.args.get('ticker_id')) or abort(404)
+    asset.edit(request.form)
     return ''
 
 
@@ -157,17 +153,12 @@ def asset_settings_update():
 @login_required
 def asset_info():
     """Asset page."""
-    portfolio = get_portfolio(request.args.get('portfolio_id'))
-    if not portfolio:
-        return ''
+    portfolio = get_portfolio(request.args.get('portfolio_id')) or abort(404)
 
     if portfolio.market != 'other':
-        asset = get_asset(portfolio, request.args.get('ticker_id'))
+        asset = get_asset(portfolio, request.args.get('ticker_id')) or abort(404)
     else:
-        asset = get_other_asset(portfolio, request.args.get('asset_id'))
-
-    if not asset:
-        return ''
+        asset = get_other_asset(portfolio, request.args.get('asset_id')) or abort(404)
 
     asset.portfolio.update_price()
     asset.update_details()
@@ -194,9 +185,7 @@ def transactions_action():
 def transaction_info():
     """Transaction info."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_asset(portfolio, request.args.get('ticker_id'))
-    if not asset:
-        return ''
+    asset = get_asset(portfolio, request.args.get('ticker_id')) or abort(404)
 
     asset.update_price()
     asset.free = asset.get_free()
@@ -242,9 +231,7 @@ def transaction_info():
 def transaction_update():
     """Add transaction or change transaction info."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_asset(portfolio, request.args.get('ticker_id'))
-    if not asset:
-        return ''
+    asset = get_asset(portfolio, request.args.get('ticker_id')) or abort(404)
 
     transaction = get_transaction(asset, request.args.get('transaction_id'))
     if transaction:
@@ -312,9 +299,7 @@ def other_asset_settings(portfolio_id):
 @demo_user_change
 def other_asset_settings_update():
     """Other asset settings update."""
-    portfolio = get_portfolio(request.args.get('portfolio_id'))
-    if not portfolio:
-        return ''
+    portfolio = get_portfolio(request.args.get('portfolio_id')) or abort(404)
 
     asset = get_other_asset(portfolio, request.args.get('asset_id'))
     if not asset:
@@ -329,9 +314,7 @@ def other_asset_settings_update():
 def other_transaction():
     """Other transaction info."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_other_asset(portfolio, request.args.get('asset_id'))
-    if not asset:
-        return ''
+    asset = get_other_asset(portfolio, request.args.get('asset_id')) or abort(404)
 
     transaction = get_other_transaction(asset,
                                         request.args.get('transaction_id'))
@@ -355,9 +338,7 @@ def other_transaction():
 def other_transaction_update():
     """Other transaction info update."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_other_asset(portfolio, request.args.get('asset_id'))
-    if not asset:
-        return ''
+    asset = get_other_asset(portfolio, request.args.get('asset_id')) or abort(404)
 
     transaction = get_other_transaction(asset,
                                         request.args.get('transaction_id'))
@@ -378,9 +359,7 @@ def other_transaction_update():
 def other_body():
     """Other body info."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_other_asset(portfolio, request.args.get('asset_id'))
-    if not asset:
-        return ''
+    asset = get_other_asset(portfolio, request.args.get('asset_id')) or abort(404)
 
     body = get_other_body(asset, request.args.get('body_id'))
     if not body:
@@ -402,9 +381,7 @@ def other_body():
 def other_body_update():
     """Other body info update."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_other_asset(portfolio, request.args.get('asset_id'))
-    if not asset:
-        return ''
+    asset = get_other_asset(portfolio, request.args.get('asset_id')) or abort(404)
 
     body = get_other_body(asset, request.args.get('body_id'))
     if body:

@@ -4,6 +4,7 @@ import time
 from flask import current_app
 
 from ..app import db, redis
+from ..wraps import logging
 from ..general_functions import redis_decode
 from ..portfolio.models import PriceHistory
 from .utils import get_tickers, remove_prefix, request_json, task_log, \
@@ -33,8 +34,11 @@ def get_data(url: str) -> dict | None:
             return data
 
         task_log(f'Осталось попыток: {attempts})', MARKET)
+        current_app.logger.warning(f'Неудача (еще попыток: {attempts})',
+                                   exc_info=True)
 
 
+@logging
 def load_prices() -> None:
     # Обновление один раз в день
     if redis_decode(PRICE_UPDATE_KEY) == str(datetime.now().date()):
@@ -62,6 +66,7 @@ def load_prices() -> None:
     task_log('Загрузка цен - Конец', MARKET)
 
 
+@logging
 def load_tickers() -> None:
     task_log('Загрузка тикеров - Старт', MARKET)
 
@@ -94,6 +99,7 @@ def load_tickers() -> None:
     task_log('Загрузка тикеров - Конец', MARKET)
 
 
+@logging
 def load_history() -> None:
     task_log('Загрузка истории - Старт', MARKET)
 

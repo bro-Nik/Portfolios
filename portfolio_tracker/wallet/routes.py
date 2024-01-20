@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timezone
 
-from flask import render_template, request, url_for
+from flask import abort, render_template, request, url_for
 from flask_login import login_required
 
 from ..wraps import demo_user_change
@@ -55,10 +55,7 @@ def wallet_settings_update():
 @login_required
 def wallet_info():
     """ Wallet page """
-    wallet = get_wallet(request.args.get('wallet_id'))
-    if not wallet:
-        return ''
-
+    wallet = get_wallet(request.args.get('wallet_id')) or abort(404)
     wallet.update_price()
     return render_template('wallet/wallet_info.html', wallet=wallet)
 
@@ -79,9 +76,7 @@ def assets_action():
 @login_required
 def asset_info():
     wallet = get_wallet(request.args.get('wallet_id'))
-    asset = get_wallet_asset(wallet, request.args.get('ticker_id'))
-    if not asset:
-        return ''
+    asset = get_wallet_asset(wallet, request.args.get('ticker_id')) or abort(404)
 
     asset.update_price()
 
@@ -127,16 +122,14 @@ def stable_add():
     return str(url_for('.asset_info',
                        only_content=request.args.get('only_content'),
                        wallet_id=asset.wallet_id,
-                       ticker_id=asset.ticker_id)) if asset else ''
+                       ticker_id=asset.ticker_id)) if asset else abort(404)
 
 
 @bp.route('/transaction', methods=['GET'])
 @login_required
 def transaction_info():
     wallet = get_wallet(request.args.get('wallet_id'))
-    asset = get_wallet_asset(wallet, request.args.get('ticker_id'))
-    if not asset:
-        return ''
+    asset = get_wallet_asset(wallet, request.args.get('ticker_id')) or abort(404)
 
     asset.update_price()
     transaction = get_transaction(asset, request.args.get('transaction_id'))
@@ -153,10 +146,8 @@ def transaction_info():
 @login_required
 @demo_user_change
 def transaction_update():
-    wallet = get_wallet(request.args.get('wallet_id'))
-    asset = get_wallet_asset(wallet, request.args.get('ticker_id'))
-    if not wallet or not asset:
-        return ''
+    wallet = get_wallet(request.args.get('wallet_id')) or abort(404)
+    asset = get_wallet_asset(wallet, request.args.get('ticker_id')) or abort(404)
 
     transaction = get_transaction(asset, request.args.get('transaction_id'))
     transaction2 = None

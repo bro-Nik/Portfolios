@@ -9,8 +9,15 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 from celery import Celery
 import redis
+import sentry_sdk
 
 from .settings import Config
+
+
+# sentry_sdk.init(
+#     dsn="https://c2b86bd70d07ec2d3b82ff30024cc3e1@o4506602896490496.ingest.sentry.io/4506602912088064",
+#     traces_sample_rate=1,
+# )
 
 
 db = SQLAlchemy()
@@ -48,47 +55,62 @@ def create_app(config_class=Config):
 
 
 def register_blueprints(app):
-    from portfolio_tracker.portfolio import bp as portfolio_bp
+    from .portfolio import bp as portfolio_bp
     app.register_blueprint(portfolio_bp, url_prefix='/portfolios')
 
-    from portfolio_tracker.wallet import bp as wallet_bp
+    from .wallet import bp as wallet_bp
     app.register_blueprint(wallet_bp, url_prefix='/wallets')
 
-    from portfolio_tracker.watchlist import bp as watchlist_bp
+    from .watchlist import bp as watchlist_bp
     app.register_blueprint(watchlist_bp, url_prefix='/watchlist')
 
-    from portfolio_tracker.admin import bp as admin_bp
+    from .admin import bp as admin_bp
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
-    from portfolio_tracker.user import bp as user_bp
+    from .user import bp as user_bp
     app.register_blueprint(user_bp, url_prefix='/user')
 
-    from portfolio_tracker.errors import bp as errors_bp
-    app.register_blueprint(errors_bp)
-
-    from portfolio_tracker.page import bp as page_bp
+    from .page import bp as page_bp
     app.register_blueprint(page_bp)
 
-    from portfolio_tracker.api import bp as api_bp
+    from .api import bp as api_bp
     app.register_blueprint(api_bp)
 
-    from portfolio_tracker.jinja_filters import bp as jf_bp
+    from .jinja_filters import bp as jf_bp
     app.register_blueprint(jf_bp)
+
+    from .errors import bp as errors_bp
+    app.register_blueprint(errors_bp)
 
 
 def configure_logging(app):
-    if not app.debug and not app.testing:
-        if not os.path.exists('logs'):
-            os.mkdir('logs')
-        file_handler = RotatingFileHandler('logs/portfolios.log',
-                                           maxBytes=10240, backupCount=10)
-        file_handler.setFormatter(logging.Formatter(
-            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
-        file_handler.setLevel(logging.INFO)
-        app.logger.addHandler(file_handler)
+    if app.debug or app.testing:
+        return
 
-        app.logger.setLevel(logging.INFO)
-        app.logger.info('Portfolios startup')
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+
+    # формат логов
+    formatter = logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
+
+    app.logger.setLevel(logging.INFO)
+
+    # обработчик уровня Info
+    file_handler_info = RotatingFileHandler('logs/portfolios_info.log',
+                                            maxBytes=10240, backupCount=10)
+    file_handler_info.setFormatter(formatter)
+    file_handler_info.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler_info)
+
+    # обработчик уровня Error
+    file_handler_error = RotatingFileHandler('logs/portfolios_error.log',
+                                             maxBytes=10240, backupCount=10)
+    file_handler_error.setFormatter(formatter)
+    file_handler_error.setLevel(logging.ERROR)
+    app.logger.addHandler(file_handler_error)
+
+    app.logger.info('Portfolios startup')
 
 
 def init_celery(app):
@@ -104,3 +126,4 @@ def init_celery(app):
     celery.Task = ContextTask
 
     celery.autodiscover_tasks()
+    return celery

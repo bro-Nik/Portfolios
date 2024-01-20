@@ -14,7 +14,7 @@ def find_by_id(iterable: Iterable, search_id: int) -> Any:
             return item
 
 
-def redis_decode(key: str, default: str = '') -> str:
+def redis_decode(key: str, default: Any = '') -> Any:
     result = redis.get(key)
     return result.decode() if result else default
 

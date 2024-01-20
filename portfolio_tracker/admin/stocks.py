@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from flask import current_app
 
 from ..app import db, redis
+from ..wraps import logging
 from ..general_functions import redis_decode
 from .utils import get_tickers, load_image, remove_prefix, request_json, \
     task_log, find_ticker_in_base, Market
@@ -33,8 +34,11 @@ def get_data(url):
             return data['results']
 
         task_log(f'Осталось попыток: {attempts})', MARKET)
+        current_app.logger.warning(f'Неудача (еще попыток: {attempts})',
+                                   exc_info=True)
 
 
+@logging
 def load_prices() -> None:
     date = datetime.now().date()
 
@@ -72,6 +76,7 @@ def load_prices() -> None:
     task_log('Загрузка цен - Конец', MARKET)
 
 
+@logging
 def load_tickers() -> None:
     task_log('Загрузка тикеров - Старт', MARKET)
 
@@ -107,6 +112,7 @@ def load_tickers() -> None:
     task_log('Загрузка тикеров - Конец', MARKET)
 
 
+@logging
 def load_images() -> None:
     task_log('Загрузка картинок - Старт', MARKET)
 

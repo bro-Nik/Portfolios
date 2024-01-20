@@ -7,11 +7,11 @@ from flask_babel import gettext
 from flask_login import current_user, login_required
 
 from ..app import db
+from ..jinja_filters import other_currency, user_currency
 from ..portfolio.models import Ticker
 from ..watchlist.models import WatchlistAsset, Alert
 from ..user.models import User
 from ..wallet.utils import get_wallet, last_wallet_transaction
-from ..jinja_filters import other_currency, user_currency
 from . import bp
 
 

@@ -28,8 +28,7 @@ def task_log_name(market: Market) -> str:
 
 def get_task_log(market: Market) -> list:
     key = task_log_name(market)
-    log = redis_decode(key)
-    return pickle.loads(log) if log else []
+    return redis_decode(key, default=[])
 
 
 def task_log(text: str, market: Market) -> None:
@@ -114,15 +113,19 @@ def request(url: str, market: Market) -> requests.models.Response | None:
         response = requests.get(url)
         if response.status_code == 200:
             task_log('Удачный запрос', market)
+            current_app.logger.info('Удачный запрос')
             return response
 
         task_log(f'Ошибка, Код ответа: {response.status_code}', market)
+        current_app.logger.warning('Ошибка', exc_info=True)
 
     except requests.exceptions.ConnectionError as e:
         task_log(f'Ошибка: {type(e)}', market)
+        current_app.logger.warning('Ошибка', exc_info=True)
 
     except Exception as e:
         task_log(f'Ошибка: {type(e)}', market)
+        current_app.logger.error('Ошибка', exc_info=True)
         raise
 
 
@@ -150,6 +153,7 @@ def load_image(url: str, market: Market, ticker_id: str) -> str | None:
         filename = f'{ticker_id}.{original_img.format}'.lower()
     except Exception as e:
         task_log(f'Ошибка: {type(e)}', market)
+        current_app.logger.error('Ошибка', exc_info=True)
         raise
 
     def resize_image(px):

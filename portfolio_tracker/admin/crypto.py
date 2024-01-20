@@ -1,11 +1,14 @@
 import time
 from collections.abc import Callable
+from flask import current_app
 
 from pycoingecko import CoinGeckoAPI
 
 from ..app import db
+from ..wraps import logging
 from .utils import get_tickers, remove_prefix, task_log, load_image, \
     find_ticker_in_base, Market
+
 
 cg = CoinGeckoAPI()
 MARKET: Market = 'crypto'
@@ -24,14 +27,24 @@ def get_data(func: Callable, *args, **kwargs) -> dict | None:
 
         try:
             data = func(*args, **kwargs)
+
+            # logging
             task_log('Удачный запрос', MARKET)
+            current_app.logger.info('Удачный запрос')
+
             return data
-        except Exception as error:
-            task_log(f'Неудача (осталось попыток: {attempts})-{error}', MARKET)
-            # ToDo доработать ошибки
-            raise
+
+        except Exception as e:
+            # logging
+            task_log(f'Неудача (осталось попыток: {attempts})-{e}', MARKET)
+            current_app.logger.warning(f'Неудача (еще попыток: {attempts})',
+                                       exc_info=True)
+            if attempts < 1:
+                current_app.logger.error('Неудача', exc_info=True)
+                raise
 
 
+@logging
 def load_prices() -> None:
     task_log('Загрузка цен - Старт', MARKET)
 
@@ -65,6 +78,7 @@ def load_prices() -> None:
     task_log('Загрузка цен - Конец', MARKET)
 
 
+@logging
 def load_tickers() -> None:
     task_log('Загрузка тикеров - Старт', MARKET)
 
