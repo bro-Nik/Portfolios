@@ -23,6 +23,7 @@ def portfolios():
     """Portfolios page."""
     all_portfolios = AllPortfolios()
     all_portfolios.update_price()
+
     return render_template('portfolio/portfolios.html',
                            all_portfolios=all_portfolios)
 

@@ -86,9 +86,12 @@ def create_new_other_asset(portfolio: Portfolio) -> OtherAsset:
 
 def create_new_transaction(asset: Asset | WalletAsset) -> Transaction:
     """Возвращает новую транзакцию."""
-    transaction = Transaction(portfolio_id=asset.portfolio_id,
-                              wallet_id=asset.wallet_id,
-                              ticker_id=asset.ticker_id)
+    transaction = Transaction(ticker_id=asset.ticker_id)
+    if hasattr(asset, 'portfolio_id'):
+        transaction.portfolio_id = asset.portfolio_id
+    if hasattr(asset, 'wallet_id'):
+        transaction.wallet_id = asset.wallet_id
+
     db.session.add(transaction)
     db.session.commit()
     return transaction
@@ -110,9 +113,11 @@ def create_new_other_body(asset: OtherAsset) -> OtherBody:
     return body
 
 
-def actions_on_portfolios(ids: list[int | str | None], action: str) -> None:
+def actions_on_portfolios(ids: list[int | str | None], action: str,
+                          user: User = current_user,  # type: ignore
+                          ) -> None:
     for portfolio_id in ids:
-        portfolio = get_portfolio(portfolio_id)
+        portfolio = get_portfolio(portfolio_id, user)
         if not portfolio:
             continue
 

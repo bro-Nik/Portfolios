@@ -14,6 +14,13 @@ def find_by_id(iterable: Iterable, search_id: int) -> Any:
             return item
 
 
+def find_by_attr(iterable: Iterable, attr: str, search_id: int):
+    if search_id:
+        for item in iterable:
+            if getattr(item, attr) == search_id:
+                return item
+
+
 def redis_decode(key: str, default: Any = '') -> Any:
     result = redis.get(key)
     return result.decode() if result else default

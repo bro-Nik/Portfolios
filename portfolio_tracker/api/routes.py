@@ -1,7 +1,6 @@
 import json
 from datetime import datetime, timezone
 
-from sqlalchemy import func
 from flask import request
 from flask_babel import gettext
 from flask_login import current_user, login_required
@@ -9,8 +8,6 @@ from flask_login import current_user, login_required
 from ..app import db
 from ..jinja_filters import other_currency, user_currency
 from ..portfolio.models import Ticker
-from ..watchlist.models import WatchlistAsset, Alert
-from ..user.models import User
 from ..wallet.utils import get_wallet, last_wallet_transaction
 from . import bp
 
@@ -25,12 +22,12 @@ def before_request():
 @bp.route('/worked_alerts_count', methods=['GET'])
 @login_required
 def worked_alerts_count():
-    count = db.session.execute(
-        db.select(func.count()).select_from(User).
-        filter(User.id == current_user.id).join(User.watchlist).
-        join(WatchlistAsset.alerts).filter(Alert.status == 'worked')).scalar()
-
-    return '<span>' + str(count) + '</span>' if count else ''
+    count = 0
+    for wasset in current_user.watchlist:
+        for alert in wasset.alerts:
+            if alert.status == 'worked':
+                count += 1
+    return f'<span>{count}</span>' if count else ''
 
 
 @bp.route('/all_currencies', methods=['GET'])
