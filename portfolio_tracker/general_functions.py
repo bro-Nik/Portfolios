@@ -1,11 +1,12 @@
+import json
 import time
 from datetime import datetime, timedelta
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 from babel.dates import format_date
 from flask_login import current_user
 
-from .app import redis
+from .app import redis, db
 
 
 def find_by_id(iterable: Iterable, search_id: int) -> Any:
@@ -14,11 +15,23 @@ def find_by_id(iterable: Iterable, search_id: int) -> Any:
             return item
 
 
-def find_by_attr(iterable: Iterable, attr: str, search_id: int):
-    if search_id:
-        for item in iterable:
-            if getattr(item, attr) == search_id:
-                return item
+def find_by_attr(iterable: Iterable, attr: str, search: str | int | None):
+    # Если iterable или search пустое - выход
+    if not iterable or not search:
+        return
+
+    # Если тип отличается - пробуем привести к нужному
+    type_ = type(getattr(iterable[0], attr))
+    if not isinstance(search, type_):
+        try:
+            search = type_(search)
+        except ValueError:
+            return
+
+    # Поиск совпадения
+    for item in iterable:
+        if getattr(item, attr) == search:
+            return item
 
 
 def redis_decode(key: str, default: Any = '') -> Any:
@@ -67,3 +80,20 @@ def when_updated(update_date: datetime | str, default: str = '') -> str:
     else:
         result = format_date(update_date, locale=current_user.locale.upper())
     return result
+
+
+def actions_in(data_str: bytes, function: Callable, **kwargs) -> None:
+    try:
+        data = json.loads(data_str)
+    except json.JSONDecodeError:
+        data = {}
+
+    if isinstance(data, dict):
+        ids = data.get('ids', [])
+        action = data.get('action', '')
+
+        for item_id in ids:
+            if item_id:
+                function(item_id, action, **kwargs)
+
+        db.session.commit()

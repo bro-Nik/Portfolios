@@ -73,7 +73,7 @@ class Transaction(db.Model):
                     self.ticker_id, create=True, user=self.portfolio.user)
                 alert = watchlist.create_new_alert(watchlist_asset)
 
-            alert.price = self.price_usd
+            alert.price = self.price
             alert.price_usd = self.price_usd
             alert.price_ticker_id = self.ticker2_id
             alert.date = self.date
@@ -185,7 +185,55 @@ class Asset(db.Model, DetailsMixin):
             alert.asset_id = None
             alert.comment = gettext('Портфель %(name)s удален',
                                     name=self.portfolio.name)
+        self.alerts = []
 
+        db.session.delete(self)
+
+
+class OtherAsset(db.Model, DetailsMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    portfolio_id: int = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
+    name: str = db.Column(db.String(255))
+    percent: float = db.Column(db.Float, default=0)
+    amount: float = db.Column(db.Float, default=0)
+    cost_now: float = db.Column(db.Float, default=0)
+    comment: str = db.Column(db.String(1024), default='')
+
+    # Relationships
+    transactions: Mapped[List[OtherTransaction]] = db.relationship(
+        'OtherTransaction', backref=db.backref('asset', lazy=True))
+    bodies: Mapped[List[OtherBody]] = db.relationship(
+        'OtherBody', backref=db.backref('asset', lazy=True))
+
+    def edit(self, form: dict) -> None:
+        name = form.get('name')
+        comment = form.get('comment')
+        percent = form.get('percent')
+
+        if name is not None:
+            if self.name == name:
+                n = 2
+                while name in [i.name for i in self.portfolio.other_assets]:
+                    name = form['name'] + str(n)
+                    n += 1
+
+        if name:
+            self.name = name
+        if comment is not None:
+            self.comment = comment
+        if percent is not None:
+            self.percent = percent or 0
+        db.session.commit()
+
+    def is_empty(self) -> bool:
+        return not (self.bodies or self.transactions or self.comment)
+
+    def delete(self) -> None:
+        for body in self.bodies:
+            body.delete()
+        for transaction in self.transactions:
+            transaction.delete()
+        db.session.commit()
         db.session.delete(self)
 
 
@@ -195,7 +243,7 @@ class OtherTransaction(db.Model):
     asset_id: int = db.Column(db.Integer, db.ForeignKey('other_asset.id'))
     amount: float = db.Column(db.Float)
     amount_ticker_id: str = db.Column(db.String(32), db.ForeignKey('ticker.id'))
-    amount_usd: float = db.Column(db.Float)
+    amount_usd: float = db.Column(db.Float, default=0)
     type: str = db.Column(db.String(24))
     comment: str = db.Column(db.String(1024))
 
@@ -203,15 +251,15 @@ class OtherTransaction(db.Model):
     amount_ticker: Mapped[Ticker] = db.relationship('Ticker', uselist=False)
 
     def edit(self, form: dict) -> None:
+        self.date = from_user_datetime(form['date'])
+        self.comment = form['comment']
         self.type = form['type']
         t_type = 1 if self.type == 'Profit' else -1
         self.amount_ticker_id = form['amount_ticker_id']
         self.amount = float(form['amount']) * t_type
         db.session.commit()
-        self.amount_usd = self.amount * self.amount_ticker.price
-        self.comment = form['comment']
-        self.date = from_user_datetime(form['date'])
 
+        self.amount_usd = self.amount * self.amount_ticker.price
         db.session.commit()
 
     def update_dependencies(self, param: str = '') -> None:
@@ -233,10 +281,10 @@ class OtherBody(db.Model):
     date: datetime = db.Column(db.DateTime)
     asset_id: int = db.Column(db.Integer, db.ForeignKey('other_asset.id'))
     amount: float = db.Column(db.Float)
-    amount_usd: float = db.Column(db.Float)
+    amount_usd: float = db.Column(db.Float, default=0)
     amount_ticker_id: str = db.Column(db.String(32), db.ForeignKey('ticker.id'))
-    cost_now: float = db.Column(db.Float)
-    cost_now_usd: float = db.Column(db.Float)
+    cost_now: float = db.Column(db.Float, default=0)
+    cost_now_usd: float = db.Column(db.Float, default=0)
     cost_now_ticker_id: str = db.Column(db.String(32),
                                         db.ForeignKey('ticker.id'))
     comment: str = db.Column(db.String(1024))
@@ -246,15 +294,6 @@ class OtherBody(db.Model):
         'Ticker', foreign_keys=[amount_ticker_id], viewonly=True)
     cost_now_ticker: Mapped[Ticker] = db.relationship(
         'Ticker', foreign_keys=[cost_now_ticker_id], viewonly=True)
-
-    def update_dependencies(self, param: str = '') -> None:
-        if param in ('cancel',):
-            direction = -1
-        else:
-            direction = 1
-
-        self.asset.amount += self.amount_usd * direction
-        self.asset.cost_now += self.cost_now_usd * direction
 
     def edit(self, form: dict) -> None:
         self.name = form['name']
@@ -273,54 +312,17 @@ class OtherBody(db.Model):
 
         db.session.commit()
 
+    def update_dependencies(self, param: str = '') -> None:
+        if param in ('cancel',):
+            direction = -1
+        else:
+            direction = 1
+
+        self.asset.amount += self.amount_usd * direction
+        self.asset.cost_now += self.cost_now_usd * direction
+
     def delete(self) -> None:
         self.update_dependencies('cancel')
-        db.session.delete(self)
-
-
-class OtherAsset(db.Model, DetailsMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    portfolio_id: int = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
-    name: str = db.Column(db.String(255))
-    percent: float = db.Column(db.Float, default=0)
-    amount: float = db.Column(db.Float, default=0)
-    cost_now: float = db.Column(db.Float, default=0)
-    comment: str = db.Column(db.String(1024), default='')
-
-    # Relationships
-    transactions: Mapped[List[OtherTransaction]] = db.relationship(
-        'OtherTransaction', backref=db.backref('asset', lazy=True))
-    bodies: Mapped[List[OtherBody]] = db.relationship(
-        'OtherBody', backref=db.backref('asset', lazy=True))
-
-    def edit(self, portfolio: Portfolio, form: dict) -> None:
-        name = form.get('name')
-        comment = form.get('comment')
-        percent = form.get('percent')
-
-        if name is not None:
-            if self.name != name:
-                n = 2
-                while name in [i.name for i in portfolio.other_assets]:
-                    name = form['name'] + str(n)
-                    n += 1
-
-        if name:
-            self.name = name
-        if comment is not None:
-            self.comment = comment
-        if percent is not None:
-            self.percent = percent or 0
-        db.session.commit()
-
-    def is_empty(self) -> bool:
-        return not (self.bodies or self.transactions)
-
-    def delete(self) -> None:
-        for body in self.bodies:
-            body.delete()
-        for transaction in self.transactions:
-            transaction.delete()
         db.session.delete(self)
 
 
@@ -333,6 +335,13 @@ class Ticker(db.Model):
     price: float = db.Column(db.Float, default=0)
     market: str = db.Column(db.String(32))
     stable: bool = db.Column(db.Boolean)
+
+    def edit(self, form: dict) -> None:
+        self.id = form.get('id')
+        self.symbol = form.get('symbol')
+        self.name = form.get('name')
+        self.stable = bool(form.get('stable'))
+        db.session.commit()
 
     def get_history_price(self, date: datetime.date) -> float | None:
         if date:
@@ -352,17 +361,12 @@ class Ticker(db.Model):
             self.history.append(d)
         d.price_usd = price
 
-    def edit(self, form: dict) -> None:
-        self.id = form.get('id')
-        self.symbol = form.get('symbol')
-        self.name = form.get('name')
-        self.stable = bool(form.get('stable'))
-        db.session.commit()
-
     def delete(self) -> None:
         if self.history:
             for price in self.history:
+                price.ticker_id = None
                 db.session.delete(price)
+            db.session.commit()
         db.session.delete(self)
 
 
@@ -427,6 +431,9 @@ class Portfolio(db.Model, DetailsMixin):
     def delete(self) -> None:
         for asset in self.assets:
             asset.delete()
+        for asset in self.other_assets:
+            asset.delete()
+        db.session.commit()
         db.session.delete(self)
 
 

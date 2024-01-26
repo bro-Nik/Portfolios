@@ -26,23 +26,23 @@
     <div class="col-auto">
       <p class="small-text">{% trans %}Вложено{% endtrans %} / {% trans %}Стоимость сейчас{% endtrans %}</p>
       <span class="text-average">
-        {{ all_portfolios.amount|user_currency('big') }} / 
-        <span class="{{ all_portfolios.color }}">{{ all_portfolios.cost_now|user_currency('big') }}</span>
+        {{ portfolios.amount|user_currency('big') }} / 
+        <span class="{{ portfolios.color }}">{{ portfolios.cost_now|user_currency('big') }}</span>
       </span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
-        <span class="text-average {{ all_portfolios.color }}">
-          {{ all_portfolios.profit|user_currency('big') }}
-          {{ '({}%)'.format(all_portfolios.profit_percent) if all_portfolios.profit_percent }}
+        <span class="text-average {{ portfolios.color }}">
+          {{ portfolios.profit|user_currency('big') }}
+          {{ '({}%)'.format(portfolios.profit_percent) if portfolios.profit_percent }}
         </span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
       <span class="text-average">
-        {{ all_portfolios.in_orders|user_currency('big') }}
+        {{ portfolios.in_orders|user_currency('big') }}
       </span>
     </div>
 
@@ -113,7 +113,7 @@
               </td>
               
               <td>
-                {{ (portfolio.amount / all_portfolios.amount * 100)|round(1, 'common')|smart_int|string + '%' if portfolio.cost_now and all_portfolios.amount else '-' }}
+                {{ (portfolio.amount / portfolios.amount * 100)|round(1, 'common')|smart_int|string + '%' if portfolio.cost_now and portfolios.amount else '-' }}
                 / {{ portfolio.percent|smart_int|string + '%' if portfolio.percent else '-' }}
               </td>
 
@@ -158,7 +158,7 @@
               <td class="visually-hidden">{{ portfolio.amount }}</td>
               <td class="visually-hidden">{{ portfolio.cost_now }}</td>
               <td class="visually-hidden">{{ portfolio.profit }}</td>
-              <td class="visually-hidden">{{ (portfolio.cost_now / all_portfolios.cost_now * 100) if all_portfolios.cost_now }}</td>
+              <td class="visually-hidden">{{ (portfolio.cost_now / portfolios.cost_now * 100) if portfolios.cost_now }}</td>
               <td class="visually-hidden">{{ portfolio.in_orders }}</td>
 
             </tr>

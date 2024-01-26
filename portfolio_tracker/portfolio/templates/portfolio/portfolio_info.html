@@ -65,7 +65,7 @@
     <div class="col-auto">
       <p class="small-text">{% trans %}Доля от всех инвестиций{% endtrans %}</p>
       <span class="text-average">
-        {{ (portfolio.amount / all_portfolios.amount * 100)|round(1, 'common')|smart_int|string + '%' if portfolio.cost_now else '-' }}
+        {{ (portfolio.amount / portfolios.amount * 100)|round(1, 'common')|smart_int|string + '%' if portfolio.cost_now else '-' }}
         / {{ portfolio.percent|smart_int|string + '%' if portfolio.percent else '-' }}
       </span>
     </div>
