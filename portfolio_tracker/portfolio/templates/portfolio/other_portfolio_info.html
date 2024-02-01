@@ -11,7 +11,7 @@
     </div>
     <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal" type="button" data-modal-id="OtherAssetSettingsModal"
-        data-url="{{ url_for('.other_asset_settings', portfolio_id=portfolio.id) }}">
+        data-url="{{ url_for('.asset_settings', portfolio_id=portfolio.id) }}">
         {% trans %}Добавить актив{% endtrans %}
       </button>
 
@@ -75,7 +75,7 @@
     {% set tab_name = 'other_portfolio_info' %}
     {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'cost_now' %}
     {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
-    <form id="AssetsForm" action="{{ url_for('.other_asset_action', portfolio_id=portfolio.id) }}">
+    <form id="AssetsForm" action="{{ url_for('.assets_action', portfolio_id=portfolio.id) }}">
       <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
         data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
         data-sort-url="{{ url_for('portfolio.change_table_sort') }}">
@@ -153,7 +153,7 @@
                   </a>
                   <div class="dropdown-menu" aria-labelledby="dropdownAction">
                     <a class="dropdown-item open-modal" data-modal-id="OtherAssetSettingsModal"
-                      data-url="{{ url_for('.other_asset_settings', portfolio_id=portfolio.id, asset_id=asset.id) }}">
+                      data-url="{{ url_for('.asset_settings', portfolio_id=portfolio.id, asset_id=asset.id) }}">
                       {% trans %}Изменить актив{% endtrans %}
                     </a>
                     <a class="dropdown-item link-danger open-modal-confirmation"
@@ -183,11 +183,11 @@
 
       <!-- Actions buttons -->
       <div class="sticky-bottom-buttons">
-        <a class="open-modal-confirmation" data-action="delete"
+        <a class="open-modal-confirmation" data-action="delete_if_empty"
           data-title="{% trans %}Удалить активы?{% endtrans %}"
           data-text="{% trans %}Будут удалены только пустые активы{% endtrans %}">
           {% trans %}Удалить{% endtrans %}</a>
-        <a class="open-modal-confirmation" data-action="delete_with_contents"
+        <a class="open-modal-confirmation" data-action="delete"
           data-title="{% trans %}Удалить активы с содержимым?{% endtrans %}"
           data-text="{% trans %}Все содержимое в этих активах будет удалено{% endtrans %}">
           {% trans %}Удалить с содержимым{% endtrans %}</a>

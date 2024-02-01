@@ -99,7 +99,3 @@ class TestUser(unittest.TestCase):
         self.assertEqual(self.wa2.quantity, 13000)
         self.assertEqual(self.wa1.buy_orders, 13000)
         self.assertEqual(self.wa1.sell_orders, 0)
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

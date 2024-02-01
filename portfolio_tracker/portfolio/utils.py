@@ -1,12 +1,10 @@
 from __future__ import annotations
-from flask import flash
-from flask_babel import gettext
 from flask_login import current_user
 from portfolio_tracker.general_functions import find_by_attr
 
 from ..models import DetailsMixin
 from ..user.models import User
-from .models import db, OtherAsset, OtherBody, OtherTransaction, Portfolio, \
+from .models import Ticker, db, OtherAsset, OtherBody, OtherTransaction, Portfolio, \
     Asset, Transaction
 
 
@@ -14,20 +12,26 @@ def get_portfolio(portfolio_id: int | str | None) -> Portfolio | None:
     return find_by_attr(current_user.portfolios, 'id', portfolio_id)
 
 
-def get_asset(ticker_id: str | None,
-              portfolio: Portfolio | None) -> Asset | None:
-    if portfolio:
-        return find_by_attr(portfolio.assets, 'ticker_id', ticker_id)
-
-
-def get_other_asset(asset_id: str | int | None,
-                    portfolio: Portfolio | None) -> OtherAsset | None:
-    if portfolio:
+def get_asset(asset_id: str | int | None,
+              portfolio: Portfolio | None = None,
+              ticker_id: str | None = None) -> Asset | OtherAsset | None:
+    if not portfolio:
+        return
+    if portfolio.market == 'other':
         return find_by_attr(portfolio.other_assets, 'id', asset_id)
+    if ticker_id:
+        return find_by_attr(portfolio.assets, 'ticker_id', ticker_id)
+    return find_by_attr(portfolio.assets, 'id', asset_id)
+
+
+def get_ticker(ticker_id: str | None) -> Ticker | None:
+    if ticker_id:
+        return db.session.execute(
+            db.select(Ticker).filter_by(id=ticker_id)).scalar()
 
 
 def get_transaction(transaction_id: str | int | None,
-                    asset: Asset | OtherAsset | None
+                    asset: Asset | OtherAsset | WalletAsset | None
                     ) -> Transaction | OtherTransaction | None:
     if asset:
         return find_by_attr(asset.transactions, 'id', transaction_id)
@@ -39,29 +43,24 @@ def get_body(body_id: str | int | None,
         return find_by_attr(asset.bodies, 'id', body_id)
 
 
-def create_new_portfolio(form: dict,
-                         user: User = current_user  # type: ignore
+def create_new_portfolio(user: User = current_user  # type: ignore
                          ) -> Portfolio:
     """Возвращает новый портфель"""
     portfolio = Portfolio()
-    portfolio.market = form.get('market')
     user.portfolios.append(portfolio)
     return portfolio
 
 
-def create_new_asset(portfolio: Portfolio, ticker_id: str) -> Asset:
+def create_new_asset(portfolio: Portfolio, ticker: Ticker | None = None
+                     ) -> Asset | OtherAsset:
     """Возвращает новый актив"""
-    asset = Asset(ticker_id=ticker_id)
-    portfolio.assets.append(asset)
-    db.session.commit()
-    return asset
-
-
-def create_new_other_asset(portfolio: Portfolio) -> OtherAsset:
-    """Возвращает новый актив пита другой"""
-    asset = OtherAsset()
-    portfolio.other_assets.append(asset)
-    db.session.commit()
+    if portfolio.market == 'other':
+        asset = OtherAsset()
+        portfolio.other_assets.append(asset)
+    else:
+        asset = Asset(ticker=ticker)
+        portfolio.assets.append(asset)
+    db.session.flush()
     return asset
 
 
@@ -92,70 +91,6 @@ def create_new_other_body(asset: OtherAsset) -> OtherBody:
     asset.bodies.append(body)
     db.session.commit()
     return body
-
-
-def actions_in_portfolios(portfolio_id: int, action: str) -> None:
-    portfolio = get_portfolio(portfolio_id)
-    if not portfolio:
-        return
-
-    if 'delete' in action:
-        if 'with_contents' not in action and not portfolio.is_empty():
-            flash(gettext('В портфеле %(name)s есть транзакции',
-                          name=portfolio.name), 'danger')
-        else:
-            portfolio.delete()
-
-
-def actions_in_assets(ticker_id: str, action: str,
-                      portfolio: Portfolio) -> None:
-    asset = get_asset(ticker_id, portfolio)
-    if not asset:
-        return
-
-    if 'delete' in action:
-        if 'with_contents' not in action and not asset.is_empty():
-            flash(gettext('В активе %(name)s есть транзакции',
-                          name=asset.ticker.name), 'danger')
-        else:
-            asset.delete()
-
-
-def actions_in_other_assets(asset_id: int, action: str,
-                            portfolio: Portfolio) -> None:
-    asset = get_other_asset(asset_id, portfolio)
-    if not asset:
-        return
-
-    if 'delete' in action:
-        if 'with_contents' not in action and not asset.is_empty():
-            flash(gettext('Актив %(name)s не пустой',
-                          name=asset.name), 'danger')
-        else:
-            asset.delete()
-
-
-def actions_in_transactions(transaction_id: int, action: str,
-                            asset: Asset | OtherAsset) -> None:
-    transaction = get_transaction(transaction_id, asset)
-    if not transaction:
-        return
-
-    if action == 'delete':
-        transaction.delete()
-
-    elif action == 'convert_to_transaction':
-        if hasattr(transaction, 'convert_order_to_transaction'):
-            transaction.convert_order_to_transaction()
-
-
-def actions_in_bodies(body_id: int, action: str, asset: OtherAsset) -> None:
-    body = get_body(body_id, asset)
-    if not body:
-        return
-
-    if action == 'delete':
-        body.delete()
 
 
 class Portfolios(DetailsMixin):

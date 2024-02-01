@@ -93,7 +93,8 @@ def actions_in(data_str: bytes, function: Callable, **kwargs) -> None:
         action = data.get('action', '')
 
         for item_id in ids:
-            if item_id:
-                function(item_id, action, **kwargs)
+            item = function(item_id, **kwargs)
+            if item and hasattr(item, action):
+                getattr(item, action)()
 
         db.session.commit()

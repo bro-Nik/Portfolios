@@ -71,7 +71,7 @@
     $('#WorkedAlertsCount').load("{{ url_for('api.worked_alerts_count') }}");
   }
   updateAlerts();
-  setInterval(updateAlerts,10000);
+  setInterval(updateAlerts,100000);
 </script>
 
 </body>

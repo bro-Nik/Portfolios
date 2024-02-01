@@ -27,11 +27,11 @@
       </button>
       <ul class="dropdown-menu">
         <button class="dropdown-item open-modal" type="button" data-modal-id="OtherAssetSettingsModal"
-          data-url="{{ url_for('.other_asset_settings', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
+          data-url="{{ url_for('.asset_settings', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
           {% trans %}Изменить актив{% endtrans %}
         </button>
 
-        <form id="AssetActions" action="{{ url_for('.other_asset_action') }}">
+        <form id="AssetActions" action="{{ url_for('.assets_action') }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#AssetActions"
             {% if asset.is_empty %}
@@ -194,7 +194,7 @@
   <div class="tab-pane fade {{ 'active show' if page == 'transactions' }}" id="nav-transactions" role="tabpanel" aria-labelledby="nav-transactions-tab">
     {% if asset.transactions %}
       <div class="big-table pb-3">
-        <form id="TransactionsForm" action="{{ url_for('.other_transaction_action', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
+        <form id="TransactionsForm" action="{{ url_for('.transactions_action', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
           <table class="table table-sm align-middle">
             <thead>
               <tr>
@@ -291,7 +291,7 @@
 </div>
 
 <div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Добавить комментарий') }}"
-  data-url="{{ url_for('.other_asset_settings_update', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
+  data-url="{{ url_for('.asset_settings_update', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
   <span class="convert-data">{{ asset.comment if asset.comment }}</span>
 </div>
 

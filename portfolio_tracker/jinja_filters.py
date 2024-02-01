@@ -97,8 +97,9 @@ def user_currency(number: int | float, param: str = '') -> str:
         s = str(long_number(number))
         length = len(s[s.index('.') + 1:])
         force_frac = (length, length)
-    return pattern.apply(number, locale, currency=currency,
-                         force_frac=force_frac)
+    return pattern.apply(number, locale, currency=currency)
+    # return pattern.apply(number, locale, currency=currency,
+    #                      force_frac=force_frac)
 
 
 bp.add_app_template_filter(user_currency)
@@ -123,8 +124,9 @@ def other_currency(number: int | float, currency: str, param: str = '') -> str:
         s = str(long_number(number))
         length = len(s[s.index('.') + 1:])
         frac = (length, length)
-    return pattern.apply(number, locale, currency=currency.upper(),
-                         force_frac=frac)
+    return pattern.apply(number, locale, currency=currency.upper())
+    # return pattern.apply(number, locale, currency=currency.upper(),
+    #                      force_frac=frac)
 
 
 bp.add_app_template_filter(other_currency)

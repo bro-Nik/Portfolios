@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 from typing import List
+from flask import flash
 
 from flask_babel import gettext
 from sqlalchemy.orm import Mapped
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Mapped
 from ..app import db
 from ..general_functions import from_user_datetime
 from ..models import DetailsMixin
-from ..wallet.utils import get_wallet_asset
+from ..wallet.utils import create_new_wallet_asset, get_wallet_asset
 from ..watchlist import utils as watchlist
 
 
@@ -93,10 +94,12 @@ class Transaction(db.Model):
 
         if self.type in ('Buy', 'Sell'):
             asset = self.portfolio_asset
-            base_asset = get_wallet_asset(self.wallet, self.ticker_id,
-                                          create=True)
-            quote_asset = get_wallet_asset(self.wallet, self.ticker2_id,
-                                           create=True)
+            base_asset = get_wallet_asset(
+                None, self.wallet, self.ticker_id
+            ) or create_new_wallet_asset(self.wallet, self.base_ticker)
+            quote_asset = get_wallet_asset(
+                None, self.wallet, self.ticker2_id
+            ) or create_new_wallet_asset(self.wallet, self.quote_ticker)
             if base_asset and quote_asset:
                 if self.order:
                     if self.type == 'Buy':
@@ -153,6 +156,12 @@ class Asset(db.Model, DetailsMixin):
     )
 
     def edit(self, form: dict) -> None:
+        if not self.ticker_id:
+            market = form.get('ticker_id')
+            if market in ('crypto', 'stocks', 'other'):
+                self.market = market
+            else:
+                return
         comment = form.get('comment')
         percent = form.get('percent')
 
@@ -175,6 +184,13 @@ class Asset(db.Model, DetailsMixin):
     def update_price(self) -> None:
         self.price = self.ticker.price
         self.cost_now = self.quantity * self.price
+
+    def delete_if_empty(self) -> None:
+        if self.is_empty():
+            self.delete()
+        else:
+            flash(gettext('В активе %(name)s есть транзакции',
+                          name=self.ticker.name), 'danger')
 
     def delete(self) -> None:
         for transaction in self.transactions:
@@ -227,6 +243,13 @@ class OtherAsset(db.Model, DetailsMixin):
 
     def is_empty(self) -> bool:
         return not (self.bodies or self.transactions or self.comment)
+
+    def delete_if_empty(self) -> None:
+        if self.is_empty():
+            self.delete()
+        else:
+            flash(gettext('Актив %(name)s не пустой',
+                          name=self.name), 'danger')
 
     def delete(self) -> None:
         for body in self.bodies:
@@ -387,6 +410,13 @@ class Portfolio(db.Model, DetailsMixin):
         'Transaction', backref=db.backref('portfolio', lazy=True))
 
     def edit(self, form: dict) -> None:
+        if not self.market:
+            market = form.get('market')
+            if market in ('crypto', 'stocks', 'other'):
+                self.market = market
+            else:
+                return
+
         name = form.get('name')
         comment = form.get('comment')
         percent = form.get('percent') or 0
@@ -427,6 +457,13 @@ class Portfolio(db.Model, DetailsMixin):
             asset.update_details()
             self.cost_now += asset.cost_now
             self.amount += asset.amount
+
+    def delete_if_empty(self) -> None:
+        if self.is_empty():
+            self.delete()
+        else:
+            flash(gettext('В портфеле %(name)s есть транзакции',
+                          name=self.name), 'danger')
 
     def delete(self) -> None:
         for asset in self.assets:

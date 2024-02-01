@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import List
+from flask import flash
+from flask_babel import gettext
 
 from sqlalchemy.orm import Mapped
 
@@ -39,7 +41,7 @@ class Wallet(db.Model):
         db.session.commit()
 
     def is_empty(self) -> bool:
-        return not (self.transactions or self.comment)
+        return not (self.wallet_assets or self.transactions or self.comment)
 
     def update_price(self) -> None:
         self.cost_now = 0
@@ -60,6 +62,13 @@ class Wallet(db.Model):
             else:
                 self.assets.append(asset)
             self.cost_now += asset.cost_now
+
+    def delete_if_empty(self) -> None:
+        if self.is_empty():
+            self.delete()
+        else:
+            flash(gettext('Кошелек %(name)s не пустой',
+                          name=self.name), 'danger')
 
     def delete(self) -> None:
         for asset in self.wallet_assets:
@@ -98,6 +107,13 @@ class WalletAsset(db.Model):
             self.free = self.quantity - self.buy_orders
         else:
             self.free = self.quantity - self.sell_orders
+
+    def delete_if_empty(self) -> None:
+        if self.is_empty():
+            self.delete()
+        else:
+            flash(gettext('В активе %(name)s есть транзакции',
+                          name=self.ticker.name), 'danger')
 
     def delete(self) -> None:
         for transaction in self.transactions:

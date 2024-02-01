@@ -4,7 +4,7 @@
 
 
 {% block content %}
-<form data-url="{{ url_for('.other_transaction_update',portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
+<form data-url="{{ url_for('.transaction_update',portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
 
   <div class="btn-group silver col-12 mb-3" role="group" id="typetransaction">
     <input type="radio" class="btn-check" name="type" value="Profit" id="btnplus" {{ 'checked' if transaction.type == 'Profit'}}>

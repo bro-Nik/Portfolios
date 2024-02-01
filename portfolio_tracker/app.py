@@ -85,6 +85,7 @@ def register_blueprints(app):
 
 def configure_logging(app):
     if app.debug or app.testing:
+        app.logger.setLevel(logging.CRITICAL)
         return
 
     if not os.path.exists('logs'):

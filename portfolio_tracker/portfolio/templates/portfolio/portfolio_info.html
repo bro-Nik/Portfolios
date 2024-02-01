@@ -115,12 +115,12 @@
           {% for asset in portfolio.assets %}
             <tr>
               <td>
-                <input class="form-check-input to-check" type="checkbox" value="{{ asset.ticker_id }}">
+                <input class="form-check-input to-check" type="checkbox" value="{{ asset.id }}">
               </td>
 
               <td>
                 <div class="text-average open-modal d-flex gap-2 name" data-modal-id="AssetInfoModal" 
-                  data-url="{{ url_for('.asset_info', portfolio_id=portfolio.id, ticker_id=asset.ticker_id) }}">
+                  data-url="{{ url_for('.asset_info', portfolio_id=portfolio.id, asset_id=asset.id) }}">
 
                   {% if asset.ticker.image %}
                     <img class="img-asset-min" loading="lazy" src="{{ url_for('static', filename='images/tickers/' + portfolio.market + '/24/' + asset.ticker.image) }}">
@@ -191,7 +191,7 @@
                   </a>
                   <div class="dropdown-menu" aria-labelledby="dropdownAction">
                     <a class="dropdown-item open-modal" data-modal-id="AssetSettingsModal"
-                      data-url="{{ url_for('.asset_settings', portfolio_id=portfolio.id, ticker_id=asset.ticker_id) }}">
+                      data-url="{{ url_for('.asset_settings', portfolio_id=portfolio.id, asset_id=asset.id) }}">
                       {% trans %}Изменить актив{% endtrans %}
                     </a>
                     <a class="dropdown-item link-danger open-modal-confirmation"
@@ -223,11 +223,11 @@
 
       <!-- Actions buttons -->
       <div class="sticky-bottom-buttons">
-        <a class="open-modal-confirmation" data-action="delete"
+        <a class="open-modal-confirmation" data-action="delete_if_empty"
           data-title="{% trans %}Удалить активы?{% endtrans %}"
           data-text="{% trans %}Будут удалены только пустые активы{% endtrans %}">
           {% trans %}Удалить{% endtrans %}</a>
-        <a class="open-modal-confirmation" data-action="delete_with_contents"
+        <a class="open-modal-confirmation" data-action="delete"
           data-title="{% trans %}Удалить активы с содержимым?{% endtrans %}"
           data-text="{% trans %}Все транзакции в этих активах будут удалены{% endtrans %}">
           {% trans %}Удалить с содержимым{% endtrans %}</a>

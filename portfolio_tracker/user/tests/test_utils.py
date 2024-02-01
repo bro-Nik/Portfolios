@@ -51,7 +51,3 @@ class TestAuth(unittest.TestCase):
         set_password(self.u, 'cat')
         self.assertFalse(check_password(self.u.password, 'dog'))
         self.assertTrue(check_password(self.u.password, 'cat'))
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

@@ -31,17 +31,17 @@
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Стоимость сейчас{% endtrans %}</p>
-    <span class="text-average {{ all_wallets.color }}">{{ all_wallets.cost_now|user_currency('big') }}</span>
+    <span class="text-average {{ wallets.color }}">{{ wallets.cost_now|user_currency('big') }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-    <span class="text-average">{{ all_wallets.in_orders|user_currency('big') }}</span>
+    <span class="text-average">{{ wallets.in_orders|user_currency('big') }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Свободные средства{% endtrans %}</p>
-    <span class="text-average">{{ all_wallets.free|user_currency('big') }}</span>
+    <span class="text-average">{{ wallets.free|user_currency('big') }}</span>
   </div>
 </div>
 

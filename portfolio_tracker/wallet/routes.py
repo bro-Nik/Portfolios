@@ -1,34 +1,34 @@
-import json
 from datetime import datetime, timezone
 
 from flask import abort, render_template, request, url_for
-from flask_login import login_required
+from flask_login import current_user, login_required
 
+from ..general_functions import actions_in
 from ..wraps import demo_user_change
 from ..portfolio.models import Ticker, Transaction
-from ..portfolio.utils import create_new_transaction
+from ..portfolio.utils import create_new_transaction, get_ticker, get_transaction
 from .models import db
-from .utils import AllWallets, actions_on_assets, actions_on_transactions, \
-    actions_on_wallets, create_new_wallet, get_transaction, get_wallet, \
-    get_wallet_asset
+from .utils import Wallets, create_new_wallet, create_new_wallet_asset, \
+    get_wallet, get_wallet_asset
 from . import bp
 
 
 @bp.route('/', methods=['GET'])
 @login_required
 def wallets():
-    all_wallets = AllWallets()
-    all_wallets.update_price()
-    return render_template('wallet/wallets.html', all_wallets=all_wallets)
+    wallets_ = Wallets()
+    wallets_.update_price()
+    return render_template('wallet/wallets.html', wallets=wallets_)
 
 
 @bp.route('/action', methods=['POST'])
 @login_required
 @demo_user_change
 def wallets_action():
-    data = json.loads(request.data) if request.data else {}
-
-    actions_on_wallets(data['ids'], data['action'])
+    actions_in(request.data, get_wallet)
+    if not current_user.wallets:
+        create_new_wallet()
+        db.session.commit()
     return ''
 
 
@@ -43,9 +43,7 @@ def wallet_settings():
 @login_required
 @demo_user_change
 def wallet_settings_update():
-    wallet = get_wallet(request.args.get('wallet_id'))
-    if not wallet:
-        wallet = create_new_wallet()
+    wallet = get_wallet(request.args.get('wallet_id')) or create_new_wallet()
 
     wallet.edit(request.form)
     return ''
@@ -65,10 +63,9 @@ def wallet_info():
 @demo_user_change
 def assets_action():
     """ Asset action """
-    wallet = get_wallet(request.args.get('wallet_id'))
-    data = json.loads(request.data) if request.data else {}
+    wallet = get_wallet(request.args.get('wallet_id')) or abort(404)
 
-    actions_on_assets(wallet, data['ids'], data['action'])
+    actions_in(request.data, get_wallet_asset, wallet=wallet)
     return ''
 
 
@@ -76,7 +73,8 @@ def assets_action():
 @login_required
 def asset_info():
     wallet = get_wallet(request.args.get('wallet_id'))
-    asset = get_wallet_asset(wallet, request.args.get('ticker_id')) or abort(404)
+    asset = get_wallet_asset(request.args.get('asset_id'), wallet,
+                             request.args.get('ticker_id')) or abort(404)
 
     asset.update_price()
 
@@ -115,24 +113,25 @@ def stable_add_tickers():
 @bp.route('/add_stable', methods=['GET'])
 @login_required
 def stable_add():
-    ticker_id = request.args.get('ticker_id')
-    wallet = get_wallet(request.args.get('wallet_id'))
-    asset = get_wallet_asset(wallet, ticker_id, create=True)
+    ticker = get_ticker(request.args.get('ticker_id')) or abort(404)
+    wallet = get_wallet(request.args.get('wallet_id')) or abort(404)
+    asset = get_wallet_asset(None, wallet, ticker.id
+                             ) or create_new_wallet_asset(wallet, ticker)
 
     return str(url_for('.asset_info',
                        only_content=request.args.get('only_content'),
-                       wallet_id=asset.wallet_id,
-                       ticker_id=asset.ticker_id)) if asset else abort(404)
+                       wallet_id=asset.wallet_id, ticker_id=asset.ticker_id))
 
 
 @bp.route('/transaction', methods=['GET'])
 @login_required
 def transaction_info():
     wallet = get_wallet(request.args.get('wallet_id'))
-    asset = get_wallet_asset(wallet, request.args.get('ticker_id')) or abort(404)
+    asset = get_wallet_asset(request.args.get('asset_id'), wallet,
+                             request.args.get('ticker_id')) or abort(404)
 
     asset.update_price()
-    transaction = get_transaction(asset, request.args.get('transaction_id'))
+    transaction = get_transaction(request.args.get('transaction_id'), asset)
     if not transaction:
         transaction = Transaction(
             type='Input' if asset.ticker.stable else 'TransferOut',
@@ -147,9 +146,10 @@ def transaction_info():
 @demo_user_change
 def transaction_update():
     wallet = get_wallet(request.args.get('wallet_id')) or abort(404)
-    asset = get_wallet_asset(wallet, request.args.get('ticker_id')) or abort(404)
+    asset = get_wallet_asset(request.args.get('asset_id'), wallet,
+                             request.args.get('ticker_id')) or abort(404)
 
-    transaction = get_transaction(asset, request.args.get('transaction_id'))
+    transaction = get_transaction(request.args.get('transaction_id'), asset)
     transaction2 = None
 
     if transaction:
@@ -193,8 +193,8 @@ def transaction_update():
 @demo_user_change
 def transactions_action():
     wallet = get_wallet(request.args.get('wallet_id'))
-    asset = get_wallet_asset(wallet, request.args.get('ticker_id'))
-    data = json.loads(request.data) if request.data else {}
+    asset = get_wallet_asset(request.args.get('asset_id'), wallet,
+                             request.args.get('ticker_id')) or abort(404)
 
-    actions_on_transactions(asset, data['ids'], data['action'])
+    actions_in(request.data, get_transaction, asset=asset)
     return ''

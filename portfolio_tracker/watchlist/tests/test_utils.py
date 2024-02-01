@@ -1,10 +1,10 @@
 import unittest
 
-from portfolio_tracker.app import db
-from portfolio_tracker.models import Alert, User, WatchlistAsset
-from portfolio_tracker.watchlist.utils import create_new_alert, \
-    create_new_watchlist_asset, get_alert, get_watchlist_asset
-from tests import app
+from portfolio_tracker.user.models import User
+from tests import app, db
+from ..models import Alert, WatchlistAsset
+from ..utils import create_new_alert, create_new_watchlist_asset, get_alert, \
+    get_watchlist_asset
 
 
 class TestWatchlistUtils(unittest.TestCase):
