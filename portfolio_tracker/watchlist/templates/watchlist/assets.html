@@ -106,13 +106,13 @@
 	                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
                   </a>
                   <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                    <a class="dropdown-item link-danger open-modal-confirmation" data-action="delete"
+                    <a class="dropdown-item link-danger open-modal-confirmation" data-action="delete_if_empty"
                       data-title="{% trans %}Удалить актив?{% endtrans %}"
                       data-text="{% trans %}Уведомления, кроме ордеров, будут удалены. Актив без уведомлений также будет удален{% endtrans %}"
                       data-id="{{ ticker.id }}">
                       {% trans %}Удалить актив{% endtrans %}
                     </a>
-                    <a class="dropdown-item link-danger open-modal-confirmation" data-action="delete_with_orders"
+                    <a class="dropdown-item link-danger open-modal-confirmation" data-action="delete"
                       data-title="{% trans %}Удалить актив с ордерами?{% endtrans %}"
                       data-text="{% trans %}Все уведомления (включая уведомления на ордеры), связанные с этим активом будут удалены{% endtrans %}"
                       data-id="{{ ticker.id }}">
@@ -128,11 +128,11 @@
 
       <!-- Actions buttons -->
       <div class="sticky-bottom-buttons">
-        <a class="open-modal-confirmation" data-action="delete"
+        <a class="open-modal-confirmation" data-action="delete_if_empty"
           data-title="{% trans %}Удалить активы?{% endtrans %}"
           data-text="{% trans %}Будут удалены только те активы, которые не содержат ордеров. Уведомления на ордеры останутся{% endtrans %}">
           {% trans %}Удалить{% endtrans %}</a>
-        <a class="open-modal-confirmation" data-action="delete_with_orders"
+        <a class="open-modal-confirmation" data-action="delete"
           data-title="{% trans %}Удалить активы с ордерами?{% endtrans %}"
           data-text="{% trans %}Все уведомления (включая уведомления на ордеры), связанные с этими активами будут удалены{% endtrans %}">
           {% trans %}Удалить с ордерами{% endtrans %}</a>

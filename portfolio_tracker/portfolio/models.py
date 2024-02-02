@@ -70,8 +70,9 @@ class Transaction(db.Model):
             alert.delete()
         elif self.order:
             if not alert:
-                watchlist_asset = watchlist.get_watchlist_asset(
-                    self.ticker_id, create=True, user=self.portfolio.user)
+                watchlist_asset = watchlist.get_asset(
+                    None, self.ticker_id
+                ) or watchlist.create_new_asset(self.base_ticker)
                 alert = watchlist.create_new_alert(watchlist_asset)
 
             alert.price = self.price
@@ -127,6 +128,7 @@ class Transaction(db.Model):
         self.order = False
         self.date = datetime.now(timezone.utc)
         if self.alert:
+            self.alert.transaction_id = None
             self.alert.delete()
         self.update_dependencies()
 

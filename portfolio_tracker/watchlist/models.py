@@ -27,6 +27,14 @@ class WatchlistAsset(db.Model):
     def is_empty(self) -> bool:
         return not (self.alerts or self.comment)
 
+    def delete_if_empty(self) -> None:
+        for alert in self.alerts:
+            if not alert.transaction_id:
+                alert.delete()
+        db.session.commit()  # ToDo переделать
+        if self.is_empty():
+            self.delete()
+
     def delete(self) -> None:
         for alert in self.alerts:
             alert.delete()
@@ -79,4 +87,5 @@ class Alert(db.Model):
         self.status = 'on'
 
     def delete(self) -> None:
-        db.session.delete(self)
+        if not self.transaction_id:
+            db.session.delete(self)
