@@ -4,9 +4,11 @@ from flask import current_app
 
 from pycoingecko import CoinGeckoAPI
 
+from portfolio_tracker.general_functions import remove_prefix
+
 from ..app import db
 from ..wraps import logging
-from .utils import get_tickers, remove_prefix, task_log, load_image, \
+from .utils import get_tickers, task_log, load_image, \
     find_ticker_in_base, Market
 
 

@@ -1,13 +1,13 @@
-import json
-
 from flask import render_template, redirect, url_for, request
 
-from ..general_functions import redis_decode, when_updated
+from ..general_functions import actions_in, redis_decode, when_updated
 from ..jinja_filters import user_datetime
 from ..wraps import admin_only
 from ..app import celery, redis
-from .utils import actions_on_tickers, actions_on_users, get_all_users, \
-    get_task_log, get_ticker, get_tickers, get_tickers_count, get_users_count
+from ..portfolio.utils import get_ticker
+from ..user.utils import find_user_by_id
+from .utils import get_all_users, get_task_log, get_tickers, \
+    get_tickers_count, get_users_count
 from . import bp
 
 
@@ -72,9 +72,7 @@ def users_detail():
 @bp.route('/users/action', methods=['POST'])
 @admin_only
 def users_action():
-    data = json.loads(request.data) if request.data else {}
-
-    actions_on_users(data['ids'], data['action'])
+    actions_in(request.data, find_user_by_id)
     return ''
 
 
@@ -87,9 +85,7 @@ def imports():
 @bp.route('/tickers/action', methods=['POST'])
 @admin_only
 def tickers_action():
-    data = json.loads(request.data) if request.data else {}
-
-    actions_on_tickers(data['ids'], data['action'])
+    actions_in(request.data, get_ticker)
     return ''
 
 

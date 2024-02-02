@@ -1,12 +1,16 @@
 import json
 import time
 from datetime import datetime, timedelta
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Literal, TypeAlias
 
 from babel.dates import format_date
+from flask import current_app
 from flask_login import current_user
 
 from .app import redis, db
+
+
+Market: TypeAlias = Literal['crypto', 'stocks', 'currency']
 
 
 def find_by_id(iterable: Iterable, search_id: int) -> Any:
@@ -98,3 +102,19 @@ def actions_in(data_str: bytes, function: Callable, **kwargs) -> None:
                 getattr(item, action)()
 
         db.session.commit()
+
+
+def get_prefix(market: Market) -> str:
+    return current_app.config[f'{market.upper()}_PREFIX']
+
+
+def add_prefix(ticker_id: str, market: Market) -> str:
+    return (get_prefix(market) + ticker_id).lower()
+
+
+def remove_prefix(ticker_id: str, market: Market) -> str:
+    prefix = get_prefix(market)
+    if ticker_id.startswith(prefix):
+        ticker_id = ticker_id[len(prefix):]
+
+    return ticker_id

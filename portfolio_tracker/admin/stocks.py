@@ -5,8 +5,8 @@ from flask import current_app
 
 from ..app import db, redis
 from ..wraps import logging
-from ..general_functions import redis_decode
-from .utils import get_tickers, load_image, remove_prefix, request_json, \
+from ..general_functions import redis_decode, remove_prefix
+from .utils import get_tickers, load_image, request_json, \
     task_log, find_ticker_in_base, Market
 
 MARKET: Market = 'crypto'

@@ -5,9 +5,9 @@ from flask import current_app
 
 from ..app import db, redis
 from ..wraps import logging
-from ..general_functions import redis_decode
+from ..general_functions import redis_decode, remove_prefix
 from ..portfolio.models import PriceHistory
-from .utils import get_tickers, remove_prefix, request_json, task_log, \
+from .utils import get_tickers, request_json, task_log, \
     find_ticker_in_base, Market
 
 MARKET: Market = 'currency'

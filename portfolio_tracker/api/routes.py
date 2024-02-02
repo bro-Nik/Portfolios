@@ -7,6 +7,7 @@ from flask_login import current_user, login_required
 
 from ..app import db
 from ..jinja_filters import other_currency, user_currency
+from ..general_functions import remove_prefix
 from ..portfolio.models import Ticker
 from ..wallet.utils import get_wallet, last_wallet_transaction
 from . import bp
@@ -33,12 +34,13 @@ def worked_alerts_count():
 @bp.route('/all_currencies', methods=['GET'])
 @login_required
 def all_currencies():
+    market = 'currency'
     result = []
     currencies = db.session.execute(
-        db.select(Ticker).filter_by(market='currency')).scalars()
+        db.select(Ticker).filter_by(market=market)).scalars()
 
     for currency in currencies:
-        result.append({'value': str(currency.id[3:]),
+        result.append({'value': remove_prefix(currency.id, market),
                        'text': currency.symbol.upper(),
                        'subtext': currency.name})
     return json.dumps(result, ensure_ascii=False)
@@ -54,7 +56,7 @@ def wallets_to_sell():
         wallet.update_price()
 
         for asset in wallet.wallet_assets:
-            if ticker_id != asset.ticker.id:
+            if ticker_id != asset.ticker_id:
                 continue
 
             if asset.free:
@@ -109,7 +111,7 @@ def wallets_to_transfer_out():
 
         quantity = sort = 0
         for asset in wallet.wallet_assets:
-            if ticker_id != asset.ticker.id:
+            if ticker_id != asset.ticker_id:
                 continue
 
             quantity = other_currency(asset.free, asset.ticker.symbol)
