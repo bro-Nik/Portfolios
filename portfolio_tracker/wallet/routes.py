@@ -120,7 +120,7 @@ def stable_add():
 
     return str(url_for('.asset_info',
                        only_content=request.args.get('only_content'),
-                       wallet_id=asset.wallet_id, ticker_id=asset.ticker_id))
+                       wallet_id=wallet.id, ticker_id=ticker.id))
 
 
 @bp.route('/transaction', methods=['GET'])

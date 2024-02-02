@@ -6,10 +6,40 @@ from flask import Response, render_template, redirect, url_for, request, \
 from flask_babel import gettext
 from flask_login import login_user, login_required, current_user, logout_user
 
+from portfolio_tracker.general_functions import actions_in
+
 from ..app import db
 from ..settings import LANGUAGES
 from ..wallet.utils import create_new_wallet
 from . import bp, utils
+
+
+@bp.route('/login', methods=['GET', 'POST'])
+def login():
+    """Отдает страницу входа и принимает форму входа."""
+    if current_user.is_authenticated and current_user.type != 'demo':
+        return redirect(url_for('portfolio.portfolios'))
+
+    if request.method == 'POST':
+        if utils.login(request.form) is True:
+            next_page = request.args.get('next',
+                                         url_for('portfolio.portfolios'))
+            return redirect(next_page)
+
+    return render_template('user/login.html')
+
+
+@bp.route('/register', methods=['GET', 'POST'])
+def register():
+    """Отдает страницу регистрации и принимает форму регистрации."""
+    if current_user.is_authenticated and current_user.type != 'demo':
+        return redirect(url_for('portfolio.portfolios'))
+
+    if request.method == 'POST':
+        if utils.register(request.form):
+            return redirect(url_for('.login'))
+
+    return render_template('user/register.html', locale=utils.get_locale())
 
 
 @bp.route('/logout')
@@ -29,34 +59,10 @@ def redirect_to_signin(response):
     return response
 
 
-@bp.route('/register', methods=['GET', 'POST'])
-def register():
-    """Отдает страницу регистрации и принимает форму регистрации."""
-    if request.method == 'POST':
-        if utils.register(request.form):
-            return redirect(url_for('.login'))
-
-    return render_template('auth/register.html', locale=utils.get_locale())
-
-
-@bp.route('/login', methods=['GET', 'POST'])
-def login():
-    """Отдает страницу входа и принимает форму входа."""
-    if current_user.is_authenticated and current_user.type != 'demo':
-        return redirect(url_for('portfolio.portfolios'))
-
-    if request.method == 'POST':
-        if utils.login(request.form) is True:
-            next_page = request.args.get('next',
-                                         url_for('portfolio.portfolios'))
-            return redirect(next_page)
-
-    return render_template('user/login.html')
-
-
 @bp.route('/user_action', methods=['POST'])
 @login_required
 def user_action():
+
     data = json.loads(request.data) if request.data else {}
     action = data.get('action')
 
@@ -66,7 +72,6 @@ def user_action():
 
     if action == 'delete_data':
         current_user.cleare()
-        # current_user.create_first_wallet()
         create_new_wallet(current_user)  # type: ignore
         flash(gettext('Профиль очищен'), 'success')
 
@@ -78,7 +83,7 @@ def user_action():
     return ''
 
 
-@bp.route("/demo_user")
+@bp.route('/demo_user')
 def demo_user():
     login_user(utils.get_demo_user())
     return redirect(url_for('portfolio.portfolios'))

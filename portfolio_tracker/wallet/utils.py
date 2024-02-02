@@ -50,10 +50,11 @@ def last_wallet_transaction(wallet: Wallet | None,
                 return transaction
 
 
-def create_new_wallet() -> Wallet:
+def create_new_wallet(user: User = current_user) -> Wallet:
     wallet = Wallet()
-    create_new_wallet_asset(wallet, current_user.currency_ticker)
-    current_user.wallets.append(wallet)
+    create_new_wallet_asset(wallet, user.currency_ticker)
+    user.wallets.append(wallet)
+    # db.session.flush()
 
     return wallet
 
@@ -61,8 +62,6 @@ def create_new_wallet() -> Wallet:
 def create_new_wallet_asset(wallet: Wallet, ticker: Ticker) -> WalletAsset:
     asset = WalletAsset(ticker_id=ticker.id)
     wallet.wallet_assets.append(asset)
-    db.session.flush()
-    # db.session.commit()
     return asset
 
 

@@ -1,4 +1,4 @@
-from flask import current_app, request, session, flash
+from flask import request, session, flash
 from flask_login import current_user, login_user
 from flask_babel import gettext
 
@@ -8,13 +8,13 @@ from ..wallet.utils import create_new_wallet
 from .models import db, User, UserInfo
 
 
-def find_user(email: str) -> User | None:
+def find_user_by_email(email: str) -> User | None:
     """Принимает email, находит и возвращает пользователя."""
     return db.session.execute(db.select(User).filter_by(email=email)).scalar()
 
 
 @login_manager.user_loader
-def load_user(user_id: int) -> User | None:
+def find_user_by_id(user_id: int) -> User | None:
     """Принимает ID и возвращает пользователя."""
     return db.session.execute(db.select(User).filter_by(id=user_id)).scalar()
 
@@ -26,11 +26,14 @@ def create_new_user(email: str, password: str) -> User:
     new_user.set_password(password)
     new_user.change_currency()
     new_user.change_locale()
+
+    db.session.add(new_user)
+    db.session.flush()
+
     create_new_wallet(new_user)
 
     new_user.info = UserInfo()
 
-    db.session.add(new_user)
     db.session.commit()
     return new_user
 
@@ -45,7 +48,7 @@ def register(form: dict) -> bool | None:
         flash(gettext('Заполните адрес электронной почты, '
                       'пароль и подтверждение пароля'), 'danger')
 
-    elif find_user(email):
+    elif find_user_by_email(email):
         flash(gettext('Данный почтовый ящик уже используется'), 'danger')
 
     elif password != password2:
@@ -67,7 +70,7 @@ def login(form: dict) -> bool | None:
         flash(gettext('Введити адрес электронной почты и пароль'), 'danger')
 
     else:
-        user = find_user(email)
+        user = find_user_by_email(email)
         if user and user.check_password(password):
             login_user(user, form.get('remember-me', False))
             user.new_login()
@@ -82,9 +85,6 @@ def get_demo_user() -> User | None:
 
 
 def get_locale() -> str | None:
-    if current_app.testing:
-        return 'ru'
-
     u = current_user
     if u.is_authenticated and u.type != 'demo' and u.locale:
         return u.locale
@@ -100,8 +100,5 @@ def get_currency() -> str:
 
 
 def get_timezone() -> str | None:
-    if current_app.testing:
-        return None
-
     if current_user.is_authenticated:
         return current_user.timezone

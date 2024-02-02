@@ -1,6 +1,7 @@
 *venv*/
 *instance/
 .idea/
+.coverage
 __pycache__/
 logs/
 portfolio_tracker/__pycache__/

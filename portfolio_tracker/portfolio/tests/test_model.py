@@ -282,6 +282,8 @@ class TestTransactionModel(unittest.TestCase):
 
     def test_update_dependencies_create_wallet_assets(self):
         # Wallet assets
+        self.w.wallet_assets = [WalletAsset(ticker_id='usdt'),
+                                WalletAsset(ticker_id='btc')]
 
         self.t.type = 'Buy'
         self.t.ticker_id = 'btc'
@@ -843,13 +845,15 @@ class TestAssetModel(unittest.TestCase):
         db.session.commit()
 
         # Удаление транзакций, уведомлений и актива
-        self.a.delete()
-        db.session.commit()
+        with app.test_request_context():
+            login_user(self.u, False)
+            self.a.delete()
+            db.session.commit()
 
-        self.assertEqual(self.a.transactions, [])
-        self.assertEqual(self.a.alerts, [])
-        self.assertEqual(self.p.assets, [])
-        self.assertEqual(alert.asset_id, None)
+            self.assertEqual(self.a.transactions, [])
+            self.assertEqual(self.a.alerts, [])
+            self.assertEqual(self.p.assets, [])
+            self.assertEqual(alert.asset_id, None)
 
 
 class TestOtherAssetModel(unittest.TestCase):

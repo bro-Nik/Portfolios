@@ -125,98 +125,14 @@ class User(db.Model, UserMixin):
 
     def import_data(self, data: dict) -> None:
         pass
-        # prefixes = {'crypto': current_app.config['CRYPTO_PREFIX'],
-        #             'stocks': current_app.config['STOCKS_PREFIX'],
-        #             'currency': current_app.config['CURRENCY_PREFIX']}
-        #
-        # def get_ticker_id(t):
-        #     return f"{prefixes[t['market']]}{t['id']}" if t else None
-        #
-        # # Portfolios
-        # new_portfolios_ids = {}
-        # for p in data.get('portfolios', []):
-        #     portfolio = Portfolio(market=p['market'],
-        #                           name=p['name'], comment=p['comment'])
-        #     self.portfolios.append(portfolio)
-        #     db.session.commit()
-        #     new_portfolios_ids[p['id']] = portfolio.id
-        #
-        #     # Portfolio assets
-        #     for a in p['assets']:
-        #         asset = Asset(ticker_id=get_ticker_id(a['ticker']),
-        #                       percent=a['percent'] or 0, comment=a['comment'])
-        #         portfolio.assets.append(asset)
-        #
-        # # Wallets
-        # new_transactions_ids = {}
-        # for w in data.get('wallets', []):
-        #     wallet = Wallet(name=w['name'], comment=w['comment'])
-        #     self.wallets.append(wallet)
-        #
-        #     # Wallet assets
-        #     for a in w['assets']:
-        #         asset = WalletAsset(ticker_id=get_ticker_id(a['ticker']))
-        #         wallet.wallet_assets.append(asset)
-        #
-        #         # Transactions
-        #         for t in a['transactions']:
-        #             transaction = Transaction(
-        #                 date=t['date'],
-        #                 ticker_id=get_ticker_id(t['ticker']),
-        #                 quantity=t['quantity'],
-        #                 ticker2_id=get_ticker_id(t['ticker2']),
-        #                 quantity2=t['quantity2'],
-        #                 comment=t['comment'],
-        #                 type=t['type'],
-        #                 order=t['order'],
-        #                 price=t['price'],
-        #                 price_usd=t['price_usd'],
-        #                 related_transaction_id=t['related_transaction_id'],
-        #                 portfolio_id=new_portfolios_ids[t['portfolio_id']]
-        #             )
-        #             asset.transactions.append(transaction)
-        #             db.session.commit()
-        #             new_transactions_ids[t['id']] = transaction.id
-        #
-        # # Transactions
-        # for wallet in self.wallets:
-        #     for t in wallet.transactions:
-        #         t.update_dependencies()
-        #
-        #         if t.related_transaction_id:
-        #             id = new_transactions_ids[t.related_transaction_id]
-        #             t.related_transaction_id = id
-        #
-        # # Watchlist Assets
-        # for a in data['watchlist']:
-        #     asset = WatchlistAsset(ticker_id=get_ticker_id(a['ticker']))
-        #     asset.comment = asset['comment']
-        #
-        #     self.watchlist.append(asset)
-        #
-        #     for al in a['alerts']:
-        #         alert = Alert(
-        #             date=al['date'],
-        #             asset_id=al['asset_id'],
-        #             # watchlist_asset_id=watchlist_asset.id,
-        #             price=al['price'],
-        #             price_usd=al['price_usd'],
-        #             price_ticker_id=al['price_ticker_id'],
-        #             type=al['type'],
-        #             comment=al['comment'],
-        #             status=al['status']
-        #             )
-        #         asset.alerts.append(alert)
-        #
-        # db.session.commit()
 
 
 class UserInfo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id: int = db.Column(db.Integer, db.ForeignKey('user.id'))
+    country: str = db.Column(db.String(255))
+    city: str = db.Column(db.String(255))
     first_visit: datetime = db.Column(db.DateTime,
                                       default=datetime.now(timezone.utc))
     last_visit: datetime = db.Column(db.DateTime,
                                      default=datetime.now(timezone.utc))
-    country: str = db.Column(db.String(255))
-    city: str = db.Column(db.String(255))
