@@ -4,8 +4,8 @@ from portfolio_tracker.general_functions import find_by_attr
 
 from ..models import DetailsMixin
 from ..user.models import User
-from .models import Ticker, db, OtherAsset, OtherBody, OtherTransaction, Portfolio, \
-    Asset, Transaction
+from .models import Ticker, db, OtherAsset, OtherBody, OtherTransaction, \
+    Portfolio, Asset, Transaction
 
 
 def get_portfolio(portfolio_id: int | str | None) -> Portfolio | None:
@@ -60,7 +60,7 @@ def create_new_asset(portfolio: Portfolio, ticker: Ticker | None = None
     else:
         asset = Asset(ticker=ticker)
         portfolio.assets.append(asset)
-    db.session.flush()
+    db.session.commit()
     return asset
 
 

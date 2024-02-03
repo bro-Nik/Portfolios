@@ -6,8 +6,8 @@ from flask import current_app
 from ..app import db, redis
 from ..wraps import logging
 from ..general_functions import redis_decode, remove_prefix
-from .utils import get_tickers, load_image, request_json, \
-    task_log, find_ticker_in_base, Market
+from .utils import get_tickers, load_image, request_json, task_log, \
+    find_ticker_in_base, Market
 
 MARKET: Market = 'crypto'
 BASE_URL: str = 'https://api.polygon.io/'
@@ -71,7 +71,7 @@ def load_prices() -> None:
             ticker.price = price
 
     db.session.commit()
-    redis.set(PRICE_UPDATE_KEY, str(datetime.now().date()))
+    redis.set(PRICE_UPDATE_KEY, pickle.dumps(datetime.now().date()))
 
     task_log('Загрузка цен - Конец', MARKET)
 

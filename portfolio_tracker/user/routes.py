@@ -6,8 +6,6 @@ from flask import Response, render_template, redirect, url_for, request, \
 from flask_babel import gettext
 from flask_login import login_user, login_required, current_user, logout_user
 
-from portfolio_tracker.general_functions import actions_in
-
 from ..app import db
 from ..settings import LANGUAGES
 from ..wallet.utils import create_new_wallet

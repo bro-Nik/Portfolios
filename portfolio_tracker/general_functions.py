@@ -1,4 +1,5 @@
 import json
+import pickle
 import time
 from datetime import datetime, timedelta
 from typing import Any, Callable, Iterable, Literal, TypeAlias
@@ -11,12 +12,6 @@ from .app import redis, db
 
 
 Market: TypeAlias = Literal['crypto', 'stocks', 'currency']
-
-
-def find_by_id(iterable: Iterable, search_id: int) -> Any:
-    for item in iterable:
-        if item.id == search_id:
-            return item
 
 
 def find_by_attr(iterable: Iterable, attr: str, search: str | int | None):
@@ -40,7 +35,7 @@ def find_by_attr(iterable: Iterable, attr: str, search: str | int | None):
 
 def redis_decode(key: str, default: Any = '') -> Any:
     result = redis.get(key)
-    return result.decode() if result else default
+    return pickle.loads(result) if result else default
 
 
 def from_user_datetime(date: datetime | str) -> datetime:

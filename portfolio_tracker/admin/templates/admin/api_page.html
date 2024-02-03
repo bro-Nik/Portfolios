@@ -40,7 +40,7 @@
 {% block after_scripts %}
 <script>
   function UpdateInfo() {
-    var request = $.get("{{ url_for('.crypto_detail') }}");
+    var request = $.get("{{ url_for('.api_page_detail', market=market) }}");
 
     request.done(function(data) {
       $('.ticker_count').html(data.tickers_count);
@@ -67,7 +67,7 @@
 
   function UpdateTasks() {
     var $box = $('.tasks-box'),
-      request = $.get("{{ url_for('.tasks', filter='crypto') }}");
+      request = $.get("{{ url_for('.tasks', filter=market) }}");
     $box.empty().append(`<div class="spinner-border spinner-border-sm text-secondary"></div>`);
 
     request.done(function(tasks) {

@@ -8,11 +8,11 @@ from ..general_functions import actions_in
 from ..wraps import demo_user_change
 from ..wallet.utils import get_wallet_has_asset, last_wallet, \
     last_wallet_transaction
-from . import bp
 from .models import db, Ticker, OtherTransaction, OtherBody, Transaction
 from .utils import Portfolios, create_new_asset, create_new_transaction, \
     create_new_portfolio, create_new_other_body, get_asset, get_body, \
     get_portfolio, get_ticker, get_transaction
+from . import bp
 
 
 @bp.route('/', methods=['GET'])
@@ -97,7 +97,7 @@ def asset_add_tickers(market):
                        Ticker.market_cap_rank.asc()))
 
     if search := request.args.get('search'):
-        query = query.filter(Ticker.name.contains(search) or
+        query = query.filter(Ticker.name.contains(search) |
                              Ticker.symbol.contains(search))
 
     tickers = tuple(query.paginate(page=request.args.get('page', 1, type=int),
@@ -113,7 +113,6 @@ def asset_add_tickers(market):
 @demo_user_change
 def asset_add():
     """Add asset to portfolio."""
-    # ticker_id = request.args.get('ticker_id')
     ticker = get_ticker(request.args.get('ticker_id')) or abort(404)
     portfolio = get_portfolio(request.args.get('portfolio_id')) or abort(404)
     asset = get_asset(None, portfolio, ticker_id=ticker.id,
@@ -133,7 +132,8 @@ def asset_settings():
     asset = get_asset(request.args.get('asset_id'), portfolio)
 
     page = 'other_' if portfolio.market == 'other' else ''
-    return render_template(f'portfolio/{page}asset_settings.html', asset=asset)
+    return render_template(f'portfolio/{page}asset_settings.html',
+                           asset=asset, portfolio_id=portfolio.id)
 
 
 @bp.route('/asset_settings_update', methods=['POST'])
@@ -245,8 +245,6 @@ def transaction_update():
     return ''
 
 
-# Other assets
-
 @bp.route('/other_asset/body_action', methods=['POST'])
 @login_required
 def other_body_action():
@@ -278,28 +276,6 @@ def other_transaction():
 
     return render_template('portfolio/other_transaction.html',
                            asset=asset, transaction=transaction)
-
-
-# @bp.route('/other_asset_transaction_update', methods=['POST'])
-# @login_required
-# @demo_user_change
-# def other_transaction_update():
-#     """Other transaction info update."""
-#     portfolio = get_portfolio(request.args.get('portfolio_id'))
-#     asset = get_other_asset(request.args.get('asset_id'), portfolio
-#                             ) or abort(404)
-#     transaction = get_transaction(request.args.get('transaction_id'), asset)
-#
-#     if transaction:
-#         transaction.update_dependencies('cancel')
-#     else:
-#         transaction = create_new_other_transaction(asset)
-#
-#     transaction.edit(request.form)
-#     transaction.update_dependencies()
-#     db.session.commit()
-#     session['other_asset_page'] = 'transactions'
-#     return ''
 
 
 @bp.route('/other_asset_body', methods=['GET'])

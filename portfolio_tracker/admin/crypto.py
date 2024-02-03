@@ -4,10 +4,10 @@ from flask import current_app
 
 from pycoingecko import CoinGeckoAPI
 
-from portfolio_tracker.general_functions import remove_prefix
 
 from ..app import db
 from ..wraps import logging
+from ..general_functions import remove_prefix
 from .utils import get_tickers, task_log, load_image, \
     find_ticker_in_base, Market
 
@@ -59,8 +59,8 @@ def load_prices() -> None:
 
         # Разбиение запроса до допустимой длины
         ids = ''
-        while (len(f'{ids},{remove_prefix(tickers[0].id, MARKET)}') < max_len
-               and tickers):
+        while (tickers and
+               len(f'{ids},{remove_prefix(tickers[0].id, MARKET)}') < max_len):
             ids += ',' + remove_prefix(tickers[0].id, MARKET)
             tickers_to_do.append(tickers.pop(0))
 

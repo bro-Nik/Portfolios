@@ -1,5 +1,6 @@
 from functools import wraps
 import time
+
 from flask import current_app, request, redirect, url_for, abort, flash
 from flask_babel import gettext
 from flask_login import current_user

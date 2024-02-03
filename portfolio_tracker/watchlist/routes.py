@@ -3,9 +3,9 @@ import json
 from flask import abort, render_template, session, url_for, request
 from flask_login import login_required, current_user
 
-from portfolio_tracker.general_functions import actions_in
 
 from ..wraps import demo_user_change
+from ..general_functions import actions_in
 from .. import portfolio
 from .utils import create_new_alert, create_new_asset, get_alert, get_asset
 from .models import db, WatchlistAsset

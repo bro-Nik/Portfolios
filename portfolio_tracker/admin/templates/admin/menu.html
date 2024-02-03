@@ -1,8 +1,10 @@
 <nav class="nav nav-underline mb-5">
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.index') }}"
     href="{{ url_for('.index') }}">Главная</a>
-  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.crypto') }}"
-    href="{{ url_for('.crypto') }}">Crypto</a>
+  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.api_page', market='crypto') }}"
+    href="{{ url_for('.api_page', market='crypto') }}">Crypto</a>
+  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.api_page', market='stocks') }}"
+    href="{{ url_for('.api_page', market='stocks') }}">Stocks</a>
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.users_page') }}"
     href="{{ url_for('.users_page') }}">Пользователи</a>
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.imports') }}"

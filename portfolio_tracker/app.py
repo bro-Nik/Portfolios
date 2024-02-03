@@ -31,7 +31,7 @@ babel = Babel()
 celery = Celery()
 redis = redis.StrictRedis('127.0.0.1', 6379)
 
-from portfolio_tracker.user.utils import get_locale, get_timezone
+from .user.utils import get_locale, get_timezone
 
 
 def create_app(config_class=Config):

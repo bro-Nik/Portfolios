@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import pickle
 import time
 
 from flask import current_app
@@ -61,7 +62,7 @@ def load_prices() -> None:
             ticker.price = 1 / price
 
     db.session.commit()
-    redis.set(PRICE_UPDATE_KEY, str(datetime.now().date()))
+    redis.set(PRICE_UPDATE_KEY, pickle.dumps(datetime.now().date()))
 
     task_log('Загрузка цен - Конец', MARKET)
 

@@ -4,7 +4,7 @@ from flask_login import current_user
 
 from ..models import DetailsMixin
 from ..general_functions import find_by_attr
-from .models import db, Wallet, WalletAsset
+from .models import Wallet, WalletAsset
 
 
 def get_wallet(wallet_id: int | str | None) -> Wallet | None:
@@ -54,7 +54,6 @@ def create_new_wallet(user: User = current_user) -> Wallet:
     wallet = Wallet()
     create_new_wallet_asset(wallet, user.currency_ticker)
     user.wallets.append(wallet)
-    # db.session.flush()
 
     return wallet
 

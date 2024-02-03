@@ -1,9 +1,9 @@
 from flask import render_template, redirect, url_for, request
 
-from ..general_functions import actions_in, redis_decode, when_updated
-from ..jinja_filters import user_datetime
-from ..wraps import admin_only
 from ..app import celery, redis
+from ..wraps import admin_only
+from ..jinja_filters import user_datetime
+from ..general_functions import actions_in, redis_decode, when_updated
 from ..portfolio.utils import get_ticker
 from ..user.utils import find_user_by_id
 from .utils import get_all_users, get_task_log, get_tickers, \
@@ -158,18 +158,18 @@ def active_tasks_action(task_id):
     return redirect(url_for('.active_tasks'))
 
 
-@bp.route('/crypto', methods=['GET'])
+@bp.route('/api/<string:market>', methods=['GET'])
 @admin_only
-def crypto():
-    return render_template('admin/crypto.html')
+def api_page(market):
+    return render_template('admin/api_page.html', market=market)
 
 
-@bp.route('/crypto_detail', methods=['GET'])
+@bp.route('/api/<string:market>/detail', methods=['GET'])
 @admin_only
-def crypto_detail():
+def api_page_detail(market):
     return {
-        "tickers_count": get_tickers_count('crypto'),
-        "price_when_update": when_updated(redis_decode('update-crypto'), 'Нет')
+        "tickers_count": get_tickers_count(market),
+        "price_when_update": when_updated(redis_decode(f'update-{market}'), 'Нет')
         }
 
 
