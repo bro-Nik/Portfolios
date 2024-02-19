@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import pickle
 import time
@@ -12,6 +13,7 @@ from .app import redis, db
 
 
 Market: TypeAlias = Literal['crypto', 'stocks', 'currency']
+MARKETS: tuple[Market, ...] = ('crypto', 'stocks', 'currency')
 
 
 def find_by_attr(iterable: Iterable, attr: str, search: str | int | None):
@@ -65,16 +67,16 @@ def when_updated(update_date: datetime | str, default: str = '') -> str:
             result = 'менее минуты'
 
         elif 60 <= delta_time.total_seconds() < 3600:
-            result = f'{delta_time.total_seconds() / 60} мин.'
+            result = f'{int(delta_time.total_seconds() / 60)} мин. назад'
 
         else:
-            result = f'{delta_time.total_seconds() / 3600} ч.'
+            result = f'{int(delta_time.total_seconds() / 3600)} ч. назад'
 
     elif 0 < (date - datetime.date(update_date)).days < 2:
         result = 'вчера'
 
     elif 2 <= (date - datetime.date(update_date)).days < 10:
-        result = f'{(date - datetime.date(update_date)).days} д. назад'
+        result = f'{int((date - datetime.date(update_date)).days)} д. назад'
 
     else:
         result = format_date(update_date, locale=current_user.locale.upper())
@@ -107,7 +109,7 @@ def add_prefix(ticker_id: str, market: Market) -> str:
     return (get_prefix(market) + ticker_id).lower()
 
 
-def remove_prefix(ticker_id: str, market: Market) -> str:
+def remove_prefix(ticker_id: Ticker.id, market: Market) -> str:
     prefix = get_prefix(market)
     if ticker_id.startswith(prefix):
         ticker_id = ticker_id[len(prefix):]

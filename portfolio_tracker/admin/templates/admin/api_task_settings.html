@@ -1,0 +1,33 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+{% set modal_title = task_ru_name %}
+
+{% block content %}
+<form data-url="{{ url_for('.task_settings', task_name=task_name, api_name=api_name) }}">
+  <div class="row g-2">
+
+    <div class="col-6">
+      <label class="form-label h7">Период выполнения</label>
+      <select class="form-select" name="retry_period_type">
+        <option value="">Выбрать...</option>
+        <option value="1" {{ 'selected' if task and task.retry_period_type == 1 }}>Минут</option>
+        <option value="60" {{ 'selected' if task and task.retry_period_type == 60 }}>Часов</option>
+        <option value="1440" {{ 'selected' if task and task.retry_period_type == 1440 }}>Дней</option>
+      </select>
+    </div>
+
+    <div class="col-6">
+      <label class="form-label h7">Количество периодов</label>
+      <input type="number" class="form-control" name="retry_period_count" value="{{ task.retry_period_count if task }}">
+    </div>
+    
+    <div class="col-12">
+      <div class="mb-3">
+      </div>
+    </div>
+
+  </div>
+
+  <button class="btn btn-primary rounded-3 w-100" type="submit">Изменить настройки</button>
+</form>
+{% endblock %}

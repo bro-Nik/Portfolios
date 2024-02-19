@@ -1,0 +1,125 @@
+{% if not request.args.get('only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
+
+{% block content %}
+<div class="mb-5">
+  <div class="row xs-mb-3">
+    <div class="col-auto">
+      <h1>Цены</h1>
+    </div>
+  </div>
+  {% include 'flash_messages.html' %}
+</div>
+
+<div class="big-table pt-3 pb-3">
+  <form id="EventAction" action="{{ url_for('.api_event_info', api_name=api_name, event=event) }}">
+    
+    <table class="table table-sm align-middle bootstrap-table" data-search="true"
+      data-pagination="true" data-page-size="20">
+      <thead>
+        <tr>
+          <th class="main-tab-checkbox">
+            <input class="form-check-input check-all" type="checkbox">
+          </th>
+          <th data-sortable="true" data-field="name">Название</th>
+          <th></th>
+          <th>Цена</th>
+          {#}
+          <th>Цена не обновлена (раз)</th>
+          <th>Тикер</th>
+          {#}
+            {% for api_event_name in data %}
+              <th>{{ api_event_name }}</th>
+            {% endfor %}
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticker in tickers %}
+          <tr>
+            <td>
+              <input class="form-check-input to-check" type="checkbox" value="{{ ticker.id }}">
+            </td>
+
+            <td>
+              <div class="text-average open-modal d-flex gap-2 name" data-modal-id="AssetInfoModal" 
+                data-url="">
+
+                {% if ticker.image %}
+                  <img class="img-asset-min" loading="lazy" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/24/' + ticker.image) }}">
+                {% else %}
+                  <span class="img-asset-min bg-secondary-subtle"></span>
+                {% endif %}
+                <span class="text-truncate" title="{{ ticker.name }}">{{ ticker.name }}</span>
+                <span class="text-muted">{{ ticker.symbol|upper }}</span>
+              </div>
+            </td>
+
+            <td>
+              <a href="{{ ticker.external_url() }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-up-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5"/><path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z"/></svg>
+              </a>
+            </td>
+
+            <td>
+              <div class="mx-1 text-nowrap">{{ ticker.price|user_currency }}</div>
+            </td>
+
+            {% for api_event_name in data %}
+              <td>
+                <div class="mx-1 text-nowrap">{{ data[api_event_name][ticker.id] }}</div>
+              </td>
+            {% endfor %}
+            {#}
+            <td>
+              <div class="mx-1 text-nowrap">{{ data['update_prices'][ticker.id] }}</div>
+            </td>
+
+            <td>
+              <div class="mx-1 text-nowrap">{{ data['update_tickers'][ticker.id] }}</div>
+            </td>
+            {#}
+
+            <td class="align-middle text-end">
+              <div class="dropdown dropstart">
+                <a href="#" class="link-secondary" role="button" id="dropdownAction"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownAction">
+                  <a class="dropdown-item open-modal" data-modal-id="AssetSettingsModal"
+                    data-url="">
+                    Изменить
+                  </a>
+                  <a class="dropdown-item link-danger open-modal-confirmation"
+                      data-title="Удалить?"
+                      data-action="delete"
+                    data-id="">
+                    Удалить актив
+                  </a>
+                </div>
+              </div>
+            </td>
+
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Actions buttons -->
+    <div class="sticky-bottom-buttons">
+      <a class="open-modal-confirmation" data-action="delete_all"
+        data-title="Удалить все записи?"
+        data-text="Будут удалены все записи">
+        Удалить все</a>
+      <a class="open-modal-confirmation" data-action="delete"
+        data-title="Удалить активы с содержимым?"
+        data-text="Все транзакции в этих активах будут удалены">
+        Удалить с содержимым</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

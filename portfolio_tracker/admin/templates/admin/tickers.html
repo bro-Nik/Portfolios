@@ -10,9 +10,9 @@
 {% include 'admin/menu.html' %}
 
 <nav class="nav nav-underline">
-  <a class="nav-link {{ 'active disabled' if market == 'crypto' }}" href="{{ url_for('.tickers', market='crypto') }}">Crypto</a>
-  <a class="nav-link {{ 'active disabled' if market == 'stocks' }}" href="{{ url_for('.tickers', market='stocks') }}">Stocks</a>
-  <a class="nav-link {{ 'active disabled' if market == 'currency' }}" href="{{ url_for('.tickers', market='currency') }}">Currency</a>
+  <a class="nav-link {{ 'active disabled' if market == 'crypto' }}" href="{{ url_for('.tickers_page', market='crypto') }}">Crypto</a>
+  <a class="nav-link {{ 'active disabled' if market == 'stocks' }}" href="{{ url_for('.tickers_page', market='stocks') }}">Stocks</a>
+  <a class="nav-link {{ 'active disabled' if market == 'currency' }}" href="{{ url_for('.tickers_page', market='currency') }}">Currency</a>
 </nav>
 
 <div class="big-table pt-3 pb-3">

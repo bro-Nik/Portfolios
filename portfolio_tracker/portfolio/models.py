@@ -7,7 +7,7 @@ from flask_babel import gettext
 from sqlalchemy.orm import Mapped
 
 from ..app import db
-from ..general_functions import from_user_datetime
+from ..general_functions import from_user_datetime, remove_prefix
 from ..models import DetailsMixin
 from ..wallet.utils import create_new_wallet_asset, get_wallet_asset
 from ..watchlist import utils as watchlist
@@ -352,10 +352,10 @@ class OtherBody(db.Model):
 
 
 class Ticker(db.Model):
-    id = db.Column(db.String(256), primary_key=True)
+    id: str = db.Column(db.String(256), primary_key=True)
     name: str = db.Column(db.String(1024))
     symbol: str = db.Column(db.String(124))
-    image: str = db.Column(db.String(1024))
+    image: str | None = db.Column(db.String(1024))
     market_cap_rank: int | None = db.Column(db.Integer)
     price: float = db.Column(db.Float, default=0)
     market: str = db.Column(db.String(32))
@@ -385,6 +385,12 @@ class Ticker(db.Model):
             d = PriceHistory(date=date)
             self.history.append(d)
         d.price_usd = price
+
+    def external_url(self):
+        external_id = remove_prefix(self.id, self.market)
+        if self.market == 'crypto':
+            url = 'https://www.coingecko.com/ru/%D0%9A%D1%80%D0%B8%D0%BF%D1%82%D0%BE%D0%B2%D0%B0%D0%BB%D1%8E%D1%82%D1%8B/'
+            return f'{url}{external_id}'
 
     def delete(self) -> None:
         if self.history:

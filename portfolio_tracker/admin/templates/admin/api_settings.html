@@ -1,0 +1,47 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+{% set modal_title = 'Изменить настройки API' %}
+
+{% block content %}
+<form data-url="{{ url_for('.api_settings', api_name=api.name) }}">
+  <div class="row g-2">
+
+    <div class="col-12">
+      <div class="mb-1">
+        <label class="form-label h7">Лимит вызовов в минуту</label>
+        <input type="number" class="form-control rounded-3" name="minute_limit" value="{{ api.minute_limit if api.minute_limit }}">
+      </div>
+    </div>
+    
+    <div class="col-12">
+      <div class="mb-1">
+        <label class="form-label h7">Лимит вызовов в месяц</label>
+        <input type="number" class="form-control rounded-3" name="month_limit" value="{{ api.month_limit if api.month_limit }}">
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="mb-1">
+        <label class="form-label h7">Префикс ключа</label>
+        <input type="text" class="form-control rounded-3" name="key_prefix" value="{{ api.key_prefix if api.key_prefix }}">
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="form-check mb-1">
+        <label class="form-check-label">Нужен API key</label>
+        <input class="form-check-input" type="checkbox" value="1" {{ 'checked' if api.need_key }} name="need_key">
+      </div>
+    </div>
+
+    <div class="col-12 mb-3">
+      <div class="ms-auto form-check mb-1">
+        <label class="form-check-label">Прокси</label>
+        <input class="form-check-input" type="checkbox" value="1" {{ 'checked' if api.need_proxy }} name="need_proxy">
+      </div>
+    </div>
+
+  </div>
+  <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
+</form>
+{% endblock %}

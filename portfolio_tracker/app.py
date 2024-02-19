@@ -84,7 +84,8 @@ def register_blueprints(app):
 
 
 def configure_logging(app):
-    if app.debug or app.testing:
+    # if app.debug or app.testing:
+    if app.testing:
         app.logger.setLevel(logging.CRITICAL)
         return
 

@@ -1,103 +1,124 @@
-import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from flask import current_app
+import requests
 
-from ..app import db, redis
-from ..wraps import logging
-from ..general_functions import redis_decode, remove_prefix
-from .utils import get_tickers, load_image, request_json, task_log, \
-    find_ticker_in_base, Market
+from ..app import db, celery
+from ..general_functions import Market, remove_prefix
+from .utils import alerts_update, api_info, create_new_ticker, get_api, \
+    get_data, get_tickers, load_image, response_json, api_logging, \
+    find_ticker_in_base, ApiName, task_logging, api_event
 
-MARKET: Market = 'crypto'
+
+API_NAME: ApiName = 'stocks'
+MARKET: Market = 'stocks'
 BASE_URL: str = 'https://api.polygon.io/'
-PRICE_UPDATE_KEY: str = 'update_stocks'
 
 
-def get_data(url):
-    attempts: int = 5  # Допустимое количество попыток
-    minute_calls: int | None = 5  # Допустимое количество вызовов в минуту
-    connector = '&' if '?' in url else '?'
-    api_key: str = current_app.config['API_KEY_POLYGON']
-    url += f"{connector}apiKey={api_key}"
+def check_response(response: requests.models.Response | None,
+                   task_name: str, item: str = '') -> dict:
+    if response:
+        data = response_json(response)
+        if data:
+            return data[item] if item else data
 
-    while attempts > 0:
-        attempts -= 1
-
-        # Задержка, если ограничено количество вызовов в минуту
-        if minute_calls:
-            time.sleep(60 / minute_calls)
-
-        data = request_json(url, MARKET)
-
-        if data and data.get('results'):
-            return data['results']
-
-        task_log(f'Осталось попыток: {attempts})', MARKET)
-        current_app.logger.warning(f'Неудача (еще попыток: {attempts})',
-                                   exc_info=True)
+        api_logging.set('error', 'Нет данных', API_NAME, task_name)
+    return {}
 
 
-@logging
-def load_prices() -> None:
-    date = datetime.now().date()
+@celery.task(bind=True, name='stocks_load_prices', max_retries=None)
+@task_logging
+def stocks_load_prices(self, retry_after) -> None:
 
-    # Обновление один раз в день
-    if redis_decode(PRICE_UPDATE_KEY) == str(date):
-        return None
-
-    task_log('Загрузка цен - Старт', MARKET)
-
-    # Получение данных
+    api = get_api(API_NAME)
+    tickers = get_tickers(MARKET)
+    not_updated_ids = [ticker.id for ticker in tickers]
     max_attempts = 30
+    url = f'{BASE_URL}v2/aggs/grouped/locale/us/market/stocks/'
     data = None
 
-    while not data or max_attempts > 0:
+    # Если меньше полудня - запрос на предыдущий день
+    date = datetime.now().date()
+    if datetime.now(timezone.utc).hour < 12:
+        date -= timedelta(days=1)
+
+    # Получение данных
+    while not data and max_attempts > 0:
         max_attempts -= 1
 
         # Вчерашняя цена закрытия (т.к. бесплатно) или более поздняя
         date -= timedelta(days=1)
-        url = f'{BASE_URL}v2/aggs/grouped/locale/us/market/stocks/{date}'
-        data = get_data(url)
+
+        api_logging.set('info', f'Попытка запроса на {date}', API_NAME, self.name)
+        data = get_data(lambda key: f'{url}{date}?{key}', api)
+        data = check_response(data, self.name, 'results')
 
     if not data:
-        return None
+        return
 
     # Сохранение данных
-    for ticker in get_tickers(MARKET):
-        ticker_in_data = data.get(remove_prefix(ticker.id, MARKET))
-        if ticker_in_data:
-            price = ticker_in_data['c']
-            ticker.price = price
+    for item in data:
+        ticker = find_ticker_in_base(item['T'], tickers, MARKET)
+        if ticker:
+            ticker.price = item['c']
+            # Исключение из списка необновленных
+            if ticker.id in not_updated_ids:
+                not_updated_ids.remove(ticker.id)
 
     db.session.commit()
-    redis.set(PRICE_UPDATE_KEY, pickle.dumps(datetime.now().date()))
 
-    task_log('Загрузка цен - Конец', MARKET)
+    # Обновить уведомления
+    alerts_update(MARKET)
+
+    # События
+    api_event.update(API_NAME, not_updated_ids, 'not_updated_prices')
+
+    # Инфо
+    api_info.set('Цены обновлены', datetime.now(), API_NAME)
+
+    # Следующий запуск
+    if retry_after:
+        self.default_retry_delay = retry_after
+        self.retry()
 
 
-@logging
-def load_tickers() -> None:
-    task_log('Загрузка тикеров - Старт', MARKET)
+@celery.task(bind=True, name='stocks_load_tickers', max_retries=None)
+@task_logging
+def stocks_load_tickers(self, retry_after) -> None:
 
+    api = get_api(API_NAME)
     tickers = get_tickers(MARKET)
+    new_ids = []
+    not_found_ids = [ticker.id for ticker in tickers]
+    url = f'{BASE_URL}v3/reference/tickers?market=stocks&limit=1000'
 
     # Пакетная загрузка
-    url = f'{BASE_URL}v3/reference/tickers?market=stocks&limit=1000'
     while url:
         # Получение данных
-        data = get_data(url)
-        if not data:
+        data = get_data(lambda key: f'{url}&{key}', api)
+        data = check_response(data, self.name)
+        stocks = data.get('results')
+        if not stocks:
             break
 
         # Сохранение данных
-        for stock in data:
+        for stock in stocks:
 
-            # Поиск или добавление нового тикера
+            # Внешний ID
             external_id = stock['ticker']
-            ticker = find_ticker_in_base(external_id, tickers, MARKET, True)
-            if not ticker:
+            if not external_id:
                 continue
+
+            # Поиск тикера
+            ticker = find_ticker_in_base(external_id, tickers, MARKET)
+            # Или добавление нового тикера
+            if not ticker:
+                ticker = create_new_ticker(external_id, MARKET)
+                tickers.append(ticker)
+                new_ids.append(ticker.id)
+
+            # Исключение из списка ненайденных
+            if ticker.id in not_found_ids:
+                not_found_ids.remove(ticker.id)
 
             # Обновление информации
             ticker.name = stock['name']
@@ -107,29 +128,54 @@ def load_tickers() -> None:
 
         # Следующий URL
         url = data.get('next_url')
+        if url:
+            api_logging.set('info', 'Получен следующий url', API_NAME, self.name)
 
-    redis.delete(PRICE_UPDATE_KEY)
-    task_log('Загрузка тикеров - Конец', MARKET)
+    # События
+    api_event.update(API_NAME, new_ids, 'new_tickers', False)
+    api_event.update(API_NAME, not_found_ids, 'not_found_tickers')
+
+    # Инфо
+    api_info.set('Тикеры обновлены', datetime.now(), API_NAME)
+
+    # Следующий запуск
+    if retry_after:
+        self.default_retry_delay = retry_after
+        self.retry()
 
 
-@logging
-def load_images() -> None:
-    task_log('Загрузка картинок - Старт', MARKET)
+@celery.task(bind=True, name='stocks_load_images')
+@task_logging
+def stocks_load_images(self, retry_after) -> None:
 
+    api = get_api(API_NAME)
     tickers = get_tickers(MARKET, without_image=True)
+    url = f'{BASE_URL}v3/reference/tickers/'
+    loaded_ids = []
 
-    for ticker in tickers:
+    while tickers:
+        ticker = tickers.pop(0)
         ticker_id = remove_prefix(ticker.id, MARKET)
-        url = f'{BASE_URL}v3/reference/tickers/{ticker_id}'
 
-        try:
-            data = get_data(url)
-        except ValueError:
+        # Получение данных
+        t_id = ticker_id.upper()
+        data = get_data(lambda key: f'{url}{t_id}?{key}', api)
+        data = check_response(data, self.name, 'results')
+        if not (data.get('branding') and data['branding'].get('icon_url')):
             continue
 
-        if data and data.get('branding') and data['branding'].get('icon_url'):
-            image_url = f"{data['branding']['icon_url']}"
-            ticker.image = load_image(image_url, MARKET, ticker_id)
-            db.session.commit()
+        # Загрузка иконки
+        image_url = f"{data['branding']['icon_url']}"
+        ticker.image = load_image(image_url, MARKET, ticker_id, API_NAME)
+        db.session.commit()
+        api_logging.set('info', f'Осталось {len(tickers)}', API_NAME, self.name)
+        # Добавление в список обновленных
+        loaded_ids.append(ticker.id)
 
-    task_log('Загрузка картинок - Конец', MARKET)
+    # События
+    api_event.update(API_NAME, loaded_ids, 'updated_images', False)
+
+    # Следующий запуск
+    if retry_after:
+        self.default_retry_delay = retry_after
+        self.retry()

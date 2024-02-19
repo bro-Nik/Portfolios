@@ -8,6 +8,7 @@ from portfolio_tracker.portfolio.models import *
 from portfolio_tracker.wallet.models import *
 from portfolio_tracker.watchlist.models import *
 from portfolio_tracker.user.models import *
+from portfolio_tracker.admin.models import *
 
 
 class TestConfig(Config):

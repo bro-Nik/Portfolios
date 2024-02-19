@@ -1,111 +1,120 @@
-import time
-from collections.abc import Callable
-from flask import current_app
+from datetime import datetime
 
-from pycoingecko import CoinGeckoAPI
+# from pycoingecko import CoinGeckoAPI
 
-
-from ..app import db
-from ..wraps import logging
-from ..general_functions import remove_prefix
-from .utils import get_tickers, task_log, load_image, \
-    find_ticker_in_base, Market
+from ..app import db, celery
+from ..general_functions import Market, remove_prefix
+from .utils import alerts_update, api_info, \
+    create_new_ticker, get_data, get_tickers, \
+    response_json, api_logging, load_image, find_ticker_in_base, ApiName, \
+    get_api, task_logging, api_event
 
 
-cg = CoinGeckoAPI()
+API_NAME: ApiName = 'crypto'
 MARKET: Market = 'crypto'
+BASE_URL: str = 'https://api.coingecko.com/api/v3/'
 
 
-def get_data(func: Callable, *args, **kwargs) -> dict | None:
-    attempts: int = 5  # Допустимое количество попыток
-    minute_calls: int | None = 30  # Допустимое количество вызовов в минуту
+@celery.task(bind=True, name='crypto_load_prices', max_retries=None)
+@task_logging
+def crypto_load_prices(self, retry_after) -> None:
 
-    while attempts > 0:
-        attempts -= 1
-
-        # Задержка, если ограничено количество вызовов в минуту
-        if minute_calls:
-            time.sleep(60 / minute_calls)
-
-        try:
-            data = func(*args, **kwargs)
-
-            # logging
-            task_log('Удачный запрос', MARKET)
-            current_app.logger.info('Удачный запрос')
-
-            return data
-
-        except Exception as e:
-            # logging
-            task_log(f'Неудача (осталось попыток: {attempts})-{e}', MARKET)
-            current_app.logger.warning(f'Неудача (еще попыток: {attempts})',
-                                       exc_info=True)
-            if attempts < 1:
-                current_app.logger.error('Неудача', exc_info=True)
-                raise
-
-
-@logging
-def load_prices() -> None:
-    task_log('Загрузка цен - Старт', MARKET)
-
+    api = get_api(API_NAME)
     tickers = get_tickers(MARKET)
-    url = f'{cg.api_base_url}simple/price?vs_currencies=usd&ids='
-    max_len = 2048 - len(url)
-    tickers_to_do = []
+    url = f'{BASE_URL}simple/price?vs_currencies=usd&ids='
+    not_updated_ids = []
 
     while tickers:
 
         # Разбиение запроса до допустимой длины
+        tickers_to_do = []
         ids = ''
         while (tickers and
-               len(f'{ids},{remove_prefix(tickers[0].id, MARKET)}') < max_len):
+               len(f'{url}{ids},{remove_prefix(tickers[0].id, MARKET)}') < 2048):
             ids += ',' + remove_prefix(tickers[0].id, MARKET)
             tickers_to_do.append(tickers.pop(0))
 
         # Получение данных
-        data = get_data(cg.get_price, vs_currencies='usd', ids=ids)
+        data = get_data(lambda key: f'{url}/{ids}&{key}', api)
+        data = response_json(data)
         if not data:
+            api_logging.set('error', 'Нет данных', API_NAME, self.name)
             return
 
         # Сохранение данных
         for ticker in tickers_to_do:
-            ticker_in_data = data.get(remove_prefix(ticker.id, MARKET))
+            external_id = remove_prefix(ticker.id, MARKET)
+            ticker_in_data = data.get(external_id)
             if ticker_in_data:
                 price = ticker_in_data.get('usd', 0)
                 ticker.price = price
+            else:
+                # Добавление в словарь необновленных
+                not_updated_ids.append(ticker.id)
+
         db.session.commit()
+        api_logging.set('info', f'Осталось: {len(tickers)}', API_NAME, self.name)
 
-    task_log('Загрузка цен - Конец', MARKET)
+    # Обновить уведомления
+    alerts_update(MARKET)
+
+    # События
+    api_event.update(API_NAME, not_updated_ids, 'not_updated_prices')
+
+    # Инфо
+    api_info.set('Цены обновлены', datetime.now(), API_NAME)
+
+    # Следующий запуск
+    if retry_after:
+        self.default_retry_delay = retry_after
+        self.retry()
 
 
-@logging
-def load_tickers() -> None:
-    task_log('Загрузка тикеров - Старт', MARKET)
+@celery.task(bind=True, name='crypto_load_tickers', max_retries=None)
+@task_logging
+def crypto_load_tickers(self, retry_after) -> None:
 
+    api = get_api(API_NAME)
     tickers = get_tickers(MARKET)
+    new_ids = []
+    not_found_ids = [ticker.id for ticker in tickers]
     page = 1
+    url = f'{BASE_URL}coins/markets?vs_currency=usd&per_page=250&page='
 
     while True:
+        api_logging.set('info', f'Страница: {page}', API_NAME, self.name)
 
         # Получение данных
-        data = get_data(cg.get_coins_markets, 'usd', per_page='200', page=page)
+        data = get_data(lambda key: f'{url}{page}&{key}', api)
+        data = response_json(data)
         if not data:
             break
 
         # Сохранение данных
         for coin in data:
 
-            # Поиск или добавление нового тикера
+            # Внешний ID
             external_id = coin['id']
-            ticker = find_ticker_in_base(external_id, tickers, MARKET, True)
-            if not ticker:
+            if not external_id:
                 continue
 
+            # Поиск тикера
+            ticker = find_ticker_in_base(external_id, tickers, MARKET)
+            # Или добавление нового тикера
+            if not ticker:
+                ticker = create_new_ticker(external_id, MARKET)
+                tickers.append(ticker)
+                new_ids.append(ticker.id)
+
+            # Исключение из списка ненайденных
+            if ticker.id in not_found_ids:
+                not_found_ids.remove(ticker.id)
+
             # Добавление иконки
-            if not ticker.image:
-                ticker.image = load_image(coin.get('image'), MARKET, ticker.id)
+            image_url = coin.get('image')
+            if not ticker.image and image_url:
+                ticker.image = load_image(image_url, MARKET,
+                                          ticker.id, API_NAME)
 
             # Обновление информации
             ticker.market_cap_rank = coin.get('market_cap_rank')
@@ -117,4 +126,14 @@ def load_tickers() -> None:
         # Следующая страница
         page += 1
 
-    task_log('Загрузка тикеров - Конец', MARKET)
+    # События
+    api_event.update(API_NAME, new_ids, 'new_tickers', False)
+    api_event.update(API_NAME, not_found_ids, 'not_found_tickers')
+
+    # Инфо
+    api_info.set('Тикеры обновлены', datetime.now(), API_NAME)
+
+    # Следующий запуск
+    if retry_after:
+        self.default_retry_delay = retry_after
+        self.retry()

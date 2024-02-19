@@ -2,6 +2,7 @@
 *instance/
 .idea/
 .coverage
+migrations/
 __pycache__/
 logs/
 portfolio_tracker/__pycache__/

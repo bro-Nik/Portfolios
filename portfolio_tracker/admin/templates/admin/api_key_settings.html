@@ -1,0 +1,39 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+{% set modal_title = 'Изменить настройки ключа' if key.id else 'Добавить новый ключ' %}
+
+{% block content %}
+<form data-url="{{ url_for('.api_key_settings', api_id=api.id, key_id=key.id) }}">
+  <div class="row g-2">
+
+    <div class="col-12">
+      <div class="mb-1">
+        <label class="form-label h7">API Key</label>
+        <input type="text" class="form-control rounded-3" name="api_key" value="{{ key.api_key if key.api_key }}" {{ 'required' if api.need_key }}>
+      </div>
+    </div>
+
+    <span class="mb-3 cursor-pointer text-primary show-more">+ Еще</span>
+
+    <div class="show-more-content" style="display: none;">
+
+      <div class="col-md-12">
+        <div class="mb-3">
+          <label class="form-label h7">Комментарий</label>
+          <textarea class="form-control" name="comment"></textarea>
+        </div>
+      </div>
+    </div>
+
+    {% if key.id %}
+      <span class="link-danger open-modal-confirmation"
+         data-title="Удалить ключ *{{ key.api_key[-10:] }}?" data-action="delete_keys" data-id="{{ key.id }}"
+         data-pre-need-clean="true">
+        Удалить</span>
+    {% endif %}
+
+    <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
+
+  </div>
+</form>
+{% endblock %}
