@@ -30,7 +30,7 @@ def check_response(response: requests.models.Response | None,
 
 @celery.task(bind=True, name='currency_load_prices', max_retries=None)
 @task_logging
-def currency_load_prices(self, retry_after) -> None:
+def currency_load_prices(self) -> None:
 
     api = get_api(API_NAME)
     not_updated_ids = []
@@ -59,15 +59,10 @@ def currency_load_prices(self, retry_after) -> None:
     # Инфо
     api_info.set('Цены обновлены', datetime.now(), API_NAME)
 
-    # Следующий запуск
-    if retry_after:
-        self.default_retry_delay = retry_after
-        self.retry()
-
 
 @celery.task(bind=True, name='currency_load_tickers', max_retries=None)
 @task_logging
-def currency_load_tickers(self, retry_after) -> None:
+def currency_load_tickers(self) -> None:
 
     api = get_api(API_NAME)
     tickers = get_tickers(MARKET)
@@ -113,15 +108,10 @@ def currency_load_tickers(self, retry_after) -> None:
     # Инфо
     api_info.set('Тикеры обновлены', datetime.now(), API_NAME)
 
-    # Следующий запуск
-    if retry_after:
-        self.default_retry_delay = retry_after
-        self.retry()
-
 
 @celery.task(bind=True, name='currency_load_history')
 @task_logging
-def currency_load_history(self, retry_after) -> None:
+def currency_load_history(self) -> None:
 
     api = get_api(API_NAME)
     tickers = get_tickers(MARKET)
@@ -157,9 +147,4 @@ def currency_load_history(self, retry_after) -> None:
                 ticker.set_price(date, 1 / price)
 
         db.session.commit()
-        api_logging.set('info', f'Получены цена на {date}', API_NAME, self.name)
-
-    # Следующий запуск
-    if retry_after:
-        self.default_retry_delay = retry_after
-        self.retry()
+        api_logging.set('info', f'Получены цены на {date}', API_NAME, self.name)

@@ -27,7 +27,7 @@ def check_response(response: requests.models.Response | None,
 
 @celery.task(bind=True, name='stocks_load_prices', max_retries=None)
 @task_logging
-def stocks_load_prices(self, retry_after) -> None:
+def stocks_load_prices(self) -> None:
 
     api = get_api(API_NAME)
     tickers = get_tickers(MARKET)
@@ -75,15 +75,10 @@ def stocks_load_prices(self, retry_after) -> None:
     # Инфо
     api_info.set('Цены обновлены', datetime.now(), API_NAME)
 
-    # Следующий запуск
-    if retry_after:
-        self.default_retry_delay = retry_after
-        self.retry()
-
 
 @celery.task(bind=True, name='stocks_load_tickers', max_retries=None)
 @task_logging
-def stocks_load_tickers(self, retry_after) -> None:
+def stocks_load_tickers(self) -> None:
 
     api = get_api(API_NAME)
     tickers = get_tickers(MARKET)
@@ -138,15 +133,10 @@ def stocks_load_tickers(self, retry_after) -> None:
     # Инфо
     api_info.set('Тикеры обновлены', datetime.now(), API_NAME)
 
-    # Следующий запуск
-    if retry_after:
-        self.default_retry_delay = retry_after
-        self.retry()
-
 
 @celery.task(bind=True, name='stocks_load_images')
 @task_logging
-def stocks_load_images(self, retry_after) -> None:
+def stocks_load_images(self) -> None:
 
     api = get_api(API_NAME)
     tickers = get_tickers(MARKET, without_image=True)
@@ -174,8 +164,3 @@ def stocks_load_images(self, retry_after) -> None:
 
     # События
     api_event.update(API_NAME, loaded_ids, 'updated_images', False)
-
-    # Следующий запуск
-    if retry_after:
-        self.default_retry_delay = retry_after
-        self.retry()

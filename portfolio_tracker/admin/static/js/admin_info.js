@@ -8,7 +8,13 @@ function UpdateInfo(url) {
     $.each(data.info, function(index, data){       
 
       var $item = $('<div>', {});
-      $item.append(`<span class="me-3 ${!data.value ? 'text-average' : ''}">${data.name}</span><span class="text-average">${data.value || ''}</span>`)
+      if (data.group_name) {
+        // Заголовок группы
+        $item.append(`<span class="me-3 text-average">${data.group_name}</span>`)
+      } else {
+        // Список информации
+        $item.append(`<span class="me-3">${data.name}</span><span class="text-average">${data.value}</span>`)
+      }
       $box.append($item);
     })
     // Заглушка, если пусто
@@ -20,10 +26,15 @@ function UpdateInfo(url) {
       var box_url = $box.attr('data-url');
 
       var $item = $('<div>', {});
-      $item.append(`<span class="me-3">${data.name}</span><span class="text-average">${data.value}</span>`)
-      $item.addClass('open-modal')
-      // $item.addClass('open-modal').attr('data-url', $box.attr('data-url'))
-      $item.attr('data-url', `${box_url}${box_url.includes('?') ? '&' : '?'}event=${data.key}`)
+      if (data.group_name) {
+        // Заголовок группы
+        $item.append(`<span class="me-3 text-average">${data.group_name}</span>`)
+      } else {
+        // Список событий
+        $item.append(`<span class="me-3">${data.name}</span><span class="text-average">${data.value}</span>`)
+        $item.addClass('open-modal')
+        $item.attr('data-url', `${box_url}${box_url.includes('?') ? '&' : '?'}event=${data.key}`)
+      }
       $box.append($item);
     })
     // Заглушка, если пусто

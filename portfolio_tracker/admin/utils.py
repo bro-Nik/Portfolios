@@ -32,10 +32,10 @@ class ApiLog:
     CATEGORIES: tuple[ApiLogCategory, ...] = ('info', 'debug', 'warning',
                                               'error')
 
-    def key(self, api_name):
+    def key(self, api_name: ApiName):
         return f"api.{api_name}.logs"
 
-    def get(self, api_name: ApiName, timestamp: float) -> list:
+    def get(self, api_name: ApiName, timestamp: float = 0.0) -> list:
         logs = []
         logs_key = self.key(api_name)
         for key in redis.hkeys(logs_key):
@@ -57,9 +57,31 @@ class ApiLog:
                'timestamp': timestamp, 'time': str(now)}
         redis.hset(self.key(api_name), timestamp, json.dumps(log))
 
+    def clear(self):
+        """ Очистка логов """
+        # Сколько дней хранить по категории
+        settings: dict[ApiLogCategory, int] = {'info': 7, 'debug': 0,
+                                               'warning': 60}
+
+        now = datetime.now()
+        timestamp = []
+        for category in self.CATEGORIES:
+            days = settings.get(category)
+            timestamp.append((now - timedelta(days=days)).timestamp()
+                             if days is not None else 0)
+
+        for api_name in API_NAMES:
+            for key in redis.hkeys(self.key(api_name)):
+                key_timestamp = key.decode()
+                log = redis.hget(self.key(api_name), key).decode()
+                log = json.loads(log)
+
+                if float(key_timestamp) <= timestamp[log['category']]:
+                    redis.hdel(self.key(api_name), key)
+
 
 class ApiInfo:
-    def key(self, api_name):
+    def key(self, api_name: ApiName):
         return f'api.{api_name}.info'
 
     def set(self, key: str, value, api_name: ApiName) -> None:
@@ -70,13 +92,13 @@ class ApiInfo:
 
 
 class ApiData:
-    def key(self, api_name):
+    def key(self, api_name: ApiName):
         return f'api.{api_name}.data'
 
     def set(self, key: str, value: list | dict, api_name: ApiName) -> None:
         redis.hset(self.key(api_name), key, json.dumps(value))
 
-    def get(self, key: str, api_name: ApiName, data_type):
+    def get(self, key: str, api_name: ApiName, data_type: type):
         value = redis.hget(self.key(api_name), key)
         if value:
             value = json.loads(value.decode())
@@ -90,7 +112,7 @@ class ApiEvents:
                                    'not_found_tickers': 'Не найденные тикеры',
                                    'updated_images': 'Обновленные иконки'}
 
-    def key(self, api_name):
+    def key(self, api_name: ApiName):
         return f'api.{api_name}.events'
 
     def set(self, key: ApiEvent, value: list | dict, api_name: ApiName) -> None:
@@ -321,7 +343,8 @@ def tasks_trans(name):
 
     # Пробелы
     name = name.replace('_', ' ')
-    return name
+    # return name
+    return name.capitalize()
 
 
 def get_tasks() -> list:
@@ -335,31 +358,22 @@ def get_tasks() -> list:
     if active:
         for server in active:
             for task in active[server]:
-                tasks_list.append(
-                    {'name': task['name'],
-                     'name_ru': tasks_trans(task['name']),
-                     'id': task['id']}
-                )
+                tasks_list.append({'name': task['name'], 'id': task['id']})
                 tasks_names.append(task['name'])
 
     if scheduled:
         for server in scheduled:
             for task in scheduled[server]:
                 if task['request']['name'] not in tasks_names:
-                    tasks_list.append(
-                        {'name': task['request']['name'],
-                         'name_ru': tasks_trans(task['request']['name']),
-                         'id': task['request']['id']}
-                    )
+                    tasks_list.append({'name': task['request']['name'],
+                                       'id': task['request']['id']})
                     tasks_names.append(task['request']['name'])
 
     if registered:
         for server in registered:
             for task in registered[server]:
                 if task not in tasks_names:
-                    tasks_list.append(
-                        {'name': task, 'name_ru': tasks_trans(task), 'id': ''}
-                    )
+                    tasks_list.append({'name': task})
 
     return tasks_list
 
@@ -383,37 +397,43 @@ def get_api_key(key_id):
     return db.session.execute(db.select(ApiKey).filter_by(id=key_id)).scalar()
 
 
-def task_logging(func):
-    @wraps(func)
-    def decorated_function(*args, **kwargs):
+def task_logging(function):
+    @wraps(function)
+    def decorated_function(task):
         start = time.perf_counter()
-        func_name = func.__name__
-        api_name = func_name[:func_name.find('_')]
+        api_name = task.name[:task.name.find('_')]
 
         # Старт лог
-        api_logging.set('info', 'Старт', api_name, func_name)
-        current_app.logger.info(f'{func_name}: Старт')
+        api_logging.set('info', 'Старт', api_name, task.name)
+        current_app.logger.info(f'{task.name}: Старт')
 
-        # task_func = func(*args, **kwargs)
+        try:
+            result = function(task)
+        except Exception as e:
+            api_logging.set('error', f'{e}', api_name, task.name)
+            return
 
         # Настройки следующего запуска
         next_run_time = None
         retry_after = None
-        task = get_api_task(func_name)
-        if task and task.retry_after():
-            retry_after = task.retry_after()
+        task_settings = get_api_task(task.name)
+        if task_settings and task_settings.retry_after():
+            retry_after = task_settings.retry_after()
+            task.default_retry_delay = retry_after
             next_run_time = datetime.now() + timedelta(seconds=retry_after)
             next_run_time = next_run_time.isoformat(sep=' ', timespec='minutes')
-
-        result = func(*args, retry_after=retry_after, **kwargs)
 
         # Конец лог
         wasted_time = smart_time(time.perf_counter() - start)
         mes = f'Конец #Time: {wasted_time}'
         mes2 = f'#Next: {next_run_time}' if next_run_time else ''
 
-        current_app.logger.info(f'{func_name}: {mes}')
-        api_logging.set('debug', f'{mes} {mes2}', api_name, func_name)
+        current_app.logger.info(f'{task.name}: {mes}')
+        api_logging.set('debug', f'{mes} {mes2}', api_name, task.name)
+
+        # Следующий запуск
+        if retry_after:
+            task.retry()
 
         return result
 

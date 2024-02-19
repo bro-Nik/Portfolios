@@ -196,6 +196,7 @@ def api_page_detail():
     for api_name in api_list:
 
         # События
+        events_list = []
         for event_name in redis.hkeys(api_event.key(api_name)):
             count = len(api_event.get(event_name, api_name))
 
@@ -203,15 +204,20 @@ def api_page_detail():
             if event_name not in api_event.EVENTS:
                 # Удалить устаревшие
                 api_event.delete(api_name, event_name)
-            result['events'].append({'name': api_event.EVENTS[event_name],
-                                     'key': event_name, 'value': f'{count}'})
+            events_list.append({'name': api_event.EVENTS[event_name],
+                                'key': event_name, 'value': f'{count}'})
+
+        # Заголовок в событиях
+        if len(api_list) > 1 and events_list:
+            result['events'].append({'group_name': api_name.capitalize()})
+        result['events'] += events_list
+
+        info_list = []
 
         # Тикеры
-        if len(api_list) > 1:
-            result['info'].append({'name': api_name.capitalize()})
         if api_name in MARKETS:
-            result['info'].append({'name': 'Количество тикеров',
-                                   'value': get_tickers_count(api_name)})
+            info_list.append({'name': 'Количество тикеров',
+                              'value': get_tickers_count(api_name)})
 
         # Информация
         for info_name in redis.hkeys(api_info.key(api_name)):
@@ -221,8 +227,13 @@ def api_page_detail():
             if re.search(r'\d{4}-\d{2}-\d{2}', value):
                 value = when_updated(value)
 
-            result['info'].append({'name': f'{info_name.decode()}',
-                                   'value': value})
+            info_list.append({'name': f'{info_name.decode()}',
+                              'value': value})
+
+        # Заголовок в информации
+        if len(api_list) > 1 and info_list:
+            result['info'].append({'group_name': api_name.capitalize()})
+        result['info'] += info_list
 
         # Потоки
         if len(api_list) > 1:
@@ -308,16 +319,55 @@ def task_settings():
 @bp.route('/tasks', methods=['GET'])
 @admin_only
 def tasks():
-    filter_by = request.args.get('filter')
-
     tasks_list = get_tasks()
+    result = []
+
+    # Задачи определенного Api
+    filter_by = request.args.get('filter')
     if filter_by:
-        tasks_list = list(filter(lambda task: filter_by in task['name'],
-                                 tasks_list))
-    else:
-        tasks_list = sorted(tasks_list,
-                            key=lambda task: task.get('name'), reverse=True)
-    return tasks_list
+        for task in tasks_list:
+            if filter_by in task['name']:
+                task['name_ru'] = tasks_trans(task['name'][len(filter_by) + 1:])
+                result.append(task)
+        return result
+
+    # Все задачи
+    tasks_names = []
+    if not filter_by:
+
+        for task in tasks_list:
+            tasks_names.append(task['name'])
+
+        # Группировка
+        # Задачи API
+        for api_name in API_NAMES:
+            result.append({'group_name': api_name.capitalize()})
+            n = len(tasks_list) - 1
+            while n >= 0:
+                task = tasks_list[n]
+                if task['name'].startswith(api_name):
+                    task['name_ru'] = tasks_trans(task['name'][len(api_name)+1:])
+                    result.append(task)
+                    tasks_list.remove(task)
+                n -= 1
+
+        # Задачи вне API
+        if len(tasks_list):
+            result.append({'group_name': 'Остальные'})
+            for task in tasks_list:
+                task['name_ru'] = tasks_trans(task['name'])
+                result.append(task)
+
+        # Задачи из базы (удаленные)
+        tasks_db = list(db.session.execute(
+            db.select(ApiTask)
+            .filter(ApiTask.name.notin_(tasks_names))).scalars())
+        if len(tasks_db):
+            result.append({'group_name': 'Удаленные'})
+            for task in tasks_db:
+                result.append({'deleted_name': task.name})
+
+    return result
 
 
 @bp.route('/tasks_action', methods=['GET'])

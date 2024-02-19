@@ -4,10 +4,9 @@ from datetime import datetime
 
 from ..app import db, celery
 from ..general_functions import Market, remove_prefix
-from .utils import alerts_update, api_info, \
-    create_new_ticker, get_data, get_tickers, \
-    response_json, api_logging, load_image, find_ticker_in_base, ApiName, \
-    get_api, task_logging, api_event
+from .utils import alerts_update, api_info, create_new_ticker, get_data, \
+    get_tickers, response_json, api_logging, load_image, find_ticker_in_base, \
+    ApiName, get_api, task_logging, api_event
 
 
 API_NAME: ApiName = 'crypto'
@@ -17,7 +16,7 @@ BASE_URL: str = 'https://api.coingecko.com/api/v3/'
 
 @celery.task(bind=True, name='crypto_load_prices', max_retries=None)
 @task_logging
-def crypto_load_prices(self, retry_after) -> None:
+def crypto_load_prices(self) -> None:
 
     api = get_api(API_NAME)
     tickers = get_tickers(MARKET)
@@ -64,15 +63,10 @@ def crypto_load_prices(self, retry_after) -> None:
     # Инфо
     api_info.set('Цены обновлены', datetime.now(), API_NAME)
 
-    # Следующий запуск
-    if retry_after:
-        self.default_retry_delay = retry_after
-        self.retry()
-
 
 @celery.task(bind=True, name='crypto_load_tickers', max_retries=None)
 @task_logging
-def crypto_load_tickers(self, retry_after) -> None:
+def crypto_load_tickers(self) -> None:
 
     api = get_api(API_NAME)
     tickers = get_tickers(MARKET)
@@ -132,8 +126,3 @@ def crypto_load_tickers(self, retry_after) -> None:
 
     # Инфо
     api_info.set('Тикеры обновлены', datetime.now(), API_NAME)
-
-    # Следующий запуск
-    if retry_after:
-        self.default_retry_delay = retry_after
-        self.retry()

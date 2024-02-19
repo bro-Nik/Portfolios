@@ -19,19 +19,27 @@ function UpdateTasks() {
     for (let i = 0; i < tasks.length; i++) {
 
       var $task = $(`<div class="d-flex"></div>`);
-      $task.append($(`<span class="open-modal" >${tasks[i].name_ru}</span>`)
-      .attr('data-url', `${url_settings}${url_settings.includes('?') ? '&' : '?'}task_name=${tasks[i].name}`)
-      .attr('data-modal-id', 'TaskSettingsModal'));
-
-      var $link = $(a).addClass('ms-3');
-
-      if (tasks[i].id) {
-        $link.data('url', `${url_action}stop&task_id=${tasks[i].id}`).text('Остановить').addClass('text-red');
+      if (tasks[i].group_name) {
+        // Заголовок группы
+        $task.append(`<span class="me-3 text-average">${tasks[i].group_name}</span>`)
+      } else if (tasks[i].deleted_name) {
+        $task.append(`<span class="me-3">${tasks[i].deleted_name}</span>`)
       } else {
-        $link.data('url', `${url_action}start&task_name=${tasks[i].name}`).text('Запустить');
-      }
+        // Задача
+        $task.append($(`<span class="open-modal" >${tasks[i].name_ru}</span>`)
+        .attr('data-url', `${url_settings}${url_settings.includes('?') ? '&' : '?'}task_name=${tasks[i].name}`)
+        .attr('data-modal-id', 'TaskSettingsModal'));
 
-      $task.append($(`<span class="ms-auto"></span>`).append($link))
+        var $link = $(a).addClass('ms-3');
+
+        if (tasks[i].id) {
+          $link.data('url', `${url_action}stop&task_id=${tasks[i].id}`).text('Остановить').addClass('text-red');
+        } else {
+          $link.data('url', `${url_action}start&task_name=${tasks[i].name}`).text('Запустить');
+        }
+
+        $task.append($(`<span class="ms-auto"></span>`).append($link))
+      }
       $tasks_box.append($task)
     }
 

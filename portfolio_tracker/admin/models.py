@@ -101,6 +101,7 @@ class Api(db.Model):
             time.sleep(0.1)
 
         self.block_streams()
+        now = datetime.now()
 
         # Поиск ближайшего потока
         result = None
@@ -113,6 +114,10 @@ class Api(db.Model):
             if not stream.next_call:
                 result = stream
                 break
+
+            # Отсеиваем с большой задержкой
+            if (stream.next_call - now).total_seconds() > 1800:
+                continue
 
             # Ищем ближайший поток
             if result is None or stream.next_call < result.next_call:

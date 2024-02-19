@@ -1,8 +1,8 @@
 from datetime import datetime
 
 from ..app import db, celery
-from .utils import api_info, get_api, get_data, \
-    get_api_task, response_json, api_logging, ApiName, task_logging, api_data
+from .utils import api_info, get_api, get_data, get_api_task, response_json, \
+    api_logging, ApiName, task_logging, api_data
 from . import models
 
 
@@ -16,7 +16,7 @@ def get_proxies() -> dict:
 
 @celery.task(bind=True, name='proxy_update', max_retries=None)
 @task_logging
-def proxy_update(self, retry_after) -> None:
+def proxy_update(self) -> None:
 
     api = get_api(API_NAME)
     api.update_streams()
@@ -52,11 +52,6 @@ def proxy_update(self, retry_after) -> None:
     # Инфо
     api_info.set('Количество активных прокси', len(data), API_NAME)
     api_info.set('Прокси обновлены', datetime.now(), API_NAME)
-
-    # Следующий запуск
-    if retry_after:
-        self.default_retry_delay = retry_after
-        self.retry()
 
 
 def update_streams() -> None:
