@@ -1,38 +1,59 @@
+from __future__ import annotations
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from ..app import db, celery
-from .utils import api_info, get_api, get_data, get_api_task, response_json, \
-    api_logging, ApiName, task_logging, api_data
-from . import models
+from flask import current_app
+
+from ..app import celery
+from .api_integration import API_NAMES, ApiIntegration, ApiName, \
+    get_api_task, task_logging
+
+if TYPE_CHECKING:
+    import requests
 
 
 API_NAME: ApiName = 'proxy'
 BASE_URL: str = 'https://proxy6.net/api'
 
 
+class Api(ApiIntegration):
+    def response_processing(self, response: requests.models.Response | None,
+                            ) -> dict | None:
+        if response:
+            # Ответ с данными
+            if response.status_code == 200:
+                return response.json()
+
+            # Ошибки
+            m = f'Ошибка, Код: {response.status_code}, {response.url}'
+            self.logs.set('warning', m)
+            current_app.logger.warning(m, exc_info=True)
+
+
 def get_proxies() -> dict:
-    return api_data.get('proxy_list', API_NAME, dict)
+    api = Api(API_NAME)
+    return api.data.get('proxy_list', dict)
 
 
 @celery.task(bind=True, name='proxy_update', max_retries=None)
 @task_logging
 def proxy_update(self) -> None:
 
-    api = get_api(API_NAME)
-    api.update_streams()
+    api = Api(API_NAME)
+    # api.update_streams()
 
     method = 'getproxy/?state=active'
     while True:
         # Получение данных
-        data = get_data(lambda key: f'{BASE_URL}/{key}/{method}', api)
-        data = response_json(data)
+        response = api.request(lambda key: f'{BASE_URL}/{key}/{method}')
+        data = api.response_processing(response)
         if data and data.get('list'):
+            data = data['list']
             break
 
-        api_logging.set('error', 'Нет данных', API_NAME, self.name)
+        api.logs.set('error', 'Нет данных', self.name)
 
     # Сохранение данных
-    data = data['list']
     # Не использовать прокси, если скоро закончится
     for _, proxy in data.items():
         proxy_end = datetime.strptime(proxy['date_end'], '%Y-%m-%d %H:%M:%S')
@@ -44,18 +65,20 @@ def proxy_update(self) -> None:
         if need_time > time_left:
             del data[proxy]
 
-    api_data.set('proxy_list', data, API_NAME)
+    api.data.set('proxy_list', data)
 
     # Обновление потоков
     update_streams()
 
     # Инфо
-    api_info.set('Количество активных прокси', len(data), API_NAME)
-    api_info.set('Прокси обновлены', datetime.now(), API_NAME)
+    api.info.set('Количество активных прокси', len(data))
+    api.info.set('Прокси обновлены', datetime.now())
 
 
 def update_streams() -> None:
-    for api in db.session.execute(db.select(models.Api)).scalars():
+    for api_name in API_NAMES:
+        api = ApiIntegration(api_name)
         api.update_streams()
     # Логи
-    api_logging.set('info', 'Потоки обновлены', API_NAME)
+    api = ApiIntegration(API_NAME)
+    api.logs.set('info', 'Потоки обновлены')

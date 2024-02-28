@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import unittest
 
-from tests import app, db, Api, ApiStream
+from tests import app, db, Api, Stream
 
 
 class TestApiModel(unittest.TestCase):
@@ -23,11 +23,11 @@ class TestApiModel(unittest.TestCase):
         api = Api(name='cr', need_key=False, minute_limit=5, month_limit=10000)
 
         # Потоки
-        stream1 = ApiStream(active=False,
+        stream1 = Stream(active=False,
                             next_call=datetime(2024, 10, 6, 10, 11, 00))
-        stream2 = ApiStream(active=False,
+        stream2 = Stream(active=False,
                             next_call=datetime(2024, 10, 5, 10, 14, 00))
-        stream3 = ApiStream(active=False, next_call=None)
+        stream3 = Stream(active=False, next_call=None)
 
         api.streams = [stream1, stream2, stream3]
         db.session.add(api)
@@ -102,7 +102,7 @@ class TestApiStreamModel(unittest.TestCase):
         now = datetime.now()
 
         # Поток
-        stream = ApiStream(month_calls=100, minute_calls=4)
+        stream = Stream(month_calls=100, minute_calls=4)
 
         api.streams = [stream]
         db.session.add(api)

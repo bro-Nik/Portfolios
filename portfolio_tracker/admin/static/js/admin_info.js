@@ -22,6 +22,7 @@ function UpdateInfo(url) {
 
     // События
     var $box = $(`.events-box`).empty();
+    var group_name = '';
     $.each(data.events, function(index, data){       
       var box_url = $box.attr('data-url');
 
@@ -29,11 +30,13 @@ function UpdateInfo(url) {
       if (data.group_name) {
         // Заголовок группы
         $item.append(`<span class="me-3 text-average">${data.group_name}</span>`)
+        group_name = data.group_name;
       } else {
         // Список событий
         $item.append(`<span class="me-3">${data.name}</span><span class="text-average">${data.value}</span>`)
         $item.addClass('open-modal')
-        $item.attr('data-url', `${box_url}${box_url.includes('?') ? '&' : '?'}event=${data.key}`)
+        $item.attr('data-modal-id', 'EventModal')
+        $item.attr('data-url', `${box_url}${group_name.toLowerCase()}${box_url.includes('?') ? '&' : '?'}event=${data.key}`)
       }
       $box.append($item);
     })

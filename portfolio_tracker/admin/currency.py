@@ -1,12 +1,16 @@
+from __future__ import annotations
 from datetime import datetime, timedelta
-import requests
+from typing import TYPE_CHECKING
+from flask import current_app
 
 from ..app import db, celery
 from ..general_functions import Market, remove_prefix
 from ..portfolio.models import PriceHistory
-from .utils import api_info, create_new_ticker, get_api, get_tickers, \
-    get_data, response_json, api_logging, find_ticker_in_base, ApiName, \
-    task_logging, api_event
+from .api_integration import ApiIntegration, task_logging, ApiName
+from .utils import create_new_ticker, get_tickers, find_ticker_in_list
+
+if TYPE_CHECKING:
+    import requests
 
 
 API_NAME: ApiName = 'currency'
@@ -14,30 +18,55 @@ MARKET: Market = 'currency'
 BASE_URL: str = 'http://api.currencylayer.com/'
 
 
-def check_response(response: requests.models.Response | None,
-                   task_name: str, item: str) -> dict | None:
-    if response:
-        data = response_json(response)
-        if data.get('success'):
-            if item and data.get(item):
+class Api(ApiIntegration):
+    def minute_limit_trigger(self, response: requests.models.Response
+                             ) -> int | None:
+        return
+
+    def monthly_limit_trigger(self, response: requests.models.Response
+                              ) -> bool:
+        try:
+            e = response.json()['error']
+            return e['code'] == 104 and 'Your monthly usage limit' in e['info']
+        except:
+            return False
+
+    def response_processing(self, response: requests.models.Response | None,
+                            task_name, item: str) -> dict | None:
+        if not response:
+            return
+
+        if response.status_code == 200:
+            data = response.json()
+
+            # Ответ с данными
+            if data.get('success') and data.get(item):
                 return data[item]
 
-            api_logging.set('error', 'Нет данных', API_NAME, task_name)
+            # Ответ с ошибкой
+            if data.get('error'):
+                self.logs.set('warning', data['error'], task_name)
 
-        if data.get('error'):
-            api_logging.set('error', data['error'], API_NAME, task_name)
+            # Ответ без данных
+            self.logs.set('warning', f'Нет данных. {data}', task_name)
+
+        else:
+            # Остальные ошибки
+            m = f'Ошибка, Код: {response.status_code}, url: {response.url}'
+            self.logs.set('warning', m, task_name)
+            current_app.logger.warning(m, exc_info=True)
 
 
 @celery.task(bind=True, name='currency_load_prices', max_retries=None)
 @task_logging
 def currency_load_prices(self) -> None:
 
-    api = get_api(API_NAME)
+    api = Api(API_NAME)
     not_updated_ids = []
 
     # Получение данных
-    data = get_data(lambda key: f'{BASE_URL}live?{key}', api)
-    data = check_response(data, self.name, 'quotes')
+    response = api.request(lambda key: f'{BASE_URL}live?{key}')
+    data = api.response_processing(response, self.name, 'quotes')
     if not data:
         return
 
@@ -54,24 +83,24 @@ def currency_load_prices(self) -> None:
     db.session.commit()
 
     # События
-    api_event.update(API_NAME, not_updated_ids, 'not_updated_prices')
+    api.events.update(not_updated_ids, 'not_updated_prices')
 
     # Инфо
-    api_info.set('Цены обновлены', datetime.now(), API_NAME)
+    api.info.set('Цены обновлены', datetime.now())
 
 
 @celery.task(bind=True, name='currency_load_tickers', max_retries=None)
 @task_logging
 def currency_load_tickers(self) -> None:
 
-    api = get_api(API_NAME)
+    api = Api(API_NAME)
     tickers = get_tickers(MARKET)
     new_ids = []
     not_found_ids = [ticker.id for ticker in tickers]
 
     # Получение данных
-    data = get_data(lambda key: f'{BASE_URL}list?{key}', api)
-    data = check_response(data, self.name, 'currencies')
+    response = api.request(lambda key: f'{BASE_URL}list?{key}')
+    data = api.response_processing(response, self.name, 'currencies')
     if not data:
         return
 
@@ -83,7 +112,7 @@ def currency_load_tickers(self) -> None:
             continue
 
         # Поиск тикера
-        ticker = find_ticker_in_base(external_id, tickers, MARKET)
+        ticker = find_ticker_in_list(external_id, tickers, MARKET)
         # Или добавление нового тикера
         if not ticker:
             ticker = create_new_ticker(external_id, MARKET)
@@ -102,18 +131,18 @@ def currency_load_tickers(self) -> None:
     db.session.commit()
 
     # События
-    api_event.update(API_NAME, new_ids, 'new_tickers', False)
-    api_event.update(API_NAME, not_found_ids, 'not_found_tickers')
+    api.events.update(new_ids, 'new_tickers', False)
+    api.events.update(not_found_ids, 'not_found_tickers')
 
     # Инфо
-    api_info.set('Тикеры обновлены', datetime.now(), API_NAME)
+    api.info.set('Тикеры обновлены', datetime.now())
 
 
 @celery.task(bind=True, name='currency_load_history')
 @task_logging
 def currency_load_history(self) -> None:
 
-    api = get_api(API_NAME)
+    api = Api(API_NAME)
     tickers = get_tickers(MARKET)
     date = datetime.now().date()
     attempts: int = 5  # Количество запросов
@@ -130,8 +159,9 @@ def currency_load_history(self) -> None:
 
         # Получение данных
         attempts -= 1
-        data = get_data(lambda key: f'{url}{date}&{key}', api)
-        data = check_response(data, API_NAME, 'quotes')
+
+        response = api.request(lambda key: f'{url}{date}&{key}')
+        data = api.response_processing(response, self.name, 'quotes')
         if not data:
             return
 
@@ -140,11 +170,11 @@ def currency_load_history(self) -> None:
 
             # Поиск тикера
             external_id = currency[len('USD'):]
-            ticker = find_ticker_in_base(external_id, tickers, MARKET)
+            ticker = find_ticker_in_list(external_id, tickers, MARKET)
 
             price = data[currency]
             if ticker and price:
                 ticker.set_price(date, 1 / price)
 
         db.session.commit()
-        api_logging.set('info', f'Получены цены на {date}', API_NAME, self.name)
+        api.logs.set('info', f'Получены цены на {date}', self.name)

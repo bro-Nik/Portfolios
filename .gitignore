@@ -14,3 +14,4 @@ pyrightconfig.json
 .pylintrc
 messages.pot
 test.py
+request_streams/

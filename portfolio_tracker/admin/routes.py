@@ -1,7 +1,7 @@
 import json
 import re
+import time
 from flask import abort, redirect, render_template, url_for, request
-
 
 from ..app import db, redis
 from ..wraps import admin_only
@@ -10,10 +10,11 @@ from ..general_functions import MARKETS, actions_in, when_updated
 from ..portfolio.models import Ticker
 from ..portfolio.utils import get_ticker
 from ..user.utils import find_user_by_id
-from .models import ApiKey, ApiTask
-from .utils import API_NAMES, api_event, get_all_users, get_api, get_api_key, \
-    get_api_task, get_tasks, get_tickers, get_tickers_count, \
-    task_action, tasks_trans, api_logging, api_info
+from .models import Key, Task
+from .api_integration import API_NAMES, ApiIntegration, Event, Log, \
+    get_api_task, tasks_trans
+from .utils import get_all_users, get_tasks, \
+    get_tickers, get_tickers_count, task_action
 from . import bp
 
 
@@ -123,7 +124,7 @@ def ticker_settings():
 @admin_only
 def api_page():
     api_name = request.args.get('api_name')
-    api = get_api(api_name)
+    api = ApiIntegration(api_name).api if api_name else None
 
     # Actions
     if request.method == 'POST':
@@ -136,50 +137,65 @@ def api_page():
         return ''
 
     return render_template('admin/api.html',
-                           api=api, log_categories=api_logging.CATEGORIES)
+                           api=api, log_categories=Log.CATEGORIES)
 
 
-@bp.route('/api/events', methods=['GET', 'POST'])
+@bp.route('/api/events', methods=['GET'])
 @admin_only
 def api_event_info():
-    api_name = request.args.get('api_name')
     event = request.args.get('event')
-    if api_name not in API_NAMES or event not in api_event.EVENTS:
+    if event not in Event.EVENTS:
         abort(404)
 
-    if request.method == 'POST':
-        data = json.loads(request.data)
-        action = data['action']
-        if 'delete_all' == action:
-            api_event.delete(api_name, event)
-        return ''
+    api = ApiIntegration(request.args.get('api_name')) or abort(404)
 
     ids = []
     data = {}
-    for event_name, event_ru in api_event.EVENTS.items():
-        data_event = api_event.get(event_name, api_name, dict)
+
+    # Общие действия
+    for event_name, event_name_ru in Event.EVENTS.items():
+        data_event = api.events.get(event_name, dict)
         if data_event:
-            data[event_ru] = data_event
+            data[event_name_ru] = data_event
 
         # для списка тикеров
         if event_name == event:
-            ids = data[event_ru].keys()
+            ids = data[event_name_ru].keys()
 
     tickers = db.session.execute(
         db.select(Ticker).filter(Ticker.id.in_(ids))).scalars()
 
     return render_template('admin/api_event.html', data=data, tickers=tickers,
-                           event=event, api_name=api_name,
-                           api_events=api_event.EVENTS)
+                           event=event, api_name=api.api.name,
+                           api_events=Event.EVENTS)
+
+
+@bp.route('/api/events', methods=['POST'])
+@admin_only
+def api_event_action():
+    # event = request.args.get('event')
+    # if event not in Event.EVENTS:
+    #     abort(404)
+    #
+    # api = ApiIntegration(request.args.get('api_name')) or abort(404)
+
+    # if 'delete_all_redis' == action:
+    #     api.events.delete(event)
+    # else:
+    actions_in(request.data, get_ticker)
+    return ''
 
 
 @bp.route('/api/<string:api_name>/settings', methods=['GET', 'POST'])
 @admin_only
 def api_settings(api_name):
-    api = get_api(api_name)
+    module = ApiIntegration(api_name)
+    api = module.api
 
     if request.method == 'POST':
         api.edit(request.form)
+        # Обновляем потоки
+        module.update_streams()
         return ''
 
     return render_template('admin/api_settings.html', api=api)
@@ -194,22 +210,23 @@ def api_page_detail():
     # Для итерации по api
     api_list = [api_name_] if api_name_ in API_NAMES else API_NAMES
     for api_name in api_list:
+        api = ApiIntegration(api_name)
 
         # События
         events_list = []
-        for event_name in redis.hkeys(api_event.key(api_name)):
-            count = len(api_event.get(event_name, api_name))
+        for event_name in redis.hkeys(api.events.key):
+            count = len(api.events.get(event_name))
 
             event_name = event_name.decode()
-            if event_name not in api_event.EVENTS:
+            if event_name not in Event.EVENTS:
                 # Удалить устаревшие
-                api_event.delete(api_name, event_name)
-            events_list.append({'name': api_event.EVENTS[event_name],
+                api.events.delete(event_name)
+            events_list.append({'name': Event.EVENTS[event_name],
                                 'key': event_name, 'value': f'{count}'})
 
         # Заголовок в событиях
         if len(api_list) > 1 and events_list:
-            result['events'].append({'group_name': api_name.capitalize()})
+            result['events'].append({'group_name': api.api.name.capitalize()})
         result['events'] += events_list
 
         info_list = []
@@ -217,11 +234,12 @@ def api_page_detail():
         # Тикеры
         if api_name in MARKETS:
             info_list.append({'name': 'Количество тикеров',
-                              'value': get_tickers_count(api_name)})
+                              'value': get_tickers_count(api.api.name)})
 
         # Информация
-        for info_name in redis.hkeys(api_info.key(api_name)):
-            value = api_info.get(info_name, api_name)
+        for info_name in redis.hkeys(api.info.key):
+            value = api.info.get(info_name)
+            # print(value)
 
             # Если дата
             if re.search(r'\d{4}-\d{2}-\d{2}', value):
@@ -238,13 +256,13 @@ def api_page_detail():
         # Потоки
         if len(api_list) > 1:
             continue
-        api = get_api(api_name)
-        for stream in api.streams:
+        # api = get_api(api_name)
+        for stream in api.api.streams:
             result['streams'].append(
                 {'name': stream.name, 'class': 'text-average',
-                 'calls': f'{stream.month_calls} из {api.month_limit or "∞"}',
+                 'calls': f'{stream.month_calls} из {api.api.month_limit or "∞"}',
                  'api_key': f'*{stream.key.api_key[-10:]}' if stream.key else 'без ключа',
-                 'called': when_updated(stream.first_call_minute, 'Никогда'),
+                 'called': when_updated(stream.next_call, 'Никогда'),
                  'status': 'Активный' if stream.active else 'Не активный'}
             )
 
@@ -261,7 +279,8 @@ def api_logs():
     # Для итерации по api
     api_list = [api_name_] if api_name_ in API_NAMES else API_NAMES
     for api_name in api_list:
-        logs += api_logging.get(api_name, timestamp)
+        api = ApiIntegration(api_name)
+        logs += api.logs.get(timestamp)
 
     if logs:
         logs = sorted(logs, key=lambda log: log.get('timestamp'))
@@ -276,7 +295,8 @@ def api_logs_delete():
     # Для итерации по api
     api_list = [api_name_] if api_name_ in API_NAMES else API_NAMES
     for api_name in api_list:
-        redis.delete(api_logging.key(api_name))
+        api = ApiIntegration(api_name)
+        redis.delete(api.logs.key)
 
     return redirect(url_for('.api_page', api_name=api_name_))
 
@@ -284,12 +304,17 @@ def api_logs_delete():
 @bp.route('/api/key_settings/', methods=['GET', 'POST'])
 @admin_only
 def api_key_settings():
-    api = get_api(request.args.get('api_name'))
-    key = get_api_key(request.args.get('key_id')
-                      ) or ApiKey(api_id=request.args.get('api_id'))
+    module = ApiIntegration(request.args.get('api_name'))
+    api = module.api
+
+    key = db.session.execute(
+        db.select(Key).filter_by(id=request.args.get('key_id'))
+    ).scalar() or Key(api_id=api.id)
 
     if request.method == 'POST':
         key.edit(request.form)
+        # Обновляем потоки
+        module.update_streams()
         return ''
 
     return render_template('admin/api_key_settings.html', key=key, api=api)
@@ -299,14 +324,13 @@ def api_key_settings():
 @admin_only
 def task_settings():
     task_name = request.args.get('task_name')
-    api_name = request.args.get('api_name')
-    task = get_api_task(task_name) or ApiTask()
+    task = get_api_task(task_name) or Task()
 
     if request.method == 'POST':
         if not task.name:
             task.name = task_name
             db.session.add(task)
-        task.edit(request.form, api_name)
+        task.edit(request.form)
 
         return ''
 
@@ -346,7 +370,9 @@ def tasks():
             while n >= 0:
                 task = tasks_list[n]
                 if task['name'].startswith(api_name):
-                    task['name_ru'] = tasks_trans(task['name'][len(api_name)+1:])
+                    task['name_ru'] = tasks_trans(
+                        task['name'][len(api_name)+1:]
+                    )
                     result.append(task)
                     tasks_list.remove(task)
                 n -= 1
@@ -360,10 +386,10 @@ def tasks():
 
         # Задачи из базы (удаленные)
         tasks_db = list(db.session.execute(
-            db.select(ApiTask)
-            .filter(ApiTask.name.notin_(tasks_names))).scalars())
+            db.select(Task)
+            .filter(Task.name.notin_(tasks_names))).scalars())
         if len(tasks_db):
-            result.append({'group_name': 'Удаленные'})
+            result.append({'group_name': 'Не найдены'})
             for task in tasks_db:
                 result.append({'deleted_name': task.name})
 
@@ -379,7 +405,7 @@ def tasks_action():
     filter_by = request.args.get('filter')
 
     tasks_list = get_tasks()
-    active_ids = [task['id'] for task in tasks_list if task['id']]
+    active_ids = [task['id'] for task in tasks_list if task.get('id')]
 
     if task_id or task_name:
         # Конкретная задача
@@ -394,6 +420,8 @@ def tasks_action():
             api_task = get_api_task(task['name'])
             if not api_task or not api_task.retry_after():
                 continue
-            task_action(active_ids, action, task_id=task['id'],
+            task_action(active_ids, action, task_id=task.get('id'),
                         task_name=task['name'])
+            if action == 'start':
+                time.sleep(0.1)
     return ''

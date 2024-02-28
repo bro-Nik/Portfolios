@@ -14,7 +14,7 @@
 </div>
 
 <div class="big-table pt-3 pb-3">
-  <form id="EventAction" action="{{ url_for('.api_event_info', api_name=api_name, event=event) }}">
+  <form id="EventForm" action="{{ url_for('.api_event_action', api_name=api_name, event=event) }}">
     
     <table class="table table-sm align-middle bootstrap-table" data-search="true"
       data-pagination="true" data-page-size="20">
@@ -25,14 +25,11 @@
           </th>
           <th data-sortable="true" data-field="name">Название</th>
           <th></th>
+          <th>В активах</th>
           <th>Цена</th>
-          {#}
-          <th>Цена не обновлена (раз)</th>
-          <th>Тикер</th>
-          {#}
-            {% for api_event_name in data %}
-              <th>{{ api_event_name }}</th>
-            {% endfor %}
+          {% for api_event_name in data %}
+            <th>{{ api_event_name }}</th>
+          {% endfor %}
           <th></th>
         </tr>
       </thead>
@@ -64,23 +61,19 @@
             </td>
 
             <td>
+              <div class="mx-1 text-nowrap">{{ ticker.assets|length }}</div>
+            </td>
+
+            <td>
               <div class="mx-1 text-nowrap">{{ ticker.price|user_currency }}</div>
             </td>
 
-            {% for api_event_name in data %}
+            {% for event_name in data %}
               <td>
-                <div class="mx-1 text-nowrap">{{ data[api_event_name][ticker.id] }}</div>
+                <div class="mx-1 text-nowrap" title="{{ data[event_name][ticker.id][0] if data[event_name].get(ticker.id) }} .. {{ data[event_name][ticker.id][-1] if data[event_name].get(ticker.id) }}">
+                  {{ (data[event_name][ticker.id])|length }}</div>
               </td>
             {% endfor %}
-            {#}
-            <td>
-              <div class="mx-1 text-nowrap">{{ data['update_prices'][ticker.id] }}</div>
-            </td>
-
-            <td>
-              <div class="mx-1 text-nowrap">{{ data['update_tickers'][ticker.id] }}</div>
-            </td>
-            {#}
 
             <td class="align-middle text-end">
               <div class="dropdown dropstart">
@@ -110,14 +103,14 @@
 
     <!-- Actions buttons -->
     <div class="sticky-bottom-buttons">
-      <a class="open-modal-confirmation" data-action="delete_all"
+      <a class="open-modal-confirmation" data-action="delete_all_redis"
         data-title="Удалить все записи?"
         data-text="Будут удалены все записи">
-        Удалить все</a>
+        Удалить все из Redis</a>
       <a class="open-modal-confirmation" data-action="delete"
-        data-title="Удалить активы с содержимым?"
-        data-text="Все транзакции в этих активах будут удалены">
-        Удалить с содержимым</a>
+        data-title="Удалить тикеры?"
+        data-text="Все тикеры и фото будут удалены из базы">
+        Удалить</a>
     </div>
   </form>
 </div>

@@ -1,12 +1,17 @@
+from __future__ import annotations
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING
 
-import requests
+from flask import current_app
 
 from ..app import db, celery
 from ..general_functions import Market, remove_prefix
-from .utils import alerts_update, api_info, create_new_ticker, get_api, \
-    get_data, get_tickers, load_image, response_json, api_logging, \
-    find_ticker_in_base, ApiName, task_logging, api_event
+from .api_integration import ApiIntegration, task_logging, ApiName
+from .utils import alerts_update, create_new_ticker, get_tickers, \
+    load_image, find_ticker_in_list
+
+if TYPE_CHECKING:
+    import requests
 
 
 API_NAME: ApiName = 'stocks'
@@ -14,25 +19,36 @@ MARKET: Market = 'stocks'
 BASE_URL: str = 'https://api.polygon.io/'
 
 
-def check_response(response: requests.models.Response | None,
-                   task_name: str, item: str = '') -> dict:
-    if response:
-        data = response_json(response)
-        if data:
-            return data[item] if item else data
+class Api(ApiIntegration):
+    def minute_limit_trigger(self, response: requests.models.Response
+                             ) -> int | None:
+        return False
 
-        api_logging.set('error', 'Нет данных', API_NAME, task_name)
-    return {}
+    def monthly_limit_trigger(self, response: requests.models.Response
+                              ) -> bool:
+        return False
+
+    def response_processing(self, response: requests.models.Response | None
+                            ) -> dict | None:
+        if response:
+            # Ответ с данными
+            if response.status_code == 200:
+                return response.json()
+
+            # Ошибки
+            m = f'Ошибка, Код: {response.status_code}, {response.url}'
+            self.logs.set('warning', m)
+            current_app.logger.warning(m, exc_info=True)
 
 
 @celery.task(bind=True, name='stocks_load_prices', max_retries=None)
 @task_logging
 def stocks_load_prices(self) -> None:
 
-    api = get_api(API_NAME)
+    api = Api(API_NAME)
     tickers = get_tickers(MARKET)
     not_updated_ids = [ticker.id for ticker in tickers]
-    max_attempts = 30
+    max_attempts = 5
     url = f'{BASE_URL}v2/aggs/grouped/locale/us/market/stocks/'
     data = None
 
@@ -48,16 +64,21 @@ def stocks_load_prices(self) -> None:
         # Вчерашняя цена закрытия (т.к. бесплатно) или более поздняя
         date -= timedelta(days=1)
 
-        api_logging.set('info', f'Попытка запроса на {date}', API_NAME, self.name)
-        data = get_data(lambda key: f'{url}{date}?{key}', api)
-        data = check_response(data, self.name, 'results')
+        api.logs.set('info', f'Попытка запроса на {date}', self.name)
+        response = api.request(lambda key: f'{url}{date}?{key}')
+        data = api.response_processing(response)
+        # Ошибка
+        if not data:
+            return
+        data = data.get('results')
 
     if not data:
+        api.logs.set('error', 'Нет данных', self.name)
         return
 
     # Сохранение данных
     for item in data:
-        ticker = find_ticker_in_base(item['T'], tickers, MARKET)
+        ticker = find_ticker_in_list(item['T'], tickers, MARKET)
         if ticker:
             ticker.price = item['c']
             # Исключение из списка необновленных
@@ -70,17 +91,17 @@ def stocks_load_prices(self) -> None:
     alerts_update(MARKET)
 
     # События
-    api_event.update(API_NAME, not_updated_ids, 'not_updated_prices')
+    api.events.update(not_updated_ids, 'not_updated_prices')
 
     # Инфо
-    api_info.set('Цены обновлены', datetime.now(), API_NAME)
+    api.info.set('Цены обновлены', datetime.now())
 
 
 @celery.task(bind=True, name='stocks_load_tickers', max_retries=None)
 @task_logging
 def stocks_load_tickers(self) -> None:
 
-    api = get_api(API_NAME)
+    api = Api(API_NAME)
     tickers = get_tickers(MARKET)
     new_ids = []
     not_found_ids = [ticker.id for ticker in tickers]
@@ -89,10 +110,15 @@ def stocks_load_tickers(self) -> None:
     # Пакетная загрузка
     while url:
         # Получение данных
-        data = get_data(lambda key: f'{url}&{key}', api)
-        data = check_response(data, self.name)
+        response = api.request(lambda key: f'{url}&{key}')
+        data = api.response_processing(response)
+        # Ошибка
+        if not data:
+            return
+
         stocks = data.get('results')
         if not stocks:
+            api.logs.set('error', 'Нет данных', self.name)
             break
 
         # Сохранение данных
@@ -104,7 +130,7 @@ def stocks_load_tickers(self) -> None:
                 continue
 
             # Поиск тикера
-            ticker = find_ticker_in_base(external_id, tickers, MARKET)
+            ticker = find_ticker_in_list(external_id, tickers, MARKET)
             # Или добавление нового тикера
             if not ticker:
                 ticker = create_new_ticker(external_id, MARKET)
@@ -124,21 +150,21 @@ def stocks_load_tickers(self) -> None:
         # Следующий URL
         url = data.get('next_url')
         if url:
-            api_logging.set('info', 'Получен следующий url', API_NAME, self.name)
+            api.logs.set('info', 'Получен следующий url', self.name)
 
     # События
-    api_event.update(API_NAME, new_ids, 'new_tickers', False)
-    api_event.update(API_NAME, not_found_ids, 'not_found_tickers')
+    api.events.update(new_ids, 'new_tickers', False)
+    api.events.update(not_found_ids, 'not_found_tickers')
 
     # Инфо
-    api_info.set('Тикеры обновлены', datetime.now(), API_NAME)
+    api.info.set('Тикеры обновлены', datetime.now())
 
 
 @celery.task(bind=True, name='stocks_load_images')
 @task_logging
 def stocks_load_images(self) -> None:
 
-    api = get_api(API_NAME)
+    api = Api(API_NAME)
     tickers = get_tickers(MARKET, without_image=True)
     url = f'{BASE_URL}v3/reference/tickers/'
     loaded_ids = []
@@ -149,18 +175,19 @@ def stocks_load_images(self) -> None:
 
         # Получение данных
         t_id = ticker_id.upper()
-        data = get_data(lambda key: f'{url}{t_id}?{key}', api)
-        data = check_response(data, self.name, 'results')
+        response = api.request(lambda key: f'{url}{t_id}?{key}')
+        data = api.response_processing(response)
+        data = data.get('results', {}) if data else {}
         if not (data.get('branding') and data['branding'].get('icon_url')):
             continue
 
         # Загрузка иконки
         image_url = f"{data['branding']['icon_url']}"
-        ticker.image = load_image(image_url, MARKET, ticker_id, API_NAME)
+        ticker.image = load_image(image_url, MARKET, ticker_id, api)
         db.session.commit()
-        api_logging.set('info', f'Осталось {len(tickers)}', API_NAME, self.name)
+        api.logs.set('info', f'Осталось {len(tickers)}', API_NAME)
         # Добавление в список обновленных
         loaded_ids.append(ticker.id)
 
     # События
-    api_event.update(API_NAME, loaded_ids, 'updated_images', False)
+    api.events.update(loaded_ids, 'updated_images', False)

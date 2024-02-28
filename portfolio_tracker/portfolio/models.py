@@ -1,10 +1,13 @@
 from __future__ import annotations
 from datetime import datetime, timezone
+import os
 from typing import List
-from flask import flash
+from flask import current_app, flash
 
 from flask_babel import gettext
 from sqlalchemy.orm import Mapped
+
+# from portfolio_tracker.admin.utils import image_folder
 
 from ..app import db
 from ..general_functions import from_user_datetime, remove_prefix
@@ -393,11 +396,27 @@ class Ticker(db.Model):
             return f'{url}{external_id}'
 
     def delete(self) -> None:
+        # print(self.image)
+        # return
+        # Цены
         if self.history:
             for price in self.history:
                 price.ticker_id = None
                 db.session.delete(price)
             db.session.commit()
+        # Активы
+        if self.assets:
+            for asset in self.assets:
+                asset.delete()
+
+        # Иконки
+        # Папка хранения изображений
+        if self.image:
+            upload_folder = current_app.config['UPLOAD_FOLDER']
+            path = f'{upload_folder}/images/tickers/{self.market}'
+            os.remove(f'{path}/24/{self.image}')
+            os.remove(f'{path}/40/{self.image}')
+
         db.session.delete(self)
 
 

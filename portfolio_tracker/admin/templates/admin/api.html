@@ -7,7 +7,7 @@
 {% include 'admin/menu.html' %}
 
 <nav class="nav nav-underline">
-  <a class="nav-link {{ 'active disabled' if api.name == None }}" href="{{ url_for('.api_page', api_name=None) }}">Все</a>
+  <a class="nav-link {{ 'active disabled' if api == None }}" href="{{ url_for('.api_page', api_name=None) }}">Все</a>
   <a class="nav-link {{ 'active disabled' if api.name == 'proxy' }}" href="{{ url_for('.api_page', api_name='proxy') }}">Proxy</a>
   <a class="nav-link {{ 'active disabled' if api.name == 'crypto' }}" href="{{ url_for('.api_page', api_name='crypto') }}">Crypto</a>
   <a class="nav-link {{ 'active disabled' if api.name == 'stocks' }}" href="{{ url_for('.api_page', api_name='stocks') }}">Stocks</a>
@@ -64,7 +64,7 @@
       <h5>Задачи</h5>
       <span class="tasks-box small-text" data-url="{{ url_for('.tasks', filter=api.name) }}"
         data-url-action="{{ url_for('.tasks_action', filter=api.name)}}"
-        data-url-settings="{{ url_for('.task_settings', api_name=api.name)}}"></span>
+        data-url-settings="{{ url_for('.task_settings', api_name=api.name if api)}}"></span>
     </div>
 
   </div>
@@ -77,7 +77,7 @@
           <input class="form-check-input" type="radio" name="log_category"
             id="log_{{ category }}" {{ 'checked' if category == 'info' }}
             value="{{ log_categories.index(category) }}">
-          <label class="form-check-label" for="flexRadioDefault1">{{ category }}</label>
+          <label class="form-check-label">{{ category }}</label>
           <sup class="log-category-{{ log_categories.index(category) }}-count">0</sup>
         </div>
       {% endfor %}
