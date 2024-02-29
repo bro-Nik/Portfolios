@@ -21,8 +21,8 @@ class Config:
 
     # Celery
     CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
-    RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
-    CELERY_VISIBILITY_TIMEOUT = 12000
+    # RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
+    # CELERY_VISIBILITY_TIMEOUT = 12000
 
     # Prefix
     CRYPTO_PREFIX = os.environ.get('CRYPTO_PREFIX', '')
