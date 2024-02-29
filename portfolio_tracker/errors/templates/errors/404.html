@@ -10,8 +10,9 @@
 {% block head %}{{ super() }}{% endblock %}
 
 {% block content %}
-  <div class="d-flex align-items-center">
-    <div class="">
+  <div class="d-flex align-items-center h-100">
+    <div class="m-auto">
+      {{ super() }}
       <h1 class="text-center">{% trans %}Упс! Страница не найдена{% endtrans %}</h1>
       <p class="text-center lead">{% trans %}Ошибка 404{% endtrans %}</p>
     </div>
