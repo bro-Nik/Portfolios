@@ -12,7 +12,8 @@ from ..general_functions import Market, add_prefix, remove_prefix
 from ..portfolio.models import Ticker
 from ..watchlist.models import WatchlistAsset
 from ..user.models import User
-from .integrations_api import ApiIntegration, request_data
+from .integrations_api import API_NAMES, ApiIntegration, request_data
+from .integrations_other import MODULE_NAMES, OtherIntegration
 
 if TYPE_CHECKING:
     pass
@@ -162,3 +163,12 @@ def alerts_update(market):
                 alert.status = 'worked'
 
     db.session.commit()
+
+
+def get_module(module_name):
+    # from .integrations_api import API_NAMES, ApiIntegration
+    # from .integrations_other import MODULE_NAMES, OtherIntegration
+    if module_name in API_NAMES:
+        return ApiIntegration(module_name)
+    if module_name in MODULE_NAMES:
+        return OtherIntegration(module_name)

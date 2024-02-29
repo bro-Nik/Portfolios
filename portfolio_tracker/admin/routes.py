@@ -13,8 +13,8 @@ from ..user.utils import find_user_by_id
 from .models import Key, Task
 from .integrations import Event, Log, get_api_task, tasks_trans
 from .integrations_api import API_NAMES, ApiIntegration
-from .integrations_module import MODULE_NAMES
-from .utils import get_all_users, get_tasks, \
+from .integrations_other import MODULE_NAMES
+from .utils import get_all_users, get_module, get_tasks, \
     get_tickers, get_tickers_count, task_action
 from . import bp
 
@@ -22,7 +22,7 @@ from . import bp
 @bp.route('/index', methods=['GET'])
 @admin_only
 def index():
-    return redirect(url_for('.api_page'))
+    return redirect(url_for('.module_page'))
 
 
 @bp.route('/users', methods=['GET'])
@@ -121,41 +121,41 @@ def ticker_settings():
     return render_template('admin/ticker_settings.html', ticker=ticker)
 
 
-@bp.route('/api', methods=['GET', 'POST'])
+@bp.route('/module', methods=['GET', 'POST'])
 @admin_only
-def api_page():
-    api_name = request.args.get('api_name')
-    api = ApiIntegration(api_name).api if api_name else None
+def module_page():
+    module = get_module(request.args.get('module_name'))
 
     # Actions
-    if request.method == 'POST':
+    if request.method == 'POST' and hasattr(module, 'api'):
         data = json.loads(request.data)
         if 'delete_keys' in data['action']:
-            for key in api.keys:
+            for key in module.api.keys:
                 if str(key.id) in data['ids']:
                     db.session.delete(key)
         db.session.commit()
         return ''
 
-    return render_template('admin/api.html',
-                           api=api, log_categories=Log.CATEGORIES)
+    return render_template('admin/module_page.html',
+                           module=module, log_categories=Log.CATEGORIES,
+                           module_names=API_NAMES + MODULE_NAMES)
 
 
-@bp.route('/api/events', methods=['GET'])
+@bp.route('/module/events', methods=['GET'])
 @admin_only
-def api_event_info():
+def module_event_info():
     event = request.args.get('event')
     if event not in Event.EVENTS:
         abort(404)
 
-    api = ApiIntegration(request.args.get('api_name')) or abort(404)
+    module = get_module(request.args.get('module_name')) or abort(404)
 
     ids = []
     data = {}
 
     # Общие действия
     for event_name, event_name_ru in Event.EVENTS.items():
-        data_event = api.events.get(event_name, dict)
+        data_event = module.events.get(event_name, dict)
         if data_event:
             data[event_name_ru] = data_event
 
@@ -167,8 +167,131 @@ def api_event_info():
         db.select(Ticker).filter(Ticker.id.in_(ids))).scalars()
 
     return render_template('admin/api_event.html', data=data, tickers=tickers,
-                           event=event, api_name=api.api.name,
+                           event=event, module_name=module.name,
                            api_events=Event.EVENTS)
+
+
+@bp.route('/module/detail', methods=['GET'])
+@admin_only
+def module_page_detail():
+    module_name_ = request.args.get('module_name')
+    result = {'info': [], 'streams': [], 'events': []}
+
+    # Для итерации по модулям
+    module_list = [module_name_] if module_name_ else API_NAMES + MODULE_NAMES
+    for name in module_list:
+        module = get_module(name)
+        if not module:
+            continue
+
+        # События
+        events_list = []
+        for event_name in redis.hkeys(module.events.key):
+            count = len(module.events.get(event_name))
+
+            event_name = event_name.decode()
+            if event_name not in Event.EVENTS:
+                # Удалить устаревшие
+                module.events.delete(event_name)
+            events_list.append({'name': Event.EVENTS[event_name],
+                                'key': event_name, 'value': f'{count}'})
+
+        # Заголовок в событиях
+        if len(module_list) > 1 and events_list:
+            result['events'].append({'group_name': module.name.capitalize()})
+        result['events'] += events_list
+
+        info_list = []
+
+        # Тикеры
+        if name in MARKETS:
+            info_list.append({'name': 'Количество тикеров',
+                              'value': get_tickers_count(module.api.name)})
+
+        # Информация
+        for info_name in redis.hkeys(module.info.key):
+            value = module.info.get(info_name)
+            # print(value)
+
+            # Если дата
+            if re.search(r'\d{4}-\d{2}-\d{2}', value):
+                value = when_updated(value)
+
+            info_list.append({'name': f'{info_name.decode()}',
+                              'value': value})
+
+        # Заголовок в информации
+        if len(module_list) > 1 and info_list:
+            result['info'].append({'group_name': name.capitalize()})
+        result['info'] += info_list
+
+        # Потоки
+        if len(module_list) > 1 or not hasattr(module, 'api'):
+            continue
+        for stream in module.api.streams:
+            result['streams'].append(
+                {'name': stream.name, 'class': 'text-average',
+                 'calls': f'{stream.month_calls} из {module.api.month_limit or "∞"}',
+                 'api_key': f'*{stream.key.api_key[-10:]}' if stream.key else 'без ключа',
+                 'called': when_updated(stream.next_call, 'Никогда'),
+                 'status': 'Активный' if stream.active else 'Не активный'}
+            )
+
+    return result
+
+
+@bp.route('/module/logs', methods=['GET'])
+@admin_only
+def json_module_logs():
+    timestamp = request.args.get('timestamp', 0.0, type=float)
+    module_name = request.args.get('module_name')
+    logs = []
+
+    # Для итерации по модулям
+    module_list = [module_name] if module_name else API_NAMES + MODULE_NAMES
+    for module in module_list:
+        module_logs = Log(module)
+        logs += module_logs.get(timestamp)
+
+    if logs:
+        logs = sorted(logs, key=lambda log: log.get('timestamp'))
+    return logs
+
+
+@bp.route('/module/logs_delete', methods=['POST'])
+@admin_only
+def module_logs_delete():
+    module_name = request.args.get('module_name')
+
+    # Для итерации по модулям
+    module_list = [module_name] if module_name else API_NAMES + MODULE_NAMES
+    for name in module_list:
+        module = get_module(name)
+        if not module:
+            continue
+
+        redis.delete(module.logs.key)
+
+    return redirect(url_for('.module_page', module_name=module_name))
+
+
+@bp.route('/api/key_settings/', methods=['GET', 'POST'])
+@admin_only
+def api_key_settings():
+    module = ApiIntegration(request.args.get('api_name'))
+    api = module.api
+
+    key = db.session.execute(
+        db.select(Key).filter_by(id=request.args.get('key_id'))
+    ).scalar() or Key(api_id=api.id)
+
+    if request.method == 'POST':
+        key.edit(request.form)
+        # Обновляем потоки
+        module.update_streams()
+        return ''
+
+    return render_template('admin/api_key_settings.html', key=key, api=api)
 
 
 @bp.route('/api/events', methods=['POST'])
@@ -200,124 +323,6 @@ def api_settings(api_name):
         return ''
 
     return render_template('admin/api_settings.html', api=api)
-
-
-@bp.route('/api/detail', methods=['GET'])
-@admin_only
-def api_page_detail():
-    api_name_ = request.args.get('api_name')
-    result = {'info': [], 'streams': [], 'events': []}
-
-    # Для итерации по api
-    api_list = [api_name_] if api_name_ in API_NAMES else API_NAMES
-    for api_name in api_list:
-        api = ApiIntegration(api_name)
-
-        # События
-        events_list = []
-        for event_name in redis.hkeys(api.events.key):
-            count = len(api.events.get(event_name))
-
-            event_name = event_name.decode()
-            if event_name not in Event.EVENTS:
-                # Удалить устаревшие
-                api.events.delete(event_name)
-            events_list.append({'name': Event.EVENTS[event_name],
-                                'key': event_name, 'value': f'{count}'})
-
-        # Заголовок в событиях
-        if len(api_list) > 1 and events_list:
-            result['events'].append({'group_name': api.api.name.capitalize()})
-        result['events'] += events_list
-
-        info_list = []
-
-        # Тикеры
-        if api_name in MARKETS:
-            info_list.append({'name': 'Количество тикеров',
-                              'value': get_tickers_count(api.api.name)})
-
-        # Информация
-        for info_name in redis.hkeys(api.info.key):
-            value = api.info.get(info_name)
-            # print(value)
-
-            # Если дата
-            if re.search(r'\d{4}-\d{2}-\d{2}', value):
-                value = when_updated(value)
-
-            info_list.append({'name': f'{info_name.decode()}',
-                              'value': value})
-
-        # Заголовок в информации
-        if len(api_list) > 1 and info_list:
-            result['info'].append({'group_name': api_name.capitalize()})
-        result['info'] += info_list
-
-        # Потоки
-        if len(api_list) > 1:
-            continue
-        for stream in api.api.streams:
-            result['streams'].append(
-                {'name': stream.name, 'class': 'text-average',
-                 'calls': f'{stream.month_calls} из {api.api.month_limit or "∞"}',
-                 'api_key': f'*{stream.key.api_key[-10:]}' if stream.key else 'без ключа',
-                 'called': when_updated(stream.next_call, 'Никогда'),
-                 'status': 'Активный' if stream.active else 'Не активный'}
-            )
-
-    return result
-
-
-@bp.route('/api/logs', methods=['GET'])
-@admin_only
-def api_logs():
-    timestamp = request.args.get('timestamp', 0.0, type=float)
-    module_name = request.args.get('api_name')
-    logs = []
-
-    # Для итерации по модулям
-    module_list = [module_name] if module_name else API_NAMES + MODULE_NAMES
-    for module in module_list:
-        module_logs = Log(module)
-        logs += module_logs.get(timestamp)
-
-    if logs:
-        logs = sorted(logs, key=lambda log: log.get('timestamp'))
-    return logs
-
-
-@bp.route('/api/logs_delete', methods=['POST'])
-@admin_only
-def api_logs_delete():
-    api_name_ = request.args.get('api_name')
-
-    # Для итерации по api
-    api_list = [api_name_] if api_name_ in API_NAMES else API_NAMES
-    for api_name in api_list:
-        api = ApiIntegration(api_name)
-        redis.delete(api.logs.key)
-
-    return redirect(url_for('.api_page', api_name=api_name_))
-
-
-@bp.route('/api/key_settings/', methods=['GET', 'POST'])
-@admin_only
-def api_key_settings():
-    module = ApiIntegration(request.args.get('api_name'))
-    api = module.api
-
-    key = db.session.execute(
-        db.select(Key).filter_by(id=request.args.get('key_id'))
-    ).scalar() or Key(api_id=api.id)
-
-    if request.method == 'POST':
-        key.edit(request.form)
-        # Обновляем потоки
-        module.update_streams()
-        return ''
-
-    return render_template('admin/api_key_settings.html', key=key, api=api)
 
 
 @bp.route('/api/task_settings', methods=['GET', 'POST'])

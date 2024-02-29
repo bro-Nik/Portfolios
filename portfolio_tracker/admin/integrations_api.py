@@ -8,6 +8,7 @@ from flask import current_app
 
 from ..app import db, redis
 from .models import Api, Stream
+from . import integrations
 
 if TYPE_CHECKING:
     pass
@@ -17,9 +18,9 @@ ApiName: TypeAlias = Literal['crypto', 'stocks', 'currency', 'proxy']
 API_NAMES: tuple[ApiName, ...] = ('crypto', 'stocks', 'currency', 'proxy')
 
 
-class ApiIntegration:
+class ApiIntegration(integrations.Integration):
     def __init__(self, name: str | None):
-        from .integrations import Data, Event, Info, Log
+        super().__init__(name)
 
         if name not in API_NAMES:
             return
@@ -29,13 +30,9 @@ class ApiIntegration:
             api = Api(name=name)
             db.session.add(api)
         self.api = api
+        self.type = 'api'
         # if api.id:
         #     self.update_streams()
-
-        self.events = Event(name)
-        self.info = Info(name)
-        self.logs = Log(name)
-        self.data = Data(name)
 
     def update_streams(self) -> None:
         from . import proxy

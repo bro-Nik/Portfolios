@@ -9,11 +9,21 @@ from flask import current_app
 
 from ..app import db, redis
 from .models import Task
-from .integrations_api import API_NAMES, ApiIntegration
-from .integrations_module import MODULE_NAMES, ModuleIntegration
 
 if TYPE_CHECKING:
     from ..portfolio.models import Ticker
+
+
+class Integration:
+    def __init__(self, module_name: str | None):
+        if not module_name:
+            return
+
+        self.name = module_name
+        self.events = Event(module_name)
+        self.info = Info(module_name)
+        self.logs = Log(module_name)
+        self.data = Data(module_name)
 
 
 class Log:
@@ -139,25 +149,20 @@ class Event:
 def task_logging(function):
     @wraps(function)
     def decorated_function(task):
-        module_name = task.name[:task.name.find('_')]
-        print(module_name)
+        from .utils import get_module
 
-        module = None
-        if module_name in API_NAMES:
-            module = ApiIntegration(module_name)
+        module_name = task.name[:task.name.find('_')]
+
+        module = get_module(module_name)
+        if not module:
+            print('Модуль не найден')
+            return
+
+        if hasattr(module, 'is_working_now'):
             while module.is_working_now():
                 time.sleep(60)
 
             module.start_work()
-
-        if module_name in MODULE_NAMES:
-            module = ModuleIntegration(module_name)
-            print(module_name)
-            print(module)
-
-        if not module:
-            print('Модуль не найден')
-            return
 
         start = time.perf_counter()
 

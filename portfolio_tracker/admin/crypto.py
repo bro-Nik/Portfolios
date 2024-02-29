@@ -11,7 +11,6 @@ from .integrations_api import ApiIntegration, ApiName
 from .utils import alerts_update, create_new_ticker, get_tickers, \
     load_image, find_ticker_in_list
 
-
 if TYPE_CHECKING:
     import requests
 

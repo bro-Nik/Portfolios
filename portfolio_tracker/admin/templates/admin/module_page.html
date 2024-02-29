@@ -7,23 +7,22 @@
 {% include 'admin/menu.html' %}
 
 <nav class="nav nav-underline">
-  <a class="nav-link {{ 'active disabled' if api == None }}" href="{{ url_for('.api_page', api_name=None) }}">Все</a>
-  <a class="nav-link {{ 'active disabled' if api.name == 'proxy' }}" href="{{ url_for('.api_page', api_name='proxy') }}">Proxy</a>
-  <a class="nav-link {{ 'active disabled' if api.name == 'crypto' }}" href="{{ url_for('.api_page', api_name='crypto') }}">Crypto</a>
-  <a class="nav-link {{ 'active disabled' if api.name == 'stocks' }}" href="{{ url_for('.api_page', api_name='stocks') }}">Stocks</a>
-  <a class="nav-link {{ 'active disabled' if api.name == 'currency' }}" href="{{ url_for('.api_page', api_name='currency') }}">Currency</a>
+  <a class="nav-link {{ 'active disabled' if module == None }}" href="{{ url_for('.module_page', module_name=None) }}">Все</a>
+  {% for module_name in module_names %}
+    <a class="nav-link {{ 'active disabled' if module.name == module_name }}" href="{{ url_for('.module_page', module_name=module_name) }}">{{ module_name|capitalize }}</a>
+  {% endfor %}
 </nav>
 
-<div class="info-url" data-url="{{ url_for('.api_page_detail', api_name=api.name if api) }}"></div>
+<div class="info-url" data-url="{{ url_for('.module_page_detail', module_name=module.name if module) }}"></div>
 <div class="col-12 d-flex gap-5 pe-5 pt-3">
 
   <div class="col-6 d-flex flex-column gap-5">
     <div class="d-flex flex-column">
       <div class="d-flex">
         <h5>Инфо</h5>
-        {% if api.id %}
+        {% if module.api and module.api.id %}
           <a class="small-text text-decoration-none open-modal ms-3" data-modal-id="ApiSettingsModal"
-            data-url="{{ url_for('.api_settings', api_name=api.name) }}">Настройки</a>
+            data-url="{{ url_for('.api_settings', api_name=module.api.name) }}">Настройки</a>
         {% endif %}
       </div>
       <div class="info-box small-text"></div>
@@ -31,23 +30,23 @@
 
     <div class="d-flex flex-column">
       <h5>События</h5>
-      <div class="events-box small-text" data-url="{{ url_for('.api_event_info', api_name=api.name) }}"></div>
+      <div class="events-box small-text" data-url="{{ url_for('.module_event_info', module_name=module.name) }}"></div>
     </div>
 
-    {% if api.need_key %}
+    {% if module.api and module.api.need_key %}
       <div class="d-flex flex-column">
         <div class="d-flex">
           <h5>Ключи</h5>
-          {% if api.need_proxy or (not api.need_proxy and not api.keys) %}
+          {% if module.api.need_proxy or (not module.api.need_proxy and not module.api.keys) %}
             <a class="small-text text-decoration-none open-modal ms-3" data-modal-id="KeySettingsModal"
-              data-url="{{ url_for('.api_key_settings', api_name=api.name) }}">Добавить</a>
+              data-url="{{ url_for('.api_key_settings', api_name=module.api.name) }}">Добавить</a>
           {% endif %}
         </div>
         <div class="small-text">
-          {% for key in api.keys %}
+          {% for key in module.api.keys %}
             <div class="d-flex gap-3 open-modal" data-modal-id="KeySettingsModal"
-              data-url="{{ url_for('.api_key_settings', api_name=api.name, key_id=key.id) }}">
-              <span class="text-average">Ключ {{ loop.index if api.keys|length > 1 }}</span>
+              data-url="{{ url_for('.api_key_settings', api_name=module.api.name, key_id=key.id) }}">
+              <span class="text-average">Ключ {{ loop.index if module.api.keys|length > 1 }}</span>
               <span>*{{ key.api_key[-10:] }}</span>
             </div>
           {% endfor%}
@@ -55,23 +54,26 @@
       </div>
     {% endif %}
 
-    <div class="d-flex flex-column">
-      <h5>Потоки</h5>
-      <div class="streams-box small-text"></div>
-    </div>
+    {% if module.api %}
+      <div class="d-flex flex-column">
+        <h5>Потоки</h5>
+        <div class="streams-box small-text"></div>
+      </div>
+    {% endif %}
+
 
     <div class="d-flex flex-column">
       <h5>Задачи</h5>
-      <span class="tasks-box small-text" data-url="{{ url_for('.tasks', filter=api.name) }}"
-        data-url-action="{{ url_for('.tasks_action', filter=api.name)}}"
-        data-url-settings="{{ url_for('.task_settings', api_name=api.name if api)}}"></span>
+      <span class="tasks-box small-text" data-url="{{ url_for('.tasks', filter=module.name) }}"
+        data-url-action="{{ url_for('.tasks_action', filter=module.name)}}"
+        data-url-settings="{{ url_for('.task_settings', module_name=module.name if module)}}"></span>
     </div>
 
   </div>
 
   <div class="col-6 form-floating">
     <h5>Логи</h5>
-    <form action="{{ url_for('.api_logs_delete', api_name=api.name if api.name) }}" method="post" class="d-flex">
+    <form action="{{ url_for('.module_logs_delete', module_name=module.name if module) }}" method="post" class="d-flex">
       {% for category in log_categories %}
         <div class="form-check form-check-inline log-category">
           <input class="form-check-input" type="radio" name="log_category"
@@ -85,7 +87,7 @@
     </form>
 
     <div class="form-control overflow-auto logs-box small-text" style="height: 400px"
-      data-url="{{ url_for('.api_logs', api_name=api.name) }}"></div>
+      data-url="{{ url_for('.json_module_logs', module_name=module.name) }}"></div>
   </div>
 
 

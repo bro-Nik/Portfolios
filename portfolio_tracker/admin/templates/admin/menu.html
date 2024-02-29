@@ -1,8 +1,8 @@
 <nav class="nav nav-underline mb-5">
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.index') }}"
     href="{{ url_for('.index') }}">Главная</a>
-  <a class="nav-link text-muted {{ 'active disabled' if url_for('.api_page', api_name='') in request.path }}"
-    href="{{ url_for('.api_page', api_name='crypto') }}">Api</a>
+  <a class="nav-link text-muted {{ 'active disabled' if url_for('.module_page', module_name='') in request.path }}"
+    href="{{ url_for('.module_page', module_name='') }}">Api</a>
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.users_page') }}"
     href="{{ url_for('.users_page') }}">Пользователи</a>
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.imports') }}"
