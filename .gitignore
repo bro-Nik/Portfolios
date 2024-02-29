@@ -15,3 +15,4 @@ pyrightconfig.json
 messages.pot
 test.py
 request_streams/
+wsgi.py

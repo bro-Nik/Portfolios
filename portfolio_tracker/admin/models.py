@@ -86,7 +86,6 @@ class Task(db.Model):
     __tablename__ = 'api_task'
 
     name = db.Column(db.String(128), primary_key=True)
-    api_name: ApiName = db.Column(db.String(32))
     retry_period_type: int = db.Column(db.Integer, default=0)
     retry_period_count: int = db.Column(db.Integer, default=0)
 

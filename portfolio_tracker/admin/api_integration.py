@@ -30,8 +30,8 @@ class ApiIntegration:
             api = Api(name=name)
             db.session.add(api)
         self.api = api
-        if api.id:
-            self.update_streams()
+        # if api.id:
+        #     self.update_streams()
 
         self.events = Event(name)
         self.info = Info(name)

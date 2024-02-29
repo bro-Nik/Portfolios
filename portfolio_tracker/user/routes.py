@@ -66,7 +66,7 @@ def user_action():
 
     if action == 'delete_user':
         current_user.delete()
-        return {'redirect': str(url_for('auth.login'))}
+        return {'redirect': str(url_for('user.login'))}
 
     if action == 'delete_data':
         current_user.cleare()

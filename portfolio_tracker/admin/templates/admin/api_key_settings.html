@@ -3,12 +3,13 @@
 {% set modal_title = 'Изменить настройки ключа' if key.id else 'Добавить новый ключ' %}
 
 {% block content %}
-<form data-url="{{ url_for('.api_key_settings', api_id=api.id, key_id=key.id) }}">
+<form data-url="{{ url_for('.api_key_settings', api_name=api.name, key_id=key.id) }}">
   <div class="row g-2">
 
     <div class="col-12">
       <div class="mb-1">
         <label class="form-label h7">API Key</label>
+        {{ api.name }}
         <input type="text" class="form-control rounded-3" name="api_key" value="{{ key.api_key if key.api_key }}" {{ 'required' if api.need_key }}>
       </div>
     </div>
@@ -20,7 +21,7 @@
       <div class="col-md-12">
         <div class="mb-3">
           <label class="form-label h7">Комментарий</label>
-          <textarea class="form-control" name="comment"></textarea>
+          <textarea class="form-control" name="comment">{{ key.comment }}</textarea>
         </div>
       </div>
     </div>

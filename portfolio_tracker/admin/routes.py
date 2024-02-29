@@ -256,7 +256,6 @@ def api_page_detail():
         # Потоки
         if len(api_list) > 1:
             continue
-        # api = get_api(api_name)
         for stream in api.api.streams:
             result['streams'].append(
                 {'name': stream.name, 'class': 'text-average',
@@ -279,8 +278,8 @@ def api_logs():
     # Для итерации по api
     api_list = [api_name_] if api_name_ in API_NAMES else API_NAMES
     for api_name in api_list:
-        api = ApiIntegration(api_name)
-        logs += api.logs.get(timestamp)
+        api_logs_ = Log(api_name)
+        logs += api_logs_.get(timestamp)
 
     if logs:
         logs = sorted(logs, key=lambda log: log.get('timestamp'))
