@@ -11,8 +11,9 @@ from ..portfolio.models import Ticker
 from ..portfolio.utils import get_ticker
 from ..user.utils import find_user_by_id
 from .models import Key, Task
-from .api_integration import API_NAMES, ApiIntegration, Event, Log, \
-    get_api_task, tasks_trans
+from .integrations import Event, Log, get_api_task, tasks_trans
+from .integrations_api import API_NAMES, ApiIntegration
+from .integrations_module import MODULE_NAMES
 from .utils import get_all_users, get_tasks, \
     get_tickers, get_tickers_count, task_action
 from . import bp
@@ -272,14 +273,14 @@ def api_page_detail():
 @admin_only
 def api_logs():
     timestamp = request.args.get('timestamp', 0.0, type=float)
-    api_name_ = request.args.get('api_name')
+    module_name = request.args.get('api_name')
     logs = []
 
-    # Для итерации по api
-    api_list = [api_name_] if api_name_ in API_NAMES else API_NAMES
-    for api_name in api_list:
-        api_logs_ = Log(api_name)
-        logs += api_logs_.get(timestamp)
+    # Для итерации по модулям
+    module_list = [module_name] if module_name else API_NAMES + MODULE_NAMES
+    for module in module_list:
+        module_logs = Log(module)
+        logs += module_logs.get(timestamp)
 
     if logs:
         logs = sorted(logs, key=lambda log: log.get('timestamp'))
@@ -362,21 +363,21 @@ def tasks():
             tasks_names.append(task['name'])
 
         # Группировка
-        # Задачи API
-        for api_name in API_NAMES:
-            result.append({'group_name': api_name.capitalize()})
+        # Задачи модулей
+        for module in API_NAMES + MODULE_NAMES:
+            result.append({'group_name': module.capitalize()})
             n = len(tasks_list) - 1
             while n >= 0:
                 task = tasks_list[n]
-                if task['name'].startswith(api_name):
+                if task['name'].startswith(module):
                     task['name_ru'] = tasks_trans(
-                        task['name'][len(api_name)+1:]
+                        task['name'][len(module)+1:]
                     )
                     result.append(task)
                     tasks_list.remove(task)
                 n -= 1
 
-        # Задачи вне API
+        # Задачи вне модулей
         if len(tasks_list):
             result.append({'group_name': 'Остальные'})
             for task in tasks_list:

@@ -1,19 +1,19 @@
-{% set only_content = request.args.get('only_content') %}
-
-{% if not only_content %}
+{% if current_user.is_authenticated %}
+  {% if not request.args.get('only_content') %}
     {% extends "base.html" %}
-    {% block title %}{% trans %}Не найдено{% endtrans %}{% endblock %}
+  {% endif %}
+{% else %}
+  {% extends "errors/base.html" %}
 {% endif %}
 
-{% block head %}
-    {{ super() }}
-{% endblock %}
-{% block content %}
-<div class="h-100 d-flex align-items-center">
-    <div class="w-100">
-        <h1 class="text-center">{% trans %}Упс! Страница не найдена{% endtrans %}</h1>
-        <p class="text-center lead">{% trans %}Ошибка 404{% endtrans %}</p>
-    </div>
-</div>
+{% block title %}Portfolios | {% trans %}Ошибка{% endtrans %}{% endblock %}
+{% block head %}{{ super() }}{% endblock %}
 
+{% block content %}
+  <div class="d-flex align-items-center">
+    <div class="">
+      <h1 class="text-center">{% trans %}Упс! Страница не найдена{% endtrans %}</h1>
+      <p class="text-center lead">{% trans %}Ошибка 404{% endtrans %}</p>
+    </div>
+  </div>
 {% endblock %}

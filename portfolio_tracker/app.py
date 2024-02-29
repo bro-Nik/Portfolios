@@ -105,6 +105,13 @@ def configure_logging(app):
     file_handler_info.setLevel(logging.INFO)
     app.logger.addHandler(file_handler_info)
 
+    # обработчик уровня Warning
+    file_handler_warning = RotatingFileHandler('logs/portfolios_warning.log',
+                                               maxBytes=10240, backupCount=10)
+    file_handler_warning.setFormatter(formatter)
+    file_handler_warning.setLevel(logging.WARNING)
+    app.logger.addHandler(file_handler_warning)
+
     # обработчик уровня Error
     file_handler_error = RotatingFileHandler('logs/portfolios_error.log',
                                              maxBytes=10240, backupCount=10)

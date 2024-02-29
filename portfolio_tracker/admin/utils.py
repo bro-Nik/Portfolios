@@ -12,7 +12,7 @@ from ..general_functions import Market, add_prefix, remove_prefix
 from ..portfolio.models import Ticker
 from ..watchlist.models import WatchlistAsset
 from ..user.models import User
-from .api_integration import ApiIntegration, request_data
+from .integrations_api import ApiIntegration, request_data
 
 if TYPE_CHECKING:
     pass

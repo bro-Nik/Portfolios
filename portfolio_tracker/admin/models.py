@@ -8,7 +8,6 @@ from ..app import db
 
 if TYPE_CHECKING:
     from werkzeug.datastructures.structures import ImmutableMultiDict
-    from .api_integration import ApiName
 
 
 class Api(db.Model):

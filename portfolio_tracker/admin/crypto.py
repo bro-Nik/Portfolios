@@ -4,11 +4,10 @@ from typing import TYPE_CHECKING
 
 from flask import current_app
 
-# from pycoingecko import CoinGeckoAPI
-
 from ..app import db, celery
 from ..general_functions import Market, remove_prefix
-from .api_integration import ApiIntegration, ApiName, task_logging
+from .integrations import task_logging
+from .integrations_api import ApiIntegration, ApiName
 from .utils import alerts_update, create_new_ticker, get_tickers, \
     load_image, find_ticker_in_list
 

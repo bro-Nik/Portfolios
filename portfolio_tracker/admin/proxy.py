@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 from flask import current_app
 
 from ..app import celery
-from .api_integration import API_NAMES, ApiIntegration, ApiName, \
-    get_api_task, task_logging
+from .integrations import get_api_task, task_logging
+from .integrations_api import API_NAMES, ApiIntegration, ApiName
 
 if TYPE_CHECKING:
     import requests
