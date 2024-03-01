@@ -232,8 +232,9 @@ def request_data(api, url: str, stream: Stream | None = None
         api.new_call(stream)
 
         if stream.proxy:
-            proxies = {'https': stream.proxy.replace('http://', 'https://'),
-                       'http': stream.proxy.replace('https://', 'http://')}
+            # proxies = {'https': stream.proxy.replace('http://', 'https://'),
+            #            'http': stream.proxy.replace('https://', 'http://')}
+            proxies = {'http': stream.proxy.replace('https://', 'http://')}
 
     try:
         return requests.get(url, proxies=proxies)

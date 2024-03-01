@@ -57,6 +57,7 @@ class User(db.Model, UserMixin):
             if response.get('status') == 'success':
                 self.info.country = response.get('country')
                 self.info.city = response.get('city')
+                db.session.commit()
 
     def cleare(self) -> None:
 
