@@ -7,11 +7,10 @@ from ..app import db, redis
 from ..wraps import admin_only
 from ..jinja_filters import user_datetime
 from ..general_functions import MARKETS, actions_in, when_updated
-from ..portfolio.models import Ticker
 from ..portfolio.utils import get_ticker
 from ..user.utils import find_user_by_id
 from .models import Key, Task
-from .integrations import Event, Log, get_api_task, tasks_trans
+from .integrations import Log, get_api_task, tasks_trans
 from .integrations_api import API_NAMES, ApiIntegration
 from .integrations_other import MODULE_NAMES
 from .utils import get_all_users, get_module, get_tasks, \
@@ -136,8 +135,8 @@ def module_page():
         db.session.commit()
         return ''
 
-    return render_template('admin/module_page.html',
-                           module=module, log_categories=Log.CATEGORIES,
+    return render_template('admin/module_page.html', module=module,
+                           log_categories=Log.CATEGORIES,
                            module_names=API_NAMES + MODULE_NAMES)
 
 
@@ -145,30 +144,12 @@ def module_page():
 @admin_only
 def module_event_info():
     event = request.args.get('event')
-    if event not in Event.EVENTS:
-        abort(404)
 
     module = get_module(request.args.get('module_name')) or abort(404)
+    data = module.evets_info(event) if hasattr(module, 'evets_info') else {}
 
-    ids = []
-    data = {}
-
-    # Общие действия
-    for event_name, event_name_ru in Event.EVENTS.items():
-        data_event = module.events.get(event_name, dict)
-        if data_event:
-            data[event_name_ru] = data_event
-
-        # для списка тикеров
-        if event_name == event:
-            ids = data[event_name_ru].keys()
-
-    tickers = db.session.execute(
-        db.select(Ticker).filter(Ticker.id.in_(ids))).scalars()
-
-    return render_template('admin/api_event.html', data=data, tickers=tickers,
-                           event=event, module_name=module.name,
-                           api_events=Event.EVENTS)
+    return render_template('admin/api_event.html', data=data,
+                           event=event, module=module)
 
 
 @bp.route('/module/detail', methods=['GET'])
@@ -190,10 +171,7 @@ def module_page_detail():
             count = len(module.events.get(event_name))
 
             event_name = event_name.decode()
-            if event_name not in Event.EVENTS:
-                # Удалить устаревшие
-                module.events.delete(event_name)
-            events_list.append({'name': Event.EVENTS[event_name],
+            events_list.append({'name': module.events.list.get(event_name),
                                 'key': event_name, 'value': f'{count}'})
 
         # Заголовок в событиях
@@ -297,15 +275,6 @@ def api_key_settings():
 @bp.route('/api/events', methods=['POST'])
 @admin_only
 def api_event_action():
-    # event = request.args.get('event')
-    # if event not in Event.EVENTS:
-    #     abort(404)
-    #
-    # api = ApiIntegration(request.args.get('api_name')) or abort(404)
-
-    # if 'delete_all_redis' == action:
-    #     api.events.delete(event)
-    # else:
     actions_in(request.data, get_ticker)
     return ''
 

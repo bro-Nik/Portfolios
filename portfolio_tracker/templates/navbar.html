@@ -73,11 +73,6 @@
     <ul class="dropdown-menu" style="">
       {% if current_user.type != 'demo' %}
       <li>
-        <a class="dropdown-item" href="{{ url_for('user.settings_export_import') }}">
-          {% trans %}Экспорт{% endtrans %}/{% trans %}Импорт{% endtrans %}
-        </a>
-      </li>
-      <li>
         <a class="dropdown-item" href="{{ url_for('user.settings_profile') }}">
           {% trans %}Настройки{% endtrans %}
         </a>

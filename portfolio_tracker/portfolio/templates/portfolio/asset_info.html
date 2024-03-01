@@ -48,7 +48,7 @@
       </button>
       <div class="dropdown-menu">
         <button class="dropdown-item open-modal" type="button" data-modal-id="AssetSettingsModal"
-          data-url="{{ url_for('.asset_settings', portfolio_id=asset.portfolio_id, ticker_id=asset.ticker_id) }}">
+          data-url="{{ url_for('.asset_settings', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
           {% trans %}Изменить актив{% endtrans %}
         </button>
 
@@ -119,7 +119,7 @@
   </div>
 
 <div class="big-table pt-3 pb-3">
-  <form id="TransactionsForm" action="{{ url_for('.transactions_action', portfolio_id=asset.portfolio_id, ticker_id=asset.ticker_id) }}">
+  <form id="TransactionsForm" action="{{ url_for('.transactions_action', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
     <table class="table table-sm align-middle">
       <thead>
         <tr>
@@ -146,7 +146,7 @@
 
           <td>
             <div class="open-modal" data-modal-id="TransactionModal"
-              data-url="{{ url_for('.transaction_info', portfolio_id=asset.portfolio_id, ticker_id=asset.ticker_id, transaction_id=transaction.id) }}">
+              data-url="{{ url_for('.transaction_info', portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
               <span class="{{ color }}">{{ gettext(transaction.type) }}</span>
               {{ '(' + gettext('Ордер') + ')' if transaction.order }}
               <br>

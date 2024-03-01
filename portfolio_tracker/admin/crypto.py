@@ -7,7 +7,7 @@ from flask import current_app
 from ..app import db, celery
 from ..general_functions import Market, remove_prefix
 from .integrations import task_logging
-from .integrations_api import ApiIntegration, ApiName
+from .integrations_api import ApiName, MarketIntegration
 from .utils import alerts_update, create_new_ticker, get_tickers, \
     load_image, find_ticker_in_list
 
@@ -20,7 +20,7 @@ MARKET: Market = 'crypto'
 BASE_URL: str = 'https://api.coingecko.com/api/v3/'
 
 
-class Api(ApiIntegration):
+class Api(MarketIntegration):
     def minute_limit_trigger(self, response: requests.models.Response
                              ) -> int | None:
         if response.status_code == 429:

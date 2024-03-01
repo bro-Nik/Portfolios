@@ -7,7 +7,7 @@ from ..app import db, celery
 from ..general_functions import Market, remove_prefix
 from ..portfolio.models import PriceHistory
 from .integrations import task_logging
-from .integrations_api import ApiIntegration, ApiName
+from .integrations_api import ApiName, MarketIntegration
 from .utils import create_new_ticker, get_tickers, find_ticker_in_list
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ MARKET: Market = 'currency'
 BASE_URL: str = 'http://api.currencylayer.com/'
 
 
-class Api(ApiIntegration):
+class Api(MarketIntegration):
     def minute_limit_trigger(self, response: requests.models.Response
                              ) -> int | None:
         return

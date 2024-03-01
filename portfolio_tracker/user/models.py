@@ -58,24 +58,6 @@ class User(db.Model, UserMixin):
                 self.info.country = response.get('country')
                 self.info.city = response.get('city')
 
-    def update_assets(self) -> None:
-        for wallet in self.wallets:
-            for asset in wallet.wallet_assets:
-                asset.quantity = 0
-                asset.buy_orders = 0
-                asset.sell_orders = 0
-                for transaction in asset.transactions:
-                    if transaction.type not in ('Buy', 'Sell'):
-                        transaction.update_dependencies()
-
-        for portfolio in self.portfolios:
-            for asset in portfolio.assets:
-                asset.quantity = 0
-                asset.in_orders = 0
-                asset.amount = 0
-                for transaction in asset.transactions:
-                    transaction.update_dependencies()
-
     def cleare(self) -> None:
 
         # alerts

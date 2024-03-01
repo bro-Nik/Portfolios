@@ -14,7 +14,7 @@
 </div>
 
 <div class="big-table pt-3 pb-3">
-  <form id="EventForm" action="{{ url_for('.api_event_action', api_name=api_name, event=event) }}">
+  <form id="EventForm" action="{{ url_for('.api_event_action', module_name=module.name, event=event) }}">
     
     <table class="table table-sm align-middle bootstrap-table" data-search="true"
       data-pagination="true" data-page-size="20">
@@ -27,14 +27,14 @@
           <th></th>
           <th>В активах</th>
           <th>Цена</th>
-          {% for api_event_name in data %}
+          {% for api_event_name in data['events'] %}
             <th>{{ api_event_name }}</th>
           {% endfor %}
           <th></th>
         </tr>
       </thead>
       <tbody>
-        {% for ticker in tickers %}
+        {% for ticker in data['tickers'] %}
           <tr>
             <td>
               <input class="form-check-input to-check" type="checkbox" value="{{ ticker.id }}">
@@ -68,10 +68,10 @@
               <div class="mx-1 text-nowrap">{{ ticker.price|user_currency if ticker.price else '-' }}</div>
             </td>
 
-            {% for event_name in data %}
+            {% for event_name in data['events'] %}
               <td>
-                <div class="mx-1 text-nowrap" title="{{ data[event_name][ticker.id][0] + ' .. ' if data[event_name].get(ticker.id) }}{{ data[event_name][ticker.id][-1] if data[event_name].get(ticker.id) }}">
-                  {{ (data[event_name][ticker.id])|length if data[event_name][ticker.id] else '-' }}</div>
+                <div class="mx-1 text-nowrap" title="{{ data['events'][event_name][ticker.id][0] + ' .. ' if data['events'][event_name].get(ticker.id) }}{{ data['events'][event_name][ticker.id][-1] if data['events'][event_name].get(ticker.id) }}">
+                  {{ (data['events'][event_name][ticker.id])|length if data['events'][event_name][ticker.id] else '-' }}</div>
               </td>
             {% endfor %}
 

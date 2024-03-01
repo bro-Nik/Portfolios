@@ -79,7 +79,7 @@
   </div>
 
 <div class="big-table pt-3 pb-3">
-  <form id="WalletAssetTransactionsForm" action="{{ url_for('.transactions_action', wallet_id=asset.wallet_id, ticker_id=ticker.id) }}">
+  <form id="WalletAssetTransactionsForm" action="{{ url_for('.transactions_action', wallet_id=asset.wallet_id, asset_id=asset.id) }}">
     <table class="table table-sm align-middle">
       <thead>
         <tr>
@@ -97,9 +97,9 @@
       <tbody>
         {% for transaction in asset.transactions|sort(reverse=true, attribute="date") %}
           {% if transaction.portfolio_asset %}
-            {% set url = url_for('portfolio.transaction_info', portfolio_id=transaction.portfolio_id, ticker_id=ticker.id, transaction_id=transaction.id) %}
+            {% set url = url_for('portfolio.transaction_info', portfolio_id=transaction.portfolio_id, ticker_id=asset.ticker_id, transaction_id=transaction.id) %}
           {% else %}
-            {% set url = url_for('wallet.transaction_info', wallet_id=asset.wallet_id, ticker_id=asset.ticker_id, transaction_id=transaction.id) %}
+            {% set url = url_for('wallet.transaction_info', wallet_id=asset.wallet_id, asset_id=asset.id, transaction_id=transaction.id) %}
           {% endif %}
           {% set quantity = transaction.quantity %}
           {% set color = 'text-green' if quantity > 0 else 'text-red' %}

@@ -8,11 +8,12 @@ from sqlalchemy import func
 from PIL import Image
 
 from ..app import db, celery
-from ..general_functions import Market, add_prefix, remove_prefix
+from ..general_functions import MARKETS, Market, add_prefix, remove_prefix
 from ..portfolio.models import Ticker
 from ..watchlist.models import WatchlistAsset
 from ..user.models import User
-from .integrations_api import API_NAMES, ApiIntegration, request_data
+from .integrations_api import API_NAMES, ApiIntegration, MarketIntegration, \
+    request_data
 from .integrations_other import MODULE_NAMES, OtherIntegration
 
 if TYPE_CHECKING:
@@ -166,8 +167,8 @@ def alerts_update(market):
 
 
 def get_module(module_name):
-    # from .integrations_api import API_NAMES, ApiIntegration
-    # from .integrations_other import MODULE_NAMES, OtherIntegration
+    if module_name in MARKETS:
+        return MarketIntegration(module_name)
     if module_name in API_NAMES:
         return ApiIntegration(module_name)
     if module_name in MODULE_NAMES:

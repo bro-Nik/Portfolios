@@ -11,7 +11,7 @@ from ..app import db, redis
 from .models import Task
 
 if TYPE_CHECKING:
-    from ..portfolio.models import Ticker
+    pass
 
 
 class Integration:
@@ -78,8 +78,8 @@ class Log:
 
 
 class Info:
-    def __init__(self, api_name: ApiName) -> None:
-        self.key = f'api.{api_name}.info'
+    def __init__(self, module_name: str) -> None:
+        self.key = f'api.{module_name}.info'
 
     def set(self, key: str, value) -> None:
         redis.hset(self.key, key, str(value).encode('utf-8'))
@@ -89,8 +89,8 @@ class Info:
 
 
 class Data:
-    def __init__(self, api_name: ApiName) -> None:
-        self.key = f'api.{api_name}.data'
+    def __init__(self, module_name: str) -> None:
+        self.key = f'api.{module_name}.data'
 
     def set(self, key: str, value: list | dict) -> None:
         redis.hset(self.key, key, json.dumps(value))
@@ -104,43 +104,19 @@ class Data:
 
 
 class Event:
-    Events: TypeAlias = Literal['not_updated_prices', 'new_tickers',
-                                'not_found_tickers', 'updated_images']
-    EVENTS: dict[Events, str] = {'not_updated_prices': 'Цены не обновлены',
-                                 'new_tickers': 'Новые тикеры',
-                                 'not_found_tickers': 'Тикеры не найдены',
-                                 'updated_images': 'Обновлены картинки'}
 
-    def __init__(self, api_name: ApiName) -> None:
-        self.key = f'api.{api_name}.events'
+    def __init__(self, module_name: str) -> None:
+        self.key = f'api.{module_name}.events'
 
-    def set(self, key: Events, value: list | dict) -> None:
+    def set(self, key: str, value: list | dict) -> None:
         redis.hset(self.key, key, json.dumps(value))
 
-    def get(self, key: Events, data_type=dict):
+    def get(self, key: str, data_type=dict):
         value = redis.hget(self.key, key)
         if value:
             value = json.loads(value.decode())
 
         return value if isinstance(value, data_type) else data_type()
-
-    def update(self, ids_in_event: list[Ticker.id],
-               event_name: Events, exclude_missing: bool = True) -> None:
-        today_str = str(datetime.now().date())
-        ids_in_db = self.get(event_name, dict)
-
-        # Добавление ненайденных
-        for ticker_id in ids_in_event:
-            ids_in_db.setdefault(ticker_id, [])
-            if today_str not in ids_in_db[ticker_id]:
-                ids_in_db[ticker_id].append(today_str)
-
-        # Исключение найденных
-        if exclude_missing is True:
-            for ticker_id in list(ids_in_db):
-                if ticker_id not in ids_in_event:
-                    del ids_in_db[ticker_id]
-            self.set(event_name, ids_in_db)
 
     def delete(self, key):
         redis.hdel(self.key, key)

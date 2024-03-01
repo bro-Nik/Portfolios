@@ -73,10 +73,6 @@ def user_action():
         create_new_wallet(current_user)  # type: ignore
         flash(gettext('Профиль очищен'), 'success')
 
-    elif action == 'update_assets':
-        current_user.update_assets()
-        flash(gettext('Активы пересчитаны'), 'success')
-
     db.session.commit()
     return ''
 
@@ -93,61 +89,61 @@ def settings_profile():
     return render_template('user/settings_profile.html')
 
 
-@bp.route('/settings_export_import', methods=['GET'])
-@login_required
-def settings_export_import():
-    return render_template('user/settings_export_import.html')
-
-
-@bp.route('/export', methods=['GET'])
-@login_required
-def export_data():
-    # For export to demo user
-    if request.args.get('demo_user') and current_user.type == 'admin':
-        user = utils.get_demo_user()
-    else:
-        user = current_user
-    if not user:
-        return ''
-
-    filename = f'portfolios_export ({datetime.now().date()}).txt'
-
-    return Response(
-        json.dumps(user.export_data()),
-        mimetype='application/json',
-        headers={'Content-disposition': f'attachment; filename={filename}'})
-
-
-@bp.route('/import_post', methods=['POST'])
-@login_required
-def import_data_post():
-    # For import to demo user
-    if request.args.get('demo_user') and current_user.type == 'admin':
-        user = utils.get_demo_user()
-        url = url_for('admin.demo_user', )
-    else:
-        user = current_user
-        url = url_for('.settings_export_import')
-
-    if not user:
-        return ''
-
-    file = request.files['file']
-    if file:
-        data = file.read()
-
-        try:
-            data = json.loads(data)
-            user.import_data(data)
-            flash(gettext('Импорт заверщен'), 'success')
-        except (json.decoder.JSONDecodeError, ValueError):
-            flash(gettext('Ошибка чтения данных'), 'danger')
-        except Exception as e:
-            flash(gettext('Неизвестная ошибка'), 'danger')
-            print(e)
-
-    return redirect(url)
-
+# @bp.route('/settings_export_import', methods=['GET'])
+# @login_required
+# def settings_export_import():
+#     return render_template('user/settings_export_import.html')
+#
+#
+# @bp.route('/export', methods=['GET'])
+# @login_required
+# def export_data():
+#     # For export to demo user
+#     if request.args.get('demo_user') and current_user.type == 'admin':
+#         user = utils.get_demo_user()
+#     else:
+#         user = current_user
+#     if not user:
+#         return ''
+#
+#     filename = f'portfolios_export ({datetime.now().date()}).txt'
+#
+#     return Response(
+#         json.dumps(user.export_data()),
+#         mimetype='application/json',
+#         headers={'Content-disposition': f'attachment; filename={filename}'})
+#
+#
+# @bp.route('/import_post', methods=['POST'])
+# @login_required
+# def import_data_post():
+#     # For import to demo user
+#     if request.args.get('demo_user') and current_user.type == 'admin':
+#         user = utils.get_demo_user()
+#         url = url_for('admin.demo_user', )
+#     else:
+#         user = current_user
+#         url = url_for('.settings_export_import')
+#
+#     if not user:
+#         return ''
+#
+#     file = request.files['file']
+#     if file:
+#         data = file.read()
+#
+#         try:
+#             data = json.loads(data)
+#             user.import_data(data)
+#             flash(gettext('Импорт заверщен'), 'success')
+#         except (json.decoder.JSONDecodeError, ValueError):
+#             flash(gettext('Ошибка чтения данных'), 'danger')
+#         except Exception as e:
+#             flash(gettext('Неизвестная ошибка'), 'danger')
+#             print(e)
+#
+#     return redirect(url)
+#
 
 @bp.route('/ajax_locales', methods=['GET'])
 @login_required
