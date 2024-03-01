@@ -95,7 +95,7 @@ class Data:
     def set(self, key: str, value: list | dict) -> None:
         redis.hset(self.key, key, json.dumps(value))
 
-    def get(self, key: str, data_type: type):
+    def get(self, key: str, data_type: type) -> dict:
         value = redis.hget(self.key, key)
         if value:
             value = json.loads(value.decode())
