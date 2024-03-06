@@ -45,17 +45,35 @@ function UpdateInfo(url) {
 
     // Потоки
     var $box = $(`.streams-box`).empty();
+    var $tab = $('<table class="small-text w-100">', {});
     $.each(data.streams, function(index, data){       
+      var box_url = $box.attr('data-url');
 
-      var $item = $('<div>', {});
-      $item.append(`<span class="me-3">${data.name}:</span>
-                    <span class="me-3">${data.calls}</span>
-                    <span class="me-3">${data.api_key}</span>
-                    <span class="me-3">${data.called}</span>
-                    <span class="text-average">${data.status}</span>`
+      // var $item = $('<div>', {});
+      // $item.addClass('open-modal')
+      // $item.attr('data-modal-id', 'StreamModal')
+      // $item.attr('data-url', `${box_url}${box_url.includes('?') ? '&' : '?'}stream_id=${data.id}`)
+      // $item.append(`<span class="me-3">${data.name}:</span>
+      //               <span class="me-3">${data.calls}</span>
+      //               <span class="me-3">${data.api_key}</span>
+      //               <span class="me-3">${data.called}</span>
+      //               <span class="text-average">${data.status}</span>`
+      //
+      var $tr = $('<tr class="m-3">', {});
+      $tr.addClass('open-modal')
+      $tr.attr('data-modal-id', 'StreamModal')
+      $tr.attr('data-url', `${box_url}${box_url.includes('?') ? '&' : '?'}stream_id=${data.id}`)
+
+      $tr.append(`<td>${data.name}:</td>
+                  <td>${data.calls}</td>
+                  <td>${data.api_key}</td>
+                  <td>${data.called}</td>
+                  <td class="text-average">${data.status}</td>`
       )
-      $box.append($item);
+      $tab.append($tr);
+      // $box.append($item);
     })
+    $box.append($tab);
     // Спрятать, если пусто
     if ($box.html() == '') {$box.parent().addClass('visually-hidden')}
     else {$box.parent().removeClass('visually-hidden')}

@@ -7,7 +7,7 @@
 <div class="mb-5">
   <div class="row xs-mb-3">
     <div class="col-auto">
-      <h1>Цены</h1>
+      <h1>{{ module.events.list[event] }}</h1>
     </div>
   </div>
   {% include 'flash_messages.html' %}
@@ -103,10 +103,6 @@
 
     <!-- Actions buttons -->
     <div class="sticky-bottom-buttons">
-      <a class="open-modal-confirmation" data-action="delete_all_redis"
-        data-title="Удалить все записи?"
-        data-text="Будут удалены все записи">
-        Удалить все из Redis</a>
       <a class="open-modal-confirmation" data-action="delete"
         data-title="Удалить тикеры?"
         data-text="Все тикеры и фото будут удалены из базы">

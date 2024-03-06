@@ -80,6 +80,11 @@ class Stream(db.Model):
         'Key', backref=db.backref('stream', uselist=False, lazy=True))
     # api: Mapped[Api]
 
+    def edit(self, form: ImmutableMultiDict) -> None:
+        self.next_call = form['next_call']
+        # self.comment = form['comment']
+        db.session.commit()
+
 
 class Task(db.Model):
     __tablename__ = 'api_task'

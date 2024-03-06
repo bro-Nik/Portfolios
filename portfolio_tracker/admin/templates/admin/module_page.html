@@ -57,7 +57,7 @@
     {% if module.api %}
       <div class="d-flex flex-column">
         <h5>Потоки</h5>
-        <div class="streams-box small-text"></div>
+        <div class="streams-box small-text" data-url="{{ url_for('.api_stream_settings') }}"></div>
       </div>
     {% endif %}
 

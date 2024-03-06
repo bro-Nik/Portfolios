@@ -10,8 +10,8 @@ MODULE_NAMES: tuple[ModuleName, ...] = ('other', 'requests')
 
 class OtherIntegration(integrations.Integration):
     def __init__(self, name: str | None):
-        super().__init__(name)
         if name not in MODULE_NAMES:
             return
 
+        super().__init__(name)
         self.type = 'other'

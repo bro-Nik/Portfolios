@@ -15,10 +15,7 @@ if TYPE_CHECKING:
 
 
 class Integration:
-    def __init__(self, module_name: str | None):
-        if not module_name:
-            return
-
+    def __init__(self, module_name: str):
         self.name = module_name
         self.events = Event(module_name)
         self.info = Info(module_name)
@@ -104,7 +101,6 @@ class Data:
 
 
 class Event:
-
     def __init__(self, module_name: str) -> None:
         self.key = f'api.{module_name}.events'
 
@@ -126,6 +122,7 @@ def task_logging(function):
     @wraps(function)
     def decorated_function(task):
         from .utils import get_module
+        from .integrations_api import ApiIntegration
 
         module_name = task.name[:task.name.find('_')]
 
@@ -134,10 +131,13 @@ def task_logging(function):
             print('Модуль не найден')
             return
 
-        if hasattr(module, 'is_working_now'):
+        # Блокировка модуля
+        if isinstance(module, ApiIntegration):
+            # Ожидание завершения уже запущенной задачи
             while module.is_working_now():
                 time.sleep(60)
 
+            # Блокировка других задач модуля
             module.start_work()
 
         start = time.perf_counter()
@@ -159,8 +159,8 @@ def task_logging(function):
         if task_settings and task_settings.retry_after():
             retry_after = task_settings.retry_after()
             task.default_retry_delay = retry_after
-            next_run_time = datetime.now() + timedelta(seconds=retry_after)
-            next_run_time = next_run_time.isoformat(sep=' ', timespec='minutes')
+            run_time = datetime.now() + timedelta(seconds=retry_after)
+            next_run_time = run_time.isoformat(sep=' ', timespec='minutes')
 
         # Конец лог
         wasted_time = smart_time(time.perf_counter() - start)
@@ -170,7 +170,8 @@ def task_logging(function):
         current_app.logger.info(f'{task.name}: {mes}')
         module.logs.set('debug', f'{mes} {mes2}', task.name)
 
-        if hasattr(module, 'end_work'):
+        # Разблокировка модуля
+        if isinstance(module, ApiIntegration):
             module.end_work()
 
         # Следующий запуск

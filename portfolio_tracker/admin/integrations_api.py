@@ -6,7 +6,6 @@ import requests
 
 from flask import current_app
 
-from ..portfolio.models import Ticker
 from ..app import db, redis
 from .models import Api, Stream
 from . import integrations
@@ -17,25 +16,27 @@ if TYPE_CHECKING:
 
 ApiName: TypeAlias = Literal['crypto', 'stocks', 'currency', 'proxy']
 API_NAMES: tuple[ApiName, ...] = ('crypto', 'stocks', 'currency', 'proxy')
-Events: TypeAlias = Literal['not_updated_prices', 'new_tickers',
-                            'not_found_tickers', 'updated_images']
 
 
 class ApiIntegration(integrations.Integration):
     def __init__(self, name: str | None):
-        super().__init__(name)
-
         if name not in API_NAMES:
             return
 
+        super().__init__(name)
         api = db.session.execute(db.select(Api).filter_by(name=name)).scalar()
         if not api:
             api = Api(name=name)
             db.session.add(api)
         self.api = api
-        # self.type = 'api'
-        # if api.id:
-        #     self.update_streams()
+
+    def minute_limit_trigger(self, response: requests.models.Response
+                             ) -> int | bool:
+        return False
+
+    def monthly_limit_trigger(self, response: requests.models.Response
+                              ) -> bool:
+        return False
 
     def update_streams(self) -> None:
         from . import proxy
@@ -56,12 +57,14 @@ class ApiIntegration(integrations.Integration):
         free_keys = [key.id for key in api.keys if not key.stream]
 
         for stream in api.streams:
+
             # Сопоставляем свободные ключи
             if api.need_key and not stream.key:
                 stream.api_key_id = free_keys.pop() if free_keys else None
+
             # Обновляем статус потока и убираем занятые прокси
             has_proxy = bool(proxies.pop(stream.proxy_id, False))
-            has_key_if_need = bool(not api.need_key or stream.key)
+            has_key_if_need = bool(not api.need_key or stream.api_key_id)
             stream.active = has_proxy and has_key_if_need
 
         # Если есть свободные прокси - добавляем потоки
@@ -105,16 +108,14 @@ class ApiIntegration(integrations.Integration):
         api = self.api
         now = datetime.now()
         next_call = stream.next_call
-        delay = 0
-        if next_call:
-            delay = (next_call - now).total_seconds()
-            delay = delay if delay > 0 else 0
+        delay = (next_call - now).total_seconds()
+        delay = delay if delay > 0 else 0
 
         # Время запуска после задержки
         run_time = now + timedelta(seconds=delay)
 
         # Если после запуска будет больше минуты с первого запроса - обнуляем
-        if run_time > stream.first_call_minute + timedelta(seconds=60):
+        if run_time >= stream.first_call_minute + timedelta(seconds=60):
             stream.first_call_minute = run_time
             stream.minute_calls = 0
 
@@ -138,11 +139,12 @@ class ApiIntegration(integrations.Integration):
             self.next_month_call(stream)
 
         db.session.commit()
-        # stream.api.unblock_streams()
 
         print(
-            f'Поток: {stream.id}, next_call: {stream.next_call},'
-            f'calls: {stream.minute_calls}, delay: {delay}')
+            f'Поток: {stream.name}, first_call: {stream.first_call_minute}, '
+            f'next_call: {stream.next_call}, '
+            f'calls: {stream.minute_calls}, delay: {delay}'
+        )
 
         # Задержка до запроса (если есть)
         time.sleep(delay)
@@ -156,11 +158,11 @@ class ApiIntegration(integrations.Integration):
                               stream)
 
         # Уменьшаем лимит
-        if self.api.minute_limit > 1:
-            self.api.minute_limit -= 1
-            # Лог
-            self.logs.set('warning',
-                          f'Уменьшен лимит запросов в минуту. {stream.name}')
+        # if self.api.minute_limit > 1:
+        #     self.api.minute_limit -= 1
+        #     # Лог
+        #     self.logs.set('warning',
+        #                   f'Уменьшен лимит запросов в минуту. {stream.name}')
         db.session.commit()
 
     def change_next_call(self, next_datetime, stream):
@@ -190,113 +192,63 @@ class ApiIntegration(integrations.Integration):
 
             # Запрос
             response = request_data(self, url, stream)
+            if response is None:
+                return
 
             # Проверка на превышение минутного лимита
-            if hasattr(self, 'minute_limit_trigger'):
-                retry_after = self.minute_limit_trigger(response)
-                if retry_after:
-                    # Логи
-                    m = f'Превышен лимит запросов в минуту. {stream.name}'
-                    current_app.logger.warning(m, exc_info=True)
-                    self.logs.set('warning', m)
+            minute_limit = self.minute_limit_trigger(response)
+            if minute_limit is not False:
+                retry_after = minute_limit
+                # Логи
+                m = (f'Превышен лимит запросов в минуту'
+                     f'(retry_after={retry_after}). {stream.name}')
+                current_app.logger.warning(m, exc_info=True)
+                self.logs.set('warning', m)
 
-                    # Уменьшить лимит
-                    self.update_minute_limit(retry_after, stream)
-                    continue
+                # Уменьшить лимит
+                self.update_minute_limit(retry_after, stream)
+                continue
 
             # Проверка на превышение месячного лимита
-            if hasattr(self, 'monthly_limit_trigger'):
-                # Превышен лимит запросов в месяц
-                if self.monthly_limit_trigger(response):
-                    # Логи
-                    m = f'Превышен лимит запросов в месяц. {stream.name}'
-                    current_app.logger.warning(m, exc_info=True)
-                    self.logs.set('warning', m)
+            monthly_limit = self.monthly_limit_trigger(response)
+            if monthly_limit is not False:
+                # Логи
+                m = f'Превышен лимит запросов в месяц. {stream.name}'
+                current_app.logger.warning(m, exc_info=True)
+                self.logs.set('warning', m)
 
-                    # Отодвинуть следующий вызов
-                    self.next_month_call(stream)
-                    continue
+                # Отодвинуть следующий вызов
+                self.next_month_call(stream)
+                continue
 
             return response
 
 
 def request_data(api, url: str, stream: Stream | None = None
                  ) -> requests.models.Response | None:
+    # Неверная ссылка
     if not url.startswith('http'):
         return
 
-    # time.sleep(0.1)
-    # Прокси
+    time.sleep(0.1)
+
     proxies = {}
     if stream:
         api.new_call(stream)
 
+        # Прокси
         if stream.proxy:
-            # proxies = {'https': stream.proxy.replace('http://', 'https://'),
-            #            'http': stream.proxy.replace('https://', 'http://')}
-            proxies = {'http': stream.proxy.replace('https://', 'http://')}
+            proxy = stream.proxy.replace('https://', 'http://')
+            proxies = {'http': proxy, 'https': proxy}
 
     try:
         return requests.get(url, proxies=proxies)
 
     except requests.exceptions.ConnectionError as e:
-        current_app.logger.error(f'Ошибка: {e}', exc_info=True)
-        api.logs.set('error', f'Ошибка: {e}')
+        current_app.logger.error(f'Ошибка соединения: {e}', exc_info=True)
+        api.logs.set('error', f'Ошибка соединения: {e}')
 
     except Exception as e:
         current_app.logger.error(f'Ошибка: {e}. url: {url}', exc_info=True)
         api.logs.set('error', f'Ошибка: {e}')
         raise
-
-
-class MarketEvent(integrations.Event):
-    def __init__(self, name):
-        super().__init__(name)
-        self.list: dict[Events, str] = {
-            'not_updated_prices': 'Цены не обновлены',
-            'new_tickers': 'Новые тикеры',
-            'not_found_tickers': 'Тикеры не найдены',
-            'updated_images': 'Обновлены картинки'
-        }
-
-    def update(self, ids_in_event: list[Ticker.id],
-               event_name: str, exclude_missing: bool = True) -> None:
-        today_str = str(datetime.now().date())
-        ids_in_db = self.get(event_name, dict)
-
-        # Добавление ненайденных
-        for ticker_id in ids_in_event:
-            ids_in_db.setdefault(ticker_id, [])
-            if today_str not in ids_in_db[ticker_id]:
-                ids_in_db[ticker_id].append(today_str)
-
-        # Исключение найденных
-        if exclude_missing is True:
-            for ticker_id in list(ids_in_db):
-                if ticker_id not in ids_in_event:
-                    del ids_in_db[ticker_id]
-            self.set(event_name, ids_in_db)
-
-
-class MarketIntegration(ApiIntegration):
-    def __init__(self, name):
-        super().__init__(name)
-        self.events = MarketEvent(name)
-
-    def evets_info(self, event):
-        ids = []
-        data = {'events': {}}
-
-        # Общие действия
-        for event_name, event_name_ru in self.events.list.items():
-            data_event = self.events.get(event_name, dict)
-            if data_event:
-                data['events'][event_name_ru] = data_event
-
-            # для списка тикеров
-            if event_name == event:
-                ids = data['events'][event_name_ru].keys()
-
-        data['tickers'] = db.session.execute(
-            db.select(Ticker).filter(Ticker.id.in_(ids))).scalars()
-        return data

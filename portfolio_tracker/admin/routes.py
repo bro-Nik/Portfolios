@@ -9,12 +9,12 @@ from ..jinja_filters import user_datetime
 from ..general_functions import MARKETS, actions_in, when_updated
 from ..portfolio.utils import get_ticker
 from ..user.utils import find_user_by_id
-from .models import Key, Task
+from .models import Key, Stream, Task
 from .integrations import Log, get_api_task, tasks_trans
 from .integrations_api import API_NAMES, ApiIntegration
 from .integrations_other import MODULE_NAMES
-from .utils import get_all_users, get_module, get_tasks, \
-    get_tickers, get_tickers_count, task_action
+from .utils import get_all_users, get_module, get_tasks, get_tickers, \
+    get_tickers_count, task_action
 from . import bp
 
 
@@ -140,18 +140,6 @@ def module_page():
                            module_names=API_NAMES + MODULE_NAMES)
 
 
-@bp.route('/module/events', methods=['GET'])
-@admin_only
-def module_event_info():
-    event = request.args.get('event')
-
-    module = get_module(request.args.get('module_name')) or abort(404)
-    data = module.evets_info(event) if hasattr(module, 'evets_info') else {}
-
-    return render_template('admin/api_event.html', data=data,
-                           event=event, module=module)
-
-
 @bp.route('/module/detail', methods=['GET'])
 @admin_only
 def module_page_detail():
@@ -189,7 +177,6 @@ def module_page_detail():
         # Информация
         for info_name in redis.hkeys(module.info.key):
             value = module.info.get(info_name)
-            # print(value)
 
             # Если дата
             if re.search(r'\d{4}-\d{2}-\d{2}', value):
@@ -209,6 +196,7 @@ def module_page_detail():
         for stream in module.api.streams:
             result['streams'].append(
                 {'name': stream.name, 'class': 'text-average',
+                 'id': stream.id,
                  'calls': f'{stream.month_calls} из {module.api.month_limit or "∞"}',
                  'api_key': f'*{stream.key.api_key[-10:]}' if stream.key else 'без ключа',
                  'called': when_updated(stream.next_call, 'Никогда'),
@@ -270,6 +258,32 @@ def api_key_settings():
         return ''
 
     return render_template('admin/api_key_settings.html', key=key, api=api)
+
+
+@bp.route('/api/stream_settings/', methods=['GET', 'POST'])
+@admin_only
+def api_stream_settings():
+    stream = db.session.execute(
+        db.select(Stream).filter_by(id=request.args.get('stream_id'))
+    ).scalar() or abort(404)
+
+    if request.method == 'POST':
+        stream.edit(request.form)
+        return ''
+
+    return render_template('admin/api_stream_settings.html', stream=stream)
+
+
+@bp.route('/module/events', methods=['GET'])
+@admin_only
+def module_event_info():
+    event = request.args.get('event')
+
+    module = get_module(request.args.get('module_name')) or abort(404)
+    data = module.evets_info(event) if hasattr(module, 'evets_info') else {}
+
+    return render_template('admin/api_event.html', data=data,
+                           event=event, module=module)
 
 
 @bp.route('/api/events', methods=['POST'])
@@ -360,8 +374,7 @@ def tasks():
 
         # Задачи из базы (удаленные)
         tasks_db = list(db.session.execute(
-            db.select(Task)
-            .filter(Task.name.notin_(tasks_names))).scalars())
+            db.select(Task).filter(Task.name.notin_(tasks_names))).scalars())
         if len(tasks_db):
             result.append({'group_name': 'Не найдены'})
             for task in tasks_db:

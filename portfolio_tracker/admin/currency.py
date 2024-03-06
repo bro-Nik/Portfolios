@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING
 from flask import current_app
 
 from ..app import db, celery
-from ..general_functions import Market, remove_prefix
+from ..general_functions import Market, add_prefix, remove_prefix
 from ..portfolio.models import PriceHistory
 from .integrations import task_logging
-from .integrations_api import ApiName, MarketIntegration
+from .integrations_api import ApiName
+from .integrations_market import MarketIntegration
 from .utils import create_new_ticker, get_tickers, find_ticker_in_list
 
 if TYPE_CHECKING:
@@ -20,10 +21,6 @@ BASE_URL: str = 'http://api.currencylayer.com/'
 
 
 class Api(MarketIntegration):
-    def minute_limit_trigger(self, response: requests.models.Response
-                             ) -> int | None:
-        return
-
     def monthly_limit_trigger(self, response: requests.models.Response
                               ) -> bool:
         try:
@@ -61,8 +58,8 @@ class Api(MarketIntegration):
 @celery.task(bind=True, name='currency_load_prices', max_retries=None)
 @task_logging
 def currency_load_prices(self) -> None:
-
     api = Api(API_NAME)
+    tickers = get_tickers(MARKET, without_ids=[add_prefix('usd', MARKET)])
     not_updated_ids = []
 
     # Получение данных
@@ -72,7 +69,7 @@ def currency_load_prices(self) -> None:
         return
 
     # Сохранение данных
-    for ticker in get_tickers(MARKET):
+    for ticker in tickers:
         external_id = f'USD{remove_prefix(ticker.id, MARKET)}'.upper()
         price = data.get(external_id)
         if price:
@@ -93,7 +90,6 @@ def currency_load_prices(self) -> None:
 @celery.task(bind=True, name='currency_load_tickers', max_retries=None)
 @task_logging
 def currency_load_tickers(self) -> None:
-
     api = Api(API_NAME)
     tickers = get_tickers(MARKET)
     new_ids = []
@@ -132,7 +128,7 @@ def currency_load_tickers(self) -> None:
     db.session.commit()
 
     # События
-    api.events.update(new_ids, 'new_tickers', False)
+    api.events.update(new_ids, 'new_tickers', exclude_missing=False)
     api.events.update(not_found_ids, 'not_found_tickers')
 
     # Инфо
@@ -144,7 +140,7 @@ def currency_load_tickers(self) -> None:
 def currency_load_history(self) -> None:
 
     api = Api(API_NAME)
-    tickers = get_tickers(MARKET)
+    tickers = get_tickers(MARKET, without_ids=[add_prefix('usd', MARKET)])
     date = datetime.now().date()
     attempts: int = 5  # Количество запросов
     url = f'{BASE_URL}historical?date='

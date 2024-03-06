@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from io import BytesIO
 
 from flask import current_app
@@ -12,22 +12,24 @@ from ..general_functions import MARKETS, Market, add_prefix, remove_prefix
 from ..portfolio.models import Ticker
 from ..watchlist.models import WatchlistAsset
 from ..user.models import User
-from .integrations_api import API_NAMES, ApiIntegration, MarketIntegration, \
-    request_data
+from .integrations_api import API_NAMES, ApiIntegration, request_data
+from .integrations_market import MarketIntegration
 from .integrations_other import MODULE_NAMES, OtherIntegration
 
 if TYPE_CHECKING:
     pass
 
 
-def get_tickers(market: Market | None = None,
-                without_image: bool = False) -> list[Ticker]:
+def get_tickers(market: Market | None = None, without_image: bool = False,
+                without_ids: List[str] | None = None) -> List[Ticker]:
     select = db.select(Ticker).order_by(Ticker.market_cap_rank.is_(None),
                                         Ticker.market_cap_rank.asc())
     if market:
         select = select.filter_by(market=market)
     if without_image:
         select = select.filter_by(image=None)
+    if without_ids:
+        select = select.filter(Ticker.id.notin_(without_ids))
 
     return list(db.session.execute(select).scalars())
 
@@ -67,8 +69,8 @@ def create_new_ticker(external_id: str, market: Market) -> Ticker:
     return ticker
 
 
-def load_image(url: str, market: Market, ticker_id: Ticker.id,
-               api: ApiIntegration) -> str | None:
+def load_image(url: str, market: Market, ticker_id: str, api: ApiIntegration
+               ) -> str | None:
 
     # Папка хранения изображений
     upload_folder = current_app.config['UPLOAD_FOLDER']
@@ -166,7 +168,7 @@ def alerts_update(market):
     db.session.commit()
 
 
-def get_module(module_name):
+def get_module(module_name) -> MarketIntegration | ApiIntegration | OtherIntegration | None:
     if module_name in MARKETS:
         return MarketIntegration(module_name)
     if module_name in API_NAMES:

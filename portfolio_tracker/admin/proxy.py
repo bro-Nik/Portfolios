@@ -40,8 +40,6 @@ def get_proxies() -> dict:
 def proxy_update(self) -> None:
 
     api = Api(API_NAME)
-    # api.update_streams()
-
     method = 'getproxy/?state=active'
     while True:
         # Получение данных
@@ -55,7 +53,8 @@ def proxy_update(self) -> None:
 
     # Сохранение данных
     # Не использовать прокси, если скоро закончится
-    for _, proxy in data.items():
+    for _, proxy in list(data.items()):
+
         proxy_end = datetime.strptime(proxy['date_end'], '%Y-%m-%d %H:%M:%S')
         time_left = (proxy_end - datetime.now()).total_seconds()
         need_time = 6*60*60  # По умолчанию 6 часов
@@ -63,7 +62,7 @@ def proxy_update(self) -> None:
         if task and task.retry_after():
             need_time = task.retry_after()
         if need_time > time_left:
-            del data[proxy]
+            del data[proxy['id']]
 
     api.data.set('proxy_list', data)
 

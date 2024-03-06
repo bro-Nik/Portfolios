@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from flask import current_app
@@ -7,7 +7,8 @@ from flask import current_app
 from ..app import db, celery
 from ..general_functions import Market, remove_prefix
 from .integrations import task_logging
-from .integrations_api import ApiName, MarketIntegration
+from .integrations_api import ApiName
+from .integrations_market import MarketIntegration
 from .utils import alerts_update, create_new_ticker, get_tickers, \
     load_image, find_ticker_in_list
 
@@ -22,14 +23,22 @@ BASE_URL: str = 'https://api.coingecko.com/api/v3/'
 
 class Api(MarketIntegration):
     def minute_limit_trigger(self, response: requests.models.Response
-                             ) -> int | None:
+                             ) -> int | bool:
         if response.status_code == 429:
-            return int(response.headers.get('Retry-After', 120))
+            retry_after = response.headers.get('Retry-After')
+            if retry_after:
+                return int(retry_after) + 1
 
-    def monthly_limit_trigger(self, response: requests.models.Response
-                              ) -> bool:
-        if response.status_code:
-            pass
+            retry_time_utc = response.headers.get('x-ratelimit-reset')
+            if retry_time_utc:
+                retry_time_utc = datetime.strptime(retry_time_utc,
+                                                   '%Y-%m-%d %H:%M:%S %z')
+                now_utc = datetime.now(timezone.utc)
+
+                return int((retry_time_utc - now_utc).total_seconds()) + 1
+
+            return 0
+
         return False
 
     def response_processing(self, response: requests.models.Response | None,
@@ -69,6 +78,9 @@ def crypto_load_prices(self) -> None:
         data = api.response_processing(response, self.name)
         if not data:
             api.logs.set('error', 'Нет данных', self.name)
+            print(f'response: {response}')
+            if response:
+                print(f'response: {response.json()}')
             return
 
         # Сохранение данных

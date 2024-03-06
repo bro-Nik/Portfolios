@@ -1,0 +1,20 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+{% set modal_title = 'Изменить настройки потока' %}
+
+{% block content %}
+<form data-url="{{ url_for('.api_stream_settings', stream_id=stream.id) }}">
+  <div class="row g-2">
+
+    <div class="col-12">
+      <div class="mb-1">
+        <label class="form-label h7">Следующий вызов</label>
+        <input type="text" class="form-control rounded-3" name="next_call" value="{{ stream.next_call }}">
+      </div>
+    </div>
+
+    <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
+
+  </div>
+</form>
+{% endblock %}
