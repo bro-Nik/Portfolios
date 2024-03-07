@@ -90,9 +90,12 @@ class ApiIntegration(integrations.Integration):
                 stream.proxy_id = p['id']
                 stream.proxy = (f"{p['type']}://{p['user']}:{p['pass']}@"
                                 f"{p['host']}:{p['port']}")
-                stream.active = True
             else:
                 break
+
+        # Отключаем потоки без прокси
+        for stream in streams_without_proxy:
+            stream.active = False
 
         db.session.commit()
 
@@ -210,6 +213,8 @@ class ApiIntegration(integrations.Integration):
             # Запрос
             response = request_data(self, url, stream)
             if response is None:
+                stream.active = False
+                db.session.commit()
                 return
 
             # Проверка на превышение минутного лимита
