@@ -9,7 +9,6 @@
     <div class="col-12">
       <div class="mb-1">
         <label class="form-label h7">API Key</label>
-        {{ api.name }}
         <input type="text" class="form-control rounded-3" name="api_key" value="{{ key.api_key if key.api_key }}" {{ 'required' if api.need_key }}>
       </div>
     </div>
@@ -25,13 +24,6 @@
         </div>
       </div>
     </div>
-
-    {% if key.id %}
-      <span class="link-danger open-modal-confirmation"
-         data-title="Удалить ключ *{{ key.api_key[-10:] }}?" data-action="delete_keys" data-id="{{ key.id }}"
-         data-pre-need-clean="true">
-        Удалить</span>
-    {% endif %}
 
     <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
 

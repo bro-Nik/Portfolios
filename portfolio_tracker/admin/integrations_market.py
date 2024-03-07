@@ -33,7 +33,6 @@ class MarketEvent(integrations.Event):
 
         # Прошлые данные
         ids_in_db = self.get(event_name, dict)
-        print(f'ids в базе: {ids_in_db}, ids: {ids_in_event}')
 
         # Добавление ненайденных
         for ticker_id in ids_in_event:

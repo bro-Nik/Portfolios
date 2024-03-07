@@ -42,22 +42,41 @@
               data-url="{{ url_for('.api_key_settings', api_name=module.api.name) }}">Добавить</a>
           {% endif %}
         </div>
-        <div class="small-text">
-          {% for key in module.api.keys %}
-            <div class="d-flex gap-3 open-modal" data-modal-id="KeySettingsModal"
-              data-url="{{ url_for('.api_key_settings', api_name=module.api.name, key_id=key.id) }}">
-              <span class="text-average">Ключ {{ loop.index if module.api.keys|length > 1 }}</span>
-              <span>*{{ key.api_key[-10:] }}</span>
-            </div>
-          {% endfor%}
-        </div>
+        <form id="KeyActionForm" action="{{ url_for('.api_key_action', api_name=module.api.name) }}">
+          <table class="small-text w-100">
+            {% for key in module.api.keys %}
+              <tr>
+                <td class="text-average">Ключ {{ loop.index if module.api.keys|length > 1 }}</td>
+                <td>*{{ key.api_key[-10:] }}</td>
+                <td class="align-middle text-end">
+	                <div class="dropdown dropstart">
+	                  <a href="#" class="link-secondary" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="dropdownAction">
+                      <a class="dropdown-item open-modal" data-modal-id="KeySettingsModal"
+                        data-url="{{ url_for('.api_key_settings', api_name=module.api.name, key_id=key.id) }}">Изменить</a>
+                        <a class="dropdown-item link-danger open-modal-confirmation"
+                            data-title="Удалить ключ?" data-form="#KeyActionForm"
+                            data-text="Ключ бедет удален, потоки пересчитаются"
+                            data-action="delete" data-id="{{ key.id }}">Удалить</a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            {% endfor%}
+          </table>
+        </form>
       </div>
     {% endif %}
 
     {% if module.api %}
       <div class="d-flex flex-column">
         <h5>Потоки</h5>
-        <div class="streams-box small-text" data-url="{{ url_for('.api_stream_settings') }}"></div>
+        <form id="StreamActionForm" action="{{ url_for('.api_stream_action') }}">
+          <table class="streams-box small-text w-100"
+            data-url-settings="{{ url_for('.api_stream_settings') }}"></table>
+        </form>
       </div>
     {% endif %}
 

@@ -13,6 +13,13 @@
       </div>
     </div>
 
+    <div class="col-12">
+      <div class="form-check mb-1">
+        <label class="form-check-label">Активный</label>
+        <input class="form-check-input" type="checkbox" value="1" {{ 'checked' if stream.active }} name="active">
+      </div>
+    </div>
+
     <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
 
   </div>

@@ -13,7 +13,7 @@ from .models import Key, Stream, Task
 from .integrations import Log, get_api_task, tasks_trans
 from .integrations_api import API_NAMES, ApiIntegration
 from .integrations_other import MODULE_NAMES
-from .utils import get_all_users, get_module, get_tasks, get_tickers, \
+from .utils import get_all_users, get_key, get_module, get_stream, get_tasks, get_tickers, \
     get_tickers_count, task_action
 from . import bp
 
@@ -124,16 +124,6 @@ def ticker_settings():
 @admin_only
 def module_page():
     module = get_module(request.args.get('module_name'))
-
-    # Actions
-    if request.method == 'POST' and hasattr(module, 'api'):
-        data = json.loads(request.data)
-        if 'delete_keys' in data['action']:
-            for key in module.api.keys:
-                if str(key.id) in data['ids']:
-                    db.session.delete(key)
-        db.session.commit()
-        return ''
 
     return render_template('admin/module_page.html', module=module,
                            log_categories=Log.CATEGORIES,
@@ -247,9 +237,7 @@ def api_key_settings():
     module = ApiIntegration(request.args.get('api_name'))
     api = module.api
 
-    key = db.session.execute(
-        db.select(Key).filter_by(id=request.args.get('key_id'))
-    ).scalar() or Key(api_id=api.id)
+    key = get_key(request.args.get('key_id')) or Key(api_id=api.id)
 
     if request.method == 'POST':
         key.edit(request.form)
@@ -260,18 +248,33 @@ def api_key_settings():
     return render_template('admin/api_key_settings.html', key=key, api=api)
 
 
+@bp.route('/api/key_action/', methods=['POST'])
+@admin_only
+def api_key_action():
+    actions_in(request.data, get_key)
+
+    module = ApiIntegration(request.args.get('api_name'))
+    module.update_streams()
+    return ''
+
+
 @bp.route('/api/stream_settings/', methods=['GET', 'POST'])
 @admin_only
 def api_stream_settings():
-    stream = db.session.execute(
-        db.select(Stream).filter_by(id=request.args.get('stream_id'))
-    ).scalar() or abort(404)
+    stream = get_stream(request.args.get('stream_id')) or abort(404)
 
     if request.method == 'POST':
         stream.edit(request.form)
         return ''
 
     return render_template('admin/api_stream_settings.html', stream=stream)
+
+
+@bp.route('/api/stream_action/', methods=['GET', 'POST'])
+@admin_only
+def api_stream_action():
+    actions_in(request.data, get_stream)
+    return ''
 
 
 @bp.route('/module/events', methods=['GET'])

@@ -56,26 +56,43 @@ class ApiIntegration(integrations.Integration):
         # Список свободных ключей
         free_keys = [key.id for key in api.keys if not key.stream]
 
+        streams_without_proxy = []
         for stream in api.streams:
 
             # Сопоставляем свободные ключи
             if api.need_key and not stream.key:
                 stream.api_key_id = free_keys.pop() if free_keys else None
+            stream.active = bool(not api.need_key or stream.api_key_id)
 
-            # Обновляем статус потока и убираем занятые прокси
-            has_proxy = bool(proxies.pop(stream.proxy_id, False))
-            has_key_if_need = bool(not api.need_key or stream.api_key_id)
-            stream.active = has_proxy and has_key_if_need
+            # Проверяем актуальность прокси и убираем занятые прокси
+            if not bool(proxies.pop(stream.proxy_id, False)) and stream.active:
+                streams_without_proxy.append(stream)
 
-        # Если есть свободные прокси - добавляем потоки
-        while len(proxies) > 0 and (not api.need_key or len(free_keys) > 0):
+        # Если есть свободные прокси
+        while proxies:
             p = proxies.pop(list(proxies.keys())[0])
-            new_stream = Stream(
-                name=f'Поток {len(api.streams) + 1}',
-                api_key_id=free_keys.pop() if free_keys else None,
-                proxy_id=p['id'],
-                proxy=f"{p['type']}://{p['user']}:{p['pass']}@{p['host']}:{p['port']}")
-            api.streams.append(new_stream)
+            stream = None
+
+            # Существующий поток с устаревшим прокси
+            if streams_without_proxy:
+                stream = streams_without_proxy.pop()
+
+            # Добавляем поток
+            if not stream and not api.need_key or free_keys:
+                stream = Stream(
+                    name=f'Поток {len(api.streams) + 1}',
+                    api_key_id=free_keys.pop() if free_keys else None
+                )
+                api.streams.append(stream)
+
+            # Обновляем проки у потока
+            if stream:
+                stream.proxy_id = p['id']
+                stream.proxy = (f"{p['type']}://{p['user']}:{p['pass']}@"
+                                f"{p['host']}:{p['port']}")
+                stream.active = True
+            else:
+                break
 
         db.session.commit()
 

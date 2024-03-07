@@ -56,6 +56,11 @@ class Key(db.Model):
         self.comment = form['comment']
         db.session.commit()
 
+    def delete(self) -> None:
+        self.stream.api_key_id = None
+        db.session.delete(self)
+        db.session.commit()
+
 
 class Stream(db.Model):
     __tablename__ = 'api_stream'
@@ -82,7 +87,11 @@ class Stream(db.Model):
 
     def edit(self, form: ImmutableMultiDict) -> None:
         self.next_call = form['next_call']
-        # self.comment = form['comment']
+        self.active = form.get('active', False, type=bool)
+        db.session.commit()
+
+    def delete(self) -> None:
+        db.session.delete(self)
         db.session.commit()
 
 

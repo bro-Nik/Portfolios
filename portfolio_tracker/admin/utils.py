@@ -7,6 +7,8 @@ from flask import current_app
 from sqlalchemy import func
 from PIL import Image
 
+from portfolio_tracker.admin.models import Key, Stream
+
 from ..app import db, celery
 from ..general_functions import MARKETS, Market, add_prefix, remove_prefix
 from ..portfolio.models import Ticker
@@ -166,6 +168,14 @@ def alerts_update(market):
                 alert.status = 'worked'
 
     db.session.commit()
+
+
+def get_key(key_id):
+    return db.session.execute(db.select(Key).filter_by(id=key_id)).scalar()
+
+
+def get_stream(stream_id):
+    return db.session.execute(db.select(Stream).filter_by(id=stream_id)).scalar()
 
 
 def get_module(module_name) -> MarketIntegration | ApiIntegration | OtherIntegration | None:
