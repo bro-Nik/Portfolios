@@ -10,13 +10,13 @@
   <title>Portfolios</title>
 </head>
 
-<body class="d-flex flex-column h-100">
-  <div class="container ps-lg-5 pe-lg-5 d-flex flex-column h-100">
-    <header class="d-flex justify-content-center">
-      <div class="d-flex col-12 py-3">
+<body>
+  <div class="container ps-lg-5 pe-lg-5 d-flex flex-column" style="min-height: calc(100vh - 80px);">
+    <header>
+      <div class="d-flex py-3">
 
         <div class="d-flex align-items-center">
-          <img class="mb-0 me-2" src="{{ url_for('static', filename='favicon.png') }}" alt="" width="32" height="32" />
+          <img class="me-2" src="{{ url_for('static', filename='favicon.png') }}" alt="" width="32" height="32" />
           <span class="fs-4">Portfolios</span>
         </div>
 
@@ -47,41 +47,41 @@
       </div>
     </header>
 
-    <section class="d-flex justify-content-center h-100">
-      <div class="d-flex align-items-center col-12">
-        <div class="col-6">
-          <div class="d-flex flex-column" style="padding: 60px 50px 60px 30px;">
-            <h2 class="text-uppercase mb-5 fw-bold" style="font-size: 3.5rem; color: #e5bb15; line-height: 1;">
-              {% trans %}Отслеживай<br> активы<br> в одном месте{% endtrans %}
-            </h2>
+    <section class="d-flex flex-column-reverse flex-lg-row align-items-center pb-5">
+
+      <div class="col-12 col-lg-6">
+        <div class="d-flex flex-column p-xl-5">
+          <h2 class="text-uppercase mb-5 fw-bold display-4" style="color: #e5bb15;">
+            {% trans %}Отслеживай активы в одном месте{% endtrans %}
+          </h2>
             <p class="fs-5">
-              {% trans %}Portfolios позволяет вести учет по многим активам(Криптовалюта, Акции, Офлайн активы) в одном личном кабинете, чтопозволяет ничего не растерять и не забыть.{% endtrans %}
-            </p>
-            <p class="fw-semibold">{% trans %}Криптовалюта и акции{% endtrans %}</p>
-            <ul class="fw-light">
-              <li>{% trans %}уведомления по достижению цены{% endtrans %}</li>
-              <li>
-                {% trans %}неограниченное количество портфелей (удобное распредение стратегий){% endtrans %}
-              </li>
-              <li>{% trans %}уведомления на выставленные ордера{% endtrans %}</li>
-            </ul>
-            <p class="fw-semibold">{% trans %}Другие активы{% endtrans %}</p>
-            <p class="fw-light">
-              {% trans %}Ведение офлайн инвестиций (коммерческой недвижимости и тд.){% endtrans %}
-            </p>
-          </div>
-        </div>
-        <div class="col-6">
-          <div class="d-flex flex-column justify-content-center">
-            <img src="{{ url_for('static', filename='home.jpg') }}" />
-          </div>
+            {% trans %}<b>Portfolios</b> позволяет вести учет по многим активам (Криптовалюта, Акции, Офлайн активы) в одном личном кабинете, что позволяет ничего не растерять и не забыть.{% endtrans %}
+          </p>
         </div>
       </div>
+
+      <div class="col-12 col-lg-6">
+        <div class="d-flex flex-column justify-content-center">
+          <img src="{{ url_for('static', filename='home.jpg') }}" />
+        </div>
+      </div>
+
     </section>
+
+    <section>
+      <p class="fw-semibold">{% trans %}Криптовалюта и акции{% endtrans %}</p>
+      <ul class="fw-light">
+        <li>{% trans %}уведомления по достижению цены{% endtrans %}</li>
+        <li>{% trans %}неограниченное количество портфелей (удобное распредение стратегий){% endtrans %}</li>
+      </ul>
+      <p class="fw-semibold">{% trans %}Другие активы{% endtrans %}</p>
+      <p class="fw-light">{% trans %}Ведение офлайн инвестиций (коммерческой недвижимости и тд.){% endtrans %}</p>
+    </section>
+
   </div>
 
-  <footer class="p-5 text-white" style="background-color: #333333; text-align: center">
-    <p>$Portfolios</p>
+  <footer class="d-flex text-white" style="background-color: #333333; text-align: center; min-height: 80px;">
+    <span class="m-auto">$Portfolios 2024</span>
   </footer>
 
   <script src="{{ url_for('static', filename='js/jquery-3.6.4.min.js') }}"></script>

@@ -350,17 +350,21 @@ def tasks():
         # Группировка
         # Задачи модулей
         for module in API_NAMES + MODULE_NAMES:
-            result.append({'group_name': module.capitalize()})
             n = len(tasks_list) - 1
+            module_tasks = []
             while n >= 0:
                 task = tasks_list[n]
                 if task['name'].startswith(module):
                     task['name_ru'] = tasks_trans(
                         task['name'][len(module)+1:]
                     )
-                    result.append(task)
+                    module_tasks.append(task)
                     tasks_list.remove(task)
                 n -= 1
+
+            if module_tasks:
+                result.append({'group_name': module.capitalize()})
+                result += module_tasks
 
         # Задачи вне модулей
         if tasks_list:
