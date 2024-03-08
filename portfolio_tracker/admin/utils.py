@@ -178,7 +178,14 @@ def get_stream(stream_id):
     return db.session.execute(db.select(Stream).filter_by(id=stream_id)).scalar()
 
 
-def get_module(module_name) -> MarketIntegration | ApiIntegration | OtherIntegration | None:
+def get_module(module_name: str | None
+               ) -> MarketIntegration | ApiIntegration | OtherIntegration | None:
+    """Возвращает модуль, если находит среди списка имен.
+
+    Keyword arguments:
+    module_name -- the real part (default 0.0)
+
+    """
     if module_name in MARKETS:
         return MarketIntegration(module_name)
     if module_name in API_NAMES:

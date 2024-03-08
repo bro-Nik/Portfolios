@@ -263,14 +263,21 @@ def request_data(api, url: str, stream: Stream | None = None
             proxy = stream.proxy.replace('https://', 'http://')
             proxies = {'http': proxy, 'https': proxy}
 
-    try:
-        return requests.get(url, proxies=proxies)
+    max_attempts = 3
+    while max_attempts > 0:
+        max_attempts -= 1
 
-    except requests.exceptions.ConnectionError as e:
-        current_app.logger.error(f'Ошибка соединения: {e}', exc_info=True)
-        api.logs.set('error', f'Ошибка соединения: {e}')
+        try:
+            return requests.get(url, proxies=proxies)
 
-    except Exception as e:
-        current_app.logger.error(f'Ошибка: {e}. url: {url}', exc_info=True)
-        api.logs.set('error', f'Ошибка: {e}')
-        raise
+        except requests.exceptions.ConnectionError as e:
+            m = f'{stream.name + ". " if stream else ""}Ошибка. {url}. {e}'
+            current_app.logger.error(m, exc_info=True)
+            api.logs.set('error', m)
+            time.sleep(60)
+
+        except Exception as e:
+            m = f'{stream.name + ". " if stream else ""}Ошибка. {url}. {e}'
+            current_app.logger.error(m, exc_info=True)
+            api.logs.set('error', m)
+            raise

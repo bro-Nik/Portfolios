@@ -1,4 +1,3 @@
-import json
 import re
 import time
 from flask import abort, redirect, render_template, url_for, request
@@ -9,12 +8,12 @@ from ..jinja_filters import user_datetime
 from ..general_functions import MARKETS, actions_in, when_updated
 from ..portfolio.utils import get_ticker
 from ..user.utils import find_user_by_id
-from .models import Key, Stream, Task
+from .models import Key, Task
 from .integrations import Log, get_api_task, tasks_trans
 from .integrations_api import API_NAMES, ApiIntegration
 from .integrations_other import MODULE_NAMES
-from .utils import get_all_users, get_key, get_module, get_stream, get_tasks, get_tickers, \
-    get_tickers_count, task_action
+from .utils import get_all_users, get_key, get_module, get_stream, get_tasks, \
+    get_tickers, get_tickers_count, task_action
 from . import bp
 
 
@@ -133,11 +132,11 @@ def module_page():
 @bp.route('/module/detail', methods=['GET'])
 @admin_only
 def module_page_detail():
-    module_name_ = request.args.get('module_name')
+    module_name = request.args.get('module_name')
     result = {'info': [], 'streams': [], 'events': []}
 
     # Для итерации по модулям
-    module_list = [module_name_] if module_name_ else API_NAMES + MODULE_NAMES
+    module_list = [module_name] if module_name else API_NAMES + MODULE_NAMES
     for name in module_list:
         module = get_module(name)
         if not module:
@@ -147,7 +146,6 @@ def module_page_detail():
         events_list = []
         for event_name in redis.hkeys(module.events.key):
             count = len(module.events.get(event_name))
-
             event_name = event_name.decode()
             events_list.append({'name': module.events.list.get(event_name),
                                 'key': event_name, 'value': f'{count}'})
@@ -172,8 +170,7 @@ def module_page_detail():
             if re.search(r'\d{4}-\d{2}-\d{2}', value):
                 value = when_updated(value)
 
-            info_list.append({'name': f'{info_name.decode()}',
-                              'value': value})
+            info_list.append({'name': f'{info_name.decode()}', 'value': value})
 
         # Заголовок в информации
         if len(module_list) > 1 and info_list:
@@ -181,7 +178,7 @@ def module_page_detail():
         result['info'] += info_list
 
         # Потоки
-        if len(module_list) > 1 or not hasattr(module, 'api'):
+        if len(module_list) > 1 or not isinstance(module, ApiIntegration):
             continue
         for stream in module.api.streams:
             result['streams'].append(
@@ -231,6 +228,18 @@ def module_logs_delete():
     return redirect(url_for('.module_page', module_name=module_name))
 
 
+@bp.route('/module/events', methods=['GET'])
+@admin_only
+def module_event_info():
+    event = request.args.get('event')
+
+    module = get_module(request.args.get('module_name')) or abort(404)
+    data = module.evets_info(event) if hasattr(module, 'evets_info') else {}
+
+    return render_template('admin/api_event.html', data=data,
+                           event=event, module=module)
+
+
 @bp.route('/api/key_settings/', methods=['GET', 'POST'])
 @admin_only
 def api_key_settings():
@@ -270,23 +279,11 @@ def api_stream_settings():
     return render_template('admin/api_stream_settings.html', stream=stream)
 
 
-@bp.route('/api/stream_action/', methods=['GET', 'POST'])
+@bp.route('/api/stream_action/', methods=['POST'])
 @admin_only
 def api_stream_action():
     actions_in(request.data, get_stream)
     return ''
-
-
-@bp.route('/module/events', methods=['GET'])
-@admin_only
-def module_event_info():
-    event = request.args.get('event')
-
-    module = get_module(request.args.get('module_name')) or abort(404)
-    data = module.evets_info(event) if hasattr(module, 'evets_info') else {}
-
-    return render_template('admin/api_event.html', data=data,
-                           event=event, module=module)
 
 
 @bp.route('/api/events', methods=['POST'])
@@ -322,13 +319,10 @@ def task_settings():
             task.name = task_name
             db.session.add(task)
         task.edit(request.form)
-
         return ''
 
-    return render_template('admin/api_task_settings.html',
-                           task_name=task_name,
-                           task_ru_name=tasks_trans(task_name),
-                           task=task)
+    return render_template('admin/api_task_settings.html', task_name=task_name,
+                           task_ru_name=tasks_trans(task_name), task=task)
 
 
 @bp.route('/tasks', methods=['GET'])
@@ -369,7 +363,7 @@ def tasks():
                 n -= 1
 
         # Задачи вне модулей
-        if len(tasks_list):
+        if tasks_list:
             result.append({'group_name': 'Остальные'})
             for task in tasks_list:
                 task['name_ru'] = tasks_trans(task['name'])
@@ -378,7 +372,7 @@ def tasks():
         # Задачи из базы (удаленные)
         tasks_db = list(db.session.execute(
             db.select(Task).filter(Task.name.notin_(tasks_names))).scalars())
-        if len(tasks_db):
+        if tasks_db:
             result.append({'group_name': 'Не найдены'})
             for task in tasks_db:
                 result.append({'deleted_name': task.name})
