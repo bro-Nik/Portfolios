@@ -4,8 +4,7 @@ from flask import current_app
 
 from tests import app, db, Ticker
 from ..models import User
-from ..utils import create_new_user, find_user_by_email, find_user_by_id, \
-    get_demo_user, login, register
+from ..utils import create_new_user, find_user, get_demo_user, login, register
 
 
 class TestUserUtils(unittest.TestCase):
@@ -38,9 +37,9 @@ class TestUserUtils(unittest.TestCase):
 
     def test_find_user_by_id(self):
         """Тест поиска по ID и загрузки пользователя."""
-        self.assertEqual(find_user_by_id(1), self.user)
-        self.assertEqual(find_user_by_id('1'), self.user)
-        self.assertEqual(find_user_by_id(2), None)
+        self.assertEqual(find_user(1), self.user)
+        self.assertEqual(find_user('1'), self.user)
+        self.assertEqual(find_user(2), None)
 
     def test_create_new_user(self):
         """Тест создания нового пользователя."""

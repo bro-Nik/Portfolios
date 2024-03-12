@@ -1,10 +1,10 @@
 import json
-from datetime import datetime
 
-from flask import Response, render_template, redirect, url_for, request, \
-    flash, session
+from flask import render_template, redirect, url_for, request, flash, session
 from flask_babel import gettext
 from flask_login import login_user, login_required, current_user, logout_user
+
+from portfolio_tracker.wraps import demo_user_change
 
 from ..app import db
 from ..settings import LANGUAGES
@@ -38,6 +38,28 @@ def register():
             return redirect(url_for('.login'))
 
     return render_template('user/register.html', locale=utils.get_locale())
+
+
+@bp.route('/change_password', methods=['GET', 'POST'])
+@login_required
+@demo_user_change
+def change_password():
+
+    if request.method == 'POST':
+        # Проверка старого пароля
+        if current_user.check_password(request.form.get('old_pass')):
+            new_pass = request.form.get('new_pass')
+            # Пароль с подтверждением совпадают
+            if new_pass == request.form.get('new_pass2'):
+                current_user.set_password(new_pass)
+                db.session.commit()
+                flash(gettext('Пароль обновлен'), 'success')
+            else:
+                flash(gettext('Новые пароли не совпадают'), 'danger')
+        else:
+            flash(gettext('Не верный старый пароль'), 'danger')
+
+    return render_template('user/password.html', locale=utils.get_locale())
 
 
 @bp.route('/logout')
