@@ -18,7 +18,7 @@
       <div class="col-md-12">
         <div class="mb-3">
           <label class="form-label h7">{% trans %}Комментарий{% endtrans %}</label>
-          <textarea class="form-control" name="comment">{{ wallet.comment if wallet }}</textarea>
+          <textarea class="form-control" name="comment">{{ wallet.comment if wallet and wallet.comment }}</textarea>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from flask_babel import gettext
 from flask_login import current_user
 
 from ..models import DetailsMixin
@@ -51,7 +52,7 @@ def last_wallet_transaction(wallet: Wallet | None,
 
 
 def create_new_wallet(user: User = current_user) -> Wallet:
-    wallet = Wallet()
+    wallet = Wallet(name=gettext('Кошелек по умолчанию'))
     create_new_wallet_asset(wallet, user.currency_ticker)
     user.wallets.append(wallet)
 

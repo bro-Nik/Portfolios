@@ -6,7 +6,7 @@
 
 
 {% block content %}
-<form id="TransactionForm" data-url="{{ url_for('.transaction_update', portfolio_id=asset.portfolio_id, ticker_id=asset.ticker_id, transaction_id=transaction.id) }}">
+<form id="TransactionForm" data-url="{{ url_for('.transaction_update', portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
 
   <div class="btn-group silver col-12 mb-3 nav" role="group" id="TypeTransaction">
     <input type="radio" class="btn-check" name="type" value="Buy" id="btnradio1">
@@ -29,7 +29,7 @@
           {% trans %}Кошелек{% endtrans %}
           <span class="open-modal link-primary small-text not-update ms-auto" data-modal-id="WalletsModal"
             data-url="{{ url_for('wallet.wallets', modal='true') }}">
-            Открыть кошельки
+            {% trans %}Открыть кошельки{% endtrans %}
           </span>
         </label>
         <div class="buy">
@@ -72,7 +72,7 @@
       <div class="mb-1" data-type="quantity">
         <label class="d-flex form-label h7">{% trans %}Количество{% endtrans %}
           <span class="small-text ms-auto gap-2 sell">
-            <span class="{{ 'text-red' if not asset.free > 0 }}">Свободно: {{ asset.free }}</span>
+            <span class="{{ 'text-red' if not asset.free > 0 }}">{% trans %}Свободно:{% endtrans %} {{ asset.free }}</span>
             {% if asset.free > 0 %}
               <span class="link-primary">
                 <span class="paste-into-input" data-value="{{ asset.free * 0.25 }}">25%</span>

@@ -4,10 +4,9 @@ from flask import render_template, redirect, url_for, request, flash, session
 from flask_babel import gettext
 from flask_login import login_user, login_required, current_user, logout_user
 
-from portfolio_tracker.wraps import demo_user_change
-
 from ..app import db
 from ..settings import LANGUAGES
+from ..wraps import demo_user_change
 from ..wallet.utils import create_new_wallet
 from . import bp, utils
 
@@ -92,7 +91,7 @@ def user_action():
 
     if action == 'delete_data':
         current_user.cleare()
-        create_new_wallet(current_user)  # type: ignore
+        create_new_wallet(current_user)
         flash(gettext('Профиль очищен'), 'success')
 
     db.session.commit()
@@ -168,7 +167,6 @@ def settings_profile():
 #
 
 @bp.route('/ajax_locales', methods=['GET'])
-@login_required
 def ajax_locales():
     result = []
     for loc, lang in LANGUAGES.items():

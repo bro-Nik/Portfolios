@@ -1,11 +1,8 @@
 from datetime import datetime, timedelta, timezone
 import json
-import time
 from flask import request, session, flash
 from flask_login import current_user, login_user
 from flask_babel import gettext
-
-from portfolio_tracker.jinja_filters import user_datetime
 
 from ..app import login_manager, redis
 from ..settings import LANGUAGES
@@ -31,7 +28,7 @@ def create_new_user(email: str, password: str) -> User:
     new_user.email = email
     new_user.set_password(password)
     new_user.change_currency()
-    new_user.change_locale()
+    new_user.change_locale(get_locale())
 
     db.session.add(new_user)
     db.session.flush()
@@ -129,12 +126,14 @@ def get_demo_user() -> User | None:
     return db.session.execute(db.select(User).filter_by(type='demo')).scalar()
 
 
-def get_locale() -> str | None:
+def get_locale() -> str:
     u = current_user
     if u.is_authenticated and u.type != 'demo' and u.locale:
         return u.locale
-    return (session.get('locale')
-            or request.accept_languages.best_match(LANGUAGES.keys()))
+    locale = (session.get('locale')
+              or request.accept_languages.best_match(LANGUAGES.keys()))
+    return locale if locale else 'en'
+
 
 
 def get_currency() -> str:
