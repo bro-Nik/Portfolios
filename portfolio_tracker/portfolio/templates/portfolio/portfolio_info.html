@@ -50,14 +50,14 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Вложено{% endtrans %} / {% trans %}Стоимость сейчас{% endtrans %}</p>
-      <span class="text-average">{{ portfolio.amount|user_currency('big') }} /</span>
-      <span class="text-average {{ portfolio.color }}">{{ portfolio.cost_now|user_currency('big') }}</span>
+      <span class="text-average">{{ portfolio.amount|currency_price(round_per=1) }} /</span>
+      <span class="text-average {{ portfolio.color }}">{{ portfolio.cost_now|currency_price(round_per=1) }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
       <span class="text-average {{ portfolio.color }}">
-        {{ portfolio.profit|user_currency('big') }}
+        {{ portfolio.profit|currency_price(round_per=1) }}
         {{ '({}%)'.format(portfolio.profit_percent) if portfolio.profit_percent }}
       </span>
     </div>
@@ -65,14 +65,14 @@
     <div class="col-auto">
       <p class="small-text">{% trans %}Доля от всех инвестиций{% endtrans %}</p>
       <span class="text-average">
-        {{ (portfolio.amount / portfolios.amount * 100)|round(1, 'common')|smart_int|string + '%' if portfolio.cost_now else '-' }}
+        {{ (portfolio.amount / portfolios.amount * 100)|round(1, 'common')|smart_int|string if portfolios.amount else 0 }}%
         / {{ portfolio.percent|smart_int|string + '%' if portfolio.percent else '-' }}
       </span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-      <span class="text-average">{{ portfolio.in_orders|user_currency('big') }}</span>
+      <span class="text-average">{{ portfolio.in_orders|currency_price(round_per=1) }}</span>
     </div>
 
     <div class="col-auto">
@@ -102,7 +102,7 @@
             <th data-sortable="true" data-field="profit" data-sort-name="_profit">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</th>
             <th data-sortable="true" data-field="percent" data-sort-name="_percent">{% trans %}Доля от портфеля{% endtrans %}</th>
             <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}В ордерах{% endtrans %}</th>
-            <th>{% trans %}Комментарий{% endtrans %}</th>
+              <th>{% trans %}Комментарий{% endtrans %}</th>
             <th></th>
             <!-- For sorting -->
             <th class="visually-hidden" data-field="_cost_now"></th>
@@ -134,18 +134,17 @@
 
               <td>
                 <div class="mx-1 text-nowrap">
-                  {{ asset.price|user_currency }} / {{ (asset.amount / asset.quantity)|user_currency if asset.quantity else '-' }}
+                  {{ asset.price|currency_price(round_per=1, default='-') }} / {{ (asset.amount / asset.quantity)|currency_price(round_per=1, default='-') if asset.quantity else '-' }}
                 </div>
               </td>
 
               <td>
                 <div class="mx-1 text-nowrap">
                   {% if asset.quantity > 0 %}
-                    {{ asset.amount|user_currency('big') if asset.amount > 0 }} /
-                    <span class="{{ asset.color }}">{{ asset.cost_now|user_currency('big') }}</span>
-                    <br>
+                    {{ asset.amount|currency_price(round_per=1, default='-') if asset.amount > 0 }} /
+                    <span class="{{ asset.color }}">{{ asset.cost_now|currency_price(round_per=1, default='-') }}</span><br>
                     <span class="text-average small-text">
-                      {{ asset.quantity|smart_round|other_currency(asset.ticker.symbol) }}
+                      {{ asset.quantity|currency_quantity(round_per=1, currency=asset.ticker.symbol) }}
                     </span>
                   {% else %}
                     -
@@ -157,7 +156,7 @@
                 <div class="mx-1 text-nowrap">
                   {% if asset.quantity > 0 %}
                     <span class="{{ asset.color }}">
-                      {{ asset.profit|user_currency('big') }}
+                      {{ asset.profit|currency_price(round_per=1) }}
                       {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
                     </span>
                   {% else %}
@@ -175,7 +174,7 @@
                 {{ asset.percent|round(1, 'common')|smart_int|string + '%' if asset.percent else '-' }}
               </td>
 
-              <td>{{ asset.in_orders|user_currency('big') }}</td>
+              <td>{{ asset.in_orders|currency_price(round_per=1, default='-') }}</td>
 
               <td>
                 <div class="d-flex comment">

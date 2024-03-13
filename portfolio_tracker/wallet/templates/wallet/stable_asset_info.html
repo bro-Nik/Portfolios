@@ -19,7 +19,7 @@
         {% if ticker.image %}
           <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/40/' + ticker.image) }}">
         {% endif %}
-        <span class="fs-1 fw-semibold" id="AssetPrice">{{ asset.price|user_currency }}</span>
+        <span class="fs-1 fw-semibold" id="AssetPrice">{{ asset.price|currency_price }}</span>
       </div>
     </div>
 
@@ -49,12 +49,16 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Свободно{% endtrans %}</p>
-      <span class="text-average">{{ asset.free|other_currency(ticker.symbol, 'big') }}</span>
+      <span class="text-average">
+        {{ asset.free|currency_quantity(round_per=1, currency=ticker.symbol) }}
+      </span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-      <span class="text-average">{{ asset.buy_orders|other_currency(ticker.symbol, 'big') }}</span>
+      <span class="text-average">
+        {{ asset.buy_orders|currency_quantity(round_per=1, currency=ticker.symbol) }}
+      </span>
     </div>
 
   </div>
@@ -106,7 +110,7 @@
           <td>
             {% if transaction.portfolio_asset %}
               <span class="link-secondary open-modal" data-modal-id="AssetInfoModal"
-                data-url="{{ url_for('portfolio.asset_info', portfolio_id=transaction.portfolio_id, ticker_id=ticker.id) }}">
+                data-url="{{ url_for('portfolio.asset_info', portfolio_id=transaction.portfolio_id, ticker_id=transaction.ticker_id) }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0zM1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5z" /></svg>
                 {{ transaction.portfolio.name }}<br>
               </span>
@@ -121,12 +125,12 @@
               {% elif 'Transfer' in transaction.type %}
                 <span class="text-secondary">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M12.136.326A1.5 1.5 0 0 1 14 1.78V3h.5A1.5 1.5 0 0 1 16 4.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.432-1.499L12.136.326zM5.562 3H13V1.78a.5.5 0 0 0-.621-.484L5.562 3zM1.5 4a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z" /></svg>
-                  Удален
+                  {% trans %}Удален{% endtrans %}
                 </span>
               {% else %}
                 <span class="text-secondary">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M0 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V4zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V6a2 2 0 0 1-2-2H3z"/></svg>
-                  Cash
+                  {% trans %}Наличные{% endtrans %}
                 </span>
               {% endif %}
             {% endif %}
@@ -134,7 +138,7 @@
 
           <td>
             <span class="text-average {{ color }}">
-              {{ '+' if quantity > 0 }}{{ quantity|other_currency(ticker.symbol, 'big') }}
+              {{ '+' if quantity > 0 }}{{ quantity|currency_quantity(round_per=1, currency=ticker.symbol) }}
             </span>
           </td>
 

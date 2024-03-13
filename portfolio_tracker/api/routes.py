@@ -6,7 +6,7 @@ from flask_babel import gettext
 from flask_login import current_user, login_required
 
 from ..app import db
-from ..jinja_filters import other_currency, user_currency
+from ..jinja_filters import currency_quantity, currency_price, smart_round
 from ..general_functions import remove_prefix
 from ..portfolio.models import Ticker
 from ..wallet.utils import get_wallet, last_wallet_transaction
@@ -83,10 +83,11 @@ def wallets_to_buy():
     for wallet in current_user.wallets:
         wallet.update_price()
 
+        free = smart_round(wallet.free, 1)
         result.append({'value': str(wallet.id),
                        'text': wallet.name,
                        'sort': wallet.free,
-                       'subtext': f"(~ {user_currency(wallet.free, 'big')})"})
+                       'subtext': f"(~ {currency_quantity(free)})"})
 
     result = sorted(result, key=lambda wallet_: wallet_.get('sort'),
                     reverse=True)

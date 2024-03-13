@@ -49,14 +49,14 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Вложено{% endtrans %} / {% trans %}Стоимость сейчас{% endtrans %}</p>
-      <span class="text-average">{{ portfolio.amount|user_currency('big') }} /</span>
-      <span class="text-average {{ portfolio.color }}">{{ portfolio.cost_now|user_currency('big') }}</span>
+      <span class="text-average">{{ portfolio.amount|currency_price(round_per=1) }} /</span>
+      <span class="text-average {{ portfolio.color }}">{{ portfolio.cost_now|currency_price(round_per=1) }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
       <span class="text-average {{ portfolio.color }}">
-        {{ portfolio.profit|user_currency('big') }}
+        {{ portfolio.profit|currency_price(round_per=1) }}
         {{ '({}%)'.format(portfolio.profit_percent) if portfolio.profit_percent }}
       </span>
     </div>
@@ -64,7 +64,7 @@
     <div class="col-auto">
       <p class="small-text">{% trans %}Доля от всех инвестиций{% endtrans %}</p>
       <span class="text-average">
-        {{ (portfolio.amount / portfolios.amount * 100)|round(1, 'common')|smart_int|string + '%' if portfolio.cost_now else '-' }}
+        {{ (portfolio.amount / portfolios.amount * 100)|round(1, 'common')|smart_int|string if portfolios.amount else 0 }}%
         / {{ portfolio.percent|smart_int|string + '%' if portfolio.percent else '-' }}
       </span>
     </div>
@@ -111,18 +111,18 @@
                 </div>
               </td>
 
-              <td>{{ asset.amount|user_currency('big') if asset.amount else '-' }}</td>
+              <td>{{ asset.amount|currency_price(round_per=1, default='-') }}</td>
 
               <td>
                 <span class="{{ asset.color }}">
-                  {{ asset.cost_now|user_currency('big') if asset.cost_now else '-' }}
+                  {{ asset.cost_now|currency_price(round_per=1, default='-') }}
                 </span>
               </td>
 
               <td>
                 {% if asset.cost_now %}
                   <span class="text-average {{ asset.color }}">
-                    {{ '-' if asset.profit < 0 }}{{ asset.profit|user_currency('big') }}
+                    {{ '-' if asset.profit < 0 }}{{ asset.profit|currency_price(round_per=1) }}
                     {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
                   </span>
                 {% else %}

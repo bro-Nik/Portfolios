@@ -49,17 +49,17 @@
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Стоимость сейчас{% endtrans %}</p>
-    <span class="text-average">{{ wallet.cost_now|user_currency('big') }}</span>
+    <span class="text-average">{{ wallet.cost_now|currency_price(round_per=1) }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-    <span class="text-average">{{ wallet.in_orders|user_currency('big') }}</span>
+    <span class="text-average">{{ wallet.in_orders|currency_price(round_per=1) }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Свободные средства{% endtrans %}</p>
-    <span class="text-average">{{ wallet.free|user_currency('big') }}</span>
+    <span class="text-average">{{ wallet.free|currency_price(round_per=1) }}</span>
   </div>
 </div>
 
@@ -126,16 +126,10 @@
                     </div>
                   </td>
 
-                  <td>{{ asset.cost_now|user_currency('big') if asset.quantity else '-' }}</td>
-
-                  <td>
-                    <span class="text-average small-text">
-                      {{ asset.quantity|other_currency(ticker.symbol) if asset.quantity else '-' }}
-                    </span>
-                  </td>
-
-                  <td>{{ asset.sell_orders|other_currency(ticker.symbol) if asset.sell_orders else '-' }}</td>
-                  <td>{{ asset.buy_orders|user_currency('big') if asset.buy_orders else '-' }}</td>
+                  <td>{{ asset.cost_now|currency_price(round_per=1, default='-') }}</td>
+                  <td>{{ asset.quantity|currency_quantity(round_per=1, currency=ticker.symbol, default='-') }}</td>
+                  <td>{{ asset.sell_orders|currency_quantity(round_per=1, currency=ticker.symbol, default='-') }}</td>
+                  <td>{{ asset.buy_orders|currency_price(round_per=1, default='-') }}</td>
 
                   <td class="align-middle text-end">
                     <div class="d-flex justify-content-end">
@@ -240,13 +234,8 @@
                     </div>
                   </td>
 
-                  <td>
-                    <span class="text-average small-text">{{ asset.free|other_currency(ticker.symbol, 'big') }}</span>
-                  </td>
-
-                  <td>
-                    <span class="text-average small-text">{{ asset.buy_orders|other_currency(ticker.symbol, 'big') }}</span>
-                  </td>
+                  <td>{{ asset.free|currency_price(round_per=1, currency=ticker.symbol, default='-') }}</td>
+                  <td>{{ asset.buy_orders|currency_price(round_per=1, currency=ticker.symbol, default='-') }}</td>
 
                   <td class="align-middle text-end">
                     <div class="d-flex justify-content-end">

@@ -24,15 +24,15 @@
     <div class="col-auto">
       <p class="small-text">{% trans %}Вложено{% endtrans %} / {% trans %}Стоимость сейчас{% endtrans %}</p>
       <span class="text-average">
-        {{ portfolios.amount|user_currency('big') }} / 
-        <span class="{{ portfolios.color }}">{{ portfolios.cost_now|user_currency('big') }}</span>
+        {{ portfolios.amount|currency_price(round_per=1) }} / 
+        <span class="{{ portfolios.color }}">{{ portfolios.cost_now|currency_price(round_per=1) }}</span>
       </span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
         <span class="text-average {{ portfolios.color }}">
-          {{ portfolios.profit|user_currency('big') }}
+          {{ portfolios.profit|currency_price(round_per=1) }}
           {{ '({}%)'.format(portfolios.profit_percent) if portfolios.profit_percent }}
         </span>
     </div>
@@ -40,7 +40,7 @@
     <div class="col-auto">
       <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
       <span class="text-average">
-        {{ portfolios.in_orders|user_currency('big') }}
+        {{ portfolios.in_orders|currency_price(round_per=1) }}
       </span>
     </div>
 
@@ -91,18 +91,18 @@
                 </div>
               </td>
 
-              <td>{{ portfolio.amount|user_currency('big') if portfolio.amount else '-' }}</td>
+              <td>{{ portfolio.amount|currency_price(round_per=1, default='-') }}</td>
 
               <td>
                 <span class="{{ portfolio.color }}">
-                  {{ portfolio.cost_now|user_currency('big') if portfolio.cost_now else '-' }}
+                  {{ portfolio.cost_now|currency_price(round_per=1, default='-') }}
                 </span>
               </td>
 
               <td>
                 {% if portfolio.cost_now %}
                   <span class="{{ portfolio.color }}">
-                    {{ portfolio.profit|user_currency('big') }}
+                    {{ portfolio.profit|currency_price(round_per=1, default='-') }}
                     {{ '({}%)'.format(portfolio.profit_percent) if portfolio.profit_percent }}
                   </span>
                 {% else %}
@@ -115,9 +115,7 @@
                 / {{ portfolio.percent|smart_int|string + '%' if portfolio.percent else '-' }}
               </td>
 
-              <td>
-                {{ portfolio.in_orders|user_currency('big') if portfolio.in_orders else '-' }}
-              </td>
+              <td>{{ portfolio.in_orders|currency_price(round_per=1, default='-') }}</td>
 
               <td>
                 <div class="d-flex comment">

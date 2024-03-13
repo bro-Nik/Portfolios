@@ -10,7 +10,7 @@
   <div class="row xs-mb-3">
     <div class="col-auto">
       <h1 class="fs-6 text-muted m-0">{{ asset.name }}</h1>
-      <span class="fs-1 fw-semibold">{{ asset.cost_now|user_currency }}</span>
+      <span class="fs-1 fw-semibold">{{ asset.cost_now|currency_price(round_per=1) }}</span>
     </div>
 
     <div class="col-auto ms-auto">
@@ -55,13 +55,13 @@
   <div class="row mb-5 xs-mb-3">
     <div class="col-auto">
       <p class="small-text">{% trans %}Вложено{% endtrans %}</p>
-      <span class="text-average">{{ asset.amount|user_currency }}</span>
+      <span class="text-average">{{ asset.amount|currency_price(round_per=1) }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
       <span class="text-average {{ asset.color }}">
-        {{ asset.profit|user_currency }}
+        {{ asset.profit|currency_price(round_per=1) }}
         {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
       </span>
     </div>
@@ -125,21 +125,21 @@
                   </td>
 
                   <td>
-                    {{ body.amount_usd|user_currency('big') }}
-                    {% if current_user.currency_ticker_id != body.amount_ticker_id %}
+                    {{ body.amount_usd|currency_price(round_per=1) }}
+                    {% if current_user.currency_ticker_id|lower != body.amount_ticker_id|lower %}
                       <br>
                       <span class="text-average small-text text-muted">
-                        {{ body.amount|other_currency(body.amount_ticker.symbol) }}
+                        {{ body.amount|currency_price(round_per=1, currency=body.amount_ticker.symbol) }}
                       </span>
                     {% endif %}
                   </td>
 
                   <td>
-                    {{ body.cost_now_usd|user_currency('big') }}
-                    {% if current_user.currency_ticker_id != body.cost_now_ticker_id %}
+                    {{ body.cost_now_usd|currency_price(round_per=1) }}
+                    {% if current_user.currency_ticker_id|lower != body.cost_now_ticker_id|lower %}
                       <br>
                       <span class="text-average small-text text-muted">
-                        {{ body.cost_now|other_currency(body.cost_now_ticker.symbol, param='big') }}<br>
+                        {{ body.cost_now|currency_price(round_per=1, currency=body.cost_now_ticker.symbol) }}<br>
                       </span>
                     {% endif %}
                   </td>
@@ -231,13 +231,13 @@
                       <span class="text-green">+
                     {% endif %}
 
-                    {{ transaction.amount_usd|abs|user_currency('big') }}
+                    {{ transaction.amount_usd|abs|currency_price(round_per=1) }}
                     </span>
 
-                    {% if current_user.currency_ticker_id != transaction.amount_ticker_id %}
+                    {% if current_user.currency_ticker_id|lower != transaction.amount_ticker_id|lower %}
                       <br>
                       <span class="text-average small-text text-muted">
-                        {{ transaction.amount|abs|other_currency(transaction.amount_ticker.symbol) }}<br>
+                        {{ transaction.amount|abs|currency_price(round_per=1, currency=transaction.amount_ticker.symbol) }}<br>
                       </span>
                     {% endif %}
                   </td>

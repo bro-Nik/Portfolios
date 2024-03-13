@@ -1,6 +1,6 @@
 import time
 from datetime import datetime, timedelta
-import math
+from typing import Tuple
 
 from babel.dates import format_datetime
 from flask import Blueprint
@@ -11,11 +11,8 @@ from flask_login import current_user
 bp = Blueprint('jinja_filters', __name__)
 
 
-def smart_int(number: int | float | None) -> int | float:
+def smart_int(number: int | float) -> int | float:
     """ Float без точки, если оно целое """
-    if not number:
-        return 0
-
     try:
         int_num = int(number)
         return int_num if int_num == number else number
@@ -26,24 +23,20 @@ def smart_int(number: int | float | None) -> int | float:
 bp.add_app_template_filter(smart_int)
 
 
-def smart_round(number: int | float | None) -> int | float:
+def smart_round(num: int | float | None, percent: int = 0) -> int | float:
     """ Округление зависимое от величины числа для Jinja """
-    if not number:
+    if not num:
         return 0
+    if not percent:
+        return num
 
     try:
-        abs_number = abs(number)
-        if abs_number >= 1000:
-            number = int(number)
-        elif abs_number >= 100:
-            number = round(number, 1)
-        elif abs_number >= 10:
-            number = round(number, 2)
-        else:
-            dist = int(math.log10(abs_number))
-            if dist:
-                number = round(number, abs(dist) + 2)
-        return number
+        num_abs = abs(num)
+        margin_of_error = num_abs * percent / 100
+        for accuracy in range(0, 10):
+            if abs(num_abs - round(num_abs, accuracy)) <= margin_of_error:
+                return round(num, accuracy)
+        return num
 
     except TypeError:  # строка не является float / int
         return 0
@@ -69,67 +62,60 @@ def long_number(number: int | float) -> str:
 bp.add_app_template_filter(long_number)
 
 
-def user_currency(number: int | float, param: str = '') -> str:
-    currency = current_user.currency
-    locale = current_user.locale
+def currency_price(num: int | float, currency: str = '', default: str = '',
+                   round_per: int = 0) -> str:
+    if not num and default:
+        return default
 
-    price_currency_to_usd = 1 / current_user.currency_ticker.price
-    number *= price_currency_to_usd
+    num = smart_round(num, round_per)
 
-    # round
-    if param == 'big':
-        if number - round(number) < price_currency_to_usd:
-            number = round(number)
-        elif number - round(number, 1) < price_currency_to_usd:
-            number = round(number, 1)
+    if not currency:
+        currency = current_user.currency
+        num *= 1 / current_user.currency_ticker.price
+    else:
+        currency += ' '  # для разделения
+    return currency_format(num, currency, currency_frac(num))
 
-    currency = currency.upper()
 
-    # for integer
-    locale = Locale.parse(locale)
-    pattern = locale.currency_formats['standard']
-    force_frac = None
-    if number == int(number):
+def currency_quantity(num: int | float, currency: str = '', default: str = '',
+                      round_per: int = 0) -> str:
+    if not num and default:
+        return default
+
+    num = smart_round(num, round_per)
+    if num == int(num):
+        num = int(num)
+
+    if not currency:
+        currency = current_user.currency
+
+    return f'{num} {currency.upper()}'
+
+
+def currency_frac(num: int | float) -> Tuple:
+
+    if num == int(num):
         force_frac = (0, 0)
-    elif number == round(number, 1):
+    elif num == round(num, 1):
         force_frac = (1, 1)
-    elif number < 1:
-        s = str(long_number(number))
+    else:
+        s = str(long_number(num))
         length = len(s[s.index('.') + 1:])
         force_frac = (length, length)
-    return pattern.apply(number, locale, currency=currency)
-    # return pattern.apply(number, locale, currency=currency,
-    #                      force_frac=force_frac)
+
+    return force_frac
 
 
-bp.add_app_template_filter(user_currency)
-
-
-def other_currency(number: int | float, currency: str, param: str = '') -> str:
-    # round
-    if param == 'big':
-        if number - int(number) < 1:
-            number = int(number)
-        elif number - round(number, 1) < 1:
-            number = round(number, 1)
-
+def currency_format(num: int | float, currency, force_frac) -> str:
     locale = Locale.parse(current_user.locale)
     pattern = locale.currency_formats['standard']
 
-    if number == int(number):
-        frac = (0, 0)
-    elif number == round(number, 1):
-        frac = (1, 1)
-    else:
-        s = str(long_number(number))
-        length = len(s[s.index('.') + 1:])
-        frac = (length, length)
-    return pattern.apply(number, locale, currency=currency.upper())
-    # return pattern.apply(number, locale, currency=currency.upper(),
-    #                      force_frac=frac)
+    return pattern.apply(num, locale, currency=currency.upper(),
+                         force_frac=force_frac)
 
 
-bp.add_app_template_filter(other_currency)
+bp.add_app_template_filter(currency_price)
+bp.add_app_template_filter(currency_quantity)
 
 
 def user_datetime(date: datetime, not_format: bool = False) -> str:

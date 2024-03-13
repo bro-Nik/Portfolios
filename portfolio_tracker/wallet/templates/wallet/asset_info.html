@@ -19,7 +19,7 @@
         {% if ticker.image %}
           <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/40/' + ticker.image) }}">
         {% endif %}
-        <span class="fs-1 fw-semibold" id="AssetPrice">{{ asset.price|user_currency }}</span>
+        <span class="fs-1 fw-semibold" id="AssetPrice">{{ asset.price|currency_price }}</span>
       </div>
     </div>
 
@@ -58,22 +58,22 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Количество{% endtrans %}</p>
-      <span class="text-average">{{ asset.quantity|other_currency(ticker.symbol) }}</span>
+      <span class="text-average">{{ asset.quantity|currency_quantity(currency=ticker.symbol) }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Стоимость сейчас{% endtrans %}</p>
-      <span class="text-average">{{ asset.cost_now|user_currency('big') }}</span>
+      <span class="text-average">{{ asset.cost_now|currency_price(round_per=1) }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}В ордерах на продажу{% endtrans %}</p>
-      <span class="text-average"> {{ asset.sell_orders|other_currency(ticker.symbol) }}</span>
+      <span class="text-average"> {{ asset.sell_orders|currency_quantity(round_per=1, currency=ticker.symbol) }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}В ордерах на покупку{% endtrans %}</p>
-      <span class="text-average"> {{ asset.buy_orders|user_currency('big') }}</span>
+      <span class="text-average"> {{ asset.buy_orders|currency_price(round_per=1) }}</span>
     </div>
 
   </div>
@@ -136,7 +136,7 @@
                 {% else %}
                   <span class="text-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M12.136.326A1.5 1.5 0 0 1 14 1.78V3h.5A1.5 1.5 0 0 1 16 4.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.432-1.499L12.136.326zM5.562 3H13V1.78a.5.5 0 0 0-.621-.484L5.562 3zM1.5 4a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z" /></svg>
-                    Удален
+                    {% trans %}Удален{% endtrans %}
                   </span>
                 {% endif %}
               {% endif %}
@@ -145,11 +145,10 @@
             <td>
               {# transaction from portfolio #}
               {% if transaction.portfolio_asset %}
-                {% if current_user.currency != transaction.quote_ticker.symbol %}
-                  {{ transaction.price|other_currency(transaction.quote_ticker.symbol) }}
-                  <br>
+                {% if current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
+                  {{ transaction.price|currency_price(round_per=1, currency=transaction.quote_ticker.symbol) }}<br>
                 {% endif %}
-                {{ transaction.price_usd|user_currency }}
+                {{ transaction.price_usd|currency_price(round_per=1) }}
               {# transaction from wallet #}
               {% else %}
               -
@@ -159,19 +158,17 @@
             <td>
               {# transaction from portfolio #}
               {% if transaction.portfolio_asset %}
-                {% if current_user.currency != transaction.quote_ticker.symbol %}
-                {{ '+' if transaction.quantity2 > 0 }}{{ transaction.quantity2|other_currency(transaction.quote_ticker.symbol, 'big') }}
-                  <br>
+                {% if current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
+                  {{ '+' if transaction.quantity2 > 0 }}{{ transaction.quantity2|currency_price(round_per=1, currency=transaction.quote_ticker.symbol) }}<br>
                 {% endif %}
-                {{ '+' if transaction.quantity2 > 0 }}{{ (transaction.quantity * transaction.price_usd * -1)|user_currency('big') }}
-                <br>
+                {{ '+' if transaction.quantity2 > 0 }}{{ (transaction.quantity * transaction.price_usd * -1)|currency_price(round_per=1) }}<br>
                 <span class="text-average small-text {{ color }}">
-                  {{ '+' if transaction.quantity > 0 }}{{ transaction.quantity|smart_round|other_currency(ticker.symbol) }}
+                  {{ '+' if transaction.quantity > 0 }}{{ transaction.quantity|currency_quantity(round_per=1, currency=ticker.symbol) }}
                 </span>
               {# transaction from wallet #}
               {% else %}
                 <span class="text-average small-text {{ color }}">
-                  {{ transaction.quantity|other_currency(ticker.symbol) }}
+                  {{ transaction.quantity|currency_quantity(round_per=1, currency=ticker.symbol) }}
                 </span>
               {% endif %}
             </td>

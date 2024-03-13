@@ -31,17 +31,17 @@
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Стоимость сейчас{% endtrans %}</p>
-    <span class="text-average {{ wallets.color }}">{{ wallets.cost_now|user_currency('big') }}</span>
+    <span class="text-average {{ wallets.color }}">{{ wallets.cost_now|currency_price(round_per=1) }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-    <span class="text-average">{{ wallets.in_orders|user_currency('big') }}</span>
+    <span class="text-average">{{ wallets.in_orders|currency_price(round_per=1) }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Свободные средства{% endtrans %}</p>
-    <span class="text-average">{{ wallets.free|user_currency('big') }}</span>
+    <span class="text-average">{{ wallets.free|currency_price(round_per=1) }}</span>
   </div>
 </div>
 
@@ -85,18 +85,9 @@
               </div>
             </td>
 
-            <td>{{ wallet.cost_now|user_currency('big') if wallet.cost_now else '-' }}
-            </td>
-
-            <td>{{ wallet.in_orders|user_currency('big') if wallet.in_orders or wallet.cost_now else '-' }}</td>
-
-            <td>
-              {% if wallet.free != 0 or wallet.cost_now or wallet.in_orders %}
-                {{ wallet.free|user_currency('big') }}
-              {% else %}
-                -
-              {% endif %}
-            </td>
+            <td>{{ wallet.cost_now|currency_price(round_per=1, default='-') }}</td>
+            <td>{{ wallet.in_orders|currency_price(round_per=1, default='-') }}</td>
+            <td>{{ wallet.free|currency_price(round_per=1, default='-') }}</td>
 
             <td>
               <div class="d-flex comment">

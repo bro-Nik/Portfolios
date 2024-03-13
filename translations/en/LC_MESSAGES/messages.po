@@ -1004,12 +1004,12 @@ msgstr "All transactions in this asset will be removed"
 #: portfolio_tracker/wallet/templates/wallet/asset_info.html:70
 #: portfolio_tracker/wallet/templates/wallet/wallet_info.html:97
 msgid "В ордерах на продажу"
-msgstr "In buy orders"
+msgstr "In sell orders"
 
 #: portfolio_tracker/wallet/templates/wallet/asset_info.html:75
 #: portfolio_tracker/wallet/templates/wallet/wallet_info.html:98
 msgid "В ордерах на покупку"
-msgstr "In sell orders"
+msgstr "In buy orders"
 
 #: portfolio_tracker/wallet/templates/wallet/asset_info.html:90
 #: portfolio_tracker/wallet/templates/wallet/stable_asset_info.html:71

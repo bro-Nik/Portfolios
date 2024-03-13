@@ -135,7 +135,6 @@ def get_locale() -> str:
     return locale if locale else 'en'
 
 
-
 def get_currency() -> str:
     u = current_user
     if u.is_authenticated and u.type != 'demo' and u.currency:

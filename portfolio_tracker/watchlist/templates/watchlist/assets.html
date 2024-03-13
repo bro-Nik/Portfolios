@@ -91,7 +91,7 @@
               <td>
                 {% for alert in whitelist_ticker.alerts|sort(attribute="price") if alert.status != 'off' %}
                   <span class="badge text-bg-{{ 'success' if alert.status == 'worked' else 'light text-muted' }} fw-normal none-cursor">
-                    {{ alert.price_usd|user_currency }}
+                    {{ alert.price_usd|currency_price }}
                   </span>
                 {% endfor %}
               </td>
