@@ -1,7 +1,6 @@
 from functools import wraps
-import time
 
-from flask import current_app, request, redirect, url_for, abort, flash
+from flask import request, redirect, url_for, abort, flash
 from flask_babel import gettext
 from flask_login import current_user
 
@@ -26,12 +25,3 @@ def demo_user_change(func):
             return ''
         return func(*args, **kwargs)
     return decorated_function
-
-
-def debug(func):
-    def wrapper(*args, **kwargs):
-        print(f'Вызвана функция: {func.__name__}, args: {args}, kwargs: {kwargs}')
-        result = func(*args, **kwargs)
-        print(f'{func.__name__} результат: {result}')
-        return result
-    return wrapper

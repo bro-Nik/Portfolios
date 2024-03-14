@@ -1,6 +1,6 @@
 import re
 import time
-from flask import abort, redirect, render_template, url_for, request
+from flask import abort, flash, redirect, render_template, url_for, request
 
 from ..app import db, redis
 from ..wraps import admin_only
@@ -117,6 +117,23 @@ def ticker_settings():
         ticker.edit(request.form)
         return ''
     return render_template('admin/ticker_settings.html', ticker=ticker)
+
+
+@bp.route('/demo_page', methods=['GET'])
+@admin_only
+def demo_page():
+    return render_template('admin/demo_page.html')
+
+
+@bp.route('/demo/action', methods=['GET'])
+@admin_only
+def demo_action():
+    action = request.args.get('action')
+    if action == 'allow':
+        flash('С этого IP изменения разрешены', 'success')
+    elif action == 'disallow':
+        flash('Изменения запрещены', 'warning')
+    return redirect(url_for('.demo_page'))
 
 
 @bp.route('/module', methods=['GET', 'POST'])

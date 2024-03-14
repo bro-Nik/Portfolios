@@ -38,15 +38,8 @@ def smart_round(num: int | float | None, margin_of_error: int | float = 0
         return 0
 
 
-def number_group(number: int | float) -> str:
-    """ Разделитель тысяных для Jinja """
-    return (long_number(number) if (0 < number < 0.0005)
-            else '{:,}'.format(number).replace(',', ' '))
-
-
-def long_number(number: int | float) -> str:
-    return ('{:.18f}'.format(number).rstrip('0') if number < 0.0005
-            else str(number))
+def long_number(n: int | float) -> str:
+    return '{:.18f}'.format(n).rstrip('0') if abs(n) < 0.0005 else str(n)
 
 
 def currency_price(num: int | float, currency: str = '', default: str = '',
@@ -54,8 +47,7 @@ def currency_price(num: int | float, currency: str = '', default: str = '',
     if not currency:
         currency = current_user.currency
         num *= 1 / current_user.currency_ticker.price
-    else:
-        currency += ' '  # для разделения
+    currency = currency.upper()
 
     num = currency_round(num, round_per=round_per, round_to=round_to)
     if not num and default:
@@ -72,9 +64,13 @@ def currency_price(num: int | float, currency: str = '', default: str = '',
 
     locale = Locale.parse(current_user.locale)
     p = locale.currency_formats['standard']
-    # rez = p.apply(num, locale, currency=currency.upper(), force_frac=frac)
-    # return f'{"~" if round_per or round_to else ""}{rez}'
-    return p.apply(num, locale, currency=currency.upper(), force_frac=frac)
+    rez = str(p.apply(num, locale, currency=currency.upper(), force_frac=frac))
+
+    # Разрыв, если у валюта пишется вначале и у нее нет символа
+    if rez.startswith(currency):
+        rez = rez.replace(currency, f'{currency} ')
+
+    return rez
 
 
 def currency_round(num: int | float, round_per: int = 0, round_to: str = ''
@@ -115,7 +111,6 @@ def user_datetime(date: datetime, not_format: bool = False) -> str:
 bp.add_app_template_filter(smart_int)
 bp.add_app_template_filter(smart_round)
 bp.add_app_template_filter(long_number)
-bp.add_app_template_filter(number_group)
 bp.add_app_template_filter(currency_price)
 bp.add_app_template_filter(currency_quantity)
 bp.add_app_template_filter(user_datetime)

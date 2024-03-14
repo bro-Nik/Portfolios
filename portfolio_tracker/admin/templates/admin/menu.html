@@ -9,4 +9,6 @@
     href="{{ url_for('.imports') }}">Импорты</a>
   <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.tickers_page') }}"
     href="{{ url_for('.tickers_page') }}">Тикеры</a>
+  <a class="nav-link text-muted {{ 'active disabled' if request.path == url_for('.demo_page') }}"
+    href="{{ url_for('.demo_page') }}">Демо</a>
 </nav>

@@ -167,7 +167,9 @@ def transaction_update():
 
     # Связанная транзакция
     wallet2 = get_wallet(request.form.get('wallet_id'))
-    asset2 = get_wallet_asset(wallet2, asset.ticker_id, create=True)
+    asset2 = get_wallet_asset(None, wallet2, asset.ticker_id)
+    if wallet2 and not asset2:
+        asset2 = create_new_wallet_asset(wallet2, asset.ticker)
 
     if wallet2 and asset2:
         if not transaction2:

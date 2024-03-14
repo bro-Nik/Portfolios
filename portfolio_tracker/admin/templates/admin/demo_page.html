@@ -1,0 +1,15 @@
+{% if not request.args.get('only_content') %}
+  {% extends "base.html" %}
+  {% block title %} Tickers / Admin {% endblock %}
+{% endif %}
+
+{% block content %}
+
+{% include 'admin/menu.html' %}
+
+<div class="d-flex flex-column">
+  <a href="{{ url_for('.demo_action', action='allow') }}" class="text-decoration-none">Разрешить изменения с текущего IP</a>
+  <a href="{{ url_for('.demo_action', action='disallow') }}" class="text-decoration-none text-danger">Запретить изменения</a>
+</div>
+
+{% endblock %}
