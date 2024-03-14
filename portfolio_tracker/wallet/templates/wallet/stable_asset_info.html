@@ -64,7 +64,7 @@
   </div>
 
 <div class="big-table pt-3 pb-3">
-  <form id="WalletStableTransactionsForm" action="{{ url_for('.transactions_action') }}">
+  <form id="WalletStableTransactionsForm" action="{{ url_for('.transactions_action', wallet_id=asset.wallet_id, asset_id=asset.id) }}">
     <table class="table table-sm align-middle">
       <thead>
         <tr>
