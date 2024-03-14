@@ -49,17 +49,17 @@
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Стоимость сейчас{% endtrans %}</p>
-    <span class="text-average">{{ wallet.cost_now|currency_price(round_per=1) }}</span>
+    <span class="text-average">{{ wallet.cost_now|currency_price(round_to='usd') }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-    <span class="text-average">{{ wallet.in_orders|currency_price(round_per=1) }}</span>
+    <span class="text-average">{{ wallet.in_orders|currency_price(round_to='usd') }}</span>
   </div>
 
   <div class="col-auto">
     <p class="small-text">{% trans %}Свободные средства{% endtrans %}</p>
-    <span class="text-average">{{ wallet.free|currency_price(round_per=1) }}</span>
+    <span class="text-average">{{ wallet.free|currency_price(round_to='usd') }}</span>
   </div>
 </div>
 
@@ -126,10 +126,10 @@
                     </div>
                   </td>
 
-                  <td>{{ asset.cost_now|currency_price(round_per=1, default='-') }}</td>
-                  <td>{{ asset.quantity|currency_quantity(round_per=1, currency=ticker.symbol, default='-') }}</td>
-                  <td>{{ asset.sell_orders|currency_quantity(round_per=1, currency=ticker.symbol, default='-') }}</td>
-                  <td>{{ asset.buy_orders|currency_price(round_per=1, default='-') }}</td>
+                  <td>{{ asset.cost_now|currency_price(round_to='usd', default='-') }}</td>
+                  <td>{{ asset.quantity|currency_quantity(round_to=ticker.price, currency=ticker.symbol, default='-') }}</td>
+                  <td>{{ asset.sell_orders|currency_quantity(round_to='usd', currency=ticker.symbol, default='-') }}</td>
+                  <td>{{ asset.buy_orders|currency_price(round_to='usd', default='-') }}</td>
 
                   <td class="align-middle text-end">
                     <div class="d-flex justify-content-end">
@@ -234,8 +234,8 @@
                     </div>
                   </td>
 
-                  <td>{{ asset.free|currency_price(round_per=1, currency=ticker.symbol, default='-') }}</td>
-                  <td>{{ asset.buy_orders|currency_price(round_per=1, currency=ticker.symbol, default='-') }}</td>
+                  <td>{{ asset.free|currency_price(round_to='usd', currency=ticker.symbol, default='-') }}</td>
+                  <td>{{ asset.buy_orders|currency_price(round_to='usd', currency=ticker.symbol, default='-') }}</td>
 
                   <td class="align-middle text-end">
                     <div class="d-flex justify-content-end">

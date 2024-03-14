@@ -63,17 +63,17 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Стоимость сейчас{% endtrans %}</p>
-      <span class="text-average">{{ asset.cost_now|currency_price(round_per=1) }}</span>
+      <span class="text-average">{{ asset.cost_now|currency_price(round_to='usd') }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}В ордерах на продажу{% endtrans %}</p>
-      <span class="text-average"> {{ asset.sell_orders|currency_quantity(round_per=1, currency=ticker.symbol) }}</span>
+      <span class="text-average"> {{ asset.sell_orders|currency_quantity(round_to='usd', currency=ticker.symbol) }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}В ордерах на покупку{% endtrans %}</p>
-      <span class="text-average"> {{ asset.buy_orders|currency_price(round_per=1) }}</span>
+      <span class="text-average"> {{ asset.buy_orders|currency_price(round_to='usd') }}</span>
     </div>
 
   </div>
@@ -142,13 +142,15 @@
               {% endif %}
             </td>
 
+            {% set other_currency = current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
+
             <td>
               {# transaction from portfolio #}
               {% if transaction.portfolio_asset %}
-                {% if current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
-                  {{ transaction.price|currency_price(round_per=1, currency=transaction.quote_ticker.symbol) }}<br>
+                {% if other_currency %}
+                  {{ transaction.price|currency_price(currency=transaction.quote_ticker.symbol) }}<br>
                 {% endif %}
-                {{ transaction.price_usd|currency_price(round_per=1) }}
+                {{ transaction.price_usd|currency_price }}
               {# transaction from wallet #}
               {% else %}
               -
@@ -158,12 +160,12 @@
             <td>
               {# transaction from portfolio #}
               {% if transaction.portfolio_asset %}
-                {% if current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
-                  {{ '+' if transaction.quantity2 > 0 }}{{ transaction.quantity2|currency_price(round_per=1, currency=transaction.quote_ticker.symbol) }}<br>
+                {% if other_currency %}
+                  {{ '+' if transaction.quantity2 > 0 }}{{ transaction.quantity2|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }}<br>
                 {% endif %}
-                {{ '+' if transaction.quantity2 > 0 }}{{ (transaction.quantity * transaction.price_usd * -1)|currency_price(round_per=1) }}<br>
+                {{ '+' if transaction.quantity2 > 0 }}{{ (transaction.quantity * transaction.price_usd * -1)|currency_price(round_to='usd') }}<br>
                 <span class="text-average small-text {{ color }}">
-                  {{ '+' if transaction.quantity > 0 }}{{ transaction.quantity|currency_quantity(round_per=1, currency=ticker.symbol) }}
+                  {{ '+' if transaction.quantity > 0 }}{{ transaction.quantity|currency_quantity(round_to=ticker.price, currency=ticker.symbol) }}
                 </span>
               {# transaction from wallet #}
               {% else %}

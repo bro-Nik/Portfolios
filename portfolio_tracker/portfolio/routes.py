@@ -186,7 +186,8 @@ def transactions_action():
 def transaction_info():
     """Transaction info."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset: Asset = get_asset(request.args.get('asset_id'), portfolio, request.args.get('ticker_id')) or abort(404)
+    asset: Asset = get_asset(request.args.get('asset_id'), portfolio,
+                             request.args.get('ticker_id')) or abort(404)
     transaction = get_transaction(request.args.get('transaction_id'), asset)
 
     asset.update_price()

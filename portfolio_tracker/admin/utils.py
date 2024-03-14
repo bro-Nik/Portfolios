@@ -7,13 +7,12 @@ from flask import current_app
 from sqlalchemy import func
 from PIL import Image
 
-from portfolio_tracker.admin.models import Key, Stream
-
 from ..app import db, celery
 from ..general_functions import MARKETS, Market, add_prefix, remove_prefix
 from ..portfolio.models import Ticker
 from ..watchlist.models import WatchlistAsset
 from ..user.models import User
+from ..admin.models import Key, Stream
 from .integrations_api import API_NAMES, ApiIntegration, request_data
 from .integrations_market import MarketIntegration
 from .integrations_other import MODULE_NAMES, OtherIntegration

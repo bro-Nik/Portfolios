@@ -84,19 +84,19 @@
     <div class="col-auto">
       <p class="small-text">{% trans %}Средняя цена покупки{% endtrans %}</p>
       <span class="text-average">
-        {{ ((asset.amount / asset.quantity) if asset.quantity > 0 else 0)|currency_price }}
+        {{ ((asset.amount / asset.quantity) if asset.quantity > 0 else 0)|currency_price(round_per=0.1) }}
       </span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Вложено{% endtrans %} / {% trans %}Стоимость сейчас{% endtrans %}</p>
-      <span class="text-average"> {{ asset.amount|currency_price(round_per=1) }} /
-      {{ asset.cost_now|currency_price(round_per=1) }}</span>
+      <span class="text-average"> {{ asset.amount|currency_price(round_to='usd') }} /
+      {{ asset.cost_now|currency_price(round_to='usd') }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
-      <span class="text-average {{ asset.color }}">{{ asset.profit|currency_price(round_per=1) }}</span>
+      <span class="text-average {{ asset.color }}">{{ asset.profit|currency_price(round_to='usd') }}</span>
     </div>
 
     <div class="col-auto">
@@ -109,7 +109,7 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-      <span class="text-average"> {{ asset.in_orders|currency_price(round_per=1) }}</span>
+      <span class="text-average"> {{ asset.in_orders|currency_price(round_to='usd') }}</span>
     </div>
 
   </div>
@@ -152,20 +152,20 @@
 
           <td>
             {% if current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
-              {{ transaction.price|currency_price(round_per=1, currency=transaction.quote_ticker.symbol) }}<br>
+              {{ transaction.price|currency_price(round_per=0.1, currency=transaction.quote_ticker.symbol) }}<br>
             {% endif %}
-            {{ transaction.price_usd|currency_price(round_per=1) }}
+            {{ transaction.price_usd|currency_price(round_per=0.1) }}
           </td>
 
           <td>
             {% if current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
-              {{ '+' if transaction.quantity2 > 0 }}{{ transaction.quantity2|currency_price(round_per=1, currency=transaction.quote_ticker.symbol) }}
+              {{ '+' if transaction.quantity2 > 0 }}{{ transaction.quantity2|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }}
               <br>
             {% endif %}
-            {{ '+' if transaction.quantity2 > 0 }}{{ (transaction.quantity * transaction.price_usd * -1)|currency_price(round_per=1) }}
+            {{ '+' if transaction.quantity2 > 0 }}{{ (transaction.quantity * transaction.price_usd * -1)|currency_price(round_to='usd') }}
             <br>
             <span class="text-average small-text {{ color }}">
-              {{ '+' if transaction.quantity > 0 }}{{ transaction.quantity|currency_quantity(round_per=1, currency=transaction.base_ticker.symbol) }}
+              {{ '+' if transaction.quantity > 0 }}{{ transaction.quantity|currency_quantity(round_to=transaction.base_ticker.price, currency=transaction.base_ticker.symbol) }}
             </span>
           </td>
 

@@ -166,9 +166,8 @@ def task_logging(function):
         wasted_time = smart_time(time.perf_counter() - start)
         mes = f'Конец #Time: {wasted_time}'
         mes2 = f'#Next: {next_run_time}' if next_run_time else ''
-
-        current_app.logger.info(f'{task.name}: {mes}')
         module.logs.set('debug', f'{mes} {mes2}', task.name)
+        current_app.logger.info(f'{task.name}: {mes}')
 
         # Разблокировка модуля
         if isinstance(module, ApiIntegration):

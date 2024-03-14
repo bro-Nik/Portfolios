@@ -49,14 +49,14 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Вложено{% endtrans %} / {% trans %}Стоимость сейчас{% endtrans %}</p>
-      <span class="text-average">{{ portfolio.amount|currency_price(round_per=1) }} /</span>
-      <span class="text-average {{ portfolio.color }}">{{ portfolio.cost_now|currency_price(round_per=1) }}</span>
+      <span class="text-average">{{ portfolio.amount|currency_price(round_to='usd') }} /</span>
+      <span class="text-average {{ portfolio.color }}">{{ portfolio.cost_now|currency_price(round_to='usd') }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
       <span class="text-average {{ portfolio.color }}">
-        {{ portfolio.profit|currency_price(round_per=1) }}
+        {{ portfolio.profit|currency_price(round_to='usd') }}
         {{ '({}%)'.format(portfolio.profit_percent) if portfolio.profit_percent }}
       </span>
     </div>
@@ -111,18 +111,18 @@
                 </div>
               </td>
 
-              <td>{{ asset.amount|currency_price(round_per=1, default='-') }}</td>
+              <td>{{ asset.amount|currency_price(round_to='usd', default='-') }}</td>
 
               <td>
                 <span class="{{ asset.color }}">
-                  {{ asset.cost_now|currency_price(round_per=1, default='-') }}
+                  {{ asset.cost_now|currency_price(round_to='usd', default='-') }}
                 </span>
               </td>
 
               <td>
                 {% if asset.cost_now %}
                   <span class="text-average {{ asset.color }}">
-                    {{ '-' if asset.profit < 0 }}{{ asset.profit|currency_price(round_per=1) }}
+                    {{ '-' if asset.profit < 0 }}{{ asset.profit|currency_price(round_to='usd') }}
                     {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
                   </span>
                 {% else %}

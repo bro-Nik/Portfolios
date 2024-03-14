@@ -53,6 +53,7 @@ class Transaction(db.Model):
             self.ticker2_id = form['ticker2_id']
             self.price = float(form['price'])
             db.session.commit()
+
             self.price_usd = self.price * self.quote_ticker.price
             self.wallet_id = form[self.type.lower() + '_wallet_id']
             self.order = bool(form.get('order'))
@@ -98,28 +99,33 @@ class Transaction(db.Model):
 
         if self.type in ('Buy', 'Sell'):
             asset = self.portfolio_asset
+
+            # Поиск или создание активов в кошельке
             base_asset = get_wallet_asset(
                 None, self.wallet, self.ticker_id
             ) or create_new_wallet_asset(self.wallet, self.base_ticker)
             quote_asset = get_wallet_asset(
                 None, self.wallet, self.ticker2_id
             ) or create_new_wallet_asset(self.wallet, self.quote_ticker)
-            if base_asset and quote_asset:
-                if self.order:
-                    if self.type == 'Buy':
-                        asset.in_orders += (self.quantity
-                                            * self.price_usd * direction)
-                        base_asset.buy_orders += (self.quantity
-                                                  * self.price_usd * direction)
-                        quote_asset.buy_orders -= self.quantity2 * direction
-                    else:
-                        base_asset.sell_orders -= self.quantity * direction
+            db.session.commit()
+            if not (base_asset and quote_asset):
+                return
 
+            if self.order:
+                if self.type == 'Buy':
+                    asset.in_orders += (self.quantity
+                                        * self.price_usd * direction)
+                    base_asset.buy_orders += (self.quantity
+                                              * self.price_usd * direction)
+                    quote_asset.buy_orders -= self.quantity2 * direction
                 else:
-                    base_asset.quantity += self.quantity * direction
-                    quote_asset.quantity += self.quantity2 * direction
-                    asset.amount += self.quantity * self.price_usd * direction
-                    asset.quantity += self.quantity * direction
+                    base_asset.sell_orders -= self.quantity * direction
+
+            else:
+                base_asset.quantity += self.quantity * direction
+                quote_asset.quantity += self.quantity2 * direction
+                asset.amount += self.quantity * self.price_usd * direction
+                asset.quantity += self.quantity * direction
 
         elif self.type in ('Input', 'Output', 'TransferOut', 'TransferIn'):
             self.wallet_asset.quantity += self.quantity * direction
@@ -396,8 +402,6 @@ class Ticker(db.Model):
             return f'{url}{external_id}'
 
     def delete(self) -> None:
-        # print(self.image)
-        # return
         # Цены
         if self.history:
             for price in self.history:

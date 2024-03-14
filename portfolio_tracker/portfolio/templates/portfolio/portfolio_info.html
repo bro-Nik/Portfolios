@@ -50,14 +50,14 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Вложено{% endtrans %} / {% trans %}Стоимость сейчас{% endtrans %}</p>
-      <span class="text-average">{{ portfolio.amount|currency_price(round_per=1) }} /</span>
-      <span class="text-average {{ portfolio.color }}">{{ portfolio.cost_now|currency_price(round_per=1) }}</span>
+      <span class="text-average">{{ portfolio.amount|currency_price(round_to='usd') }} /</span>
+      <span class="text-average {{ portfolio.color }}">{{ portfolio.cost_now|currency_price(round_to='usd') }}</span>
     </div>
 
     <div class="col-auto">
       <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
       <span class="text-average {{ portfolio.color }}">
-        {{ portfolio.profit|currency_price(round_per=1) }}
+        {{ portfolio.profit|currency_price(round_to='usd') }}
         {{ '({}%)'.format(portfolio.profit_percent) if portfolio.profit_percent }}
       </span>
     </div>
@@ -72,7 +72,7 @@
 
     <div class="col-auto">
       <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-      <span class="text-average">{{ portfolio.in_orders|currency_price(round_per=1) }}</span>
+      <span class="text-average">{{ portfolio.in_orders|currency_price(round_to='usd') }}</span>
     </div>
 
     <div class="col-auto">
@@ -90,7 +90,7 @@
       
       <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
         data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
-        data-sort-url="{{ url_for('portfolio.change_table_sort') }}" data-pagination="true">
+        data-sort-url="{{ url_for('portfolio.change_table_sort') }}">
         <thead>
           <tr>
             <th class="main-tab-checkbox">
@@ -141,10 +141,10 @@
               <td>
                 <div class="mx-1 text-nowrap">
                   {% if asset.quantity > 0 %}
-                    {{ asset.amount|currency_price(round_per=1, default='-') if asset.amount > 0 }} /
-                    <span class="{{ asset.color }}">{{ asset.cost_now|currency_price(round_per=1, default='-') }}</span><br>
+                    {{ asset.amount|currency_price(round_to='usd', default='-') if asset.amount > 0 }} /
+                    <span class="{{ asset.color }}">{{ asset.cost_now|currency_price(round_to='usd', default='-') }}</span><br>
                     <span class="text-average small-text">
-                      {{ asset.quantity|currency_quantity(round_per=1, currency=asset.ticker.symbol) }}
+                      {{ asset.quantity|currency_quantity(round_to=asset.ticker.price, currency=asset.ticker.symbol) }}
                     </span>
                   {% else %}
                     -
@@ -156,7 +156,7 @@
                 <div class="mx-1 text-nowrap">
                   {% if asset.quantity > 0 %}
                     <span class="{{ asset.color }}">
-                      {{ asset.profit|currency_price(round_per=1) }}
+                      {{ asset.profit|currency_price(round_to='usd') }}
                       {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
                     </span>
                   {% else %}
@@ -174,7 +174,7 @@
                 {{ asset.percent|round(1, 'common')|smart_int|string + '%' if asset.percent else '-' }}
               </td>
 
-              <td>{{ asset.in_orders|currency_price(round_per=1, default='-') }}</td>
+              <td>{{ asset.in_orders|currency_price(round_to='usd', default='-') }}</td>
 
               <td>
                 <div class="d-flex comment">
