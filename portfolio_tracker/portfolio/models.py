@@ -7,8 +7,6 @@ from flask import current_app, flash
 from flask_babel import gettext
 from sqlalchemy.orm import Mapped
 
-# from portfolio_tracker.admin.utils import image_folder
-
 from ..app import db
 from ..general_functions import from_user_datetime, remove_prefix
 from ..models import DetailsMixin
@@ -92,13 +90,24 @@ class Transaction(db.Model):
         db.session.commit()
 
     def update_dependencies(self, param: str = '') -> None:
-        if param in ('cancel',):
-            direction = -1
-        else:
-            direction = 1
+        # Направление сделки (direction)
+        d = -1 if param == 'cancel' else 1
+
+        asset = self.portfolio_asset
+
+        # Расчет средней цены покупки актива
+        if not self.order:
+            if self.type == 'Buy':
+                spent = (asset.quantity * asset.average_buy_price +
+                         self.price_usd * self.quantity * d)
+                quantity = asset.quantity + self.quantity * d
+                asset.average_buy_price = spent / quantity if quantity else 0
+            elif self.type == 'Sell':
+                # Если закрыты все сделки - обнуляем
+                if asset.quantity + self.quantity * d == 0:
+                    asset.average_buy_price = 0
 
         if self.type in ('Buy', 'Sell'):
-            asset = self.portfolio_asset
 
             # Поиск или создание активов в кошельке
             base_asset = get_wallet_asset(
@@ -113,22 +122,23 @@ class Transaction(db.Model):
 
             if self.order:
                 if self.type == 'Buy':
-                    asset.in_orders += (self.quantity
-                                        * self.price_usd * direction)
-                    base_asset.buy_orders += (self.quantity
-                                              * self.price_usd * direction)
-                    quote_asset.buy_orders -= self.quantity2 * direction
+                    asset.in_orders += self.quantity * self.price_usd * d
+                    base_asset.buy_orders += self.quantity * self.price_usd * d
+                    quote_asset.buy_orders -= self.quantity2 * d
                 else:
-                    base_asset.sell_orders -= self.quantity * direction
+                    base_asset.sell_orders -= self.quantity * d
 
             else:
-                base_asset.quantity += self.quantity * direction
-                quote_asset.quantity += self.quantity2 * direction
-                asset.amount += self.quantity * self.price_usd * direction
-                asset.quantity += self.quantity * direction
+                # Активы кошелька
+                base_asset.quantity += self.quantity * d
+                quote_asset.quantity += self.quantity2 * d
+                # Актив портфеля
+                asset.amount += self.quantity * self.price_usd * d
+                asset.quantity += self.quantity * d
+
 
         elif self.type in ('Input', 'Output', 'TransferOut', 'TransferIn'):
-            self.wallet_asset.quantity += self.quantity * direction
+            self.wallet_asset.quantity += self.quantity * d
 
         db.session.commit()
 
@@ -155,6 +165,7 @@ class Asset(db.Model, DetailsMixin):
     quantity: float = db.Column(db.Float, default=0)
     in_orders: float = db.Column(db.Float, default=0)
     amount: float = db.Column(db.Float, default=0)
+    average_buy_price: float = db.Column(db.Float, default=0)  # usd
 
     # Relationships
     ticker: Mapped[Ticker] = db.relationship(
@@ -192,9 +203,34 @@ class Asset(db.Model, DetailsMixin):
                 free += transaction.quantity
         return free
 
-    def update_price(self) -> None:
-        self.price = self.ticker.price
-        self.cost_now = self.quantity * self.price
+    @property
+    def price(self) -> float:
+        return self.ticker.price
+
+    @property
+    def cost_now(self) -> float:
+        return self.quantity * self.price
+
+    @property
+    def profit_percent(self):
+        # if self.quantity:
+        #     spent = self.quantity * self.average_buy_price
+        #     # if spent:
+        #     return abs(round((self.cost_now - spent) / spent * 100))
+
+        spent = 0
+        for transaction in self.transactions:
+            if transaction.type == 'Buy' and not transaction.order:
+                spent += transaction.quantity * transaction.price_usd
+        return abs(round(self.profit / spent * 100)) if spent else 0
+
+    @property
+    def share_of_portfolio(self):
+        if self.amount < 0:
+            return 0
+        if not self.portfolio.amount:
+            return 0
+        return self.amount / self.portfolio.amount * 100
 
     def delete_if_empty(self) -> None:
         if self.is_empty():
@@ -478,16 +514,21 @@ class Portfolio(db.Model, DetailsMixin):
         self.amount = 0
 
         for asset in self.assets:
-            asset.update_price()
-            asset.update_details()
-            self.amount += asset.amount
             self.cost_now += asset.cost_now
             self.in_orders += asset.in_orders
+            self.amount += asset.amount if asset.amount > 0 else 0
 
         for asset in self.other_assets:
-            asset.update_details()
             self.cost_now += asset.cost_now
-            self.amount += asset.amount
+            self.amount += asset.amount if asset.amount > 0 else 0
+
+    @property
+    def profit_percent(self):
+        spent = 0
+        for transaction in self.transactions:
+            if transaction.type == 'Buy' and not transaction.order:
+                spent += transaction.quantity * transaction.price_usd
+        return abs(round(self.profit / spent * 100)) if spent else 0
 
     def delete_if_empty(self) -> None:
         if self.is_empty():

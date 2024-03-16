@@ -44,23 +44,12 @@
   {% include 'flash_messages.html' %}
 </div>
 
+{% import 'macro_info.html' as i with context %}
+
 {% if asset.transactions %}
   <div class="row mb-5 xs-mb-3">
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Свободно{% endtrans %}</p>
-      <span class="text-average">
-        {{ asset.free|currency_quantity(round_per=1, currency=ticker.symbol) }}
-      </span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-      <span class="text-average">
-        {{ asset.buy_orders|currency_quantity(round_per=1, currency=ticker.symbol) }}
-      </span>
-    </div>
-
+    {{ i.top("Свободно", asset.free|currency_quantity(round_per=1, currency=ticker.symbol)) }}
+    {{ i.top("В ордерах", asset.buy_orders|currency_quantity(round_per=1, currency=ticker.symbol)) }}
   </div>
 
 <div class="big-table pt-3 pb-3">
@@ -196,12 +185,7 @@
   </form>
 </div>
 {% else %}
-  <div class="nothing-box">{% trans %}Пока ничего нет...{% endtrans %}</div>
+  {% include 'nothing.html' %}
 {% endif %}
-
-<div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Добавить комментарий') }}"
-  data-url="">
-  <span class="convert-data"></span>
-</div>
 
 {% endblock %}

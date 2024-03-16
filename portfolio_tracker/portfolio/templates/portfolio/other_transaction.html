@@ -27,7 +27,7 @@
             </select>
           </div>
           <input type="number" step="any" class="form-control focus" autocomplete="off"
-                 placeholder="0,00" name="amount" value="{{ transaction.amount|abs|smart_int if transaction.amount }}" required>
+                 placeholder="0,00" name="amount" value="{{ transaction.amount|abs|smart_round or '' }}" required>
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ from ..jinja_filters import user_datetime
 from ..general_functions import MARKETS, actions_in, when_updated
 from ..portfolio.utils import get_ticker
 from ..user.utils import find_user
+from ..user.models import User
 from .models import Key, Task
 from .integrations import Log, get_api_task, tasks_trans
 from .integrations_api import API_NAMES, ApiIntegration
@@ -15,6 +16,30 @@ from .integrations_other import MODULE_NAMES
 from .utils import get_all_users, get_key, get_module, get_stream, get_tasks, \
     get_tickers, get_tickers_count, task_action
 from . import bp
+
+
+@bp.route('/updater', methods=['GET'])
+@admin_only
+def updater():
+    # Обновление средней цены актива
+    try:
+        for user in db.session.execute(db.select(User)).scalars():
+            for portfolio in user.portfolios:
+                for asset in portfolio.assets:
+                    # Если обновлено - пропускаем
+                    # if asset.average_buy_price:
+                    #     continue
+
+                    if asset.quantity:
+                        asset.average_buy_price = asset.amount / asset.quantity
+                    else:
+                        asset.average_buy_price = 0
+
+        db.session.commit()
+        flash('Обновления вополнены', 'success')
+    except Exception as e:
+        flash(f'Ошибка. {e}', 'warning')
+    return redirect(url_for('.module_page'))
 
 
 @bp.route('/index', methods=['GET'])

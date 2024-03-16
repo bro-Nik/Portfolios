@@ -51,28 +51,17 @@
   </div>
 </div>
 
+{% import 'macro_info.html' as i with context %}
+
 {% if not asset.is_empty() %}
   <div class="row mb-5 xs-mb-3">
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Вложено{% endtrans %}</p>
-      <span class="text-average">{{ asset.amount|currency_price(round_to='usd') }}</span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
-      <span class="text-average {{ asset.color }}">
-        {{ asset.profit|currency_price(round_to='usd') }}
-        {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
-      </span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Доля от портфеля{% endtrans %}</p>
-      <span class="text-average">
-        {{ (asset.amount / asset.portfolio.amount * 100)|round(1, 'common')|smart_int|string + '%' if asset.portfolio.amount else '-' }} /
-        {{ asset.percent|smart_int|string + '%' if asset.percent else '-' }}
-      </span>
-    </div>
+    {{ i.top("Вложено", asset.amount|currency_price(round_to='usd')) }}
+    {{ i.top(["Прибыль", "Убыток"],
+             [asset.profit|currency_price(round_to='usd'),
+             " ({}%)".format(asset.profit_percent) if asset.profit_percent], asset.color) }}
+    {{ i.top("Доля от портфеля",
+             ["{}%".format((asset.amount / asset.portfolio.amount * 100)|smart_round(0.1)) if asset.portfolio.amount else '-', " / ",
+             "{}%".format(asset.percent|smart_round) if asset.percent else '-']) }}
   </div>
 {% endif %}
 
@@ -187,7 +176,7 @@
         </form>
       </div>
     {% else %}
-      <div class="nothing-box">{% trans %}Пока ничего нет...{% endtrans %}</div>
+      {% include 'nothing.html' %}
     {% endif %}
   </div>
 
@@ -285,14 +274,11 @@
         </form>
       </div>
     {% else %}
-      <div class="nothing-box">{% trans %}Пока ничего нет...{% endtrans %}</div>
+      {% include 'nothing.html' %}
     {% endif %}
   </div>
 </div>
 
-<div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Добавить комментарий') }}"
-  data-url="{{ url_for('.asset_settings_update', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
-  <span class="convert-data">{{ asset.comment if asset.comment }}</span>
-</div>
+{{ i.comment(url_for('.asset_settings_update', portfolio_id=asset.portfolio_id, asset_id=asset.id), asset.comment) }}
 
 {% endblock %}

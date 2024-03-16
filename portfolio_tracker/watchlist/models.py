@@ -89,3 +89,6 @@ class Alert(db.Model):
     def delete(self) -> None:
         if not self.transaction_id:
             db.session.delete(self)
+
+    def convert_order_to_transaction(self):
+        self.transaction.convert_order_to_transaction()

@@ -4,8 +4,8 @@
 {% endif %}
 
 {% block content %}
-{% set ticker = asset.ticker %}
 
+{% set ticker = asset.ticker %}
 {% set request_from = request.args.get('request_from') %}
 
 <div class="mb-5">
@@ -73,45 +73,23 @@
   {% include 'flash_messages.html' %}
 </div>
 
+{% import 'macro_info.html' as i %}
+
 {% if asset.transactions %}
   <div class="row mb-5 xs-mb-3">
 
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Количество{% endtrans %}</p>
-      <span class="text-average">{{ asset.quantity|currency_quantity(currency=ticker.symbol) }}</span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Средняя цена покупки{% endtrans %}</p>
-      <span class="text-average">
-        {{ ((asset.amount / asset.quantity) if asset.quantity > 0 else 0)|currency_price(round_per=0.1) }}
-      </span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Вложено{% endtrans %} / {% trans %}Стоимость сейчас{% endtrans %}</p>
-      <span class="text-average"> {{ asset.amount|currency_price(round_to='usd') }} /
-      {{ asset.cost_now|currency_price(round_to='usd') }}</span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
-      <span class="text-average {{ asset.color }}">{{ asset.profit|currency_price(round_to='usd') }}</span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Доля от портфеля{% endtrans %}</p>
-      <span class="text-average">
-        {{ (asset.amount / asset.portfolio.amount * 100)|round(1, 'common')|smart_int|string if asset.portfolio.amount else 0 }}% /
-        {{ asset.percent|smart_int|string + '%' if asset.percent else '-' }}
-      </span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-      <span class="text-average"> {{ asset.in_orders|currency_price(round_to='usd') }}</span>
-    </div>
-
+    {{ i.top("Количество", asset.quantity|currency_quantity(currency=ticker.symbol)) }}
+    {{ i.top("Средняя цена покупки", asset.average_buy_price|currency_price(round_per=0.1)) }}
+    {{ i.top("Стоимость сейчас", asset.cost_now|currency_price(round_to='usd')) }}
+    {{ i.top("Вложено" if asset.amount >= 0 else "Зафиксировано",
+             asset.amount|abs|currency_price(round_to='usd')) }}
+    {{ i.top(["Прибыль", "Убыток"],
+             [asset.profit|currency_price(round_to='usd'),
+             " ({}%)".format(asset.profit_percent) if asset.profit_percent], asset.color) }}
+    {{ i.top("Доля от портфеля",
+             ["{}%".format(asset.share_of_portfolio|smart_round(0.1)), " / ",
+             "{}%".format(asset.percent|smart_round) if asset.percent else '-']) }}
+    {{ i.top("В ордерах", asset.in_orders|currency_price(round_to='usd')) }}
   </div>
 
 <div class="big-table pt-3 pb-3">
@@ -133,6 +111,7 @@
       <tbody>
         {% for transaction in asset.transactions|sort(reverse=true, attribute="date")|sort(reverse=true, attribute="order") %}
           {% set color = 'text-green' if transaction.quantity > 0 else 'text-red' %}
+          {% set other_currency = current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
 
         <tr class="{{ 'table-order' if transaction.order }}">
 
@@ -151,14 +130,14 @@
           </td>
 
           <td>
-            {% if current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
+            {% if other_currency %}
               {{ transaction.price|currency_price(round_per=0.1, currency=transaction.quote_ticker.symbol) }}<br>
             {% endif %}
             {{ transaction.price_usd|currency_price(round_per=0.1) }}
           </td>
 
           <td>
-            {% if current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
+            {% if other_currency %}
               {{ '+' if transaction.quantity2 > 0 }}{{ transaction.quantity2|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }}
               <br>
             {% endif %}
@@ -230,12 +209,9 @@
   </form>
 </div>
 {% else %}
-  <div class="nothing-box">{% trans %}Пока ничего нет...{% endtrans %}</div>
+  {% include 'nothing.html' %}
 {% endif %}
 
-<div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Добавить комментарий') }}"
-  data-url="{{ url_for('.asset_settings_update', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
-  <span class="convert-data">{{ asset.comment if asset.comment }}</span>
-</div>
+{{ i.comment(url_for('.asset_settings_update', portfolio_id=asset.portfolio_id, asset_id=asset.id), asset.comment) }}
 
 {% endblock %}

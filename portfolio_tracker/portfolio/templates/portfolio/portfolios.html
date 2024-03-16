@@ -18,32 +18,17 @@
   {% include 'flash_messages.html' %}
 </div>
 
+{% import 'macro_info.html' as i with context %}
+
 {% if current_user.portfolios %}
+
   <div class="row xs-mb-3">
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Вложено{% endtrans %} / {% trans %}Стоимость сейчас{% endtrans %}</p>
-      <span class="text-average">
-        {{ portfolios.amount|currency_price(round_to='usd') }} / 
-        <span class="{{ portfolios.color }}">{{ portfolios.cost_now|currency_price(round_to='usd') }}</span>
-      </span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
-        <span class="text-average {{ portfolios.color }}">
-          {{ portfolios.profit|currency_price(round_to='usd') }}
-          {{ '({}%)'.format(portfolios.profit_percent) if portfolios.profit_percent }}
-        </span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-      <span class="text-average">
-        {{ portfolios.in_orders|currency_price(round_to='usd') }}
-      </span>
-    </div>
-
+    {{ i.top("Вложено", portfolios.amount|currency_price(round_to='usd')) }}
+    {{ i.top("Стоимость сейчас", portfolios.cost_now|currency_price(round_to='usd'), portfolios.color) }}
+    {{ i.top(["Прибыль", "Убыток"],
+             [portfolios.profit|currency_price(round_to='usd'),
+             " ({}%)".format(portfolios.profit_percent) if portfolios.profit_percent], portfolios.color) }}
+    {{ i.top("В ордерах", portfolios.in_orders|currency_price(round_to='usd')) }}
   </div>
 
   <div class="big-table">
@@ -111,8 +96,8 @@
               </td>
               
               <td>
-                {{ (portfolio.amount / portfolios.amount * 100)|round(1, 'common')|smart_int|string + '%' if portfolio.cost_now and portfolios.amount else '-' }}
-                / {{ portfolio.percent|smart_int|string + '%' if portfolio.percent else '-' }}
+                {{ '{}%'.format((portfolio.amount / portfolios.amount * 100)|smart_round(0.1)) if portfolio.cost_now and portfolios.amount else '-' }}
+                / {{ '{}%'.format(portfolio.percent|smart_round) if portfolio.percent else '-' }}
               </td>
 
               <td>{{ portfolio.in_orders|currency_price(round_to='usd', default='-') }}</td>
@@ -177,7 +162,7 @@
     </form>
   </div>
 {% else %}
-  <div class="nothing-box">{% trans %}Пока ничего нет...{% endtrans %}</div>
+  {% include 'nothing.html' %}
 {% endif %}
 
 {% endblock %}

@@ -27,22 +27,12 @@
   {% include 'flash_messages.html' %}
 </div>
 
+{% import 'macro_info.html' as i with context %}
+
 <div class="row xs-mb-3">
-
-  <div class="col-auto">
-    <p class="small-text">{% trans %}Стоимость сейчас{% endtrans %}</p>
-    <span class="text-average {{ wallets.color }}">{{ wallets.cost_now|currency_price(round_to='usd') }}</span>
-  </div>
-
-  <div class="col-auto">
-    <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-    <span class="text-average">{{ wallets.in_orders|currency_price(round_to='usd') }}</span>
-  </div>
-
-  <div class="col-auto">
-    <p class="small-text">{% trans %}Свободные средства{% endtrans %}</p>
-    <span class="text-average">{{ wallets.free|currency_price(round_to='usd') }}</span>
-  </div>
+  {{ i.top("Стоимость сейчас", wallets.cost_now|currency_price(round_to='usd'), wallets.color) }}
+  {{ i.top("В ордерах", wallets.in_orders|currency_price(round_to='usd')) }}
+  {{ i.top("Свободные средства", wallets.free|currency_price(round_to='usd')) }}
 </div>
 
 <div class="big-table">

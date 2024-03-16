@@ -1,0 +1,30 @@
+{# macro_info.html #}
+
+{% macro top(text, value='', class='') %}
+  <div class="col-auto">
+    <p class="small-text">
+      {% if text is string or text is not iterable %}
+        {% set text = [text] %}
+      {% endif %}
+
+      {% for t in text %}
+        {{ " / " if loop.index != 1 }}{{ gettext(t) }}
+      {% endfor %}
+    </p>
+    <span class="text-average {{ class }}">
+      {% if value is string or value is not iterable %}
+        {% set value = [value] %}
+      {% endif %}
+
+      {% for v in value if v != None %}{{ v }}{% endfor %}
+      </span>
+  </div>
+{% endmacro %}
+
+{% macro comment(url, value='') %}
+  <div class="convert-text" data-convert-to="textarea" data-name="comment"
+    data-placeholder="{{ gettext("Добавить комментарий") }}" data-url="{{ url }}">
+    <span class="convert-data">{{ value if value }}</span>
+  </div>
+{% endmacro %}
+

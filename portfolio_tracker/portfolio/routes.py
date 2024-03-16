@@ -190,7 +190,7 @@ def transaction_info():
                              request.args.get('ticker_id')) or abort(404)
     transaction = get_transaction(request.args.get('transaction_id'), asset)
 
-    asset.update_price()
+    # asset.update_price()
     asset.free = asset.get_free()
 
     wallet_buy = wallet_sell = None

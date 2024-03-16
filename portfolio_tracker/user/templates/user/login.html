@@ -43,7 +43,9 @@
         <h1 class="h3 fw-normal">{% trans %}Вход{% endtrans %}</h1>
         <div class="ms-auto d-flex gap-3">
           <a class="text-decoration-none" href="{{ url_for('user.register') }}">{% trans %}Регистрация{% endtrans %}</a>
+          {#}
           <a class="text-decoration-none" href="{{ url_for('user.demo_user') }}">{% trans %}Демо{% endtrans %}</a>
+          {#}
         </div>
       </div>
 

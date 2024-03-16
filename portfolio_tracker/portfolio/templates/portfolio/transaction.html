@@ -86,7 +86,7 @@
         <div class="input-group">
           <span class="input-group-text" {{ ticker_box_style }}>{{ asset.ticker.symbol|upper }}</span>
           <input type="number" step="any" min="0.00001" class="form-control" placeholder="0,00"
-            name="quantity" autocomplete="off" value="{{ transaction.quantity|abs|smart_int if transaction.quantity }}">
+            name="quantity" autocomplete="off" value="{{ transaction.quantity|smart_round|abs or '' }}">
         </div>
       </div>
     </div>
@@ -103,7 +103,7 @@
         <div class="input-group">
           <span class="input-group-text amount-symbol" {{ ticker_box_style }}>-</span>
           <input type="number" step="any" min="0.01" class="form-control" placeholder="0,00"
-            name="quantity2" autocomplete="off" value="{{ transaction.quantity2|abs|smart_int if transaction.quantity2 }}">
+            name="quantity2" autocomplete="off" value="{{ transaction.quantity2|smart_round|abs or '' }}">
         </div>
       </div>
     </div>

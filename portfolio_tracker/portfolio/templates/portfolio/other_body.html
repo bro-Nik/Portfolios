@@ -24,7 +24,7 @@
             </select>
           </div>
           <input type="number" step="any" class="form-control" placeholder="0,00"
-                 name="amount" autocomplete="off" value="{{ body.amount_with_ticker|smart_int if body.amount_with_ticker }}" required>
+                 name="amount" autocomplete="off" value="{{ body.amount_with_ticker|smart_round or '' }}" required>
         </div>
       </div>
     </div>
@@ -40,7 +40,7 @@
             </select>
           </div>
           <input type="number" step="any" class="form-control" placeholder="0,00"
-            name="cost_now" value="{{ body.cost_now_with_ticker|smart_int if body.cost_now_with_ticker }}" required>
+            name="cost_now" value="{{ body.cost_now_with_ticker|smart_round or '' }}" required>
         </div>
       </div>
     </div>

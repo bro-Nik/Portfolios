@@ -45,41 +45,20 @@
   {% include 'flash_messages.html' %}
 </div>
 
+{% import 'macro_info.html' as i with context %}
+
 {% if portfolio.assets %}
   <div class="row xs-mb-3">
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Вложено{% endtrans %} / {% trans %}Стоимость сейчас{% endtrans %}</p>
-      <span class="text-average">{{ portfolio.amount|currency_price(round_to='usd') }} /</span>
-      <span class="text-average {{ portfolio.color }}">{{ portfolio.cost_now|currency_price(round_to='usd') }}</span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</p>
-      <span class="text-average {{ portfolio.color }}">
-        {{ portfolio.profit|currency_price(round_to='usd') }}
-        {{ '({}%)'.format(portfolio.profit_percent) if portfolio.profit_percent }}
-      </span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Доля от всех инвестиций{% endtrans %}</p>
-      <span class="text-average">
-        {{ (portfolio.amount / portfolios.amount * 100)|round(1, 'common')|smart_int|string if portfolios.amount else 0 }}%
-        / {{ portfolio.percent|smart_int|string + '%' if portfolio.percent else '-' }}
-      </span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}В ордерах{% endtrans %}</p>
-      <span class="text-average">{{ portfolio.in_orders|currency_price(round_to='usd') }}</span>
-    </div>
-
-    <div class="col-auto">
-      <p class="small-text">{% trans %}Количество активов{% endtrans %}</p>
-      <span class="text-average">{{ portfolio.assets|length}}</span>
-    </div>
-
+    {{ i.top("Вложено", portfolio.amount|currency_price(round_to='usd')) }}
+    {{ i.top("Стоимость сейчас", portfolio.cost_now|currency_price(round_to='usd'), portfolio.color) }}
+    {{ i.top(["Прибыль", "Убыток"],
+             [portfolio.profit|currency_price(round_to='usd'),
+             " ({}%)".format(portfolio.profit_percent) if portfolio.profit_percent], portfolio.color) }}
+    {{ i.top("Доля от всех инвестиций",
+             ["{}% / ".format((portfolio.amount / portfolios.amount * 100)|smart_round(0.1) if portfolios.amount else 0),
+             " ({}%)".format(portfolio.percent|smart_round) if portfolio.percent else '-']) }}
+    {{ i.top("В ордерах", portfolio.in_orders|currency_price(round_to='usd')) }}
+    {{ i.top("Количество активов", portfolio.assets|length) }}
   </div>
 
   <div class="big-table pt-3 pb-3">
@@ -102,7 +81,7 @@
             <th data-sortable="true" data-field="profit" data-sort-name="_profit">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</th>
             <th data-sortable="true" data-field="percent" data-sort-name="_percent">{% trans %}Доля от портфеля{% endtrans %}</th>
             <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}В ордерах{% endtrans %}</th>
-              <th>{% trans %}Комментарий{% endtrans %}</th>
+            <th>{% trans %}Комментарий{% endtrans %}</th>
             <th></th>
             <!-- For sorting -->
             <th class="visually-hidden" data-field="_cost_now"></th>
@@ -134,15 +113,15 @@
 
               <td>
                 <div class="mx-1 text-nowrap">
-                  {{ asset.price|currency_price(round_per=1, default='-') }} / {{ (asset.amount / asset.quantity)|currency_price(round_per=1, default='-') if asset.quantity else '-' }}
+                  {{ asset.price|currency_price(round_per=1, default='-') }} / {{ asset.average_buy_price|currency_price(round_per=1, default='-') if asset.quantity else '-' }}
                 </div>
               </td>
 
               <td>
                 <div class="mx-1 text-nowrap">
                   {% if asset.quantity > 0 %}
-                    {{ asset.amount|currency_price(round_to='usd', default='-') if asset.amount > 0 }} /
-                    <span class="{{ asset.color }}">{{ asset.cost_now|currency_price(round_to='usd', default='-') }}</span><br>
+                    {{ (asset.amount if asset.amount > 0 else 0)|currency_price(round_to='usd') }} /
+                    <span class="{{ asset.color }}">{{ asset.cost_now|currency_price(round_to='usd') }}</span><br>
                     <span class="text-average small-text">
                       {{ asset.quantity|currency_quantity(round_to=asset.ticker.price, currency=asset.ticker.symbol) }}
                     </span>
@@ -154,24 +133,20 @@
 
               <td>
                 <div class="mx-1 text-nowrap">
-                  {% if asset.quantity > 0 %}
                     <span class="{{ asset.color }}">
                       {{ asset.profit|currency_price(round_to='usd') }}
                       {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
                     </span>
-                  {% else %}
-                    -
-                  {% endif %}
                 </div>
               </td>
 
               <td>
-                {% if portfolio.amount and asset.amount %}
-                  {{ (asset.amount / portfolio.amount * 100)|round(1, 'common')|smart_int }}% /
+                {% if portfolio.amount > 0 and asset.amount > 0 %}
+                  {{ (asset.amount / portfolio.amount * 100)|smart_round(0.1) }}% /
                 {% else %}
                   - /
                 {% endif %}
-                {{ asset.percent|round(1, 'common')|smart_int|string + '%' if asset.percent else '-' }}
+                {{ '({}%)'.format(asset.percent|smart_round(0.1)) if asset.percent else '-' }}
               </td>
 
               <td>{{ asset.in_orders|currency_price(round_to='usd', default='-') }}</td>
@@ -234,12 +209,9 @@
     </form>
   </div>
 {% else %}
-  <div class="nothing-box">{% trans %}Пока ничего нет...{% endtrans %}</div>
+  {% include 'nothing.html' %}
 {% endif %}
 
-<div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Добавить комментарий') }}"
-  data-url="{{ url_for('.portfolio_settings_update', portfolio_id=portfolio.id) }}">
-  <span class="convert-data">{{ portfolio.comment if portfolio.comment }}</span>
-</div>
+{{ i.comment(url_for('.portfolio_settings_update', portfolio_id=portfolio.id), portfolio.comment) }}
 
 {% endblock %}

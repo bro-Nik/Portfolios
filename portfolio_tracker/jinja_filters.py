@@ -10,28 +10,23 @@ from flask_login import current_user
 bp = Blueprint('jinja_filters', __name__)
 
 
-def smart_int(number: int | float) -> int | float:
-    """ Float без точки, если оно целое """
-    try:
-        int_num = int(number)
-        return int_num if int_num == number else number
-    except TypeError:  # строка не является float / int
-        return 0
-
-
-def smart_round(num: int | float | None, margin_of_error: int | float = 0
+def smart_round(num: int | float = 0, margin_of_error: int | float = 0
                 ) -> int | float:
     """ Округление зависимое от величины числа для Jinja """
-    if not num:
-        return 0
-    if not margin_of_error:
-        return num
-
     try:
+        # С дробной частью
+        if margin_of_error:
+            num_abs = abs(num)
+            for accuracy in range(0, 10):
+                if abs(num_abs - round(num_abs, accuracy)) <= margin_of_error:
+                    num = round(num, accuracy)
+                    break
+
+        # Без дробной части
         num_abs = abs(num)
-        for accuracy in range(0, 10):
-            if abs(num_abs - round(num_abs, accuracy)) <= margin_of_error:
-                return round(num, accuracy)
+        if abs(num_abs - round(num_abs)) <= margin_of_error:
+            num = round(num)
+
         return num
 
     except TypeError:  # строка не является float / int
@@ -39,14 +34,15 @@ def smart_round(num: int | float | None, margin_of_error: int | float = 0
 
 
 def long_number(n: int | float) -> str:
-    return '{:.18f}'.format(n).rstrip('0') if abs(n) < 0.0005 else str(n)
+    return '{:.18f}'.format(n).rstrip('0') if 0 < abs(n) < 0.0005 else str(n)
 
 
 def currency_price(num: int | float, currency: str = '', default: str = '',
                    round_per: int = 0, round_to: str = '') -> str:
     if not currency:
         currency = current_user.currency
-        num *= 1 / current_user.currency_ticker.price
+        if num:
+            num *= 1 / current_user.currency_ticker.price
     currency = currency.upper()
 
     num = currency_round(num, round_per=round_per, round_to=round_to)
@@ -96,7 +92,7 @@ def currency_quantity(num: int | float, currency: str = '', default: str = '',
     if not currency:
         currency = current_user.currency
 
-    return f'{long_number(smart_int(num))} {currency.upper()}'
+    return f'{long_number(num)} {currency.upper()}'
 
 
 def user_datetime(date: datetime, not_format: bool = False) -> str:
@@ -108,7 +104,7 @@ def user_datetime(date: datetime, not_format: bool = False) -> str:
     return format_datetime(date, 'short', locale=locale)
 
 
-bp.add_app_template_filter(smart_int)
+# bp.add_app_template_filter(smart_int)
 bp.add_app_template_filter(smart_round)
 bp.add_app_template_filter(long_number)
 bp.add_app_template_filter(currency_price)

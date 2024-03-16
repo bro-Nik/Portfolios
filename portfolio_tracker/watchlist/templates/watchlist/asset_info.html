@@ -143,7 +143,7 @@
 </div>
 
 {% else %}
-  <div class="nothing-box">{% trans %}Пока ничего нет...{% endtrans %}</div>
+  {% include 'nothing.html' %}
 {% endif %}
 
 <div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Добавить комментарий') }}"

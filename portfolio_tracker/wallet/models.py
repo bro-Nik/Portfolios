@@ -23,7 +23,7 @@ class Wallet(db.Model):
 
     def edit(self, form: dict) -> None:
         name = form.get('name')
-        comment = form.get('comment')
+        comment = form.get('comment', '')
 
         if name is not None:
             user_wallets = self.user.wallets
