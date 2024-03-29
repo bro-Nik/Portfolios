@@ -23,19 +23,20 @@ from . import bp
 def updater():
     # Обновление средней цены актива
     try:
-        for user in db.session.execute(db.select(User)).scalars():
-            for portfolio in user.portfolios:
-                for asset in portfolio.assets:
-                    # Если обновлено - пропускаем
-                    # if asset.average_buy_price:
-                    #     continue
-
-                    if asset.quantity:
-                        asset.average_buy_price = asset.amount / asset.quantity
-                    else:
-                        asset.average_buy_price = 0
-
-        db.session.commit()
+        pass
+        # for user in db.session.execute(db.select(User)).scalars():
+        #     for portfolio in user.portfolios:
+        #         for asset in portfolio.assets:
+        #             # Если обновлено - пропускаем
+        #             # if asset.average_buy_price:
+        #             #     continue
+        #
+        #             if asset.quantity:
+        #                 asset.average_buy_price = asset.amount / asset.quantity
+        #             else:
+        #                 asset.average_buy_price = 0
+        #
+        # db.session.commit()
         flash('Обновления вополнены', 'success')
     except Exception as e:
         flash(f'Ошибка. {e}', 'warning')

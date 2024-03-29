@@ -37,10 +37,14 @@
     </div>
 
     <form id="UserActions" class="d-grid mt-5" action="{{ url_for('user.user_action') }}">
-      <a class="link-danger open-modal-confirmation text-decoration-none" data-title="{% trans %}Удалить все данные из профиля?{% endtrans %}" data-form="#UserActions" data-action="delete_data">
+      <a class="link-danger open-modal-confirmation text-decoration-none"
+        data-title="{% trans %}Удалить все данные из профиля?{% endtrans %}"
+        data-form="#UserActions" data-action="delete_data">
         {% trans %}Очистить профиль{% endtrans %}
       </a>
-      <a class="link-danger open-modal-confirmation text-decoration-none" data-title="{% trans %}Удалить профиль?{% endtrans %}" data-form="#UserActions" data-action="delete_user">
+      <a class="link-danger open-modal-confirmation text-decoration-none"
+        data-title="{% trans %}Удалить профиль?{% endtrans %}"
+        data-form="#UserActions" data-action="delete">
         {% trans %}Удалить профиль{% endtrans %}
       </a>
     </form>

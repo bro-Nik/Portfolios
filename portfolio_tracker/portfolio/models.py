@@ -7,11 +7,12 @@ from flask import current_app, flash
 from flask_babel import gettext
 from sqlalchemy.orm import Mapped
 
+from portfolio_tracker.portfolio.utils import get_ticker
+
 from ..app import db
-from ..general_functions import from_user_datetime, remove_prefix
-from ..models import DetailsMixin
-from ..wallet.utils import create_new_wallet_asset, get_wallet_asset
-from ..watchlist import utils as watchlist
+from ..general_functions import find_by_attr, from_user_datetime, remove_prefix
+from ..models import AssetsMixin, DetailsMixin
+from ..wallet.utils import create_wallet_asset, get_wallet, get_wallet_asset
 
 
 class Transaction(db.Model):
@@ -41,8 +42,16 @@ class Transaction(db.Model):
         'Transaction', foreign_keys=[related_transaction_id], uselist=False)
 
     def edit(self, form: dict) -> None:
+        from .utils import get_ticker
+        from ..watchlist import utils as watchlist
+
+        # Отменить, если есть прошлые изменения
+        self.update_dependencies('cancel')
+
+        # Направление сделки (direction)
         self.type = form['type']
-        t_type = 1 if self.type in ('Buy', 'Input', 'TransferIn') else -1
+        d = 1 if self.type in ('Buy', 'Input', 'TransferIn') else -1
+
         self.date = from_user_datetime(form['date'])
         self.comment = form.get('comment')
 
@@ -50,32 +59,35 @@ class Transaction(db.Model):
         if self.type in ('Buy', 'Sell'):
             self.ticker2_id = form['ticker2_id']
             self.price = float(form['price'])
-            db.session.commit()
 
-            self.price_usd = self.price * self.quote_ticker.price
+            quote_ticker = get_ticker(self.ticker2_id)
+            if not quote_ticker:
+                return
+
+            self.price_usd = self.price * quote_ticker.price
             self.wallet_id = form[self.type.lower() + '_wallet_id']
             self.order = bool(form.get('order'))
             if form.get('quantity') is not None:
-                self.quantity = float(form['quantity']) * t_type
+                self.quantity = float(form['quantity']) * d
                 self.quantity2 = self.price * self.quantity * -1
             else:
-                self.quantity2 = float(form['quantity2']) * t_type * -1
+                self.quantity2 = float(form['quantity2']) * d * -1
                 self.quantity = self.quantity2 / self.price * -1
 
         # Wallet transaction
         else:
-            self.quantity = float(form['quantity']) * t_type
+            self.quantity = float(form['quantity']) * d
 
         # Уведомление
-        alert = self.alert if self.alert else None
+        alert = self.alert
         if not self.order and alert:
             alert.delete()
         elif self.order:
             if not alert:
                 watchlist_asset = watchlist.get_asset(
-                    None, self.ticker_id
-                ) or watchlist.create_new_asset(self.base_ticker)
-                alert = watchlist.create_new_alert(watchlist_asset)
+                    ticker_id=self.ticker_id
+                ) or watchlist.create_watchlist_asset(self.base_ticker)
+                alert = watchlist.create_alert(watchlist_asset)
 
             alert.price = self.price
             alert.price_usd = self.price_usd
@@ -87,60 +99,54 @@ class Transaction(db.Model):
 
             alert.type = ('down' if self.base_ticker.price >= alert.price_usd
                           else 'up')
-        db.session.commit()
 
     def update_dependencies(self, param: str = '') -> None:
         # Направление сделки (direction)
         d = -1 if param == 'cancel' else 1
 
-        asset = self.portfolio_asset
+        # Кошелек
+        wallet = get_wallet(self.wallet_id)
+        if not wallet:
+            return
 
-        # Расчет средней цены покупки актива
-        if not self.order:
-            if self.type == 'Buy':
-                spent = (asset.quantity * asset.average_buy_price +
-                         self.price_usd * self.quantity * d)
-                quantity = asset.quantity + self.quantity * d
-                asset.average_buy_price = spent / quantity if quantity else 0
-            elif self.type == 'Sell':
-                # Если закрыты все сделки - обнуляем
-                if asset.quantity + self.quantity * d == 0:
-                    asset.average_buy_price = 0
+        # Базовый актив кошелька
+        w_asset1 = get_wallet_asset(wallet=wallet, ticker_id=self.ticker_id)
+        if not w_asset1:
+            w_asset1_t = get_ticker(self.ticker_id)
+        if w_asset1_t:
+            w_asset1 = create_wallet_asset(wallet, w_asset1_t) if w_asset1_t else None
+        # Выход, если актив не найден
+        if not w_asset1:
+            return
 
         if self.type in ('Buy', 'Sell'):
+            # Актив портфеля
+            p_asset = self.portfolio_asset
 
-            # Поиск или создание активов в кошельке
-            base_asset = get_wallet_asset(
-                None, self.wallet, self.ticker_id
-            ) or create_new_wallet_asset(self.wallet, self.base_ticker)
-            quote_asset = get_wallet_asset(
-                None, self.wallet, self.ticker2_id
-            ) or create_new_wallet_asset(self.wallet, self.quote_ticker)
-            db.session.commit()
-            if not (base_asset and quote_asset):
+            # Котируемый актив кошелька
+            w_asset2 = get_wallet_asset(
+                wallet=wallet, ticker_id=self.ticker2_id
+            ) or create_wallet_asset(wallet, self.ticker2_id)
+            # Выход, если активы не найдены
+            if not (p_asset and w_asset2):
                 return
 
             if self.order:
                 if self.type == 'Buy':
-                    asset.in_orders += self.quantity * self.price_usd * d
-                    base_asset.buy_orders += self.quantity * self.price_usd * d
-                    quote_asset.buy_orders -= self.quantity2 * d
-                else:
-                    base_asset.sell_orders -= self.quantity * d
+                    p_asset.in_orders += self.quantity * self.price_usd * d
+                    w_asset1.buy_orders += self.quantity * self.price_usd * d
+                    w_asset2.buy_orders -= self.quantity2 * d
+                elif self.type == 'Sell':
+                    w_asset1.sell_orders -= self.quantity * d
 
             else:
-                # Активы кошелька
-                base_asset.quantity += self.quantity * d
-                quote_asset.quantity += self.quantity2 * d
-                # Актив портфеля
-                asset.amount += self.quantity * self.price_usd * d
-                asset.quantity += self.quantity * d
-
+                p_asset.amount += self.quantity * self.price_usd * d
+                p_asset.quantity += self.quantity * d
+                w_asset1.quantity += self.quantity * d
+                w_asset2.quantity += self.quantity2 * d
 
         elif self.type in ('Input', 'Output', 'TransferOut', 'TransferIn'):
-            self.wallet_asset.quantity += self.quantity * d
-
-        db.session.commit()
+            w_asset1.quantity += self.quantity * d
 
     def convert_order_to_transaction(self) -> None:
         self.update_dependencies('cancel')
@@ -165,7 +171,7 @@ class Asset(db.Model, DetailsMixin):
     quantity: float = db.Column(db.Float, default=0)
     in_orders: float = db.Column(db.Float, default=0)
     amount: float = db.Column(db.Float, default=0)
-    average_buy_price: float = db.Column(db.Float, default=0)  # usd
+    # average_buy_price: float = db.Column(db.Float, default=0)  # usd
 
     # Relationships
     ticker: Mapped[Ticker] = db.relationship(
@@ -191,7 +197,6 @@ class Asset(db.Model, DetailsMixin):
             self.comment = comment
         if percent is not None:
             self.percent = percent
-        db.session.commit()
 
     def is_empty(self) -> bool:
         return not (self.transactions or self.comment)
@@ -208,29 +213,19 @@ class Asset(db.Model, DetailsMixin):
         return self.ticker.price
 
     @property
+    def average_buy_price(self) -> float:
+        return self.amount / self.quantity if self.quantity and self.amount > 0 else 0
+
+    @property
     def cost_now(self) -> float:
         return self.quantity * self.price
 
     @property
     def profit_percent(self):
-        # if self.quantity:
-        #     spent = self.quantity * self.average_buy_price
-        #     # if spent:
-        #     return abs(round((self.cost_now - spent) / spent * 100))
-
-        spent = 0
-        for transaction in self.transactions:
-            if transaction.type == 'Buy' and not transaction.order:
-                spent += transaction.quantity * transaction.price_usd
-        return abs(round(self.profit / spent * 100)) if spent else 0
-
-    @property
-    def share_of_portfolio(self):
-        if self.amount < 0:
-            return 0
-        if not self.portfolio.amount:
-            return 0
-        return self.amount / self.portfolio.amount * 100
+        # if self.amount > 0:
+        #     return abs(round(self.profit / self.amount * 100))
+        if self.quantity and self.average_buy_price:
+            return round(self.profit / (self.average_buy_price * self.quantity) * 100)
 
     def delete_if_empty(self) -> None:
         if self.is_empty():
@@ -286,7 +281,6 @@ class OtherAsset(db.Model, DetailsMixin):
             self.comment = comment
         if percent is not None:
             self.percent = percent or 0
-        db.session.commit()
 
     def is_empty(self) -> bool:
         return not (self.bodies or self.transactions or self.comment)
@@ -303,7 +297,6 @@ class OtherAsset(db.Model, DetailsMixin):
             body.delete()
         for transaction in self.transactions:
             transaction.delete()
-        db.session.commit()
         db.session.delete(self)
 
 
@@ -321,16 +314,18 @@ class OtherTransaction(db.Model):
     amount_ticker: Mapped[Ticker] = db.relationship('Ticker', uselist=False)
 
     def edit(self, form: dict) -> None:
+        from .utils import get_ticker
+
         self.date = from_user_datetime(form['date'])
         self.comment = form['comment']
         self.type = form['type']
         t_type = 1 if self.type == 'Profit' else -1
         self.amount_ticker_id = form['amount_ticker_id']
         self.amount = float(form['amount']) * t_type
-        db.session.commit()
 
-        self.amount_usd = self.amount * self.amount_ticker.price
-        db.session.commit()
+        amount_ticker = get_ticker(self.amount_ticker_id)
+        if amount_ticker:
+            self.amount_usd = self.amount * self.amount_ticker.price
 
     def update_dependencies(self, param: str = '') -> None:
         if param in ('cancel', ):
@@ -366,21 +361,22 @@ class OtherBody(db.Model):
         'Ticker', foreign_keys=[cost_now_ticker_id], viewonly=True)
 
     def edit(self, form: dict) -> None:
+        from .utils import get_ticker
+
         self.name = form['name']
+        self.date = from_user_datetime(form['date'])
+        self.comment = form['comment']
         self.amount = float(form['amount'])
         self.cost_now = float(form['cost_now'])
 
         self.amount_ticker_id = form['amount_ticker_id']
         self.cost_now_ticker_id = form['cost_now_ticker_id']
 
-        db.session.commit()
-        self.amount_usd = self.amount * self.amount_ticker.price
-        self.cost_now_usd = self.cost_now * self.cost_now_ticker.price
-
-        self.comment = form['comment']
-        self.date = from_user_datetime(form['date'])
-
-        db.session.commit()
+        amount_ticker = get_ticker(self.amount_ticker_id)
+        cost_now_ticker = get_ticker(self.cost_now_ticker_id)
+        if amount_ticker and cost_now_ticker:
+            self.amount_usd = self.amount * amount_ticker.price
+            self.cost_now_usd = self.cost_now * cost_now_ticker.price
 
     def update_dependencies(self, param: str = '') -> None:
         if param in ('cancel',):
@@ -411,7 +407,6 @@ class Ticker(db.Model):
         self.symbol = form.get('symbol')
         self.name = form.get('name')
         self.stable = bool(form.get('stable'))
-        db.session.commit()
 
     def get_history_price(self, date: datetime.date) -> float | None:
         if date:
@@ -443,7 +438,6 @@ class Ticker(db.Model):
             for price in self.history:
                 price.ticker_id = None
                 db.session.delete(price)
-            db.session.commit()
         # Активы
         if self.assets:
             for asset in self.assets:
@@ -460,7 +454,7 @@ class Ticker(db.Model):
         db.session.delete(self)
 
 
-class Portfolio(db.Model, DetailsMixin):
+class Portfolio(db.Model, DetailsMixin, AssetsMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id: int = db.Column(db.Integer, db.ForeignKey('user.id'))
     market: str = db.Column(db.String(32))
@@ -503,7 +497,6 @@ class Portfolio(db.Model, DetailsMixin):
 
         self.percent = percent
         self.comment = comment
-        db.session.commit()
 
     def is_empty(self) -> bool:
         return not (self.assets or self.other_assets or self.comment)
@@ -516,19 +509,27 @@ class Portfolio(db.Model, DetailsMixin):
         for asset in self.assets:
             self.cost_now += asset.cost_now
             self.in_orders += asset.in_orders
-            self.amount += asset.amount if asset.amount > 0 else 0
+            self.amount += asset.amount
 
         for asset in self.other_assets:
             self.cost_now += asset.cost_now
             self.amount += asset.amount if asset.amount > 0 else 0
 
     @property
+    def profit(self):
+        profit = 0
+        for asset in self.assets:
+            profit += asset.profit
+        return profit
+
+    @property
     def profit_percent(self):
         spent = 0
-        for transaction in self.transactions:
-            if transaction.type == 'Buy' and not transaction.order:
-                spent += transaction.quantity * transaction.price_usd
-        return abs(round(self.profit / spent * 100)) if spent else 0
+        for asset in self.assets:
+            if asset.quantity and asset.average_buy_price:
+                spent += asset.average_buy_price * asset.quantity
+
+        return round(self.profit / spent * 100) if spent else 0
 
     def delete_if_empty(self) -> None:
         if self.is_empty():
@@ -542,7 +543,6 @@ class Portfolio(db.Model, DetailsMixin):
             asset.delete()
         for asset in self.other_assets:
             asset.delete()
-        db.session.commit()
         db.session.delete(self)
 
 

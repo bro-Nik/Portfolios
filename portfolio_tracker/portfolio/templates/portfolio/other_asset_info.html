@@ -15,11 +15,11 @@
 
     <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal" type="button" data-modal-id="TransactionModal"
-        data-url="{{ url_for('.other_transaction', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
+        data-url="{{ url_for('.transaction_info', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
         {% trans %}Добавить транзакцию{% endtrans %}
       </button>
       <button class="btn btn-warning open-modal" type="button" data-modal-id="BodyModal"
-        data-url="{{ url_for('.other_body', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
+        data-url="{{ url_for('.body_info', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
         {% trans %}Добавить тело актива{% endtrans %}
       </button>
       <button type="button" class="btn btn-light dropdown-toggle ms-1" data-bs-toggle="dropdown" aria-expanded="false">
@@ -31,7 +31,7 @@
           {% trans %}Изменить актив{% endtrans %}
         </button>
 
-        <form id="AssetActions" action="{{ url_for('.assets_action') }}">
+        <form id="AssetActions" action="{{ url_for('.portfolio_info') }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#AssetActions"
             {% if asset.is_empty %}
@@ -56,7 +56,7 @@
 {% if not asset.is_empty() %}
   <div class="row mb-5 xs-mb-3">
     {{ i.top("Вложено", asset.amount|currency_price(round_to='usd')) }}
-    {{ i.top(["Прибыль", "Убыток"],
+    {{ i.top("Прибыль",
              [asset.profit|currency_price(round_to='usd'),
              " ({}%)".format(asset.profit_percent) if asset.profit_percent], asset.color) }}
     {{ i.top("Доля от портфеля",
@@ -84,7 +84,7 @@
 
     {% if asset.bodies %}
       <div class="big-table pb-3">
-        <form id="BodiesForm" action="{{ url_for('.other_body_action', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
+        <form id="BodiesForm" action="{{ url_for('.asset_info', portfolio_id=asset.portfolio_id, asset_id=asset.id, bodies=True) }}">
           <table class="table table-sm align-middle">
             <thead>
               <tr>
@@ -107,7 +107,7 @@
 
                   <td>
                     <div class="open-modal d-grid name" data-modal-id="BodyModal"
-                      data-url="{{ url_for('.other_body', portfolio_id=asset.portfolio_id, asset_id=asset.id, body_id=body.id) }}">
+                      data-url="{{ url_for('.body_info', portfolio_id=asset.portfolio_id, asset_id=asset.id, body_id=body.id) }}">
                       <span class="text-truncate" title="{{ body.name }}">{{ body.name }}</span>
                       <span class="small-text">{{ body.date|user_datetime }}</span>
                     </div>
@@ -147,7 +147,7 @@
                       </a>
                       <div class="dropdown-menu" aria-labelledby="dropdownAction">
                         <a class="dropdown-item open-modal" data-modal-id="BodyModal"
-                          data-url="{{ url_for('.other_body', portfolio_id=asset.portfolio_id, asset_id=asset.id, body_id=body.id) }}">
+                          data-url="{{ url_for('.body_info', portfolio_id=asset.portfolio_id, asset_id=asset.id, body_id=body.id) }}">
                           {% trans %}Изменить тело актива{% endtrans %}
                         </a>
                         <a class="dropdown-item link-danger open-modal-confirmation"
@@ -183,7 +183,7 @@
   <div class="tab-pane fade {{ 'active show' if page == 'transactions' }}" id="nav-transactions" role="tabpanel" aria-labelledby="nav-transactions-tab">
     {% if asset.transactions %}
       <div class="big-table pb-3">
-        <form id="TransactionsForm" action="{{ url_for('.transactions_action', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
+        <form id="TransactionsForm" action="{{ url_for('.asset_info', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
           <table class="table table-sm align-middle">
             <thead>
               <tr>
@@ -206,7 +206,7 @@
 
                   <td>
                     <div class="open-modal" data-modal-id="TransactionModal"
-                      data-url="{{ url_for('.other_transaction', portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
+                      data-url="{{ url_for('.transaction_info', portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
                       <span class="{{ color }}">{{ gettext(transaction.type) }}</span>
                       <br>
                       <span class="small-text">{{ transaction.date|user_datetime }}</span>
@@ -245,7 +245,7 @@
                       </a>
                       <div class="dropdown-menu" aria-labelledby="dropdownAction">
                         <a class="dropdown-item open-modal" data-modal-id="TransactionModal"
-                          data-url="{{ url_for('.other_transaction', portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
+                          data-url="{{ url_for('.transaction_info', portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
                           {% trans %}Изменить транзакцию{% endtrans %}
                         </a>
                         <a class="dropdown-item link-danger open-modal-confirmation"
@@ -279,6 +279,6 @@
   </div>
 </div>
 
-{{ i.comment(url_for('.asset_settings_update', portfolio_id=asset.portfolio_id, asset_id=asset.id), asset.comment) }}
+{{ i.comment(url_for('.asset_settings', portfolio_id=asset.portfolio_id, asset_id=asset.id), asset.comment) }}
 
 {% endblock %}

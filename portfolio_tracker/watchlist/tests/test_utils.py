@@ -4,7 +4,7 @@ from flask_login import login_user
 
 from tests import app, db, User, Ticker
 from ..models import Alert, WatchlistAsset
-from ..utils import create_new_alert, create_new_asset, get_alert, get_asset
+from ..utils import create_alert, create_watchlist_asset, get_alert, get_asset
 
 
 class TestWatchlistUtils(unittest.TestCase):
@@ -64,7 +64,7 @@ class TestWatchlistUtils(unittest.TestCase):
         db.session.commit()
 
         with self.app.test_request_context():
-            a = create_new_asset(t)
+            a = create_watchlist_asset(t)
             db.session.commit()
 
             self.assertEqual(len(self.user.watchlist), 1)
@@ -75,5 +75,5 @@ class TestWatchlistUtils(unittest.TestCase):
         self.user.watchlist = [a]
         db.session.commit()
 
-        create_new_alert(a)
+        create_alert(a)
         self.assertEqual(len(a.alerts), 1)

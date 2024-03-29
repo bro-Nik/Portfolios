@@ -22,17 +22,21 @@ class WatchlistAsset(db.Model):
         comment = form.get('comment')
         if comment is not None:
             self.comment = comment
-        db.session.commit()
 
+    @property
     def is_empty(self) -> bool:
         return not (self.alerts or self.comment)
+
+    @property
+    def price(self):
+        return self.ticker.price
 
     def delete_if_empty(self) -> None:
         for alert in self.alerts:
             if not alert.transaction_id:
+                self.alerts.remove(alert)
                 alert.delete()
-        db.session.commit()  # ToDo переделать
-        if self.is_empty():
+        if self.is_empty:
             self.delete()
 
     def delete(self) -> None:
@@ -64,17 +68,17 @@ class Alert(db.Model):
     price_ticker: Mapped[Ticker] = db.relationship('Ticker', uselist=False)
 
     def edit(self, form: dict) -> None:
+        from portfolio_tracker.portfolio.utils import get_ticker
+
         self.price = float(form['price'])
         self.price_ticker_id = form['price_ticker_id']
-        db.session.commit()
+        self.price_ticker = get_ticker(self.price_ticker_id)
 
         self.price_usd = self.price / self.price_ticker.price
         self.comment = form['comment']
 
         asset_price = self.watchlist_asset.ticker.price
         self.type = 'down' if asset_price >= self.price_usd else 'up'
-
-        db.session.commit()
 
     def turn_off(self) -> None:
         if not self.transaction_id:

@@ -1,13 +1,12 @@
+from portfolio_tracker.general_functions import find_by_attr
+
+
 class DetailsMixin:
     def __init__(self):
-        # self.price: float = 0
         self.free: float = 0
         self.in_orders: float = 0
         self.amount: float = 0
         self.cost_now: float = 0
-
-    def update_details(self):
-        pass
 
     @property
     def profit(self):
@@ -25,3 +24,14 @@ class DetailsMixin:
             return 'text-green'
         if round_profit < 0:
             return 'text-red'
+
+    def share_of_portfolio(self, parent_amount):
+        if self.amount < 0 or not parent_amount:
+            return 0
+        return self.amount / parent_amount * 100
+
+
+class AssetsMixin:
+    def get_asset(self, ticker_id: str | None):
+        if ticker_id:
+            return find_by_attr(self.assets, 'ticker_id', ticker_id)

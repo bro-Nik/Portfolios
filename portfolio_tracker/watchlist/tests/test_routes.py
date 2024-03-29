@@ -188,7 +188,7 @@ class TestPortfolioRoutes(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_alert_update(self):
-        url = url_for('watchlist.alert_update')
+        url = url_for('watchlist.alert_info')
 
         # Тикер
         btc = Ticker(id='btc', price=20000)

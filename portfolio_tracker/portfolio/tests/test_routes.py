@@ -111,7 +111,7 @@ class TestPortfolioRoutes(unittest.TestCase):
         self.assertIn(bytes('Изменить портфель', 'utf-8'), response.data)
 
     def test_portfolio_settings_update(self):
-        url = url_for('portfolio.portfolio_settings_update')
+        url = url_for('portfolio.portfolio_settings')
 
         # Создание портфеля
         data = {'name': 'Первый портфель', 'market': 'stocks'}
@@ -306,7 +306,7 @@ class TestPortfolioRoutes(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_asset_settings_update(self):
-        url = url_for('portfolio.asset_settings_update')
+        url = url_for('portfolio.asset_settings')
 
         # Портфель и актив
         a1 = Asset(id=1, ticker=Ticker(id='btc', name='btc'))

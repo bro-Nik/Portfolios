@@ -4,7 +4,7 @@
 
 
 {% block content %}
-<form data-url="{{ url_for('.other_body_update', portfolio_id=asset.portfolio_id, asset_id=asset.id, body_id=body.id) }}">
+<form data-url="{{ url_for('.body_info', portfolio_id=asset.portfolio_id, asset_id=asset.id, body_id=body.id) }}">
   <div class="row g-2">
     <div class="col-md-12">
       <div class="mb-1">

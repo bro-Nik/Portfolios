@@ -7,8 +7,8 @@ from portfolio_tracker.user.models import User
 from tests import app, db
 from ..models import Asset, OtherAsset, OtherBody, OtherTransaction, \
     Portfolio, Ticker, Transaction
-from ..utils import create_new_asset, create_new_other_body, \
-    create_new_other_transaction, create_new_portfolio, get_asset, \
+from ..utils import create_asset, create_new_body, \
+    create_new_other_transaction, create_portfolio, get_asset, \
     get_body, get_portfolio, get_ticker, get_transaction, \
     create_new_transaction
 
@@ -171,7 +171,7 @@ class TestPortfolioUtils(unittest.TestCase):
 
     def test_create_new_portfolio(self):
         with self.app.test_request_context():
-            p = create_new_portfolio()
+            p = create_portfolio()
 
         self.assertEqual(self.user.portfolios[-1], p)
 
@@ -183,12 +183,12 @@ class TestPortfolioUtils(unittest.TestCase):
         db.session.commit()
 
         # Assets
-        a = create_new_asset(p1, Ticker(id='btc'))
+        a = create_asset(p1, Ticker(id='btc'))
         self.assertEqual(p1.assets, [a,])
         self.assertEqual(a.ticker_id, 'btc')
 
         # Other asset
-        oa = create_new_asset(p2)
+        oa = create_asset(p2)
         self.assertEqual(p2.other_assets, [oa,])
 
 
@@ -238,7 +238,7 @@ class TestPortfolioUtils(unittest.TestCase):
         db.session.commit()
 
         self.assertEqual(a.bodies, [])
-        b1 = create_new_other_body(a)
+        b1 = create_new_body(a)
         self.assertEqual(a.bodies, [b1,])
-        b2 = create_new_other_body(a)
+        b2 = create_new_body(a)
         self.assertEqual(a.bodies, [b1, b2])

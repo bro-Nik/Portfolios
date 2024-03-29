@@ -52,7 +52,7 @@
           {% trans %}Изменить актив{% endtrans %}
         </button>
 
-        <form id="AssetActions" action="{{ url_for('.assets_action', portfolio_id=asset.portfolio_id) }}">
+        <form id="AssetActions" action="{{ url_for('.portfolio_info', portfolio_id=asset.portfolio_id) }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#AssetActions"
             {% if asset.is_empty() %}
@@ -83,17 +83,17 @@
     {{ i.top("Стоимость сейчас", asset.cost_now|currency_price(round_to='usd')) }}
     {{ i.top("Вложено" if asset.amount >= 0 else "Зафиксировано",
              asset.amount|abs|currency_price(round_to='usd')) }}
-    {{ i.top(["Прибыль", "Убыток"],
+    {{ i.top("Прибыль",
              [asset.profit|currency_price(round_to='usd'),
              " ({}%)".format(asset.profit_percent) if asset.profit_percent], asset.color) }}
     {{ i.top("Доля от портфеля",
-             ["{}%".format(asset.share_of_portfolio|smart_round(0.1)), " / ",
+             ["{}%".format(asset.share_of_portfolio(asset.portfolio.amount)|smart_round(0.1)), " / ",
              "{}%".format(asset.percent|smart_round) if asset.percent else '-']) }}
     {{ i.top("В ордерах", asset.in_orders|currency_price(round_to='usd')) }}
   </div>
 
 <div class="big-table pt-3 pb-3">
-  <form id="TransactionsForm" action="{{ url_for('.transactions_action', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
+  <form id="TransactionsForm" action="{{ url_for('.asset_info', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
     <table class="table table-sm align-middle">
       <thead>
         <tr>
@@ -212,6 +212,6 @@
   {% include 'nothing.html' %}
 {% endif %}
 
-{{ i.comment(url_for('.asset_settings_update', portfolio_id=asset.portfolio_id, asset_id=asset.id), asset.comment) }}
+{{ i.comment(url_for('.asset_settings', portfolio_id=asset.portfolio_id, asset_id=asset.id), asset.comment) }}
 
 {% endblock %}

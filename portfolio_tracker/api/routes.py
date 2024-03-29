@@ -6,7 +6,7 @@ from flask_babel import gettext
 from flask_login import current_user, login_required
 
 from ..app import db
-from ..jinja_filters import currency_quantity, currency_price, smart_round
+from ..jinja_filters import currency_price, currency_quantity, smart_round
 from ..general_functions import remove_prefix
 from ..portfolio.models import Ticker
 from ..wallet.utils import get_wallet, last_wallet_transaction
@@ -36,9 +36,9 @@ def worked_alerts_count():
 def all_currencies():
     market = 'currency'
     result = []
+
     currencies = db.session.execute(
         db.select(Ticker).filter_by(market=market)).scalars()
-
     for currency in currencies:
         result.append({'value': remove_prefix(currency.id, market),
                        'text': currency.symbol.upper(),
@@ -53,14 +53,12 @@ def wallets_to_sell():
     result = []
 
     for wallet in current_user.wallets:
-        wallet.update_price()
-
         for asset in wallet.wallet_assets:
             if ticker_id != asset.ticker_id:
                 continue
 
-            if asset.free:
-                quantity = other_currency(asset.free, asset.ticker.symbol)
+            if asset.free > 0:
+                quantity = currency_quantity(asset.free, asset.ticker.symbol)
                 result.append({'value': str(wallet.id),
                                'text': wallet.name,
                                'sort': asset.free,
@@ -81,8 +79,6 @@ def wallets_to_buy():
     result = []
 
     for wallet in current_user.wallets:
-        wallet.update_price()
-
         free = smart_round(wallet.free, 1)
         result.append({'value': str(wallet.id),
                        'text': wallet.name,
@@ -108,14 +104,12 @@ def wallets_to_transfer_out():
         if int(wallet_id) == wallet.id:
             continue
 
-        wallet.update_price()
-
         quantity = sort = 0
         for asset in wallet.wallet_assets:
             if ticker_id != asset.ticker_id:
                 continue
 
-            quantity = other_currency(asset.free, asset.ticker.symbol)
+            quantity = currency_price(asset.free, asset.ticker.symbol)
             sort = asset.free
         info = {'value': str(wallet.id), 'text': wallet.name, 'sort': sort}
         if sort > 0:
@@ -149,9 +143,8 @@ def wallet_stable_assets():
         return json.dumps(result)
 
     if wallet:
-        wallet.update_price()
         stables = wallet.stable_assets
-        stables = sorted(stables, key=lambda asset_: asset_.free, reverse=True)
+        stables = sorted(stables, key=lambda asset: asset.free, reverse=True)
         for asset in stables:
             result.append({'value': asset.ticker.id,
                            'text': asset.ticker.symbol.upper(),

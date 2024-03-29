@@ -24,7 +24,7 @@
           data-url="{{ url_for('.wallet_settings', wallet_id=wallet.id) }}">
           {% trans %}Изменить кошелек{% endtrans %}
         </button>
-        <form id="WalletActions" action="{{ url_for('.wallets_action') }}">
+        <form id="WalletActions" action="{{ url_for('.wallets') }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#WalletActions" data-pre-need-clean="true"
             {% if wallet.is_empty() %}
@@ -69,7 +69,7 @@
   <div class="tab-pane fade active show" id="nav-asset">
     {% if wallet.assets %}
       <div class="big-table">
-        <form id="WalletAssets" action="{{ url_for('wallet.assets_action', wallet_id=wallet.id) }}">
+        <form id="WalletAssets" action="{{ url_for('wallet.wallet_info', wallet_id=wallet.id) }}">
           {% set tab_name = 'wallet_assets' %}
           {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'cost_now' %}
           {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
@@ -180,7 +180,7 @@
   <div class="tab-pane fade" id="nav-transactions" role="tabpanel" aria-labelledby="nav-transactions-tab">
     {% if wallet.stable_assets %}
       <div class="big-table pb-3">
-        <form id="WalletStableAssets" action="{{ url_for('wallet.assets_action', wallet_id=wallet.id) }}">
+        <form id="WalletStableAssets" action="{{ url_for('wallet.wallet_info', wallet_id=wallet.id) }}">
           {% set tab_name = 'wallet_stable_assets' %}
           {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'free' %}
           {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
@@ -270,6 +270,6 @@
   </div>
 </div>
 
-{{ i.comment(url_for('.wallet_settings_update', wallet_id=wallet.id), wallet.comment) }}
+{{ i.comment(url_for('.wallet_settings', wallet_id=wallet.id), wallet.comment) }}
 
 {% endblock %}

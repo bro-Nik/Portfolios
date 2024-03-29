@@ -9,7 +9,7 @@ from babel.dates import format_date
 from flask import current_app
 from flask_login import current_user
 
-from .app import redis, db
+from .app import redis
 
 
 Market: TypeAlias = Literal['crypto', 'stocks', 'currency']
@@ -97,8 +97,6 @@ def actions_in(data_str: bytes, function: Callable, **kwargs) -> None:
             item = function(item_id, **kwargs)
             if item and hasattr(item, action):
                 getattr(item, action)()
-
-        db.session.commit()
 
 
 def get_prefix(market: Market) -> str:

@@ -25,7 +25,7 @@
   <div class="row xs-mb-3">
     {{ i.top("Вложено", portfolios.amount|currency_price(round_to='usd')) }}
     {{ i.top("Стоимость сейчас", portfolios.cost_now|currency_price(round_to='usd'), portfolios.color) }}
-    {{ i.top(["Прибыль", "Убыток"],
+    {{ i.top("Прибыль",
              [portfolios.profit|currency_price(round_to='usd'),
              " ({}%)".format(portfolios.profit_percent) if portfolios.profit_percent], portfolios.color) }}
     {{ i.top("В ордерах", portfolios.in_orders|currency_price(round_to='usd')) }}
@@ -35,7 +35,7 @@
     {% set tab_name = 'portfolios' %}
     {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'total_spent' %}
     {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
-    <form id="PortfoliosForm" action="{{ url_for('.portfolios_action') }}">
+    <form id="PortfoliosForm" action="{{ url_for('.portfolios') }}">
       <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
         data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
         data-sort-url="{{ url_for('portfolio.change_table_sort') }}">

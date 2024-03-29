@@ -48,9 +48,9 @@
   </span>
 </nav>
 
-{% if tickers %}
+{% if assets %}
   <div class="big-table">
-    <form id="WhitelistForm" action="{{ url_for('.assets_action') }}">
+    <form id="WhitelistForm" action="{{ url_for('.assets') }}">
       <table class="table table-sm align-middle table-hover bootstrap-table" data-search="true">
         <thead>
           <tr>
@@ -66,12 +66,12 @@
 
         <tbody>
 
-          {% for whitelist_ticker in tickers|sort(attribute="ticker.name") %}
-            {% set ticker = whitelist_ticker.ticker %}
+          {% for asset in assets|sort(attribute="ticker.name") %}
+            {% set ticker = asset.ticker %}
 
             <tr>
               <td>
-                <input class="form-check-input to-check" type="checkbox" value="{{ ticker.id }}">
+                <input class="form-check-input to-check" type="checkbox" value="{{ asset.id }}">
               </td>
 
               <td class="text-average text-truncate">
@@ -89,16 +89,14 @@
               </td>
 
               <td>
-                {% for alert in whitelist_ticker.alerts|sort(attribute="price") if alert.status != 'off' %}
+                {% for alert in asset.alerts|sort(attribute="price") if alert.status != 'off' %}
                   <span class="badge text-bg-{{ 'success' if alert.status == 'worked' else 'light text-muted' }} fw-normal none-cursor">
                     {{ alert.price_usd|currency_price }}
                   </span>
                 {% endfor %}
               </td>
 
-              <td>
-                {{ whitelist_ticker.comment if whitelist_ticker.comment }}
-              </td>
+              <td>{{ asset.comment if asset.comment }}</td>
               
               <td class="align-middle text-end">
 	              <div class="dropdown dropstart">
@@ -109,13 +107,13 @@
                     <a class="dropdown-item link-danger open-modal-confirmation" data-action="delete_if_empty"
                       data-title="{% trans %}Удалить актив?{% endtrans %}"
                       data-text="{% trans %}Уведомления, кроме ордеров, будут удалены. Актив без уведомлений также будет удален{% endtrans %}"
-                      data-id="{{ ticker.id }}">
+                      data-id="{{ asset.id }}">
                       {% trans %}Удалить актив{% endtrans %}
                     </a>
                     <a class="dropdown-item link-danger open-modal-confirmation" data-action="delete"
                       data-title="{% trans %}Удалить актив с ордерами?{% endtrans %}"
                       data-text="{% trans %}Все уведомления (включая уведомления на ордеры), связанные с этим активом будут удалены{% endtrans %}"
-                      data-id="{{ ticker.id }}">
+                      data-id="{{ asset.id }}">
                       {% trans %}Удалить актив с ордерами{% endtrans %}
                     </a>
                   </div>

@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta, timezone
 import json
+
 from flask import request, session, flash
 from flask_login import current_user, login_user
 from flask_babel import gettext
 
 from ..app import login_manager, redis
 from ..settings import LANGUAGES
-from ..wallet.utils import create_new_wallet
+from ..wallet.utils import create_wallet
 from .models import db, User, UserInfo
 
 
@@ -24,24 +25,17 @@ def find_user(user_id: int | None = None, email: str | None = None
 
 def create_new_user(email: str, password: str) -> User:
     """Создает нового пользователя."""
-    new_user = User()
-    new_user.email = email
+    new_user = User(email=email)
     new_user.set_password(password)
     new_user.change_currency()
     new_user.change_locale(get_locale())
-
-    db.session.add(new_user)
-    db.session.flush()
-
-    create_new_wallet(new_user)
-
+    create_wallet(user=new_user, first=True)
     new_user.info = UserInfo()
-
-    db.session.commit()
+    db.session.add(new_user)
     return new_user
 
 
-def register(form: dict) -> bool | None:
+def register(form: dict) -> bool:
     """Обработка формы регистрации. Регистрация пользователя"""
     email = form.get('email')
     password = form.get('password')
@@ -62,6 +56,7 @@ def register(form: dict) -> bool | None:
         flash(gettext('Вы зарегистрированы. Теперь войдите в систему'),
               'success')
         return True
+    return False
 
 
 def login(form: dict) -> bool:
@@ -120,6 +115,7 @@ def login(form: dict) -> bool:
         flash(gettext('Вход заблокирован на 10 минут'), 'danger')
 
     redis.hset(redis_key, email, json.dumps(login_attempts))
+    return False
 
 
 def get_demo_user() -> User | None:
@@ -130,9 +126,8 @@ def get_locale() -> str:
     u = current_user
     if u.is_authenticated and u.type != 'demo' and u.locale:
         return u.locale
-    locale = (session.get('locale')
-              or request.accept_languages.best_match(LANGUAGES.keys()))
-    return locale if locale else 'en'
+    return (session.get('locale')
+            or request.accept_languages.best_match(LANGUAGES.keys()) or 'en')
 
 
 def get_currency() -> str:

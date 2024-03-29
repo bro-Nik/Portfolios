@@ -3,10 +3,13 @@
 
 {% set modal_title = gettext('Изменить транзакцию') if transaction.id else gettext('Добавить транзакцию') %}
 {% set ticker_box_style = 'style=min-width:100px;' %}
+{% set wallet_buy = wallets['Buy'] %}
+{% set wallet_sell = wallets['Sell'] %}
+
 
 
 {% block content %}
-<form id="TransactionForm" data-url="{{ url_for('.transaction_update', portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
+<form id="TransactionForm" data-url="{{ url_for('.transaction_info', portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
 
   <div class="btn-group silver col-12 mb-3 nav" role="group" id="TypeTransaction">
     <input type="radio" class="btn-check" name="type" value="Buy" id="btnradio1">

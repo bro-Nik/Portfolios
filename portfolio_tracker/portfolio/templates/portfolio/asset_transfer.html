@@ -1,0 +1,25 @@
+{% extends "modal_base.html" %}
+{% set modal_fullscreen = False %}
+{% set modal_title = gettext('Переместить актив') %}
+
+{% block content %}
+<form data-url="{{ url_for('.asset_transfer', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
+  <div class="row g-2">
+
+    <div class="col-md-12">
+      <div class="mb-3">
+        <label class="form-label h7">{% trans %}Переместить в{% endtrans %}</label>
+        <select name="trans_to" class="form-select" required>
+
+          <option value="">{% trans %}-- Выберите портфель --{% endtrans %}</option>
+          {% for portfolio in current_user.portfolios %}
+            <option value="{{ portfolio.id }}">{{ portfolio.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+  </div>
+  <button class="btn btn-primary rounded-3 w-100" type="submit">{{ modal_title }}</button>
+</form>
+{% endblock %}

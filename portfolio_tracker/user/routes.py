@@ -7,33 +7,36 @@ from flask_login import login_user, login_required, current_user, logout_user
 from ..app import db
 from ..settings import LANGUAGES
 from ..wraps import demo_user_change
-from ..wallet.utils import create_new_wallet
+from ..wallet.utils import create_wallet
 from . import bp, utils
 
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
-    """Отдает страницу входа и принимает форму входа."""
+    """Отдает страницу входа и принимает форму."""
     if current_user.is_authenticated and current_user.type != 'demo':
         return redirect(url_for('portfolio.portfolios'))
 
     if request.method == 'POST':
+        # Проверка данных
         if utils.login(request.form) is True:
-            next_page = request.args.get('next',
-                                         url_for('portfolio.portfolios'))
-            return redirect(next_page)
+            db.session.commit()
+            page = request.args.get('next', url_for('portfolio.portfolios'))
+            return redirect(page)
 
     return render_template('user/login.html')
 
 
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
-    """Отдает страницу регистрации и принимает форму регистрации."""
+    """Отдает страницу регистрации и принимает форму."""
     if current_user.is_authenticated and current_user.type != 'demo':
         return redirect(url_for('portfolio.portfolios'))
 
     if request.method == 'POST':
-        if utils.register(request.form):
+        # Регистрация
+        if utils.register(request.form) is True:
+            db.session.commit()
             return redirect(url_for('.login'))
 
     return render_template('user/register.html', locale=utils.get_locale())
@@ -81,20 +84,20 @@ def redirect_to_signin(response):
 @bp.route('/user_action', methods=['POST'])
 @login_required
 def user_action():
-
     data = json.loads(request.data) if request.data else {}
     action = data.get('action')
 
-    if action == 'delete_user':
+    if action == 'delete':
         current_user.delete()
+        db.session.commit()
         return {'redirect': str(url_for('user.login'))}
 
     if action == 'delete_data':
         current_user.cleare()
-        create_new_wallet(current_user)
+        create_wallet(user=current_user, first=True)
+        db.session.commit()
         flash(gettext('Профиль очищен'), 'success')
 
-    db.session.commit()
     return ''
 
 
@@ -109,62 +112,6 @@ def demo_user():
 def settings_profile():
     return render_template('user/settings_profile.html')
 
-
-# @bp.route('/settings_export_import', methods=['GET'])
-# @login_required
-# def settings_export_import():
-#     return render_template('user/settings_export_import.html')
-#
-#
-# @bp.route('/export', methods=['GET'])
-# @login_required
-# def export_data():
-#     # For export to demo user
-#     if request.args.get('demo_user') and current_user.type == 'admin':
-#         user = utils.get_demo_user()
-#     else:
-#         user = current_user
-#     if not user:
-#         return ''
-#
-#     filename = f'portfolios_export ({datetime.now().date()}).txt'
-#
-#     return Response(
-#         json.dumps(user.export_data()),
-#         mimetype='application/json',
-#         headers={'Content-disposition': f'attachment; filename={filename}'})
-#
-#
-# @bp.route('/import_post', methods=['POST'])
-# @login_required
-# def import_data_post():
-#     # For import to demo user
-#     if request.args.get('demo_user') and current_user.type == 'admin':
-#         user = utils.get_demo_user()
-#         url = url_for('admin.demo_user', )
-#     else:
-#         user = current_user
-#         url = url_for('.settings_export_import')
-#
-#     if not user:
-#         return ''
-#
-#     file = request.files['file']
-#     if file:
-#         data = file.read()
-#
-#         try:
-#             data = json.loads(data)
-#             user.import_data(data)
-#             flash(gettext('Импорт заверщен'), 'success')
-#         except (json.decoder.JSONDecodeError, ValueError):
-#             flash(gettext('Ошибка чтения данных'), 'danger')
-#         except Exception as e:
-#             flash(gettext('Неизвестная ошибка'), 'danger')
-#             print(e)
-#
-#     return redirect(url)
-#
 
 @bp.route('/ajax_locales', methods=['GET'])
 def ajax_locales():
@@ -181,7 +128,6 @@ def change_locale():
     if current_user.is_authenticated and current_user.type != 'demo':
         current_user.change_locale(locale)
         db.session.commit()
-
     else:
         session['locale'] = locale
     return ''

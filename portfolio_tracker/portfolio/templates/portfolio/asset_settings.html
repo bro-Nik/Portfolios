@@ -3,7 +3,7 @@
 {% set modal_title = gettext('Изменить актив') %}
 
 {% block content %}
-<form data-url="{{ url_for('.asset_settings_update', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
+<form data-url="{{ url_for('.asset_settings', portfolio_id=asset.portfolio_id, asset_id=asset.id) }}">
   <div class="row g-2">
 
     <div class="col-12">

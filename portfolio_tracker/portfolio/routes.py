@@ -1,5 +1,4 @@
 import json
-from datetime import datetime, timezone
 
 from flask import abort, render_template, session, url_for, request
 from flask_login import current_user, login_required
@@ -8,76 +7,62 @@ from ..general_functions import actions_in
 from ..wraps import demo_user_change
 from ..wallet.utils import get_wallet_has_asset, last_wallet, \
     last_wallet_transaction
-from .models import db, Ticker, OtherTransaction, OtherBody, Transaction
-from .utils import Portfolios, create_new_asset, create_new_transaction, \
-    create_new_portfolio, create_new_other_body, get_asset, get_body, \
-    get_portfolio, get_ticker, get_transaction
+from .models import OtherAsset, db, Ticker
+from .utils import Portfolios, create_asset, create_new_transaction, \
+    create_other_asset, create_portfolio, create_new_body, get_asset, \
+    get_body, get_portfolio, get_ticker, get_transaction
 from . import bp
 
 
-@bp.route('/', methods=['GET'])
-@login_required
-def portfolios():
-    """Portfolios page."""
-    portfolios_ = Portfolios()
-    portfolios_.update_price()
-
-    return render_template('portfolio/portfolios.html', portfolios=portfolios_)
-
-
-@bp.route('/action', methods=['POST'])
+@bp.route('/', methods=['GET', 'POST'])
 @login_required
 @demo_user_change
-def portfolios_action():
-    """Action portfolio."""
-    actions_in(request.data, get_portfolio)
-    return ''
+def portfolios():
+    """Portfolios page and actions on portfolios."""
+    # Actions
+    if request.method == 'POST':
+        actions_in(request.data, get_portfolio)
+        db.session.commit()
+        return ''
+
+    return render_template('portfolio/portfolios.html',
+                           portfolios=Portfolios())
 
 
-@bp.route('/portfolio_settings', methods=['GET'])
+@bp.route('/portfolio_settings', methods=['GET', 'POST'])
 @login_required
+@demo_user_change
 def portfolio_settings():
     """Portfolio settings."""
-    portfolio = get_portfolio(request.args.get('portfolio_id'))
+    portfolio = get_portfolio(request.args.get('portfolio_id')
+                              ) or create_portfolio()
+
+    # Apply settings
+    if request.method == 'POST':
+        portfolio.edit(request.form)
+        db.session.commit()
+        return ''
+
     return render_template('portfolio/portfolio_settings.html',
                            portfolio=portfolio)
 
 
-@bp.route('/portfolio_settings_update', methods=['POST'])
+@bp.route('/<int:portfolio_id>', methods=['GET', 'POST'])
 @login_required
 @demo_user_change
-def portfolio_settings_update():
-    """Portfolio settings update."""
-    portfolio = get_portfolio(request.args.get('portfolio_id')
-                              ) or create_new_portfolio()
-
-    portfolio.edit(request.form)
-    return ''
-
-
-@bp.route('/<int:portfolio_id>', methods=['GET'])
-@login_required
 def portfolio_info(portfolio_id):
-    """Portfolio page."""
+    """Portfolio page and actions on assets."""
     portfolio = get_portfolio(portfolio_id) or abort(404)
 
-    portfolios_ = Portfolios()
-    portfolios_.update_price()
+    # Actions
+    if request.method == 'POST':
+        actions_in(request.data, get_asset, portfolio=portfolio)
+        db.session.commit()
+        return ''
 
     page = 'other_' if portfolio.market == 'other' else ''
     return render_template(f'portfolio/{page}portfolio_info.html',
-                           portfolio=portfolio, portfolios=portfolios_)
-
-
-@bp.route('/assets_action', methods=['POST'])
-@login_required
-@demo_user_change
-def assets_action():
-    """Asset action."""
-    portfolio = get_portfolio(request.args.get('portfolio_id')) or abort(404)
-
-    actions_in(request.data, get_asset, portfolio=portfolio)
-    return ''
+                           portfolio=portfolio, portfolios=Portfolios())
 
 
 @bp.route('/<string:market>/add_asset_modal', methods=['GET'])
@@ -102,10 +87,10 @@ def asset_add_tickers(market):
 
     tickers = tuple(query.paginate(page=request.args.get('page', 1, type=int),
                                    per_page=20, error_out=False))
-    if tickers:
-        return render_template('portfolio/add_asset_tickers.html',
-                               tickers=tickers)
-    return 'end'
+    if not tickers:
+        return 'end'
+
+    return render_template('portfolio/add_asset_tickers.html', tickers=tickers)
 
 
 @bp.route('/add_asset', methods=['GET'])
@@ -113,212 +98,155 @@ def asset_add_tickers(market):
 @demo_user_change
 def asset_add():
     """Add asset to portfolio."""
-    ticker = get_ticker(request.args.get('ticker_id')) or abort(404)
+    ticker_id = request.args.get('ticker_id')
     portfolio = get_portfolio(request.args.get('portfolio_id')) or abort(404)
-    asset = get_asset(None, portfolio, ticker_id=ticker.id,
-                      ) or create_new_asset(portfolio, ticker=ticker)
+    asset = get_asset(portfolio=portfolio, ticker_id=ticker_id)
+    if not asset:
+        ticker = get_ticker(ticker_id) or abort(404)
+        asset = create_asset(portfolio, ticker=ticker)
+        db.session.commit()
 
     return str(url_for('.asset_info',
                        only_content=request.args.get('only_content'),
-                       portfolio_id=portfolio.id,
-                       asset_id=asset.id))
+                       portfolio_id=portfolio.id, asset_id=asset.id))
 
 
-@bp.route('/asset_settings', methods=['GET'])
+@bp.route('/asset_settings', methods=['GET', 'POST'])
 @login_required
 def asset_settings():
     """Asset settings."""
     portfolio = get_portfolio(request.args.get('portfolio_id')) or abort(404)
     asset = get_asset(request.args.get('asset_id'), portfolio)
 
+    # Apply settings
+    if request.method == 'POST':
+        if not asset and portfolio.market != 'other':
+            abort(404)
+
+        asset = asset or create_other_asset(portfolio)
+        asset.edit(request.form)
+        db.session.commit()
+        return ''
+
     page = 'other_' if portfolio.market == 'other' else ''
     return render_template(f'portfolio/{page}asset_settings.html',
                            asset=asset, portfolio_id=portfolio.id)
 
 
-@bp.route('/asset_settings_update', methods=['POST'])
+@bp.route('/asset_transfer', methods=['GET', 'POST'])
+@login_required
+def asset_transfer():
+    """Asset settings."""
+    portfolio = get_portfolio(request.args.get('portfolio_id')) or abort(404)
+    asset = get_asset(request.args.get('asset_id'), portfolio) or abort(404)
+
+    # Apply settings
+    if request.method == 'POST':
+        portfolio2 = get_portfolio(request.form.get('trans_to')) or abort(404)
+        asset2 = get_asset(portfolio=portfolio2, ticker_id=asset.ticker_id)
+
+        for transaction in asset.transactions:
+            transaction.portfolio_id = portfolio2.id
+            if asset2:
+                asset.transactions.remove(transaction)
+                asset2.transactions.append(transaction)
+                transaction.update_dependencies()
+
+        if asset2:
+            asset2.comment = f'{asset2.comment or ""}{asset.comment or ""}'
+            asset.delete()
+        else:
+            asset.portfolio_id = portfolio2.id
+        db.session.commit()
+        return ''
+
+    return render_template('portfolio/asset_transfer.html',
+                           asset=asset, portfolio_id=portfolio.id)
+
+
+@bp.route('/asset_info', methods=['GET', 'POST'])
 @login_required
 @demo_user_change
-def asset_settings_update():
-    """Asset settings update."""
-    portfolio = get_portfolio(request.args.get('portfolio_id')) or abort(404)
-    asset = get_asset(request.args.get('asset_id'), portfolio)
-
-    if not asset:
-        if portfolio.market == 'other':
-            asset = create_new_asset(portfolio)
-        else:
-            abort(404)
-
-    asset.edit(request.form)
-    return ''
-
-
-@bp.route('/asset_info')
-@login_required
 def asset_info():
-    """Asset page."""
-    portfolio = get_portfolio(request.args.get('portfolio_id'))
+    """Asset page and actions on transactions."""
+    portfolio = get_portfolio(request.args.get('portfolio_id')) or abort(404)
     asset = get_asset(request.args.get('asset_id'), portfolio,
                       request.args.get('ticker_id')) or abort(404)
 
-    asset.portfolio.update_price()
-    asset.update_details()
+    # Actions
+    if request.method == 'POST':
+        if request.args.get('bodies'):
+            actions_in(request.data, get_body, asset=asset)
+            session['other_asset_page'] = 'bodies'
+        else:
+            actions_in(request.data, get_transaction, asset=asset)
+        db.session.commit()
+        return ''
 
-    page = 'other_' if asset.portfolio.market == 'other' else ''
+    portfolio.update_price()
+
+    page = 'other_' if portfolio.market == 'other' else ''
     return render_template(f'portfolio/{page}asset_info.html', asset=asset)
 
 
-@bp.route('/transaction_action', methods=['POST'])
+@bp.route('/transaction_info', methods=['GET', 'POST'])
 @login_required
 @demo_user_change
-def transactions_action():
-    """Transactions action."""
-    portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_asset(request.args.get('asset_id'), portfolio) or abort(404)
-
-    actions_in(request.data, get_transaction, asset=asset)
-    return ''
-
-
-@bp.route('/transaction_info')
-@login_required
 def transaction_info():
     """Transaction info."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset: Asset = get_asset(request.args.get('asset_id'), portfolio,
-                             request.args.get('ticker_id')) or abort(404)
-    transaction = get_transaction(request.args.get('transaction_id'), asset)
+    asset = get_asset(request.args.get('asset_id'), portfolio,
+                      request.args.get('ticker_id')) or abort(404)
+    transaction = get_transaction(request.args.get('transaction_id'), asset
+                                  ) or create_new_transaction(asset)
 
-    # asset.update_price()
-    asset.free = asset.get_free()
+    # Apply transaction
+    if request.method == 'POST':
+        transaction.update_dependencies('cancel')
+        transaction.edit(request.form)
+        transaction.update_dependencies()
+        db.session.commit()
+        return ''
 
-    wallet_buy = wallet_sell = None
-    if transaction:
-        if transaction.type == 'Buy':
-            wallet_buy = transaction.wallet
-        else:
-            wallet_sell = transaction.wallet
+    if isinstance(asset, OtherAsset):
+        return render_template('portfolio/other_transaction.html', asset=asset,
+                               transaction=transaction)
 
-        if transaction.order and transaction.type == 'Sell':
-            asset.free -= transaction.quantity
-    else:
-        transaction = Transaction(type='Buy', date=datetime.now(timezone.utc),
-                                  price=asset.price)
-
-    if not wallet_buy:
-        wallet_buy = last_wallet('buy')
-    if not wallet_sell:
-        wallet_sell = get_wallet_has_asset(asset.ticker_id)
+    asset.free = asset.get_free() - transaction.quantity
+    wallets = {'Buy': last_wallet('buy'),
+               'Sell': get_wallet_has_asset(asset.ticker_id)}
+    if transaction.wallet:
+        wallets[transaction.type] = transaction.wallet
 
     if not transaction.quote_ticker:
-        last_transaction = last_wallet_transaction(transaction.wallet or
-                                                   wallet_buy,
-                                                   transaction.type)
-        if last_transaction:
-            transaction.quote_ticker = last_transaction.quote_ticker
-        else:
-            transaction.quote_ticker = current_user.currency_ticker
-
-    calculation_type = session.get('transaction_calculation_type', 'amount')
+        lt = last_wallet_transaction(transaction.wallet or wallets['Buy'],
+                                     transaction.type)
+        transaction.quote_ticker = lt.quote_ticker if lt else current_user.currency_ticker
+    calc_type = session.get('transaction_calculation_type', 'amount')
     return render_template('portfolio/transaction.html',
                            transaction=transaction, asset=asset,
-                           wallet_buy=wallet_buy, wallet_sell=wallet_sell,
-                           calculation_type=calculation_type)
+                           wallets=wallets, calculation_type=calc_type)
 
 
-@bp.route('/transaction_update', methods=['POST'])
+@bp.route('/other_asset_body', methods=['GET', 'POST'])
 @login_required
 @demo_user_change
-def transaction_update():
-    """Add transaction or change transaction info."""
-    portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_asset(request.args.get('asset_id'), portfolio) or abort(404)
-    transaction = get_transaction(request.args.get('transaction_id'), asset)
-
-    if transaction:
-        transaction.update_dependencies('cancel')
-    else:
-        transaction = create_new_transaction(asset)
-
-    transaction.edit(request.form)
-    transaction.update_dependencies()
-    return ''
-
-
-@bp.route('/other_asset/body_action', methods=['POST'])
-@login_required
-def other_body_action():
-    """Other body action."""
-    portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_asset(request.args.get('asset_id'), portfolio) or abort(404)
-
-    actions_in(request.data, get_body, asset=asset)
-    session['other_asset_page'] = 'bodies'
-    return ''
-
-
-@bp.route('/other_asset_transaction', methods=['GET'])
-@login_required
-def other_transaction():
-    """Other transaction info."""
-    portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_asset(request.args.get('asset_id'), portfolio) or abort(404)
-    transaction = get_transaction(request.args.get('transaction_id'), asset)
-
-    if not transaction:
-        transaction = OtherTransaction(type='Profit',
-                                       date=datetime.now(timezone.utc))
-
-        if asset.transactions:
-            transaction.amount_ticker = asset.transactions[-1].amount_ticker
-        else:
-            transaction.amount_ticker = current_user.currency_ticker
-
-    return render_template('portfolio/other_transaction.html',
-                           asset=asset, transaction=transaction)
-
-
-@bp.route('/other_asset_body', methods=['GET'])
-@login_required
-def other_body():
+def body_info():
     """Other body info."""
     portfolio = get_portfolio(request.args.get('portfolio_id'))
     asset = get_asset(request.args.get('asset_id'), portfolio) or abort(404)
-    body = get_body(request.args.get('body_id'), asset)
+    body = get_body(request.args.get('body_id'), asset) or create_new_body(asset)
 
-    if not body:
-        body = OtherBody(date=datetime.now(timezone.utc))
+    # Apply settings
+    if request.method == 'POST':
+        body.edit(request.form)
+        body.update_dependencies()
+        db.session.commit()
 
-        if asset.bodies:
-            body.amount_ticker = asset.bodies[-1].amount_ticker
-            body.cost_now_ticker = asset.bodies[-1].cost_now_ticker
-        else:
-            body.amount_ticker = current_user.currency_ticker
-            body.cost_now_ticker = current_user.currency_ticker
+        session['other_asset_page'] = 'bodies'
+        return ''
 
     return render_template('portfolio/other_body.html', asset=asset, body=body)
-
-
-@bp.route('/other_asset_body_update', methods=['POST'])
-@login_required
-@demo_user_change
-def other_body_update():
-    """Other body info update."""
-    portfolio = get_portfolio(request.args.get('portfolio_id'))
-    asset = get_asset(request.args.get('asset_id'), portfolio) or abort(404)
-    body = get_body(request.args.get('body_id'), asset)
-
-    if body:
-        body.update_dependencies('cancel')
-    else:
-        body = create_new_other_body(asset)
-
-    body.edit(request.form)
-    body.update_dependencies()
-    db.session.commit()
-    session['other_asset_page'] = 'bodies'
-    return ''
 
 
 @bp.route('/change_table_sort', methods=['GET'])

@@ -4,14 +4,14 @@
 {% set modal_title = gettext('Изменить уведомление') if alert else gettext('Добавить уведомление') %}
 {% set disabled_if_order = 'disabled' if alert.transaction else '' %}
 
-{% if alert %}
+{% if alert.id %}
   {% set selected_ticker = alert.price_ticker %}
 {% else %}
   {% set selected_ticker = current_user.currency_ticker %}
 {% endif %}
 
 {% block content %}
-<form data-url="{{ url_for('watchlist.alert_update', ticker_id=watchlist_asset.ticker_id, asset_id=asset_id, alert_id=alert.id) }}">
+<form data-url="{{ url_for('watchlist.alert_info', ticker_id=asset.ticker_id, asset_id=asset_id, alert_id=alert.id) }}">
   <div class="row g-2">
 
     <div class="col-md-12">
@@ -24,15 +24,15 @@
         <div class="input-group mb-1">
         <div class="col-3">
             <select name="price_ticker_id" class="form-select" tabindex="-1"
-              data-url="{{ url_for('.ajax_stable_assets', ticker_id=watchlist_asset.ticker_id) }}"
+              data-url="{{ url_for('.ajax_stable_assets', ticker_id=asset.ticker_id) }}"
               required {{ disabled_if_order }}>
               <option selected value="{{ selected_ticker.id }}"
-                data-info="{{ selected_ticker.price * watchlist_asset.ticker.price }}">
+                data-info="{{ selected_ticker.price * asset.price }}">
                 {{ selected_ticker.symbol|upper }}</option>
             </select>
           </div>
           <input type="number" step="any" min="0.000001" class="form-control focus"
-            value="{{ alert.price if alert else watchlist_asset.ticker.price }}"
+            value="{{ alert.price if alert else asset.price }}"
             name="price" autocomplete="off" required {{ disabled_if_order }}>
         </div>
         <span class="small-text alert-price-info"></span>

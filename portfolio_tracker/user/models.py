@@ -57,7 +57,6 @@ class User(db.Model, UserMixin):
             if response.get('status') == 'success':
                 self.info.country = response.get('country')
                 self.info.city = response.get('city')
-                db.session.commit()
 
     def cleare(self) -> None:
 
@@ -87,7 +86,6 @@ class User(db.Model, UserMixin):
                     db.session.delete(transaction)
                 db.session.delete(asset)
             db.session.delete(portfolio)
-        db.session.commit()
 
     def delete(self) -> None:
         self.cleare()
@@ -95,7 +93,6 @@ class User(db.Model, UserMixin):
             db.session.delete(self.info)
 
         db.session.delete(self)
-        db.session.commit()
 
     def make_admin(self) -> None:
         self.type = 'admin'

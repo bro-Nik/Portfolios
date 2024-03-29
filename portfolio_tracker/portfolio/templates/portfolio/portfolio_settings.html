@@ -1,23 +1,23 @@
 {% extends "modal_base.html" %}
 {% set modal_fullscreen = False %}
 
-{% set modal_title = gettext('Изменить портфель') if portfolio else gettext('Добавить портфель') %}
+{% set modal_title = gettext('Изменить портфель') if portfolio.id else gettext('Добавить портфель') %}
 
 {% block content %}
-<form data-url="{{ url_for('.portfolio_settings_update', portfolio_id=portfolio.id if portfolio) }}">
+<form data-url="{{ url_for('.portfolio_settings', portfolio_id=portfolio.id if portfolio) }}">
   <div class="row g-2">
 
     <div class="col-md-6">
       <div class="mb-1">
         <label class="form-label h7">{% trans %}Название{% endtrans %}</label>
-        <input type="text" class="form-control rounded-3 focus" name="name" value="{{ portfolio.name if portfolio }}" required>
+        <input type="text" class="form-control rounded-3 focus" name="name" value="{{ portfolio.name if portfolio.name }}" required>
       </div>
     </div>
 
     <div class="col-md-6 mb-1" id="market-class">
       <label class="form-label h7">{% trans %}Рынок{% endtrans %}</label>
       <select name="market" class="form-select"
-        value="{{ portfolio.market if portfolio }}" {{ 'disabled' if portfolio }} required>
+        value="{{ portfolio.market if portfolio.id }}" {{ 'disabled' if portfolio.id }} required>
         <option {{ 'selected' if portfolio.market == 'crypto' }} value="crypto">{% trans %}Крипто{% endtrans %}</option>
         <option {{ 'selected' if portfolio.market == 'stocks' }} value="stocks">{% trans %}Акции{% endtrans %}</option>
         <option {{ 'selected' if portfolio.market == 'other' }} value="other">{% trans %}Другое{% endtrans %}</option>
@@ -40,7 +40,7 @@
       <div class="col-md-12">
         <div class="mb-3">
           <label class="form-label h7">{% trans %}Комментарий{% endtrans %}</label>
-          <textarea class="form-control" name="comment">{{ portfolio.comment if portfolio }}</textarea>
+          <textarea class="form-control" name="comment">{{ portfolio.comment if portfolio.comment }}</textarea>
         </div>
       </div>
     </div>

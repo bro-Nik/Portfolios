@@ -3,6 +3,7 @@ from typing import List
 from flask import flash
 from flask_babel import gettext
 
+from flask_login import current_user
 from sqlalchemy.orm import Mapped
 
 from ..app import db
@@ -38,7 +39,6 @@ class Wallet(db.Model):
             self.name = name
 
         self.comment = comment
-        db.session.commit()
 
     def is_empty(self) -> bool:
         return not (self.wallet_assets or self.transactions or self.comment)
@@ -51,8 +51,6 @@ class Wallet(db.Model):
         self.stable_assets = []
 
         for asset in self.wallet_assets:
-            asset.update_price()
-
             # Стейблкоины и валюта
             if asset.ticker.stable:
                 self.stable_assets.append(asset)
@@ -73,6 +71,7 @@ class Wallet(db.Model):
     def delete(self) -> None:
         for asset in self.wallet_assets:
             asset.delete()
+        current_user.wallets.remove(self)
         db.session.delete(self)
 
 
@@ -99,14 +98,39 @@ class WalletAsset(db.Model):
     def is_empty(self) -> bool:
         return not self.transactions
 
-    def update_price(self) -> None:
-        self.price = self.ticker.price
-        self.cost_now = self.quantity * self.price
+    @property
+    def price(self):
+        return self.ticker.price
 
+    @property
+    def cost_now(self):
+        return self.quantity * self.price
+
+    @property
+    def free(self) -> float:
         if self.ticker.stable:
-            self.free = self.quantity - self.buy_orders
-        else:
-            self.free = self.quantity - self.sell_orders
+            return self.quantity - self.buy_orders
+        return self.quantity - self.sell_orders
+
+    def update(self) -> None:
+        self.quantity = 0
+        for t in self.transactions:
+            is_base_asset = bool(self.ticker_id == t.ticker_id)
+
+            if not t.order:
+                quantity = 'quantity' if is_base_asset else 'quantity2'
+                self.quantity += getattr(t, quantity)
+
+            else:
+
+                if t.type == 'Buy':
+                    if is_base_asset:
+                        self.buy_orders += t.quantity * t.price_usd
+                    else:
+                        self.buy_orders -= t.quantity2
+                else:
+                    if is_base_asset:
+                        self.sell_orders -= t.quantity
 
     def delete_if_empty(self) -> None:
         if self.is_empty():

@@ -818,14 +818,14 @@ class TestAssetModel(unittest.TestCase):
         self.a.transactions = [t]
         self.assertEqual(self.a.is_empty(), False)
 
-    def test_get_free(self):
+    def test_free(self):
         t1 = Transaction(id=1, order=True, type='Buy', quantity=0.5)
         t2 = Transaction(id=2, order=True, type='Sell', quantity=-0.5)
         t3 = Transaction(id=3, order=True, type='Sell', quantity=-0.3)
         self.a.transactions = [t1, t2, t3]
         self.a.quantity = 3
 
-        self.assertEqual(self.a.get_free(), 3 - 0.8)
+        self.assertEqual(self.a.free, 3 - 0.8)
 
     def test_update_price(self):
         self.a.quantity = 1.5

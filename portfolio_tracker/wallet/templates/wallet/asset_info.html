@@ -32,7 +32,7 @@
         {% trans %}Еще{% endtrans %}
       </button>
       <div class="dropdown-menu">
-        <form id="AssetActions" action="{{ url_for('wallet.assets_action', wallet_id=asset.wallet_id) }}">
+        <form id="AssetActions" action="{{ url_for('wallet.wallet_info', wallet_id=asset.wallet_id) }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#AssetActions"
             {% if asset.is_empty() %}
@@ -64,7 +64,7 @@
   </div>
 
 <div class="big-table pt-3 pb-3">
-  <form id="WalletAssetTransactionsForm" action="{{ url_for('.transactions_action', wallet_id=asset.wallet_id, asset_id=asset.id) }}">
+  <form id="WalletAssetTransactionsForm" action="{{ url_for('.asset_info', wallet_id=asset.wallet_id, asset_id=asset.id) }}">
     <table class="table table-sm align-middle">
       <thead>
         <tr>

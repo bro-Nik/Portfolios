@@ -39,7 +39,7 @@
   {% set tab_name = 'wallets' %}
   {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'cost_now' %}
   {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
-  <form id="WalletsForm" action="{{ url_for('.wallets_action') }}">
+  <form id="WalletsForm" action="{{ url_for('.wallets') }}">
     <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
       data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
       data-sort-url="{{ url_for('portfolio.change_table_sort') }}">
@@ -124,11 +124,11 @@
 
     <!-- Actions buttons -->
     <div class="sticky-bottom-buttons">
-      <a class="open-modal-confirmation" data-action="delete"
+      <a class="open-modal-confirmation" data-action="delete_if_empty"
         data-title="{% trans %}Удалить кошельки?{% endtrans %}"
         data-text="{% trans %}Будут удалены только пустые кошельки{% endtrans %}">
         {% trans %}Удалить{% endtrans %}</a>
-      <a class="open-modal-confirmation" data-action="delete_with_contents"
+      <a class="open-modal-confirmation" data-action="delete"
         data-title="{% trans %}Удалить кошельки с содержимым?{% endtrans %}"
         data-text="{% trans %}Все транзакции, связанные с этими кошельками, будут удалены{% endtrans %}">
         {% trans %}Удалить с содержимым{% endtrans %}</a>

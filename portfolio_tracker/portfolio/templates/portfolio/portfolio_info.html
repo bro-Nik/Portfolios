@@ -23,7 +23,7 @@
           data-url="{{ url_for('.portfolio_settings', portfolio_id=portfolio.id) }}">
           {% trans %}Изменить портфель{% endtrans %}
         </button>
-        <form id="PortfolioActions" action="{{ url_for('.portfolios_action') }}">
+        <form id="PortfolioActions" action="{{ url_for('.portfolios') }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#PortfolioActions" data-pre-need-clean="true"
             {% if portfolio.is_empty() %}
@@ -49,13 +49,14 @@
 
 {% if portfolio.assets %}
   <div class="row xs-mb-3">
-    {{ i.top("Вложено", portfolio.amount|currency_price(round_to='usd')) }}
-    {{ i.top("Стоимость сейчас", portfolio.cost_now|currency_price(round_to='usd'), portfolio.color) }}
-    {{ i.top(["Прибыль", "Убыток"],
+    {{ i.top("Стоимость сейчас", portfolio.cost_now|currency_price(round_to='usd')) }}
+    {{ i.top("Вложено" if portfolio.amount >= 0 else "Зафиксировано",
+             portfolio.amount|abs|currency_price(round_to='usd')) }}
+    {{ i.top("Прибыль",
              [portfolio.profit|currency_price(round_to='usd'),
              " ({}%)".format(portfolio.profit_percent) if portfolio.profit_percent], portfolio.color) }}
     {{ i.top("Доля от всех инвестиций",
-             ["{}% / ".format((portfolio.amount / portfolios.amount * 100)|smart_round(0.1) if portfolios.amount else 0),
+             ["{}% / ".format(portfolio.share_of_portfolio(portfolios.amount)|smart_round(0.1)),
              " ({}%)".format(portfolio.percent|smart_round) if portfolio.percent else '-']) }}
     {{ i.top("В ордерах", portfolio.in_orders|currency_price(round_to='usd')) }}
     {{ i.top("Количество активов", portfolio.assets|length) }}
@@ -65,7 +66,7 @@
     {% set tab_name = 'portfolio_info' %}
     {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'cost_now' %}
     {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
-    <form id="AssetsAction" action="{{ url_for('portfolio.assets_action', portfolio_id=portfolio.id) }}">
+    <form id="AssetsAction" action="{{ url_for('portfolio.portfolio_info', portfolio_id=portfolio.id) }}">
       
       <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
         data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
@@ -168,6 +169,10 @@
                       data-url="{{ url_for('.asset_settings', portfolio_id=portfolio.id, asset_id=asset.id) }}">
                       {% trans %}Изменить актив{% endtrans %}
                     </a>
+                    <a class="dropdown-item open-modal" data-modal-id="AssetTransferModal"
+                      data-url="{{ url_for('.asset_transfer', portfolio_id=portfolio.id, asset_id=asset.id) }}">
+                      {% trans %}Переместить актив{% endtrans %}
+                    </a>
                     <a class="dropdown-item link-danger open-modal-confirmation"
                       {% if asset.is_empty() %}
                         data-title="{% trans name=asset.ticker.name %}Удалить актив {{ name }}?{% endtrans %}"
@@ -212,6 +217,6 @@
   {% include 'nothing.html' %}
 {% endif %}
 
-{{ i.comment(url_for('.portfolio_settings_update', portfolio_id=portfolio.id), portfolio.comment) }}
+{{ i.comment(url_for('.portfolio_settings', portfolio_id=portfolio.id), portfolio.comment) }}
 
 {% endblock %}

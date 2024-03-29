@@ -5,7 +5,7 @@
 
 {% block content %}
 
-{% set ticker = watchlist_asset.ticker %}
+{% set ticker = asset.ticker %}
 {% set asset_id = request.args.get('asset_id') %}
 
 <div class="mb-5">
@@ -20,7 +20,7 @@
         {% if ticker.image %}
           <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/40/' + ticker.image) }}">
         {% endif %}
-        <span class="fs-1 fw-semibold">{{ watchlist_asset.price|currency_price }}</span>
+        <span class="fs-1 fw-semibold">{{ asset.price|currency_price }}</span>
       </div>
     </div>
     <div class="col-auto ms-auto">
@@ -32,9 +32,10 @@
   </div>
   {% include 'flash_messages.html' %}
 </div>
-{% if watchlist_asset.alerts %}
+
+{% if asset.alerts %}
 <div class="big-table pt-3 pb-3">
-  <form id="WhitelistTickerForm" action="{{ url_for('.alerts_action', ticker_id=ticker.id) }}">
+  <form id="WhitelistTickerForm" action="{{ url_for('.asset_info', ticker_id=ticker.id) }}">
     <table class="table table-sm align-middle">
       <thead>
         <tr>
@@ -48,7 +49,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for alert in watchlist_asset.alerts|sort(reverse=true, attribute="price") %}
+        {% for alert in asset.alerts|sort(reverse=true, attribute="price") %}
         <tr class="{{ 'table-green' if alert.status == 'worked' }} {{ 'opacity-50' if alert.status == 'off' }}">
             <td>
               <input class="form-check-input to-check" type="checkbox" value="{{ alert.id }}">
@@ -146,9 +147,7 @@
   {% include 'nothing.html' %}
 {% endif %}
 
-<div class="convert-text" data-convert-to="textarea" data-name="comment" data-placeholder="{{ gettext('Добавить комментарий') }}"
-  data-send-url="{{ url_for('.watchlist_asset_update', ticker_id=ticker.id) }}">
-  <span class="convert-data">{{ watchlist_asset.comment if watchlist_asset.comment }}</span>
-</div>
+{% import 'macro_info.html' as i with context %}
+{{ i.comment(url_for('.asset_settings', ticker_id=ticker.id), asset.comment) }}
 
 {% endblock %}

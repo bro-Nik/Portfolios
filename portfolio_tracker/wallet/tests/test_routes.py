@@ -108,7 +108,7 @@ class TestWalletRoutes(unittest.TestCase):
         self.assertIn(bytes('Изменить кошелек', 'utf-8'), response.data)
 
     def test_wallet_settings_update(self):
-        url = url_for('wallet.wallet_settings_update')
+        url = url_for('wallet.wallet_settings')
 
         # Создание кошелька
         data = {'name': 'Первый кошелек'}

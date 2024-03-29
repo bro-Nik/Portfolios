@@ -2,15 +2,7 @@
 
 {% macro top(text, value='', class='') %}
   <div class="col-auto">
-    <p class="small-text">
-      {% if text is string or text is not iterable %}
-        {% set text = [text] %}
-      {% endif %}
-
-      {% for t in text %}
-        {{ " / " if loop.index != 1 }}{{ gettext(t) }}
-      {% endfor %}
-    </p>
+    <p class="small-text">{{ gettext(text) }}</p>
     <span class="text-average {{ class }}">
       {% if value is string or value is not iterable %}
         {% set value = [value] %}

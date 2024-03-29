@@ -7,7 +7,7 @@ from portfolio_tracker.portfolio.models import Ticker, Transaction
 from portfolio_tracker.user.models import User
 from tests import app, db
 from ..models import Wallet, WalletAsset
-from ..utils import create_new_wallet, create_new_wallet_asset, \
+from ..utils import create_wallet, create_wallet_asset, \
     get_wallet, get_wallet_asset, get_wallet_has_asset, \
     last_wallet, last_wallet_transaction
 
@@ -119,7 +119,7 @@ class TestWalletUtils(unittest.TestCase):
         with self.app.test_request_context():
             login_user(self.user)
             self.user.currency_ticker = Ticker(id='rub')
-            w = create_new_wallet()
+            w = create_wallet()
 
         self.assertEqual(len(self.user.wallets), 1)
         self.assertEqual(len(w.wallet_assets), 1)
@@ -133,7 +133,7 @@ class TestWalletUtils(unittest.TestCase):
         db.session.add(btc)
         db.session.commit()
 
-        a = create_new_wallet_asset(w, btc)
+        a = create_wallet_asset(w, btc)
         self.assertEqual(w.wallet_assets, [a])
         self.assertEqual(a.ticker_id, 'btc')
 

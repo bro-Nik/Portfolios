@@ -5,7 +5,7 @@
 
 
 {% block content %}
-  <form id="TransferForm" data-url="{{ url_for('.transaction_update', wallet_id=asset.wallet_id, ticker_id=asset.ticker_id, transaction_id=transaction.id) }}">
+  <form id="TransferForm" data-url="{{ url_for('.transaction_info', wallet_id=asset.wallet_id, ticker_id=asset.ticker_id, transaction_id=transaction.id) }}">
     <div class="btn-group silver mb-3 w-100">
       {% if transaction.type != 'TransferIn' %}
         {% if asset.ticker.stable %}

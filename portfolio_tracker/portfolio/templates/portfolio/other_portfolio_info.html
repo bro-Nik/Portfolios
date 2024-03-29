@@ -23,7 +23,7 @@
           data-url="{{ url_for('.portfolio_settings', portfolio_id=portfolio.id) }}">
           {% trans %}Изменить портфель{% endtrans %}
         </button>
-        <form id="PortfolioActions" action="{{ url_for('.portfolios_action') }}">
+        <form id="PortfolioActions" action="{{ url_for('.portfolios') }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#PortfolioActions" data-pre-need-clean="true"
             {% if portfolio.is_empty() %}
@@ -50,7 +50,7 @@
   <div class="row xs-mb-3">
     {{ i.top("Вложено", portfolio.amount|currency_price(round_to='usd')) }}
     {{ i.top("Стоимость сейчас", portfolio.cost_now|currency_price(round_to='usd'), portfolio.color) }}
-    {{ i.top(["Прибыль", "Убыток"],
+    {{ i.top("Прибыль",
              [portfolio.profit|currency_price(round_to='usd'),
              " ({}%)".format(portfolio.profit_percent) if portfolio.profit_percent], portfolio.color) }}
     {{ i.top("Доля от всех инвестиций",
@@ -62,7 +62,7 @@
     {% set tab_name = 'other_portfolio_info' %}
     {% set sort_name = session[tab_name].get('field') if session.get(tab_name) and session[tab_name].get('field') else 'cost_now' %}
     {% set sort_order = session[tab_name].get('sort_order') if session.get(tab_name) and session[tab_name].get('sort_order') else 'desc' %}
-    <form id="AssetsForm" action="{{ url_for('.assets_action', portfolio_id=portfolio.id) }}">
+    <form id="AssetsForm" action="{{ url_for('.portfolio_info', portfolio_id=portfolio.id) }}">
       <table class="table table-sm align-middle bootstrap-table" data-name="{{ tab_name }}"
         data-search="true" data-sort-name="{{ sort_name }}" data-sort-order="{{ sort_order }}"
         data-sort-url="{{ url_for('portfolio.change_table_sort') }}">
@@ -186,6 +186,6 @@
   {% include 'nothing.html' %}
 {% endif %}
 
-{{ i.comment(url_for('.portfolio_settings_update', portfolio_id=portfolio.id), portfolio.comment) }}
+{{ i.comment(url_for('.portfolio_settings', portfolio_id=portfolio.id), portfolio.comment) }}
 
 {% endblock %}
