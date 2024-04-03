@@ -332,6 +332,7 @@ def api_stream_action():
 @admin_only
 def api_event_action():
     actions_in(request.data, Ticker.get)
+    db.session.commit()
     return ''
 
 

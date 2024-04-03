@@ -483,8 +483,11 @@ class Ticker(db.Model):
         if self.image:
             upload_folder = current_app.config['UPLOAD_FOLDER']
             path = f'{upload_folder}/images/tickers/{self.market}'
-            os.remove(f'{path}/24/{self.image}')
-            os.remove(f'{path}/40/{self.image}')
+            try:
+                os.remove(f'{path}/24/{self.image}')
+                os.remove(f'{path}/40/{self.image}')
+            except:
+                pass
 
         db.session.delete(self)
 

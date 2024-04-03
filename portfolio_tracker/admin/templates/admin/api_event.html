@@ -28,7 +28,7 @@
           <th>В активах</th>
           <th>Цена</th>
           {% for api_event_name in data['events'] %}
-            <th>{{ api_event_name }}</th>
+            <th data-sortable="true">{{ api_event_name }}</th>
           {% endfor %}
           <th></th>
         </tr>
