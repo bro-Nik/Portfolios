@@ -120,7 +120,7 @@
                       {% trans %}Изменить портфель{% endtrans %}
                     </a>
                       <a class="dropdown-item link-danger open-modal-confirmation"
-                        {% if portfolio.is_empty() %}
+                        {% if portfolio.is_empty %}
                           data-title="{% trans name=portfolio.name %}Удалить портфель {{ name }}?{% endtrans %}"
                           data-action="delete"
                         {% else %}

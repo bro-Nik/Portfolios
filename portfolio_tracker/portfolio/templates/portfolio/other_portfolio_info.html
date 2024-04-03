@@ -26,7 +26,7 @@
         <form id="PortfolioActions" action="{{ url_for('.portfolios') }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#PortfolioActions" data-pre-need-clean="true"
-            {% if portfolio.is_empty() %}
+            {% if portfolio.is_empty %}
               data-title="{% trans name=portfolio.name %}Удалить портфель {{ name }}?{% endtrans %}"
               data-action="delete"
             {% else %}
@@ -118,7 +118,7 @@
               </td>
 
               <td>
-                {% if portfolio.amount and not asset.is_empty() %}
+                {% if portfolio.amount and not asset.is_empty %}
                   {{ (asset.amount / portfolio.amount * 100)|smart_round(0.1) }}% /
                 {% else %}
                   - /
@@ -144,7 +144,7 @@
                       {% trans %}Изменить актив{% endtrans %}
                     </a>
                     <a class="dropdown-item link-danger open-modal-confirmation"
-                      {% if asset.is_empty() %}
+                      {% if asset.is_empty %}
                         data-title="{% trans name=asset.name %}Удалить актив {{ name }}?{% endtrans %}"
                         data-action="delete"
                       {% else %}

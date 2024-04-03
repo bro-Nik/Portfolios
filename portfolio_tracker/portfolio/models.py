@@ -194,6 +194,7 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
         if percent is not None:
             self.percent = percent
 
+    @property
     def is_empty(self) -> bool:
         return not (self.transactions or self.comment)
 
@@ -233,8 +234,25 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
 
         return transaction
 
+    def recalculate(self):
+        self.amount = 0
+        self.quantity = 0
+        self.in_orders = 0
+
+        for transaction in self.transactions:
+            if transaction.type not in ('Buy', 'Sell'):
+                continue
+
+            if transaction.order:
+                if transaction.type == 'Buy':
+                    self.in_orders += transaction.quantity * transaction.price_usd
+
+            else:
+                self.amount += transaction.quantity * transaction.price_usd
+                self.quantity += transaction.quantity
+
     def delete_if_empty(self) -> None:
-        if self.is_empty():
+        if self.is_empty:
             self.delete()
         else:
             flash(gettext('В активе %(name)s есть транзакции',
@@ -288,6 +306,7 @@ class OtherAsset(db.Model, DetailsMixin, TransactionsMixin):
         if percent is not None:
             self.percent = percent or 0
 
+    @property
     def is_empty(self) -> bool:
         return not (self.bodies or self.transactions or self.comment)
 
@@ -319,7 +338,7 @@ class OtherAsset(db.Model, DetailsMixin, TransactionsMixin):
         return body
 
     def delete_if_empty(self) -> None:
-        if self.is_empty():
+        if self.is_empty:
             self.delete()
         else:
             flash(gettext('Актив %(name)s не пустой',
@@ -547,6 +566,7 @@ class Portfolio(db.Model, DetailsMixin):
         self.percent = percent
         self.comment = comment
 
+    @property
     def is_empty(self) -> bool:
         return not (self.assets or self.other_assets or self.comment)
 
@@ -600,7 +620,7 @@ class Portfolio(db.Model, DetailsMixin):
         return asset
 
     def delete_if_empty(self) -> None:
-        if self.is_empty():
+        if self.is_empty:
             self.delete()
         else:
             flash(gettext('В портфеле %(name)s есть транзакции',

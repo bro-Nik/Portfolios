@@ -53,17 +53,19 @@
         </button>
 
         <form id="AssetActions" action="{{ url_for('.portfolio_info', portfolio_id=asset.portfolio_id) }}">
+          <button class="dropdown-item open-modal-confirmation" 
+            type="button" data-form="#AssetActions"
+            data-title="{% trans %}Пересчитать актив?{% endtrans %}"
+            data-text="{% trans %}Все транзакции в этом активе будут пересчитаны{% endtrans %}"
+            data-action="recalculate"
+            data-id="{{ asset.id }}">
+            {% trans %}Пересчитать актив{% endtrans %}
+          </button>
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#AssetActions"
-            {% if asset.is_empty() %}
-              data-title="{% trans name=asset.ticker.name %}Удалить актив {{ name }}?{% endtrans %}"
-              data-action="delete"
-            {% else %}
-              data-title="{% trans name=asset.ticker.name %}Удалить актив {{ name }} с содержимым?{% endtrans %}"
-              data-text="{% trans %}Все транзакции в этом активе будут удалены{% endtrans %}"
-              data-action="delete_with_contents"
-            {% endif %}
-            data-id="{{ asset.id }}" data-pre-need-clean="true">
+            data-title="{% trans name=asset.ticker.name %}Удалить актив {{ name }}?{% endtrans %}"
+            data-text="{% trans %}Все транзакции в этом активе будут удалены{% endtrans %}"
+            data-action="delete" data-id="{{ asset.id }}" data-pre-need-clean="true">
             {% trans %}Удалить актив{% endtrans %}
           </button>
         </form>

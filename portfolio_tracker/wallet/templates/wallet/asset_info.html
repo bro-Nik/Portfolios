@@ -33,17 +33,19 @@
       </button>
       <div class="dropdown-menu">
         <form id="AssetActions" action="{{ url_for('wallet.wallet_info', wallet_id=asset.wallet_id) }}">
+          <button class="dropdown-item open-modal-confirmation" 
+            type="button" data-form="#AssetActions"
+            data-title="{% trans %}Пересчитать актив?{% endtrans %}"
+            data-text="{% trans %}Все транзакции в этом активе будут пересчитаны{% endtrans %}"
+            data-action="recalculate"
+            data-id="{{ asset.id }}">
+            {% trans %}Пересчитать актив{% endtrans %}
+          </button>
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#AssetActions"
-            {% if asset.is_empty() %}
-              data-title="{% trans name=asset.ticker.name %}Удалить актив {{ name }}?{% endtrans %}"
-              data-action="delete"
-            {% else %}
-              data-title="{% trans name=asset.ticker.name %}Удалить актив {{ name }} с содержимым?{% endtrans %}"
-              data-text="{% trans %}Все транзакции в активе будут удалены{% endtrans %}"
-              data-action="delete_with_contents"
-            {% endif %}
-            data-id="{{ asset.id }}" data-pre-need-clean="true">
+            data-title="{% trans name=asset.ticker.name %}Удалить актив {{ name }}?{% endtrans %}"
+            data-text="{% trans %}Все транзакции в этом активе будут удалены{% endtrans %}"
+            data-action="delete" data-id="{{ asset.id }}" data-pre-need-clean="true">
             {% trans %}Удалить актив{% endtrans %}
           </button>
         </form>
@@ -57,10 +59,15 @@
 
 {% if asset.transactions %}
   <div class="row mb-5 xs-mb-3">
-    {{ i.top("Количество", asset.quantity|currency_quantity(currency=ticker.symbol)) }}
-    {{ i.top("Стоимость сейчас", asset.cost_now|currency_price(round_to='usd')) }}
-    {{ i.top("В ордерах на продажу", asset.sell_orders|currency_quantity(round_to='usd', currency=ticker.symbol)) }}
-    {{ i.top("В ордерах на покупку", asset.buy_orders|currency_price(round_to='usd')) }}
+    {% if not ticker.stable %}
+      {{ i.top("Количество", asset.quantity|currency_quantity(currency=ticker.symbol)) }}
+      {{ i.top("Стоимость сейчас", asset.cost_now|currency_price(round_to='usd')) }}
+      {{ i.top("В ордерах на продажу", asset.sell_orders|currency_quantity(round_to='usd', currency=ticker.symbol)) }}
+      {{ i.top("В ордерах на покупку", asset.buy_orders|currency_price(round_to='usd')) }}
+    {% else %}
+      {{ i.top("Свободно", asset.free|currency_quantity(round_per=1, currency=ticker.symbol)) }}
+      {{ i.top("В ордерах", asset.buy_orders|currency_quantity(round_per=1, currency=ticker.symbol)) }}
+    {% endif %}
   </div>
 
 <div class="big-table pt-3 pb-3">
@@ -73,7 +80,9 @@
           </th>
           <th>{% trans %}Тип{% endtrans %}</th>
           <th>{% trans %}Связь{% endtrans %}</th>
-          <th>{% trans %}Цена{% endtrans %}</th>
+          {% if not ticker.stable %}
+            <th>{% trans %}Цена{% endtrans %}</th>
+          {% endif %}
           <th>{% trans %}Количество{% endtrans %}</th>
           <th>{% trans %}Комментарий{% endtrans %}</th>
           <th></th>
@@ -86,7 +95,9 @@
           {% else %}
             {% set url = url_for('wallet.transaction_info', wallet_id=asset.wallet_id, asset_id=asset.id, transaction_id=transaction.id) %}
           {% endif %}
-          {% set quantity = transaction.quantity %}
+
+          {% set quantity = transaction.quantity2 if transaction.portfolio_asset and ticker.stable else transaction.quantity %}
+          {% set quantity2 = transaction.quantity1 if transaction.portfolio_asset and ticker.stable else transaction.quantity2 %}
           {% set color = 'text-green' if quantity > 0 else 'text-red' %}
 
           <tr class="{{ 'table-order' if transaction.order }}">
@@ -98,6 +109,9 @@
             <td>
               <div class="open-modal" data-modal-id="TransactionModal" data-url="{{ url }}">
                 <span class="{{ color }}">{{ gettext(transaction.type) }}</span>
+                {% if transaction.portfolio_asset and ticker.stable %}
+                  <span class="text-muted">{{ transaction.base_ticker.symbol|upper }}</span>
+                {% endif %}
                 {{ '(' + gettext('Ордер') + ')' if transaction.order }}<br>
                 <span class="small-text">{{ transaction.date|user_datetime }}</span>
               </div>
@@ -118,10 +132,15 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M12.136.326A1.5 1.5 0 0 1 14 1.78V3h.5A1.5 1.5 0 0 1 16 4.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.432-1.499L12.136.326zM5.562 3H13V1.78a.5.5 0 0 0-.621-.484L5.562 3zM1.5 4a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z" /></svg>
                     {{ transaction2.wallet.name }}
                   </span>
-                {% else %}
+                {% elif 'Transfer' in transaction.type %}
                   <span class="text-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M12.136.326A1.5 1.5 0 0 1 14 1.78V3h.5A1.5 1.5 0 0 1 16 4.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.432-1.499L12.136.326zM5.562 3H13V1.78a.5.5 0 0 0-.621-.484L5.562 3zM1.5 4a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z" /></svg>
                     {% trans %}Удален{% endtrans %}
+                  </span>
+                {% else %}
+                  <span class="text-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M0 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V4zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V6a2 2 0 0 1-2-2H3z"/></svg>
+                    {% trans %}Наличные{% endtrans %}
                   </span>
                 {% endif %}
               {% endif %}
@@ -129,36 +148,33 @@
 
             {% set other_currency = current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
 
-            <td>
-              {# transaction from portfolio #}
-              {% if transaction.portfolio_asset %}
-                {% if other_currency %}
-                  {{ transaction.price|currency_price(currency=transaction.quote_ticker.symbol) }}<br>
+            {% if not ticker.stable %}
+              <td>
+                {% if transaction.portfolio_asset %}
+                  {% if other_currency %}
+                    {{ transaction.price|currency_price(currency=transaction.quote_ticker.symbol) }}<br>
+                  {% endif %}
+                  {{ transaction.price_usd|currency_price }}
+                {% else %}
+                -
                 {% endif %}
-                {{ transaction.price_usd|currency_price }}
-              {# transaction from wallet #}
-              {% else %}
-              -
-              {% endif %}
-            </td>
-
-            <td>
-              {# transaction from portfolio #}
-              {% if transaction.portfolio_asset %}
+              </td>
+              <td>
                 {% if other_currency %}
-                  {{ '+' if transaction.quantity2 > 0 }}{{ transaction.quantity2|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }}<br>
+                  {{ '+' if quantity2 > 0 }}{{ quantity2|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }}<br>
                 {% endif %}
-                {{ '+' if transaction.quantity2 > 0 }}{{ (transaction.quantity * transaction.price_usd * -1)|currency_price(round_to='usd') }}<br>
+                {{ '+' if quantity2 > 0 }}{{ (quantity * transaction.price_usd * -1)|currency_price(round_to='usd') }}<br>
                 <span class="text-average small-text {{ color }}">
                   {{ '+' if transaction.quantity > 0 }}{{ transaction.quantity|currency_quantity(round_to=ticker.price, currency=ticker.symbol) }}
                 </span>
-              {# transaction from wallet #}
-              {% else %}
-                <span class="text-average small-text {{ color }}">
-                  {{ transaction.quantity|currency_quantity(round_per=1, currency=ticker.symbol) }}
+              </td>
+            {% else %}
+              <td>
+                <span class="text-average {{ color }}">
+                  {{ '+' if quantity > 0 }}{{ quantity|currency_quantity(round_per=1, currency=ticker.symbol) }}
                 </span>
-              {% endif %}
-            </td>
+              </td>
+            {% endif %}
 
             <td>
               <div class="d-flex comment">

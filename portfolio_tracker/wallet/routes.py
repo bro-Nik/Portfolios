@@ -80,8 +80,8 @@ def asset_info():
         db.session.commit()
         return ''
 
-    page = 'stable_' if asset.ticker.stable else ''
-    return render_template(f'wallet/{page}asset_info.html', asset=asset)
+    # page = 'stable_' if asset.ticker.stable else ''
+    return render_template('wallet/asset_info.html', asset=asset)
 
 
 @bp.route('/add_stable_modal', methods=['GET'])

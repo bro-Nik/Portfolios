@@ -27,7 +27,7 @@
         <form id="WalletActions" action="{{ url_for('.wallets') }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#WalletActions" data-pre-need-clean="true"
-            {% if wallet.is_empty() %}
+            {% if wallet.is_empty %}
               data-title="{% trans name=wallet.name %}Удалить кошелек {{ name }}?{% endtrans %}"
               data-action="delete"
             {% else %}
@@ -134,7 +134,7 @@
                             {% trans %}Отправить{% endtrans %}
                           </a>
                           <a class="dropdown-item link-danger open-modal-confirmation"
-                            {% if asset.is_empty() %}
+                            {% if asset.is_empty %}
                               data-title="{% trans name=asset.ticker.name %}Удалить актив {{ name }}?{% endtrans %}"
                               data-action="delete"
                             {% else %}

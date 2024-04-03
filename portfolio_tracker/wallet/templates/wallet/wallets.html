@@ -97,7 +97,7 @@
                   </a>
 
                   <a class="dropdown-item link-danger open-modal-confirmation"
-                    {% if wallet.is_empty() %}
+                    {% if wallet.is_empty %}
                       data-title="{% trans name=wallet.name %}Удалить кошелек {{ name }}?{% endtrans %}"
                       data-action="delete"
                     {% else %}

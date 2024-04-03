@@ -78,6 +78,7 @@ class Wallet(db.Model):
 
         self.comment = comment
 
+    @property
     def is_empty(self) -> bool:
         return not (self.wallet_assets or self.transactions or self.comment)
 
@@ -123,7 +124,7 @@ class Wallet(db.Model):
                 return transaction
 
     def delete_if_empty(self) -> None:
-        if self.is_empty():
+        if self.is_empty:
             self.delete()
         else:
             flash(gettext('Кошелек %(name)s не пустой',
@@ -156,6 +157,7 @@ class WalletAsset(db.Model, TransactionsMixin):
         backref=db.backref('wallet_asset', lazy=True)
     )
 
+    @property
     def is_empty(self) -> bool:
         return not self.transactions
 
@@ -173,8 +175,11 @@ class WalletAsset(db.Model, TransactionsMixin):
             return self.quantity - self.buy_orders
         return self.quantity - self.sell_orders
 
-    def update(self) -> None:
+    def recalculate(self) -> None:
         self.quantity = 0
+        self.buy_orders = 0
+        self.sell_orders = 0
+
         for t in self.transactions:
             is_base_asset = bool(self.ticker_id == t.ticker_id)
 
@@ -183,7 +188,6 @@ class WalletAsset(db.Model, TransactionsMixin):
                 self.quantity += getattr(t, quantity)
 
             else:
-
                 if t.type == 'Buy':
                     if is_base_asset:
                         self.buy_orders += t.quantity * t.price_usd
@@ -208,7 +212,7 @@ class WalletAsset(db.Model, TransactionsMixin):
         return transaction
 
     def delete_if_empty(self) -> None:
-        if self.is_empty():
+        if self.is_empty:
             self.delete()
         else:
             flash(gettext('В активе %(name)s есть транзакции',

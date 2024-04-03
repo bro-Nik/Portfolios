@@ -53,7 +53,7 @@
 
 {% import 'macro_info.html' as i with context %}
 
-{% if not asset.is_empty() %}
+{% if not asset.is_empty %}
   <div class="row mb-5 xs-mb-3">
     {{ i.top("Вложено", asset.amount|currency_price(round_to='usd')) }}
     {{ i.top("Прибыль",
