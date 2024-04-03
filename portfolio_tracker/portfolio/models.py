@@ -254,7 +254,7 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
         db.session.delete(self)
 
 
-class OtherAsset(db.Model, DetailsMixin):
+class OtherAsset(db.Model, DetailsMixin, TransactionsMixin):
     id = db.Column(db.Integer, primary_key=True)
     portfolio_id: int = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
     name: str = db.Column(db.String(255))
@@ -293,6 +293,7 @@ class OtherAsset(db.Model, DetailsMixin):
 
     def create_transaction(self):
         transaction = OtherTransaction(type='Profit',
+                                       amount=0,
                                        date=datetime.now(timezone.utc))
         if self.transactions:
             transaction.amount_ticker = self.transactions[-1].amount_ticker
@@ -300,6 +301,9 @@ class OtherAsset(db.Model, DetailsMixin):
             transaction.amount_ticker = current_user.currency_ticker
 
         return transaction
+
+    def get_body(self, body_id: str | int | None):
+        return find_by_attr(self.bodies, 'id', body_id)
 
     def create_body(self) -> OtherBody:
         """Возвращает новое тело актива."""

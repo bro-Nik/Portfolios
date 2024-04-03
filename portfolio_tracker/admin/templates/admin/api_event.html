@@ -65,7 +65,7 @@
             </td>
 
             <td>
-              <div class="mx-1 text-nowrap">{{ ticker.price|user_currency if ticker.price else '-' }}</div>
+              <div class="mx-1 text-nowrap">{{ ticker.price|currency_price(default='-') }}</div>
             </td>
 
             {% for event_name in data['events'] %}

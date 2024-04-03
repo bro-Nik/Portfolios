@@ -36,6 +36,3 @@ class TransactionsMixin:
     def get_transaction(self, transaction_id: str | int | None
                         ):
         return find_by_attr(self.transactions, 'id', transaction_id)
-
-    def get_body(self, body_id: str | int | None):
-        return find_by_attr(self.bodies, 'id', body_id)

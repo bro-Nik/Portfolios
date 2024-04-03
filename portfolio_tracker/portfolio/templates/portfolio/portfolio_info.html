@@ -134,7 +134,7 @@
               <td>
                 <div class="mx-1 text-nowrap">
                     <span class="{{ asset.color }}">
-                      {{ asset.profit|currency_price(round_to='usd') }}
+                      {{ asset.profit|currency_price(round_to='usd', default='-') }}
                       {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
                     </span>
                 </div>

@@ -4,7 +4,7 @@ from flask import abort, flash, redirect, render_template, url_for, request
 
 from ..app import db, redis
 from ..wraps import admin_only
-from ..jinja_filters import smart_round, user_datetime
+from ..jinja_filters import user_datetime
 from ..general_functions import MARKETS, actions_in, when_updated
 from ..portfolio.models import Ticker
 from ..user.utils import find_user
@@ -22,23 +22,23 @@ from . import bp
 def updater():
     from ..user.models import User
     # Обновление при изменениях
-    try:
-        for user in db.session.execute(db.select(User)).scalars():
-            for portfolio in user.portfolios:
-                for asset in portfolio.assets:
-                    # Если обновлено - пропускаем
-                    # if asset.average_buy_price:
-                    #     continue
-
-                    if asset.quantity:
-                        asset.average_buy_price = asset.amount / asset.quantity
-                    else:
-                        asset.average_buy_price = 0
-
-        db.session.commit()
-        flash('Обновления вополнены', 'success')
-    except Exception as e:
-        flash(f'Ошибка. {e}', 'warning')
+    # try:
+    #     for user in db.session.execute(db.select(User)).scalars():
+    #         for portfolio in user.portfolios:
+    #             for asset in portfolio.assets:
+    #                 # Если обновлено - пропускаем
+    #                 # if asset.average_buy_price:
+    #                 #     continue
+    #
+    #                 if asset.quantity:
+    #                     asset.average_buy_price = asset.amount / asset.quantity
+    #                 else:
+    #                     asset.average_buy_price = 0
+    #
+    #     db.session.commit()
+    #     flash('Обновления вополнены', 'success')
+    # except Exception as e:
+    #     flash(f'Ошибка. {e}', 'warning')
     return redirect(url_for('.module_page'))
 
 

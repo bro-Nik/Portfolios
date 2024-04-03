@@ -46,8 +46,8 @@
               <input class="form-check-input check-all" type="checkbox">
             </th>
             <th data-sortable="true" data-field="name" data-sort-name="_name">{% trans %}Название{% endtrans %}</th>
-            <th data-sortable="true" data-field="total_spent" data-sort-name="_total_spent">{% trans %}Вложено{% endtrans %}</th>
             <th data-sortable="true" data-field="cost_now" data-sort-name="_cost_now">{% trans %}Стоимость сейчас{% endtrans %}</th>
+            <th data-sortable="true" data-field="total_spent" data-sort-name="_total_spent">{% trans %}Вложено{% endtrans %}</th>
             <th data-sortable="true" data-field="profit" data-sort-name="_profit">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</th>
             <th data-sortable="true" data-field="percent" data-sort-name="_percent">{% trans %}Доля от всех инвестиций{% endtrans %}</th>
             <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}В ордерах{% endtrans %}</th>
@@ -77,13 +77,13 @@
                 </div>
               </td>
 
-              <td>{{ portfolio.amount|currency_price(round_to='usd', default='-') }}</td>
-
               <td>
                 <span class="{{ portfolio.color }}">
                   {{ portfolio.cost_now|currency_price(round_to='usd', default='-') }}
                 </span>
               </td>
+
+              <td>{{ portfolio.amount|currency_price(round_to='usd', default='-') }}</td>
 
               <td>
                 {% if portfolio.cost_now %}
