@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from portfolio_tracker.general_functions import find_by_attr
 
 
@@ -31,7 +32,10 @@ class DetailsMixin:
         return self.amount / parent_amount * 100
 
 
-class AssetsMixin:
-    def get_asset(self, ticker_id: str | None):
-        if ticker_id:
-            return find_by_attr(self.assets, 'ticker_id', ticker_id)
+class TransactionsMixin:
+    def get_transaction(self, transaction_id: str | int | None
+                        ):
+        return find_by_attr(self.transactions, 'id', transaction_id)
+
+    def get_body(self, body_id: str | int | None):
+        return find_by_attr(self.bodies, 'id', body_id)

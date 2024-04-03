@@ -4,11 +4,10 @@ from flask import abort, flash, redirect, render_template, url_for, request
 
 from ..app import db, redis
 from ..wraps import admin_only
-from ..jinja_filters import user_datetime
+from ..jinja_filters import smart_round, user_datetime
 from ..general_functions import MARKETS, actions_in, when_updated
-from ..portfolio.utils import get_ticker
+from ..portfolio.models import Ticker
 from ..user.utils import find_user
-from ..user.models import User
 from .models import Key, Task
 from .integrations import Log, get_api_task, tasks_trans
 from .integrations_api import API_NAMES, ApiIntegration
@@ -21,22 +20,22 @@ from . import bp
 @bp.route('/updater', methods=['GET'])
 @admin_only
 def updater():
-    # Обновление средней цены актива
+    from ..user.models import User
+    # Обновление при изменениях
     try:
-        pass
-        # for user in db.session.execute(db.select(User)).scalars():
-        #     for portfolio in user.portfolios:
-        #         for asset in portfolio.assets:
-        #             # Если обновлено - пропускаем
-        #             # if asset.average_buy_price:
-        #             #     continue
-        #
-        #             if asset.quantity:
-        #                 asset.average_buy_price = asset.amount / asset.quantity
-        #             else:
-        #                 asset.average_buy_price = 0
-        #
-        # db.session.commit()
+        for user in db.session.execute(db.select(User)).scalars():
+            for portfolio in user.portfolios:
+                for asset in portfolio.assets:
+                    # Если обновлено - пропускаем
+                    # if asset.average_buy_price:
+                    #     continue
+
+                    if asset.quantity:
+                        asset.average_buy_price = asset.amount / asset.quantity
+                    else:
+                        asset.average_buy_price = 0
+
+        db.session.commit()
         flash('Обновления вополнены', 'success')
     except Exception as e:
         flash(f'Ошибка. {e}', 'warning')
@@ -98,7 +97,7 @@ def imports():
 @bp.route('/tickers/action', methods=['POST'])
 @admin_only
 def tickers_action():
-    actions_in(request.data, get_ticker)
+    actions_in(request.data, Ticker.get)
     return ''
 
 
@@ -138,7 +137,7 @@ def tickers_detail():
 @bp.route('/tickers/settings', methods=['GET', 'POST'])
 @admin_only
 def ticker_settings():
-    ticker = get_ticker(request.args.get('ticker_id')) or abort(404)
+    ticker = Ticker.get(request.args.get('ticker_id')) or abort(404)
     if request.method == 'POST':
         ticker.edit(request.form)
         return ''
@@ -332,7 +331,7 @@ def api_stream_action():
 @bp.route('/api/events', methods=['POST'])
 @admin_only
 def api_event_action():
-    actions_in(request.data, get_ticker)
+    actions_in(request.data, Ticker.get)
     return ''
 
 

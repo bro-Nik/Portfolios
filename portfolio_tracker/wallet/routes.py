@@ -5,10 +5,8 @@ from ..app import db
 from ..general_functions import actions_in
 from ..wraps import demo_user_change
 from ..portfolio.models import Ticker
-from ..portfolio.utils import create_new_transaction, get_ticker, \
-    get_transaction
-from .utils import Wallets, create_wallet, create_wallet_asset, \
-    get_wallet, get_wallet_asset
+from ..wallet.models import Wallet
+from .utils import Wallets
 from . import bp
 
 
@@ -19,11 +17,12 @@ def wallets():
     """Wallets page and actions on wallets."""
     # Actions
     if request.method == 'POST':
-        actions_in(request.data, get_wallet)
+        actions_in(request.data, Wallet.get)
 
         # Create default wallet
         if not current_user.wallets:
-            create_wallet(first=True)
+            wallet = Wallet.create(first=True)
+            current_user.wallets.append(wallet)
         db.session.commit()
         return ''
 
@@ -35,10 +34,13 @@ def wallets():
 @demo_user_change
 def wallet_settings():
     """Wallet settings."""
-    wallet = get_wallet(request.args.get('wallet_id')) or create_wallet()
+    wallet = Wallet.get(request.args.get('wallet_id')) or Wallet.create()
 
     # Apply settings
     if request.method == 'POST':
+        if not wallet.id:
+            current_user.wallets.append(wallet)
+
         wallet.edit(request.form)
         db.session.commit()
         return ''
@@ -51,11 +53,11 @@ def wallet_settings():
 @demo_user_change
 def wallet_info():
     """Wallet page and actions on assets."""
-    wallet = get_wallet(request.args.get('wallet_id')) or abort(404)
+    wallet = Wallet.get(request.args.get('wallet_id')) or abort(404)
 
     # Actions
     if request.method == 'POST':
-        actions_in(request.data, get_wallet_asset, wallet=wallet)
+        actions_in(request.data, wallet.get_asset)
         db.session.commit()
         return ''
 
@@ -68,13 +70,13 @@ def wallet_info():
 @demo_user_change
 def asset_info():
     """Asset page and actions on transactions."""
-    wallet = get_wallet(request.args.get('wallet_id'))
-    asset = get_wallet_asset(request.args.get('asset_id'), wallet,
-                             request.args.get('ticker_id')) or abort(404)
+    wallet = Wallet.get(request.args.get('wallet_id')) or abort(404)
+    find_by = request.args.get('ticker_id') or request.args.get('asset_id')
+    asset = wallet.get_asset(find_by) or abort(404)
 
     # Actions
     if request.method == 'POST':
-        actions_in(request.data, get_transaction, asset=asset)
+        actions_in(request.data, asset.get_transaction)
         db.session.commit()
         return ''
 
@@ -113,11 +115,12 @@ def stable_add_tickers():
 @login_required
 def stable_add():
     ticker_id = request.args.get('ticker_id')
-    wallet = get_wallet(request.args.get('wallet_id')) or abort(404)
-    asset = get_wallet_asset(wallet=wallet, ticker_id=ticker_id)
+    wallet = Wallet.get(request.args.get('wallet_id')) or abort(404)
+    asset = wallet.get_asset(ticker_id)
     if not asset:
-        ticker = get_ticker(ticker_id) or abort(404)
-        asset = create_wallet_asset(wallet, ticker.id)
+        ticker = Ticker.get(ticker_id) or abort(404)
+        asset = wallet.create_asset(ticker)
+        wallet.wallet_assets.append(asset)
         db.session.commit()
 
     return str(url_for('.asset_info',
@@ -129,27 +132,35 @@ def stable_add():
 @login_required
 @demo_user_change
 def transaction_info():
-    wallet = get_wallet(request.args.get('wallet_id'))
-    asset = get_wallet_asset(request.args.get('asset_id'), wallet,
-                             request.args.get('ticker_id')) or abort(404)
-    transaction = get_transaction(request.args.get('transaction_id'), asset
-                                  ) or create_new_transaction(asset)
+    wallet = Wallet.get(request.args.get('wallet_id')) or abort(404)
+    find_by = request.args.get('ticker_id') or request.args.get('asset_id')
+    asset = wallet.get_asset(find_by) or abort(404)
+    transaction = asset.get_transaction(request.args.get('transaction_id')
+                                        ) or asset.create_transaction()
 
     # Apply transaction
     if request.method == 'POST':
         transaction2 = transaction.related_transaction
 
+        if not transaction.id:
+            asset.transactions.append(transaction)
+            db.session.add(transaction)
         transaction.edit(request.form)
         transaction.update_dependencies()
 
         # Связанная транзакция
-        wallet2 = get_wallet(request.form.get('wallet_id'))
-        asset2 = get_wallet_asset(
-            wallet=wallet2, ticker_id=asset.ticker_id
-        ) or create_wallet_asset(wallet2, asset.ticker_id) if wallet2 else None
+        wallet2 = Wallet.get(request.form.get('wallet_id'))
+        if wallet2:
+            asset2 = wallet2.get_asset(asset.ticker_id)
+            if not asset2:
+                ticker2 = Ticker.get(asset.ticker_id) or abort(404)
+                asset2 = wallet2.create_asset(ticker2)
+                wallet2.wallet_assets.append(asset2)
 
-        if asset2:
-            transaction2 = transaction2 or create_new_transaction(asset2)
+            if not transaction2:
+                transaction2 = asset2.create_transaction()
+                asset2.transactions.append(transaction2)
+                db.session.add(transaction2)
 
             transaction2.edit({
                 'type': ('TransferOut' if transaction.type == 'TransferIn'
@@ -159,7 +170,10 @@ def transaction_info():
             })
 
             transaction2.update_dependencies()
-            transaction.related_transaction.append(transaction2)
+
+            db.session.flush()
+            transaction.related_transaction_id = transaction2.id
+            transaction2.related_transaction_id = transaction.id
 
         db.session.commit()
         return ''

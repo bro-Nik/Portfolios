@@ -5,11 +5,12 @@ from flask import request
 from flask_babel import gettext
 from flask_login import current_user, login_required
 
+
 from ..app import db
 from ..jinja_filters import currency_price, currency_quantity, smart_round
 from ..general_functions import remove_prefix
 from ..portfolio.models import Ticker
-from ..wallet.utils import get_wallet, last_wallet_transaction
+from ..wallet.models import Wallet
 from . import bp
 
 
@@ -79,13 +80,14 @@ def wallets_to_buy():
     result = []
 
     for wallet in current_user.wallets:
+        wallet.update_price()
         free = smart_round(wallet.free, 1)
         result.append({'value': str(wallet.id),
                        'text': wallet.name,
                        'sort': wallet.free,
                        'subtext': f"(~ {currency_quantity(free)})"})
 
-    result = sorted(result, key=lambda wallet_: wallet_.get('sort'),
+    result = sorted(result, key=lambda wallet: wallet.get('sort'),
                     reverse=True)
     return json.dumps(result)
 
@@ -127,11 +129,11 @@ def wallets_to_transfer_out():
 @login_required
 def wallet_stable_assets():
     result = []
-    wallet = get_wallet(request.args.get('wallet_id'))
+    wallet = Wallet.get(request.args.get('wallet_id'))
     last_type = request.args.get('last')
 
     if last_type:
-        last_transaction = last_wallet_transaction(wallet, last_type)
+        last_transaction = wallet.last_transaction(last_type) if wallet else None
         if last_transaction:
             ticker = last_transaction.quote_ticker
         else:
@@ -143,6 +145,7 @@ def wallet_stable_assets():
         return json.dumps(result)
 
     if wallet:
+        wallet.update_price()
         stables = wallet.stable_assets
         stables = sorted(stables, key=lambda asset: asset.free, reverse=True)
         for asset in stables:

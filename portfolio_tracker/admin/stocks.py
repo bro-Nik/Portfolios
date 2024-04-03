@@ -9,7 +9,7 @@ from ..general_functions import Market, remove_prefix
 from .integrations import task_logging
 from .integrations_api import ApiName
 from .integrations_market import MarketIntegration
-from .utils import alerts_update, create_new_ticker, get_tickers, \
+from .utils import alerts_update, create_ticker, get_tickers, \
     load_image, find_ticker_in_list
 
 if TYPE_CHECKING:
@@ -127,7 +127,7 @@ def stocks_load_tickers(self) -> None:
             ticker = find_ticker_in_list(external_id, tickers, MARKET)
             # Или добавление нового тикера
             if not ticker:
-                ticker = create_new_ticker(external_id, MARKET)
+                ticker = create_ticker(external_id, MARKET)
                 tickers.append(ticker)
                 new_ids.append(ticker.id)
 

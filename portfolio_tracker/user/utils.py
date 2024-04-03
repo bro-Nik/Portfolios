@@ -7,7 +7,7 @@ from flask_babel import gettext
 
 from ..app import login_manager, redis
 from ..settings import LANGUAGES
-from ..wallet.utils import create_wallet
+from ..wallet.models import Wallet
 from .models import db, User, UserInfo
 
 
@@ -23,13 +23,13 @@ def find_user(user_id: int | None = None, email: str | None = None
     return db.session.execute(select).scalar()
 
 
-def create_new_user(email: str, password: str) -> User:
+def create_user(email: str, password: str) -> User:
     """Создает нового пользователя."""
     new_user = User(email=email)
     new_user.set_password(password)
     new_user.change_currency()
     new_user.change_locale(get_locale())
-    create_wallet(user=new_user, first=True)
+    Wallet.create(user=new_user, first=True)
     new_user.info = UserInfo()
     db.session.add(new_user)
     return new_user
@@ -52,7 +52,7 @@ def register(form: dict) -> bool:
         flash(gettext('Пароли не совпадают'), 'danger')
 
     else:
-        create_new_user(email, password)
+        create_user(email, password)
         flash(gettext('Вы зарегистрированы. Теперь войдите в систему'),
               'success')
         return True

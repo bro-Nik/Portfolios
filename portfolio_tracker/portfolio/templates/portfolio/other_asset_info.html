@@ -31,7 +31,7 @@
           {% trans %}Изменить актив{% endtrans %}
         </button>
 
-        <form id="AssetActions" action="{{ url_for('.portfolio_info') }}">
+        <form id="AssetActions" action="{{ url_for('.portfolio_info', portfolio_id=asset.portfolio_id) }}">
           <button class="dropdown-item link-danger open-modal-confirmation" 
             type="button" data-form="#AssetActions"
             {% if asset.is_empty %}

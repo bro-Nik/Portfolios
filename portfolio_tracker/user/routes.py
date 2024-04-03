@@ -7,7 +7,7 @@ from flask_login import login_user, login_required, current_user, logout_user
 from ..app import db
 from ..settings import LANGUAGES
 from ..wraps import demo_user_change
-from ..wallet.utils import create_wallet
+from ..wallet.models import Wallet
 from . import bp, utils
 
 
@@ -94,7 +94,8 @@ def user_action():
 
     if action == 'delete_data':
         current_user.cleare()
-        create_wallet(user=current_user, first=True)
+        wallet = Wallet.create(first=True)
+        current_user.wallets.append(wallet)
         db.session.commit()
         flash(gettext('Профиль очищен'), 'success')
 

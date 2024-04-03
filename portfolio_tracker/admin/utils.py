@@ -60,7 +60,7 @@ def find_ticker_in_list(external_id: str, tickers: list[Ticker],
             return ticker
 
 
-def create_new_ticker(external_id: str, market: Market) -> Ticker:
+def create_ticker(external_id: str, market: Market) -> Ticker:
     ticker_id = add_prefix(external_id, market)
 
     ticker = Ticker()

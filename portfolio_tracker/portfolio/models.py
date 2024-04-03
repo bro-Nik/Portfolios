@@ -2,21 +2,19 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import os
 from typing import List
-from flask import current_app, flash
+from flask import abort, current_app, flash
 
 from flask_babel import gettext
+from flask_login import current_user
 from sqlalchemy.orm import Mapped
-
-from portfolio_tracker.portfolio.utils import get_ticker
 
 from ..app import db
 from ..general_functions import find_by_attr, from_user_datetime, remove_prefix
-from ..models import AssetsMixin, DetailsMixin
-from ..wallet.utils import create_wallet_asset, get_wallet, get_wallet_asset
+from ..models import DetailsMixin, TransactionsMixin
+from ..wallet.models import Wallet
 
 
 class Transaction(db.Model):
-
     id = db.Column(db.Integer, primary_key=True)
     date: datetime = db.Column(db.DateTime)
     ticker_id: str = db.Column(db.String(32), db.ForeignKey('ticker.id'))
@@ -42,9 +40,6 @@ class Transaction(db.Model):
         'Transaction', foreign_keys=[related_transaction_id], uselist=False)
 
     def edit(self, form: dict) -> None:
-        from .utils import get_ticker
-        from ..watchlist import utils as watchlist
-
         # Отменить, если есть прошлые изменения
         self.update_dependencies('cancel')
 
@@ -60,7 +55,7 @@ class Transaction(db.Model):
             self.ticker2_id = form['ticker2_id']
             self.price = float(form['price'])
 
-            quote_ticker = get_ticker(self.ticker2_id)
+            quote_ticker = Ticker.get(self.ticker2_id)
             if not quote_ticker:
                 return
 
@@ -84,10 +79,15 @@ class Transaction(db.Model):
             alert.delete()
         elif self.order:
             if not alert:
-                watchlist_asset = watchlist.get_asset(
-                    ticker_id=self.ticker_id
-                ) or watchlist.create_watchlist_asset(self.base_ticker)
-                alert = watchlist.create_alert(watchlist_asset)
+                from ..watchlist.models import Watchlist
+
+                watchlist = Watchlist()
+                watchlist_asset = watchlist.get_asset(self.ticker_id)
+                if not watchlist_asset:
+                    watchlist_asset = watchlist.create_asset(self.base_ticker)
+                    current_user.watchlist.append(watchlist_asset)
+                alert = watchlist_asset.create_alert()
+                watchlist_asset.alerts.append(alert)
 
             alert.price = self.price
             alert.price_usd = self.price_usd
@@ -105,31 +105,27 @@ class Transaction(db.Model):
         d = -1 if param == 'cancel' else 1
 
         # Кошелек
-        wallet = get_wallet(self.wallet_id)
+        wallet = Wallet.get(self.wallet_id)
         if not wallet:
             return
 
         # Базовый актив кошелька
-        w_asset1 = get_wallet_asset(wallet=wallet, ticker_id=self.ticker_id)
+        w_asset1 = wallet.get_asset(self.ticker_id)
         if not w_asset1:
-            w_asset1_t = get_ticker(self.ticker_id)
-        if w_asset1_t:
-            w_asset1 = create_wallet_asset(wallet, w_asset1_t) if w_asset1_t else None
-        # Выход, если актив не найден
-        if not w_asset1:
-            return
+            ticker1 = Ticker.get(self.ticker_id) or abort(404)
+            w_asset1 = wallet.create_asset(ticker1)
+            wallet.wallet_assets.append(w_asset1)
 
         if self.type in ('Buy', 'Sell'):
             # Актив портфеля
-            p_asset = self.portfolio_asset
+            p_asset = self.portfolio_asset or abort(404)
 
             # Котируемый актив кошелька
-            w_asset2 = get_wallet_asset(
-                wallet=wallet, ticker_id=self.ticker2_id
-            ) or create_wallet_asset(wallet, self.ticker2_id)
-            # Выход, если активы не найдены
-            if not (p_asset and w_asset2):
-                return
+            w_asset2 = wallet.get_asset(self.ticker2_id)
+            if not w_asset2:
+                ticker2 = Ticker.get(self.ticker2_id) or abort(404)
+                w_asset2 = wallet.create_asset(ticker2)
+                wallet.wallet_assets.append(w_asset2)
 
             if self.order:
                 if self.type == 'Buy':
@@ -162,7 +158,7 @@ class Transaction(db.Model):
         db.session.delete(self)
 
 
-class Asset(db.Model, DetailsMixin):
+class Asset(db.Model, DetailsMixin, TransactionsMixin):
     id = db.Column(db.Integer, primary_key=True)
     ticker_id: str = db.Column(db.String(256), db.ForeignKey('ticker.id'))
     portfolio_id: int = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
@@ -222,10 +218,20 @@ class Asset(db.Model, DetailsMixin):
 
     @property
     def profit_percent(self):
-        # if self.amount > 0:
-        #     return abs(round(self.profit / self.amount * 100))
         if self.quantity and self.average_buy_price:
             return round(self.profit / (self.average_buy_price * self.quantity) * 100)
+
+    def create_transaction(self) -> Transaction | OtherTransaction:
+        """Возвращает новую транзакцию."""
+        transaction = Transaction(
+            type='Buy',
+            ticker_id=self.ticker_id,
+            quantity=0,
+            portfolio_id=self.portfolio_id,
+            date=datetime.now(timezone.utc),
+            price=self.price)
+
+        return transaction
 
     def delete_if_empty(self) -> None:
         if self.is_empty():
@@ -285,6 +291,29 @@ class OtherAsset(db.Model, DetailsMixin):
     def is_empty(self) -> bool:
         return not (self.bodies or self.transactions or self.comment)
 
+    def create_transaction(self):
+        transaction = OtherTransaction(type='Profit',
+                                       date=datetime.now(timezone.utc))
+        if self.transactions:
+            transaction.amount_ticker = self.transactions[-1].amount_ticker
+        else:
+            transaction.amount_ticker = current_user.currency_ticker
+
+        return transaction
+
+    def create_body(self) -> OtherBody:
+        """Возвращает новое тело актива."""
+        body = OtherBody()
+        body.date = datetime.now(timezone.utc)
+        if self.bodies:
+            body.amount_ticker = self.bodies[-1].amount_ticker
+            body.cost_now_ticker = self.bodies[-1].cost_now_ticker
+        else:
+            body.amount_ticker = current_user.currency_ticker
+            body.cost_now_ticker = current_user.currency_ticker
+
+        return body
+
     def delete_if_empty(self) -> None:
         if self.is_empty():
             self.delete()
@@ -314,8 +343,6 @@ class OtherTransaction(db.Model):
     amount_ticker: Mapped[Ticker] = db.relationship('Ticker', uselist=False)
 
     def edit(self, form: dict) -> None:
-        from .utils import get_ticker
-
         self.date = from_user_datetime(form['date'])
         self.comment = form['comment']
         self.type = form['type']
@@ -323,7 +350,7 @@ class OtherTransaction(db.Model):
         self.amount_ticker_id = form['amount_ticker_id']
         self.amount = float(form['amount']) * t_type
 
-        amount_ticker = get_ticker(self.amount_ticker_id)
+        amount_ticker = Ticker.get(self.amount_ticker_id)
         if amount_ticker:
             self.amount_usd = self.amount * self.amount_ticker.price
 
@@ -361,8 +388,6 @@ class OtherBody(db.Model):
         'Ticker', foreign_keys=[cost_now_ticker_id], viewonly=True)
 
     def edit(self, form: dict) -> None:
-        from .utils import get_ticker
-
         self.name = form['name']
         self.date = from_user_datetime(form['date'])
         self.comment = form['comment']
@@ -372,8 +397,8 @@ class OtherBody(db.Model):
         self.amount_ticker_id = form['amount_ticker_id']
         self.cost_now_ticker_id = form['cost_now_ticker_id']
 
-        amount_ticker = get_ticker(self.amount_ticker_id)
-        cost_now_ticker = get_ticker(self.cost_now_ticker_id)
+        amount_ticker = Ticker.get(self.amount_ticker_id)
+        cost_now_ticker = Ticker.get(self.cost_now_ticker_id)
         if amount_ticker and cost_now_ticker:
             self.amount_usd = self.amount * amount_ticker.price
             self.cost_now_usd = self.cost_now * cost_now_ticker.price
@@ -407,6 +432,12 @@ class Ticker(db.Model):
         self.symbol = form.get('symbol')
         self.name = form.get('name')
         self.stable = bool(form.get('stable'))
+
+    @classmethod
+    def get(cls, ticker_id: str | None) -> Ticker | None:
+        if ticker_id:
+            return db.session.execute(
+                db.select(Ticker).filter_by(id=ticker_id)).scalar()
 
     def get_history_price(self, date: datetime.date) -> float | None:
         if date:
@@ -454,7 +485,7 @@ class Ticker(db.Model):
         db.session.delete(self)
 
 
-class Portfolio(db.Model, DetailsMixin, AssetsMixin):
+class Portfolio(db.Model, DetailsMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id: int = db.Column(db.Integer, db.ForeignKey('user.id'))
     market: str = db.Column(db.String(32))
@@ -469,6 +500,17 @@ class Portfolio(db.Model, DetailsMixin, AssetsMixin):
         'OtherAsset', backref=db.backref('portfolio', lazy=True))
     transactions: Mapped[List[Transaction]] = db.relationship(
         'Transaction', backref=db.backref('portfolio', lazy=True))
+
+    @classmethod
+    def get(cls, portfolio_id: int | str | None,
+            user: User = current_user) -> Portfolio | None:
+        return find_by_attr(user.portfolios, 'id', portfolio_id)
+
+    @classmethod
+    def create(cls, user: User = current_user) -> Portfolio:
+        """Возвращает новый портфель"""
+        portfolio = Portfolio()
+        return portfolio
 
     def edit(self, form: dict) -> None:
         if not self.market:
@@ -530,6 +572,25 @@ class Portfolio(db.Model, DetailsMixin, AssetsMixin):
                 spent += asset.average_buy_price * asset.quantity
 
         return round(self.profit / spent * 100) if spent else 0
+
+    def get_asset(self, find_by: str | int | None):
+        if find_by:
+            if getattr(self, 'market') == 'other':
+                return find_by_attr(self.other_assets, 'id', find_by)
+            try:
+                return find_by_attr(self.assets, 'id', int(find_by))
+            except ValueError:
+                return find_by_attr(self.assets, 'ticker_id', find_by)
+
+    def create_asset(self, ticker: Ticker) -> Asset:
+        """Возвращает новый актив"""
+        asset = Asset(ticker=ticker, ticker_id=ticker.id)
+        return asset
+
+    def create_other_asset(self) -> OtherAsset:
+        """Возвращает новый актив"""
+        asset = OtherAsset()
+        return asset
 
     def delete_if_empty(self) -> None:
         if self.is_empty():

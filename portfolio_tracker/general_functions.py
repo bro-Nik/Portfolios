@@ -16,22 +16,22 @@ Market: TypeAlias = Literal['crypto', 'stocks', 'currency']
 MARKETS: tuple[Market, ...] = ('crypto', 'stocks', 'currency')
 
 
-def find_by_attr(iterable: Iterable, attr: str, search: str | int | None):
+def find_by_attr(iterable: Iterable, attr: str, attr_value: str | int | None):
     # Если iterable или search пустое - выход
-    if not iterable or not search:
+    if not (iterable and attr_value):
         return
 
     # Если тип отличается - пробуем привести к нужному
     type_ = type(getattr(iterable[0], attr))
-    if not isinstance(search, type_):
+    if not isinstance(attr_value, type_):
         try:
-            search = type_(search)
+            attr_value = type_(attr_value)
         except ValueError:
             return
 
     # Поиск совпадения
     for item in iterable:
-        if getattr(item, attr) == search:
+        if getattr(item, attr) == attr_value:
             return item
 
 
@@ -83,7 +83,7 @@ def when_updated(update_date: datetime | str, default: str = '') -> str:
     return result
 
 
-def actions_in(data_str: bytes, function: Callable, **kwargs) -> None:
+def actions_in(data_str: bytes, function: Callable) -> None:
     try:
         data = json.loads(data_str)
     except json.JSONDecodeError:
@@ -94,7 +94,7 @@ def actions_in(data_str: bytes, function: Callable, **kwargs) -> None:
         action = data.get('action', '')
 
         for item_id in ids:
-            item = function(item_id, **kwargs)
+            item = function(item_id)
             if item and hasattr(item, action):
                 getattr(item, action)()
 

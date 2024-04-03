@@ -59,7 +59,6 @@
              ["{}% / ".format(portfolio.share_of_portfolio(portfolios.amount)|smart_round(0.1)),
              " ({}%)".format(portfolio.percent|smart_round) if portfolio.percent else '-']) }}
     {{ i.top("В ордерах", portfolio.in_orders|currency_price(round_to='usd')) }}
-    {{ i.top("Количество активов", portfolio.assets|length) }}
   </div>
 
   <div class="big-table pt-3 pb-3">
@@ -95,12 +94,12 @@
           {% for asset in portfolio.assets %}
             <tr>
               <td>
-                <input class="form-check-input to-check" type="checkbox" value="{{ asset.id }}">
+                <input class="form-check-input to-check" type="checkbox" value="{{ asset.ticker_id }}">
               </td>
 
               <td>
                 <div class="text-average open-modal d-flex gap-2 name" data-modal-id="AssetInfoModal" 
-                  data-url="{{ url_for('.asset_info', portfolio_id=portfolio.id, asset_id=asset.id) }}">
+                  data-url="{{ url_for('.asset_info', portfolio_id=portfolio.id, ticker_id=asset.ticker_id) }}">
 
                   {% if asset.ticker.image %}
                     <img class="img-asset-min" loading="lazy" src="{{ url_for('static', filename='images/tickers/' + portfolio.market + '/24/' + asset.ticker.image) }}">

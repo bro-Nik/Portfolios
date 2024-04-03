@@ -2,9 +2,12 @@ from __future__ import annotations
 from typing import List
 from datetime import datetime, timezone
 
+from flask_login import current_user
 from sqlalchemy.orm import Mapped
 
 from ..app import db
+from ..general_functions import find_by_attr
+from ..portfolio.models import Ticker
 
 
 class WatchlistAsset(db.Model):
@@ -30,6 +33,13 @@ class WatchlistAsset(db.Model):
     @property
     def price(self):
         return self.ticker.price
+
+    def get_alert(self, alert_id: int | str | None) -> Alert | None:
+        return find_by_attr(self.alerts, 'id', alert_id)
+
+    def create_alert(self) -> Alert:
+        alert = Alert()
+        return alert
 
     def delete_if_empty(self) -> None:
         for alert in self.alerts:
@@ -68,11 +78,9 @@ class Alert(db.Model):
     price_ticker: Mapped[Ticker] = db.relationship('Ticker', uselist=False)
 
     def edit(self, form: dict) -> None:
-        from portfolio_tracker.portfolio.utils import get_ticker
-
         self.price = float(form['price'])
         self.price_ticker_id = form['price_ticker_id']
-        self.price_ticker = get_ticker(self.price_ticker_id)
+        self.price_ticker = Ticker.get(self.price_ticker_id)
 
         self.price_usd = self.price / self.price_ticker.price
         self.comment = form['comment']
@@ -96,3 +104,36 @@ class Alert(db.Model):
 
     def convert_order_to_transaction(self):
         self.transaction.convert_order_to_transaction()
+
+
+class Watchlist:
+    def __init__(self):
+        self.assets = []
+
+    @classmethod
+    def get(cls, market=None, status=None):
+        watchlist = Watchlist()
+
+        if market:
+            select = (db.select(WatchlistAsset).distinct()
+                      .filter_by(user_id=current_user.id)
+                      .join(WatchlistAsset.ticker).filter_by(market=market))
+
+            if status:
+                select = select.join(WatchlistAsset.alerts).filter_by(status=status)
+
+            watchlist.assets = tuple(db.session.execute(select).scalars())
+        else:
+            watchlist.assets = current_user.watchlist
+        return watchlist
+
+    def get_asset(self, find_by: str | int | None):
+        if find_by:
+            try:
+                return find_by_attr(current_user.watchlist, 'id', int(find_by))
+            except ValueError:
+                return find_by_attr(current_user.watchlist, 'ticker_id', find_by)
+
+    def create_asset(self, ticker: Ticker) -> WatchlistAsset:
+        asset = WatchlistAsset(ticker=ticker, ticker_id=ticker.id)
+        return asset

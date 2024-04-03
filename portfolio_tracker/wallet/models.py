@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import List
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING, List
 from flask import flash
 from flask_babel import gettext
 
@@ -7,6 +8,12 @@ from flask_login import current_user
 from sqlalchemy.orm import Mapped
 
 from ..app import db
+from ..models import TransactionsMixin
+from ..general_functions import find_by_attr
+
+if TYPE_CHECKING:
+    from ..portfolio.models import Transaction
+    from ..user.models import User
 
 
 class Wallet(db.Model):
@@ -21,6 +28,37 @@ class Wallet(db.Model):
     transactions: Mapped[List[Transaction]] = db.relationship(
         'Transaction', backref=db.backref('wallet', lazy=True,
                                           order_by='Transaction.date.desc()'))
+
+    @classmethod
+    def get(cls, wallet_id: int | str | None,
+            user: User = current_user) -> Wallet | None:
+        return find_by_attr(user.wallets, 'id', wallet_id)
+
+    @classmethod
+    def create(cls, user: User = current_user, first=False) -> Wallet:
+        wallet = Wallet(name=gettext('Кошелек по умолчанию') if first else '')
+        wallet.create_asset(user.currency_ticker)
+        return wallet
+
+    @staticmethod
+    def last(transaction_type: str) -> Wallet:
+        date = result = None
+
+        for wallet in current_user.wallets:
+            transaction = wallet.last_transaction(transaction_type)
+            if transaction:
+                if not date or date < transaction.date:
+                    date = transaction.date
+                    result = wallet
+
+        return result if result else current_user.wallets[-1]
+
+    @staticmethod
+    def get_has_asset(ticker_id: str | None) -> Wallet | None:
+        for wallet in current_user.wallets:
+            asset = wallet.get_asset(ticker_id)
+            if asset and asset.free > 0:
+                return wallet
 
     def edit(self, form: dict) -> None:
         name = form.get('name')
@@ -61,6 +99,29 @@ class Wallet(db.Model):
                 self.assets.append(asset)
             self.cost_now += asset.cost_now
 
+    def get_asset(self, find_by: str | int | None):
+        if find_by:
+            try:
+                return find_by_attr(self.wallet_assets, 'id', int(find_by))
+            except ValueError:
+                return find_by_attr(self.wallet_assets, 'ticker_id', find_by)
+
+    def create_asset(self, ticker: Ticker) -> WalletAsset:
+        asset = WalletAsset(ticker_id=ticker.id,
+                            ticker=ticker,
+                            wallet=self,
+                            wallet_id=self.id,
+                            quantity=0,
+                            buy_orders=0,
+                            sell_orders=0)
+        return asset
+
+    def last_transaction(self, transaction_type: str) -> Transaction | None:
+        transaction_type = transaction_type.lower()
+        for transaction in self.transactions:
+            if transaction.type.lower() == transaction_type:
+                return transaction
+
     def delete_if_empty(self) -> None:
         if self.is_empty():
             self.delete()
@@ -75,7 +136,7 @@ class Wallet(db.Model):
         db.session.delete(self)
 
 
-class WalletAsset(db.Model):
+class WalletAsset(db.Model, TransactionsMixin):
     id = db.Column(db.Integer, primary_key=True)
     wallet_id: int = db.Column(db.Integer, db.ForeignKey('wallet.id'))
     ticker_id: str = db.Column(db.String(256), db.ForeignKey('ticker.id'))
@@ -131,6 +192,20 @@ class WalletAsset(db.Model):
                 else:
                     if is_base_asset:
                         self.sell_orders -= t.quantity
+
+    def create_transaction(self) -> Transaction:
+        """Возвращает новую транзакцию."""
+        from ..portfolio.models import Transaction
+        transaction = Transaction(
+            type='Input' if self.ticker.stable else 'TransferOut',
+            ticker_id=self.ticker_id,
+            base_ticker=self.ticker,
+            date=datetime.now(timezone.utc),
+            wallet_id=self.wallet_id,
+            quantity=0
+        )
+
+        return transaction
 
     def delete_if_empty(self) -> None:
         if self.is_empty():

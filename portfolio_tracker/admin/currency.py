@@ -9,7 +9,7 @@ from ..portfolio.models import PriceHistory
 from .integrations import task_logging
 from .integrations_api import ApiName
 from .integrations_market import MarketIntegration
-from .utils import create_new_ticker, get_tickers, find_ticker_in_list
+from .utils import create_ticker, get_tickers, find_ticker_in_list
 
 if TYPE_CHECKING:
     import requests
@@ -112,7 +112,7 @@ def currency_load_tickers(self) -> None:
         ticker = find_ticker_in_list(external_id, tickers, MARKET)
         # Или добавление нового тикера
         if not ticker:
-            ticker = create_new_ticker(external_id, MARKET)
+            ticker = create_ticker(external_id, MARKET)
             tickers.append(ticker)
             new_ids.append(ticker.id)
 

@@ -23,8 +23,9 @@
 {% if current_user.portfolios %}
 
   <div class="row xs-mb-3">
-    {{ i.top("Вложено", portfolios.amount|currency_price(round_to='usd')) }}
     {{ i.top("Стоимость сейчас", portfolios.cost_now|currency_price(round_to='usd'), portfolios.color) }}
+    {{ i.top("Вложено" if portfolios.amount >= 0 else "Зафиксировано",
+             portfolios.amount|abs|currency_price(round_to='usd')) }}
     {{ i.top("Прибыль",
              [portfolios.profit|currency_price(round_to='usd'),
              " ({}%)".format(portfolios.profit_percent) if portfolios.profit_percent], portfolios.color) }}

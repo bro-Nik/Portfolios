@@ -100,12 +100,6 @@ class User(db.Model, UserMixin):
     def unmake_admin(self) -> None:
         self.type = ''
 
-    def export_data(self) -> None:
-        pass
-
-    def import_data(self, data: dict) -> None:
-        pass
-
 
 class UserInfo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
