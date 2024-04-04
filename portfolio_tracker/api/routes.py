@@ -67,7 +67,7 @@ def wallets_to_sell():
 
     if result:
         result = sorted(result,
-                        key=lambda wallet_: wallet_.get('sort'), reverse=True)
+                        key=lambda wallet: wallet.get('sort'), reverse=True)
     else:
         result = {'message': gettext('В кошельках нет свободных остатков')}
 

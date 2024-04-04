@@ -1,13 +1,11 @@
-from typing import TYPE_CHECKING
-from portfolio_tracker.general_functions import find_by_attr
+from .general_functions import find_by_attr
 
 
 class DetailsMixin:
     def __init__(self):
-        self.free: float = 0
-        self.in_orders: float = 0
-        self.amount: float = 0
-        self.cost_now: float = 0
+        self.cost_now = 0
+        self.in_orders = 0
+        self.amount = 0
 
     @property
     def profit(self):
@@ -15,7 +13,7 @@ class DetailsMixin:
 
     @property
     def profit_percent(self):
-        if self.profit and self.amount:
+        if self.profit and self.amount > 0:
             return abs(round(self.profit / self.amount * 100))
 
     @property
@@ -27,7 +25,7 @@ class DetailsMixin:
             return 'text-red'
 
     def share_of_portfolio(self, parent_amount):
-        if self.amount < 0 or not parent_amount:
+        if self.amount <= 0 or not parent_amount:
             return 0
         return self.amount / parent_amount * 100
 

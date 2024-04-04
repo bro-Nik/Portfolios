@@ -179,31 +179,9 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
         backref=db.backref('portfolio_asset', lazy=True)
     )
 
-    def edit(self, form: dict) -> None:
-        if not self.ticker_id:
-            market = form.get('ticker_id')
-            if market in ('crypto', 'stocks', 'other'):
-                self.market = market
-            else:
-                return
-        comment = form.get('comment')
-        percent = form.get('percent')
-
-        if comment is not None:
-            self.comment = comment
-        if percent is not None:
-            self.percent = percent
-
     @property
     def is_empty(self) -> bool:
         return not (self.transactions or self.comment)
-
-    def get_free(self) -> float:
-        free = self.quantity
-        for transaction in self.transactions:
-            if transaction.order and transaction.type == 'Sell':
-                free += transaction.quantity
-        return free
 
     @property
     def price(self) -> float:
@@ -217,10 +195,17 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
     def cost_now(self) -> float:
         return self.quantity * self.price
 
-    @property
-    def profit_percent(self):
-        if self.quantity and self.average_buy_price:
-            return round(self.profit / (self.average_buy_price * self.quantity) * 100)
+    def edit(self, form: dict) -> None:
+        comment = form.get('comment')
+        percent = form.get('percent')
+
+        if comment is not None:
+            self.comment = comment
+        if percent is not None:
+            self.percent = percent
+
+    def get_free(self) -> float:
+        return sum(transaction.quantity for transaction in self.transactions)
 
     def create_transaction(self) -> Transaction | OtherTransaction:
         """Возвращает новую транзакцию."""
@@ -239,17 +224,14 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
         self.quantity = 0
         self.in_orders = 0
 
-        for transaction in self.transactions:
-            if transaction.type not in ('Buy', 'Sell'):
-                continue
-
-            if transaction.order:
-                if transaction.type == 'Buy':
-                    self.in_orders += transaction.quantity * transaction.price_usd
-
-            else:
-                self.amount += transaction.quantity * transaction.price_usd
-                self.quantity += transaction.quantity
+        for t in self.transactions:
+            if t.type in ('Buy', 'Sell'):
+                if t.order:
+                    if t.type == 'Buy':
+                        self.in_orders += t.quantity * t.price_usd
+                else:
+                    self.amount += t.quantity * t.price_usd
+                    self.quantity += t.quantity
 
     def delete_if_empty(self) -> None:
         if self.is_empty:
@@ -570,35 +552,16 @@ class Portfolio(db.Model, DetailsMixin):
     def is_empty(self) -> bool:
         return not (self.assets or self.other_assets or self.comment)
 
-    def update_price(self) -> None:
+    def update_info(self) -> None:
         self.cost_now = 0
         self.in_orders = 0
         self.amount = 0
 
-        for asset in self.assets:
+        prefix = 'other_' if self.market == 'other' else ''
+        for asset in getattr(self, f'{prefix}assets'):
             self.cost_now += asset.cost_now
-            self.in_orders += asset.in_orders
             self.amount += asset.amount
-
-        for asset in self.other_assets:
-            self.cost_now += asset.cost_now
-            self.amount += asset.amount if asset.amount > 0 else 0
-
-    @property
-    def profit(self):
-        profit = 0
-        for asset in self.assets:
-            profit += asset.profit
-        return profit
-
-    @property
-    def profit_percent(self):
-        spent = 0
-        for asset in self.assets:
-            if asset.quantity and asset.average_buy_price:
-                spent += asset.average_buy_price * asset.quantity
-
-        return round(self.profit / spent * 100) if spent else 0
+            self.in_orders += getattr(asset, 'in_orders', 0)
 
     def get_asset(self, find_by: str | int | None):
         if find_by:

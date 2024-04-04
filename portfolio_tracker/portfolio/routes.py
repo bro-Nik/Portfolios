@@ -189,7 +189,7 @@ def asset_info():
         db.session.commit()
         return ''
 
-    portfolio.update_price()
+    portfolio.update_info()
 
     page = 'other_' if portfolio.market == 'other' else ''
     return render_template(f'portfolio/{page}asset_info.html', asset=asset)

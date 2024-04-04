@@ -10,7 +10,7 @@ class Portfolios(DetailsMixin):
     def __init__(self):
         super().__init__()
         for portfolio in current_user.portfolios:
-            portfolio.update_price()
+            portfolio.update_info()
             self.amount += portfolio.amount
             self.cost_now += portfolio.cost_now
             self.in_orders += portfolio.in_orders

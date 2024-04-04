@@ -1268,7 +1268,7 @@ class TestPortfolioModel(unittest.TestCase):
         self.p1.assets.extend([a1, a2, a3])
         db.session.commit()
 
-        self.p1.update_price()
+        self.p1.update_info()
 
         self.assertEqual(self.p1.cost_now, 14300)
         self.assertEqual(self.p1.in_orders, 1000)
@@ -1281,7 +1281,7 @@ class TestPortfolioModel(unittest.TestCase):
         self.p2.other_assets.extend([a1, a2, a3])
         db.session.commit()
 
-        self.p2.update_price()
+        self.p2.update_info()
 
         self.assertEqual(self.p2.cost_now, 11000)
         self.assertEqual(self.p2.amount, 10500)

@@ -23,7 +23,7 @@
 {% if current_user.portfolios %}
 
   <div class="row xs-mb-3">
-    {{ i.top("Стоимость сейчас", portfolios.cost_now|currency_price(round_to='usd'), portfolios.color) }}
+    {{ i.top("Стоимость сейчас", portfolios.cost_now|currency_price(round_to='usd')) }}
     {{ i.top("Вложено" if portfolios.amount >= 0 else "Зафиксировано",
              portfolios.amount|abs|currency_price(round_to='usd')) }}
     {{ i.top("Прибыль",
