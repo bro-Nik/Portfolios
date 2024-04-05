@@ -41,7 +41,6 @@
       </div>
     </div>
   </div>
-  {% include 'flash_messages.html' %}
 </div>
 
 {% import 'macro_info.html' as i with context %}
@@ -187,5 +186,7 @@
 {% endif %}
 
 {{ i.comment(url_for('.portfolio_settings', portfolio_id=portfolio.id), portfolio.comment) }}
+
+{% include 'flash_messages.html' %}
 
 {% endblock %}

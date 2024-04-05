@@ -18,9 +18,7 @@
 
 <div id="wrapper">
 
-  <div id="content" class="p-5 fade">
-    {% block content %}{% endblock %}
-  </div>
+  <div id="content" class="p-5 fade">{% block content %}{% endblock %}</div>
 
   <div id="Modals">
     <!-- Modal Confirmation -->
@@ -47,6 +45,9 @@
   <div id="footer">{% block footer %}{% endblock %}</div>
 
 </div>
+
+{% include 'toasts.html' %}
+
 <script>
   var trans = {
     btn_save: "{{ gettext('Сохранить') }}",
@@ -63,6 +64,7 @@
 <script src="{{ url_for('static', filename='bootstrap-table/bootstrap-table.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/smart-select.js') }}"></script>
 <script src="{{ url_for('static', filename='js/convert-to.js') }}"></script>
+<script src="{{ url_for('static', filename='js/toasts.js') }}"></script>
 <script src="{{ url_for('static', filename='js/portfolios.js') }}"></script>
 {% block after_scripts %}{% endblock %}
 
@@ -73,6 +75,7 @@
   setTimeout(updateAlerts, 1000);
   setInterval(updateAlerts,100000);
 </script>
+
 
 </body>
 </html>

@@ -30,9 +30,7 @@
 
 
   function UpdateTickers(type, page) {
-    if (tickers_loading_started) {
-      return false;
-    }
+    if (tickers_loading_started) return false;
 
     tickers_loading_started = true;
 
@@ -40,24 +38,14 @@
       url = "{{ url_for('portfolio.asset_add_tickers', market=market)}}",
       search = $('#AssetsGeneralBox .search input').val();
 
-    url += "?page=" + page;
-    if (search) {
-      url += "&search=" + search;
-    }
-
+    url += `?page=${page}${search ? "&search=" + search : ""}`;
     $.get(url, function (data) {
       if (data == 'end') {
-        if (type == 'search') {
-          $assetsList.html(trans.nothing_found);
-        } else {
-          end_of_tickers = true;
-        }
+        if (type == 'search') $assetsList.html(trans.nothing_found);
+        else end_of_tickers = true;
       } else {
-        if (type == 'search') {
-          $assetsList.empty().append(data);
-        } else {
-          $assetsList.append(data);
-        }
+        if (type == 'search') $assetsList.empty().append(data);
+        else $assetsList.append(data);
         $assetsList.attr('data-page', page);
       }
 
@@ -91,9 +79,9 @@ $('#AssetsList').on("click", '.select-asset', function () {
     $modal = $(this).closest('.modal'),
     pre_modal_id = $modal.attr('data-pre-modal-id');
 
-    url += (url.indexOf("?") > 0 ? "&" : "?") + "ticker_id=" + ticker_id;
+  url += `${url.indexOf("?") > 0 ? "&" : "?"}ticker_id=${ticker_id}`;
 
-  $.get(url).done(function (data) {
+  $.post(url).done(function (data) {
     if (data) {
       $modal.addClass('not-update').modal('hide');
       LoadToModal('AssetInfoModal', data, true, pre_modal_id);

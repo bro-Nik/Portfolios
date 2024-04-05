@@ -30,7 +30,6 @@
       </button>
     </div>
   </div>
-  {% include 'flash_messages.html' %}
 </div>
 
 {% if asset.alerts %}
@@ -149,5 +148,7 @@
 
 {% import 'macro_info.html' as i with context %}
 {{ i.comment(url_for('.asset_settings', ticker_id=ticker.id), asset.comment) }}
+
+{% include 'flash_messages.html' %}
 
 {% endblock %}

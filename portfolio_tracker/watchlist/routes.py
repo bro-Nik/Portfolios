@@ -4,7 +4,7 @@ from flask import abort, render_template, session, url_for, request
 from flask_login import login_required
 
 from ..app import db
-from ..wraps import demo_user_change
+from ..wraps import closed_for_demo_user
 from ..general_functions import actions_in
 from ..portfolio.models import Ticker
 from .models import Watchlist
@@ -13,7 +13,7 @@ from . import bp
 
 @bp.route('/', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def assets():
     """Watchlist page and actions on assets."""
     market = request.args.get('market',
@@ -32,9 +32,9 @@ def assets():
                            market=market, status=status)
 
 
-@bp.route('/add_asset', methods=['GET'])
+@bp.route('/add_asset', methods=['POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def asset_add():
     """ Add to Tracking list """
     watchlist = Watchlist.get()
@@ -50,7 +50,7 @@ def asset_add():
 
 @bp.route('/asset_info', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def asset_info():
     """Asset page and actions on alerts."""
     watchlist = Watchlist.get()
@@ -77,7 +77,7 @@ def asset_info():
 
 @bp.route('/asset_settings', methods=['POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def asset_settings():
     watchlist = Watchlist.get()
     asset = watchlist.get_asset(request.args.get('ticker_id')) or abort(404)
@@ -90,7 +90,7 @@ def asset_settings():
 
 @bp.route('/alert', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def alert_info():
     watchlist = Watchlist.get()
     ticker_id = request.args.get('ticker_id')
@@ -98,14 +98,17 @@ def alert_info():
     if not asset:
         ticker = Ticker.get(ticker_id) or abort(404)
         asset = watchlist.create_asset(ticker)
-        watchlist.assets.append(asset)
 
     alert = asset.get_alert(request.args.get('alert_id')
                             ) or asset.create_alert()
 
     # Apply
     if request.method == 'POST':
-        asset.alerts.append(alert)
+        if asset not in watchlist.assets:
+            watchlist.assets.append(asset)
+        if alert not in asset.alerts:
+            asset.alerts.append(alert)
+
         alert.asset_id = request.args.get('asset_id')
         alert.edit(request.form)
         db.session.commit()

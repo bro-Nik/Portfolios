@@ -6,7 +6,7 @@ from flask_login import login_user, login_required, current_user, logout_user
 
 from ..app import db
 from ..settings import LANGUAGES
-from ..wraps import demo_user_change
+from ..wraps import closed_for_demo_user
 from ..wallet.models import Wallet
 from . import bp, utils
 
@@ -44,7 +44,7 @@ def register():
 
 @bp.route('/change_password', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['GET', 'POST'])
 def change_password():
 
     if request.method == 'POST':
@@ -55,17 +55,18 @@ def change_password():
             if new_pass == request.form.get('new_pass2'):
                 current_user.set_password(new_pass)
                 db.session.commit()
-                flash(gettext('Пароль обновлен'), 'success')
+                flash(gettext('Пароль обновлен'))
             else:
-                flash(gettext('Новые пароли не совпадают'), 'danger')
+                flash(gettext('Новые пароли не совпадают'), 'warning')
         else:
-            flash(gettext('Не верный старый пароль'), 'danger')
+            flash(gettext('Не верный старый пароль'), 'warning')
 
     return render_template('user/password.html', locale=utils.get_locale())
 
 
 @bp.route('/logout')
 @login_required
+@closed_for_demo_user(['GET', 'POST'])
 def logout():
     """Выводит пользователя из системы."""
     logout_user()
@@ -83,6 +84,7 @@ def redirect_to_signin(response):
 
 @bp.route('/user_action', methods=['POST'])
 @login_required
+@closed_for_demo_user(['GET', 'POST'])
 def user_action():
     data = json.loads(request.data) if request.data else {}
     action = data.get('action')
@@ -97,7 +99,7 @@ def user_action():
         wallet = Wallet.create(first=True)
         current_user.wallets.append(wallet)
         db.session.commit()
-        flash(gettext('Профиль очищен'), 'success')
+        flash(gettext('Профиль очищен'))
 
     return ''
 
@@ -110,6 +112,7 @@ def demo_user():
 
 @bp.route('/settings_profile')
 @login_required
+@closed_for_demo_user(['GET', 'POST'])
 def settings_profile():
     return render_template('user/settings_profile.html')
 

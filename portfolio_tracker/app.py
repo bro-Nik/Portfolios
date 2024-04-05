@@ -11,6 +11,7 @@ from celery import Celery
 import redis
 import sentry_sdk
 
+
 from .settings import Config
 
 
@@ -32,6 +33,7 @@ celery = Celery()
 redis = redis.StrictRedis('127.0.0.1', 6379)
 
 from .user.utils import get_locale, get_timezone
+from .errors.handlers import init_request_errors
 
 
 def create_app(config_class=Config):
@@ -50,6 +52,7 @@ def create_app(config_class=Config):
     register_blueprints(app)
 
     configure_logging(app)
+    init_request_errors(app)
 
     return app
 

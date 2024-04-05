@@ -205,7 +205,8 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
             self.percent = percent
 
     def get_free(self) -> float:
-        return sum(transaction.quantity for transaction in self.transactions)
+        return sum(t.quantity for t in self.transactions
+                   if not (t.order and t.type == 'Buy'))
 
     def create_transaction(self) -> Transaction | OtherTransaction:
         """Возвращает новую транзакцию."""
@@ -238,7 +239,7 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
             self.delete()
         else:
             flash(gettext('В активе %(name)s есть транзакции',
-                          name=self.ticker.name), 'danger')
+                          name=self.ticker.name), 'warning')
 
     def delete(self) -> None:
         for transaction in self.transactions:
@@ -324,7 +325,7 @@ class OtherAsset(db.Model, DetailsMixin, TransactionsMixin):
             self.delete()
         else:
             flash(gettext('Актив %(name)s не пустой',
-                          name=self.name), 'danger')
+                          name=self.name), 'warning')
 
     def delete(self) -> None:
         for body in self.bodies:
@@ -587,7 +588,7 @@ class Portfolio(db.Model, DetailsMixin):
             self.delete()
         else:
             flash(gettext('В портфеле %(name)s есть транзакции',
-                          name=self.name), 'danger')
+                          name=self.name), 'warning')
 
     def delete(self) -> None:
         for asset in self.assets:

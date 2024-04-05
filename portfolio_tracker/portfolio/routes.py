@@ -4,7 +4,7 @@ from flask import abort, render_template, session, url_for, request
 from flask_login import current_user, login_required
 
 from ..general_functions import actions_in
-from ..wraps import demo_user_change
+from ..wraps import closed_for_demo_user
 from ..wallet.models import Wallet
 from .models import db, OtherAsset, Portfolio, Ticker
 from .utils import Portfolios
@@ -13,7 +13,7 @@ from . import bp
 
 @bp.route('/', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def portfolios():
     """Portfolios page and actions on portfolios."""
     # Actions
@@ -28,7 +28,7 @@ def portfolios():
 
 @bp.route('/portfolio_settings', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def portfolio_settings():
     """Portfolio settings."""
     portfolio = Portfolio.get(request.args.get('portfolio_id')
@@ -49,7 +49,7 @@ def portfolio_settings():
 
 @bp.route('/<int:portfolio_id>', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def portfolio_info(portfolio_id):
     """Portfolio page and actions on assets."""
     portfolio = Portfolio.get(portfolio_id) or abort(404)
@@ -65,12 +65,34 @@ def portfolio_info(portfolio_id):
                            portfolio=portfolio, portfolios=Portfolios())
 
 
-@bp.route('/<string:market>/add_asset_modal', methods=['GET'])
+@bp.route('/asset_add', methods=['GET', 'POST'])
 @login_required
-def asset_add_modal(market):
+@closed_for_demo_user(['POST'])
+def asset_add():
     """Modal window to add asset."""
+    portfolio_id = request.args.get('portfolio_id')
+    market = request.args.get('market')
+
+    if request.method == 'POST':
+        # Add asset to portfolio
+        portfolio = Portfolio.get(portfolio_id) or abort(404)
+        ticker_id = request.args.get('ticker_id')
+        asset = portfolio.get_asset(ticker_id)
+        if not asset:
+            ticker = Ticker.get(ticker_id) or abort(404)
+            if ticker.market != portfolio.market:
+                abort(404)
+
+            asset = portfolio.create_asset(ticker)
+            portfolio.assets.append(asset)
+            db.session.commit()
+
+        return str(url_for('.asset_info',
+                           only_content=request.args.get('only_content'),
+                           portfolio_id=portfolio.id, asset_id=asset.id))
+
     return render_template('portfolio/add_asset_modal.html', market=market,
-                           portfolio_id=request.args.get('portfolio_id'))
+                           portfolio_id=portfolio_id)
 
 
 @bp.route('/<string:market>/add_asset_tickers', methods=['GET'])
@@ -93,27 +115,9 @@ def asset_add_tickers(market):
     return render_template('portfolio/add_asset_tickers.html', tickers=tickers)
 
 
-@bp.route('/add_asset', methods=['GET'])
-@login_required
-@demo_user_change
-def asset_add():
-    """Add asset to portfolio."""
-    portfolio = Portfolio.get(request.args.get('portfolio_id')) or abort(404)
-    ticker_id = request.args.get('ticker_id')
-    asset = portfolio.get_asset(ticker_id)
-    if not asset:
-        ticker = Ticker.get(ticker_id) or abort(404)
-        asset = portfolio.create_asset(ticker)
-        portfolio.assets.append(asset)
-        db.session.commit()
-
-    return str(url_for('.asset_info',
-                       only_content=request.args.get('only_content'),
-                       portfolio_id=portfolio.id, asset_id=asset.id))
-
-
 @bp.route('/asset_settings', methods=['GET', 'POST'])
 @login_required
+@closed_for_demo_user(['POST'])
 def asset_settings():
     """Asset settings."""
     portfolio = Portfolio.get(request.args.get('portfolio_id')) or abort(404)
@@ -140,6 +144,7 @@ def asset_settings():
 
 @bp.route('/asset_transfer', methods=['GET', 'POST'])
 @login_required
+@closed_for_demo_user(['POST'])
 def asset_transfer():
     """Asset settings."""
     portfolio = Portfolio.get(request.args.get('portfolio_id')) or abort(404)
@@ -172,7 +177,7 @@ def asset_transfer():
 
 @bp.route('/asset_info', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def asset_info():
     """Asset page and actions on transactions."""
     portfolio = Portfolio.get(request.args.get('portfolio_id')) or abort(404)
@@ -197,7 +202,7 @@ def asset_info():
 
 @bp.route('/transaction_info', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def transaction_info():
     """Transaction info."""
     portfolio = Portfolio.get(request.args.get('portfolio_id')) or abort(404)
@@ -238,7 +243,7 @@ def transaction_info():
 
 @bp.route('/other_asset_body', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def body_info():
     """Other body info."""
     portfolio = Portfolio.get(request.args.get('portfolio_id')) or abort(404)

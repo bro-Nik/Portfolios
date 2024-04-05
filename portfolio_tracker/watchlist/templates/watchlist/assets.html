@@ -28,13 +28,12 @@
     {% if not modal %}
       <div class="col-auto ms-auto">
         <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal"
-          data-url="{{ url_for('portfolio.asset_add_modal', market=market) }}">
+          data-url="{{ url_for('portfolio.asset_add', market=market) }}">
           {% trans %}Добавить актив{% endtrans %}
         </button>
       </div>
     {% endif %}
   </div>
-  {% include 'flash_messages.html' %}
 </div>
 
 <nav class="nav nav-underline market-menu">
@@ -142,5 +141,7 @@
 {% else %}
   {% include 'nothing.html' %}
 {% endif %}
+
+{% include 'flash_messages.html' %}
 
 {% endblock %}

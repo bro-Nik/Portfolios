@@ -52,7 +52,6 @@
       </div>
     </div>
   </div>
-  {% include 'flash_messages.html' %}
 </div>
 
 {% import 'macro_info.html' as i with context %}
@@ -230,5 +229,7 @@
 {% else %}
   {% include 'nothing.html' %}
 {% endif %}
+
+{% include 'flash_messages.html' %}
 
 {% endblock %}

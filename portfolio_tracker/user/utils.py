@@ -43,18 +43,17 @@ def register(form: dict) -> bool:
 
     if not (email and password and password2):
         flash(gettext('Заполните адрес электронной почты, '
-                      'пароль и подтверждение пароля'), 'danger')
+                      'пароль и подтверждение пароля'), 'warning')
 
     elif find_user(email=email):
-        flash(gettext('Данный почтовый ящик уже используется'), 'danger')
+        flash(gettext('Данный почтовый ящик уже используется'), 'warning')
 
     elif password != password2:
-        flash(gettext('Пароли не совпадают'), 'danger')
+        flash(gettext('Пароли не совпадают'), 'warning')
 
     else:
         create_user(email, password)
-        flash(gettext('Вы зарегистрированы. Теперь войдите в систему'),
-              'success')
+        flash(gettext('Вы зарегистрированы. Теперь войдите в систему'))
         return True
     return False
 
@@ -67,7 +66,7 @@ def login(form: dict) -> bool:
 
     # Поля не заполнены
     if not email or not password:
-        flash(gettext('Введити адрес электронной почты и пароль'), 'danger')
+        flash(gettext('Введити адрес электронной почты и пароль'), 'warning')
         return False
 
     # Поиск прошлых попыток входа
@@ -86,16 +85,15 @@ def login(form: dict) -> bool:
             m = int(delta // 60)
             s = delta - 60 * m if m else delta
 
-            flash(gettext('Вход заблокирован'), 'danger')
-            flash(gettext('Осталось %(m)s мин. %(s)s сек.', m=m, s=round(s)),
-                  'danger')
+            flash(gettext('Вход заблокирован. Осталось %(m)s мин. %(s)s сек.',
+                          m=m, s=round(s)), 'warning')
             return False
 
     user = find_user(email=email)
 
     # Пользователь не найден
     if not user:
-        flash(gettext('Неверный адрес электронной почты или пароль'), 'danger')
+        flash(gettext('Неверный адрес электронной почты или пароль'), 'warning')
         return False
 
     # Проверка пройдена
@@ -106,13 +104,13 @@ def login(form: dict) -> bool:
         return True
 
     # Проверка не пройдена
-    flash(gettext('Неверный адрес электронной почты или пароль'), 'danger')
+    flash(gettext('Неверный адрес электронной почты или пароль'), 'warning')
     login_attempts.setdefault('count', 0)
     login_attempts['count'] += 1
     if login_attempts['count'] >= 5:
         next_try = datetime.now(timezone.utc) + timedelta(minutes=10)
         login_attempts['next_try_time'] = str(next_try)
-        flash(gettext('Вход заблокирован на 10 минут'), 'danger')
+        flash(gettext('Вход заблокирован на 10 минут'), 'warning')
 
     redis.hset(redis_key, email, json.dumps(login_attempts))
     return False

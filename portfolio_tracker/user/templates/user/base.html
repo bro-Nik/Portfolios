@@ -1,0 +1,44 @@
+{# Jinja #}
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8" />
+  <title>{% block title %}{% endblock %} | Portfolios</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" />
+  <link href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
+  <style>
+    form {width: 330px;}
+    body {background-color: #f5f5f5;}
+  </style>
+</head>
+
+<body class="d-flex align-items-center flex-column">
+  <main class="m-auto">
+
+    <form method="post">
+
+      <a href="{{ url_for('page.index') }}" class="d-flex align-items-center mb-5 justify-content-center link-body-emphasis text-decoration-none">
+        <img class="mb-0 me-2" src="{{ url_for('static', filename='favicon.png') }}" alt="" width="32" height="32" />
+        <span class="fs-4">Portfolios</span>
+      </a>
+
+      {% block content %}{% endblock %}
+      {% include 'toasts.html' %}
+      {% include 'flash_messages.html' %}
+
+    </form>
+  </main>
+
+<script src="{{ url_for('static', filename='js/jquery-3.6.4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/toasts.js') }}"></script>
+<script>
+  var $messages_box = $('script[data-selector="flashed-messages-page-data-js"]');
+  if($messages_box.length) NewToasts(JSON.parse($messages_box.html()));
+</script>
+
+
+</body>
+</html>

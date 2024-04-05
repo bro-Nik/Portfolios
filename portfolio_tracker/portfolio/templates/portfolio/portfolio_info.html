@@ -11,7 +11,7 @@
     </div>
     <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal" type="button" data-modal-id="AddAssetModal"
-        data-url="{{ url_for('portfolio.asset_add_modal', market=portfolio.market, portfolio_id=portfolio.id) }}">
+        data-url="{{ url_for('portfolio.asset_add', market=portfolio.market, portfolio_id=portfolio.id) }}">
         {% trans %}Добавить актив{% endtrans %}
       </button>
 
@@ -42,7 +42,6 @@
 
     </div>
   </div>
-  {% include 'flash_messages.html' %}
 </div>
 
 {% import 'macro_info.html' as i with context %}
@@ -217,5 +216,7 @@
 {% endif %}
 
 {{ i.comment(url_for('.portfolio_settings', portfolio_id=portfolio.id), portfolio.comment) }}
+
+{% include 'flash_messages.html' %}
 
 {% endblock %}

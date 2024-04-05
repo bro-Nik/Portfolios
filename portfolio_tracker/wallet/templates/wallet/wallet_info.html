@@ -13,7 +13,7 @@
 
     <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal" type="button" data-modal-id="StableModal"
-        data-url="{{ url_for('.stable_add_modal', wallet_id=wallet.id) }}">
+        data-url="{{ url_for('.stable_add', wallet_id=wallet.id) }}">
         {% trans %}Добавить{% endtrans %}
       </button>
       <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
@@ -271,5 +271,7 @@
 </div>
 
 {{ i.comment(url_for('.wallet_settings', wallet_id=wallet.id), wallet.comment) }}
+
+{% include 'flash_messages.html' %}
 
 {% endblock %}

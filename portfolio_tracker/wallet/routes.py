@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 
 from ..app import db
 from ..general_functions import actions_in
-from ..wraps import demo_user_change
+from ..wraps import closed_for_demo_user
 from ..portfolio.models import Ticker
 from ..wallet.models import Wallet
 from .utils import Wallets
@@ -12,7 +12,7 @@ from . import bp
 
 @bp.route('/', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def wallets():
     """Wallets page and actions on wallets."""
     # Actions
@@ -31,7 +31,7 @@ def wallets():
 
 @bp.route('/wallet_settings', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def wallet_settings():
     """Wallet settings."""
     wallet = Wallet.get(request.args.get('wallet_id')) or Wallet.create()
@@ -50,7 +50,7 @@ def wallet_settings():
 
 @bp.route('/wallet_info', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def wallet_info():
     """Wallet page and actions on assets."""
     wallet = Wallet.get(request.args.get('wallet_id')) or abort(404)
@@ -67,7 +67,7 @@ def wallet_info():
 
 @bp.route('/asset_info', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def asset_info():
     """Asset page and actions on transactions."""
     wallet = Wallet.get(request.args.get('wallet_id')) or abort(404)
@@ -84,11 +84,27 @@ def asset_info():
     return render_template('wallet/asset_info.html', asset=asset)
 
 
-@bp.route('/add_stable_modal', methods=['GET'])
+@bp.route('/add_stable', methods=['GET', 'POST'])
 @login_required
-def stable_add_modal():
-    return render_template('wallet/add_stable_modal.html',
-                           wallet_id=request.args.get('wallet_id'))
+@closed_for_demo_user(['POST'])
+def stable_add():
+    wallet_id = request.args.get('wallet_id')
+
+    if request.method == 'POST':
+        ticker_id = request.args.get('ticker_id')
+        wallet = Wallet.get(wallet_id) or abort(404)
+        asset = wallet.get_asset(ticker_id)
+        if not asset:
+            ticker = Ticker.get(ticker_id) or abort(404)
+            asset = wallet.create_asset(ticker)
+            wallet.wallet_assets.append(asset)
+            db.session.commit()
+
+        return str(url_for('.asset_info',
+                           only_content=request.args.get('only_content'),
+                           wallet_id=wallet.id, ticker_id=ticker.id))
+
+    return render_template('wallet/add_stable_modal.html', wallet_id=wallet_id)
 
 
 @bp.route('/add_stable_tickers', methods=['GET'])
@@ -111,26 +127,9 @@ def stable_add_tickers():
     return 'end'
 
 
-@bp.route('/add_stable', methods=['GET'])
-@login_required
-def stable_add():
-    ticker_id = request.args.get('ticker_id')
-    wallet = Wallet.get(request.args.get('wallet_id')) or abort(404)
-    asset = wallet.get_asset(ticker_id)
-    if not asset:
-        ticker = Ticker.get(ticker_id) or abort(404)
-        asset = wallet.create_asset(ticker)
-        wallet.wallet_assets.append(asset)
-        db.session.commit()
-
-    return str(url_for('.asset_info',
-                       only_content=request.args.get('only_content'),
-                       wallet_id=wallet.id, ticker_id=ticker.id))
-
-
 @bp.route('/transaction', methods=['GET', 'POST'])
 @login_required
-@demo_user_change
+@closed_for_demo_user(['POST'])
 def transaction_info():
     wallet = Wallet.get(request.args.get('wallet_id')) or abort(404)
     find_by = request.args.get('ticker_id') or request.args.get('asset_id')

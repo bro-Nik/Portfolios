@@ -1,6 +1,4 @@
-{% set only_content = request.args.get('only_content') %}
-
-{% if not only_content %}
+{% if not request.args.get('only_content') %}
   {% extends "base.html" %}
   {% block title %}{% trans %}Настройки{% endtrans %}{% endblock %}
 {% endif %}
@@ -12,14 +10,10 @@
       <h1>{% trans %}Настройки{% endtrans %}</h1>
     </div>
   </div>
-  {% include 'flash_messages.html' %}
 </div>
 
 <nav class="nav nav-underline market-menu mb-5">
   <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_profile') }}" href="{{ url_for('.settings_profile') }}">{% trans %}Профиль{% endtrans %}</a>
-  {#}
-  <a class="nav-link {{ 'active disabled' if request.path == url_for('.settings_export_import') }}" href="{{ url_for('.settings_export_import') }}">{% trans %}Экспорт{% endtrans %}/{% trans %}Импорт{% endtrans %}</a>
-  {#}
 </nav>
 
 <div class="row">
@@ -50,6 +44,8 @@
     </form>
   </div>
 </div>
+
+{% include 'flash_messages.html' %}
 
 {% endblock %}
 

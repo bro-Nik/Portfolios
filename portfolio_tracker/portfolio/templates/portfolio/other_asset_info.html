@@ -281,4 +281,6 @@
 
 {{ i.comment(url_for('.asset_settings', portfolio_id=asset.portfolio_id, asset_id=asset.id), asset.comment) }}
 
+{% include 'flash_messages.html' %}
+
 {% endblock %}

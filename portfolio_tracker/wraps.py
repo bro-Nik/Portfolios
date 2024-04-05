@@ -1,4 +1,5 @@
 from functools import wraps
+from typing import List
 
 from flask import request, redirect, url_for, abort, flash
 from flask_babel import gettext
@@ -17,11 +18,15 @@ def admin_only(func):
     return decorated_function
 
 
-def demo_user_change(func):
-    @wraps(func)
-    def decorated_function(*args, **kwargs):
-        if current_user.type == 'demo':
-            flash(gettext('Демо юзер не может вносить изменения'), 'warning')
-            return ''
-        return func(*args, **kwargs)
-    return decorated_function
+def closed_for_demo_user(methods: List):
+    def actual_decorator(func):
+        @wraps(func)
+        def decorated_function(*args, **kwargs):
+            if current_user.type == 'demo' and request.method in methods:
+                if request.method == 'POST':
+                    flash(gettext('Демо юзер не может вносить изменения'), 'warning')
+                    return ''
+                abort(403)
+            return func(*args, **kwargs)
+        return decorated_function
+    return actual_decorator

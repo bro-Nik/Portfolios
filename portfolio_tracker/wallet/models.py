@@ -37,6 +37,9 @@ class Wallet(db.Model):
     @classmethod
     def create(cls, user: User = current_user, first=False) -> Wallet:
         wallet = Wallet(name=gettext('Кошелек по умолчанию') if first else '')
+        if not user.currency_ticker:
+            from ..portfolio.models import Ticker
+            user.currency_ticker = Ticker.get(user.currency_ticker_id)
         wallet.create_asset(user.currency_ticker)
         return wallet
 
@@ -128,7 +131,7 @@ class Wallet(db.Model):
             self.delete()
         else:
             flash(gettext('Кошелек %(name)s не пустой',
-                          name=self.name), 'danger')
+                          name=self.name), 'warning')
 
     def delete(self) -> None:
         for asset in self.wallet_assets:
@@ -216,7 +219,7 @@ class WalletAsset(db.Model, TransactionsMixin):
             self.delete()
         else:
             flash(gettext('В активе %(name)s есть транзакции',
-                          name=self.ticker.name), 'danger')
+                          name=self.ticker.name), 'warning')
 
     def delete(self) -> None:
         for transaction in self.transactions:

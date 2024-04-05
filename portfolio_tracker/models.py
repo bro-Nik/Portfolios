@@ -6,6 +6,7 @@ class DetailsMixin:
         self.cost_now = 0
         self.in_orders = 0
         self.amount = 0
+        self.free = 0
 
     @property
     def profit(self):
