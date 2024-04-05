@@ -140,6 +140,7 @@ def change_locale():
 @bp.route('/change_currency', methods=['GET'])
 def change_currency():
     currency = request.args.get('value')
+    print(currency)
     if current_user.is_authenticated and current_user.type != 'demo':
         current_user.change_currency(currency)
         db.session.commit()

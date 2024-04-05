@@ -51,14 +51,14 @@
       <select class="form-select border-0 link-secondary bg-transparent"
         data-url="{{ url_for('user.ajax_locales') }}"
         data-action-url="{{ url_for('user.change_locale') }}">
-        <option selected value="{{ current_user.locale }}">{{ current_user.locale|upper }}</option>
+        <option selected value="{{ current_user|get_locale }}">{{ current_user|get_locale|upper }}</option>
       </select>
     </div>
     <div>
       <select class="form-select border-0 link-secondary bg-transparent"
         data-url="{{ url_for('api.all_currencies') }}"
         data-action-url="{{ url_for('user.change_currency') }}">
-        <option selected value="{{ current_user.currency }}">{{ current_user.currency|upper }}</option>
+        <option selected value="{{ current_user|get_currency }}">{{ current_user|get_currency|upper }}</option>
       </select>
     </div>
   </div>

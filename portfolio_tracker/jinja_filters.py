@@ -6,6 +6,8 @@ from flask import Blueprint
 from flask_babel import Locale
 from flask_login import current_user
 
+from .user.utils import get_currency, get_locale
+
 
 bp = Blueprint('jinja_filters', __name__)
 
@@ -141,3 +143,5 @@ bp.add_app_template_filter(percent)
 bp.add_app_template_filter(share_of)
 bp.add_app_template_filter(profit)
 bp.add_app_template_filter(color)
+bp.add_app_template_filter(get_locale)
+bp.add_app_template_filter(get_currency)

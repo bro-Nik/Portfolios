@@ -3,8 +3,8 @@ from typing import List
 from datetime import datetime, timezone
 import requests
 
-from flask import current_app, request
-from flask_login import UserMixin
+from flask import current_app, request, session
+from flask_login import UserMixin, current_user
 from sqlalchemy.orm import Mapped
 from werkzeug.security import check_password_hash, generate_password_hash
 

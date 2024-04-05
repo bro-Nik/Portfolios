@@ -120,16 +120,14 @@ def get_demo_user() -> User | None:
     return db.session.execute(db.select(User).filter_by(type='demo')).scalar()
 
 
-def get_locale() -> str:
-    u = current_user
+def get_locale(u: User = current_user) -> str:
     if u.is_authenticated and u.type != 'demo' and u.locale:
         return u.locale
     return (session.get('locale')
             or request.accept_languages.best_match(LANGUAGES.keys()) or 'en')
 
 
-def get_currency() -> str:
-    u = current_user
+def get_currency(u: User = current_user) -> str:
     if u.is_authenticated and u.type != 'demo' and u.currency:
         return u.currency
     return session.get('currency', 'usd')
