@@ -104,9 +104,40 @@ def user_datetime(date: datetime, not_format: bool = False) -> str:
     return format_datetime(date, 'short', locale=locale)
 
 
-# bp.add_app_template_filter(smart_int)
+def percent(obj):
+    percent = smart_round(getattr(obj, 'percent', 0))
+    return f'{percent}%' if percent > 0 else '-'
+
+
+def share_of(obj, parent_amount):
+    if obj.amount <= 0 or parent_amount <= 0:
+        return '-'
+    return f'{smart_round(obj.amount / parent_amount * 100, 0.1)}%'
+
+
+def profit(obj):
+    profit = currency_price(obj.profit, round_to='usd')
+    percent_str = ''
+    if obj.profit and obj.amount > 0:
+        percent = abs(round(obj.profit / obj.amount * 100))
+        percent_str = f' ({percent}%)' if percent else ''
+    return f'{profit}{percent_str}' if profit else '-'
+
+
+def color(obj):
+    round_profit = round(obj.profit)
+    if round_profit > 0:
+        return 'text-green'
+    if round_profit < 0:
+        return 'text-red'
+
+
 bp.add_app_template_filter(smart_round)
 bp.add_app_template_filter(long_number)
 bp.add_app_template_filter(currency_price)
 bp.add_app_template_filter(currency_quantity)
 bp.add_app_template_filter(user_datetime)
+bp.add_app_template_filter(percent)
+bp.add_app_template_filter(share_of)
+bp.add_app_template_filter(profit)
+bp.add_app_template_filter(color)

@@ -76,6 +76,7 @@ class Transaction(db.Model):
         # Уведомление
         alert = self.alert
         if not self.order and alert:
+            alert.transaction_id = None
             alert.delete()
         elif self.order:
             if not alert:
@@ -557,11 +558,13 @@ class Portfolio(db.Model, DetailsMixin):
         self.cost_now = 0
         self.in_orders = 0
         self.amount = 0
+        self.invested = 0
 
         prefix = 'other_' if self.market == 'other' else ''
         for asset in getattr(self, f'{prefix}assets'):
             self.cost_now += asset.cost_now
             self.amount += asset.amount
+            self.invested += asset.amount if asset.amount > 0 else 0
             self.in_orders += getattr(asset, 'in_orders', 0)
 
     def get_asset(self, find_by: str | int | None):

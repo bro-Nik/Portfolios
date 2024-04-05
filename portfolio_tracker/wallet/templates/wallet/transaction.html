@@ -82,6 +82,7 @@
       type = $(this).val(),
       asset_free = +{{ asset.free|long_number }};
 
+    console.log(type)
     if ('TransferOut'.includes(type)) {
       $form.find('.wallet').slideDown(500).find('select').attr('required', true);
     } else {

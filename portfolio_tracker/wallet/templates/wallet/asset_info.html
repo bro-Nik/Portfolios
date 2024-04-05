@@ -24,7 +24,7 @@
     </div>
 
     <div class="col-auto ms-auto">
-      <button class="btn btn-primary open-modal focus" type="button" data-modal-id="WalletInOutferModal"
+      <button class="btn btn-primary open-modal focus" type="button" data-modal-id="TransactionModal"
         data-url="{{ url_for('.transaction_info', wallet_id=asset.wallet_id, ticker_id=ticker.id) }}">
         {% trans %}Добавить транзакцию{% endtrans %}
       </button>
@@ -159,10 +159,12 @@
                 {% endif %}
               </td>
               <td>
-                {% if other_currency %}
-                  {{ '+' if quantity2 > 0 }}{{ quantity2|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }}<br>
+                {% if transaction.portfolio_asset %}
+                  {% if other_currency %}
+                    {{ '+' if quantity2 > 0 }}{{ quantity2|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }}<br>
+                  {% endif %}
+                  {{ '+' if quantity2 > 0 }}{{ (quantity * transaction.price_usd * -1)|currency_price(round_to='usd') }}<br>
                 {% endif %}
-                {{ '+' if quantity2 > 0 }}{{ (quantity * transaction.price_usd * -1)|currency_price(round_to='usd') }}<br>
                 <span class="text-average small-text {{ color }}">
                   {{ '+' if transaction.quantity > 0 }}{{ transaction.quantity|currency_quantity(round_to=ticker.price, currency=ticker.symbol) }}
                 </span>

@@ -84,12 +84,8 @@
     {{ i.top("Стоимость сейчас", asset.cost_now|currency_price(round_to='usd')) }}
     {{ i.top("Вложено" if asset.amount >= 0 else "Зафиксировано",
              asset.amount|abs|currency_price(round_to='usd')) }}
-    {{ i.top("Прибыль",
-             [asset.profit|currency_price(round_to='usd'),
-             " ({}%)".format(asset.profit_percent) if asset.profit_percent], asset.color) }}
-    {{ i.top("Доля от портфеля",
-             ["{}%".format(asset.share_of_portfolio(asset.portfolio.amount)|smart_round(0.1)), " / ",
-             "{}%".format(asset.percent|smart_round) if asset.percent else '-']) }}
+    {{ i.top("Прибыль", asset|profit, asset|color) }}
+    {{ i.top("Доля от портфеля", [asset|share_of(asset.portfolio.invested), " / ", asset.percent]) }}
     {{ i.top("В ордерах", asset.in_orders|currency_price(round_to='usd')) }}
   </div>
 

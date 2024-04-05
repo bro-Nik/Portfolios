@@ -29,7 +29,7 @@
 {% import 'macro_info.html' as i with context %}
 
 <div class="row xs-mb-3">
-  {{ i.top("Стоимость сейчас", wallets.cost_now|currency_price(round_to='usd'), wallets.color) }}
+  {{ i.top("Стоимость сейчас", wallets.cost_now|currency_price(round_to='usd')) }}
   {{ i.top("В ордерах", wallets.in_orders|currency_price(round_to='usd')) }}
   {{ i.top("Свободные средства", wallets.free|currency_price(round_to='usd')) }}
 </div>

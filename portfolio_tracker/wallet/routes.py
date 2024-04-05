@@ -137,6 +137,7 @@ def transaction_info():
     transaction = asset.get_transaction(request.args.get('transaction_id')
                                         ) or asset.create_transaction()
 
+    print(transaction.type)
     # Apply transaction
     if request.method == 'POST':
         transaction2 = transaction.related_transaction

@@ -48,13 +48,9 @@
 {% if portfolio.other_assets %}
   <div class="row xs-mb-3">
     {{ i.top("Вложено", portfolio.amount|currency_price(round_to='usd')) }}
-    {{ i.top("Стоимость сейчас", portfolio.cost_now|currency_price(round_to='usd'), portfolio.color) }}
-    {{ i.top("Прибыль",
-             [portfolio.profit|currency_price(round_to='usd'),
-             " ({}%)".format(portfolio.profit_percent) if portfolio.profit_percent], portfolio.color) }}
-    {{ i.top("Доля от всех инвестиций",
-             ["{}% / ".format((portfolio.amount / portfolios.amount * 100)|smart_round(0.1) if portfolios.amount else 0),
-             " ({}%)".format(portfolio.percent|smart_round) if portfolio.percent else '-']) }}
+    {{ i.top("Стоимость сейчас", portfolio.cost_now|currency_price(round_to='usd'), portfolio|color) }}
+    {{ i.top("Прибыль", portfolio|profit, portfolio|color) }}
+    {{ i.top("Доля от всех инвестиций", [portfolio|share_of(portfolios.invested), ' / ', portfolio|percent]) }}
   </div>
 
   <div class="big-table">
@@ -100,30 +96,22 @@
               <td>{{ asset.amount|currency_price(round_to='usd', default='-') }}</td>
 
               <td>
-                <span class="{{ asset.color }}">
+                <span class="{{ asset|color }}">
                   {{ asset.cost_now|currency_price(round_to='usd', default='-') }}
                 </span>
               </td>
 
               <td>
                 {% if asset.cost_now %}
-                  <span class="text-average {{ asset.color }}">
-                    {{ '-' if asset.profit < 0 }}{{ asset.profit|currency_price(round_to='usd') }}
-                    {{ '({}%)'.format(asset.profit_percent) if asset.profit_percent }}
+                  <span class="text-average {{ asset|color }}">
+                    {{ asset|profit }}
                   </span>
                 {% else %}
                   -
                 {% endif %}
               </td>
 
-              <td>
-                {% if portfolio.amount and not asset.is_empty %}
-                  {{ (asset.amount / portfolio.amount * 100)|smart_round(0.1) }}% /
-                {% else %}
-                  - /
-                {% endif %}
-                {{ '({}%)'.format(asset.percent|smart_round) if asset.percent else '-' }}
-              </td>
+              <td>{{ asset|share_of(portfolio.invested) }} / {{ asset|percent }}</td>
 
               <td>
                 <div class="d-flex comment">

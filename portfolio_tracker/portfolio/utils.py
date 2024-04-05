@@ -12,5 +12,6 @@ class Portfolios(DetailsMixin):
         for portfolio in current_user.portfolios:
             portfolio.update_info()
             self.amount += portfolio.amount
+            self.invested += portfolio.amount if portfolio.amount > 0 else 0
             self.cost_now += portfolio.cost_now
             self.in_orders += portfolio.in_orders

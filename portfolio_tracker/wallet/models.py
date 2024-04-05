@@ -122,7 +122,8 @@ class Wallet(db.Model):
 
     def last_transaction(self, transaction_type: str) -> Transaction | None:
         transaction_type = transaction_type.lower()
-        for transaction in self.transactions:
+        for transaction in reversed(self.transactions):
+            print(transaction.date)
             if transaction.type.lower() == transaction_type:
                 return transaction
 

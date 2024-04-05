@@ -56,12 +56,8 @@
 {% if not asset.is_empty %}
   <div class="row mb-5 xs-mb-3">
     {{ i.top("Вложено", asset.amount|currency_price(round_to='usd')) }}
-    {{ i.top("Прибыль",
-             [asset.profit|currency_price(round_to='usd'),
-             " ({}%)".format(asset.profit_percent) if asset.profit_percent], asset.color) }}
-    {{ i.top("Доля от портфеля",
-             ["{}%".format((asset.amount / asset.portfolio.amount * 100)|smart_round(0.1)) if asset.portfolio.amount else '-', " / ",
-             "{}%".format(asset.percent|smart_round) if asset.percent else '-']) }}
+    {{ i.top("Прибыль", asset|profit, asset|color) }}
+    {{ i.top("Доля от портфеля", [asset|share_of(asset.portfolio.invested), " / ", asset|percent]) }}
   </div>
 {% endif %}
 
@@ -214,13 +210,8 @@
                   </td>
 
                   <td>
-                    {% if transaction.amount < 0 %}
-                      <span class="text-red">-
-                    {% else %}
-                      <span class="text-green">+
-                    {% endif %}
-
-                    {{ transaction.amount_usd|abs|currency_price(round_to='usd') }}
+                    <span class="text-{{ 'red' if transaction.amount < 0 else 'green' }}">
+                      {{ '+' if transaction.amount > 0 }}{{ transaction.amount_usd|currency_price(round_to='usd') }}
                     </span>
 
                     {% if current_user.currency_ticker_id|lower != transaction.amount_ticker_id|lower %}
