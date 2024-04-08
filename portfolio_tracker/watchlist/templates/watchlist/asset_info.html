@@ -20,7 +20,7 @@
         {% if ticker.image %}
           <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/40/' + ticker.image) }}">
         {% endif %}
-        <span class="fs-1 fw-semibold">{{ asset.price|currency_price }}</span>
+        <span class="fs-1 fw-semibold">{{ asset.price|currency_price(round_per=0.1) }}</span>
       </div>
     </div>
     <div class="col-auto ms-auto">
@@ -64,7 +64,7 @@
                 {% endif %}
 
                 {{ gettext('Выше') if alert.type == 'up' else gettext('Ниже') }}
-                {{ alert.price_usd|currency_price }}  
+                {{ alert.price_usd|currency_price(round_per=0.1) }}  
                 <br>
                 <span class="small-text">{{ alert.date|user_datetime }}</span>
               </div>

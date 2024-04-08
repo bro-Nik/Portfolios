@@ -2,9 +2,13 @@ import time
 from datetime import datetime, timedelta
 
 from babel.dates import format_datetime
-from flask import Blueprint
+from flask import Blueprint, g
 from flask_babel import Locale
 from flask_login import current_user
+from requests.api import get
+
+from portfolio_tracker.general_functions import add_prefix
+from portfolio_tracker.portfolio.models import Ticker
 
 from .user.utils import get_currency, get_locale
 
@@ -39,12 +43,27 @@ def long_number(n: int | float) -> str:
     return '{:.18f}'.format(n).rstrip('0') if 0 < abs(n) < 0.0005 else str(n)
 
 
+def get_currency_ticker(u=current_user):
+    currency_ticker = getattr(g, 'currency_ticker', None)
+    if currency_ticker is None:
+        if u.is_authenticated and u.type != 'demo' and u.currency:
+            currency_ticker = u.currency_ticker
+        else:
+            currency_ticker = Ticker.get(add_prefix(get_currency(), 'currency'))
+
+        g.currency_ticker = currency_ticker
+    return currency_ticker
+
+
 def currency_price(num: int | float, currency: str = '', default: str = '',
                    round_per: int = 0, round_to: str = '') -> str:
+    currency_ticker = get_currency_ticker()
+    locale = get_locale()
+
     if not currency:
-        currency = current_user.currency
+        currency = get_currency()
         if num:
-            num *= 1 / current_user.currency_ticker.price
+            num *= 1 / currency_ticker.price
     currency = currency.upper()
 
     num = currency_round(num, round_per=round_per, round_to=round_to)
@@ -60,7 +79,7 @@ def currency_price(num: int | float, currency: str = '', default: str = '',
         length = len(s[s.index('.') + 1:])
         frac = (length, length)
 
-    locale = Locale.parse(current_user.locale)
+    locale = Locale.parse(locale)
     p = locale.currency_formats['standard']
     rez = str(p.apply(num, locale, currency=currency.upper(), force_frac=frac))
 
@@ -74,11 +93,12 @@ def currency_price(num: int | float, currency: str = '', default: str = '',
 def currency_round(num: int | float, round_per: int = 0, round_to: str = ''
                    ) -> int | float:
     margin_of_error = 0
+    currency_ticker = get_currency_ticker()
     if round_per:
         margin_of_error = abs(num * round_per / 100)
     elif round_to:
         if round_to == 'usd':
-            margin_of_error = 1 / current_user.currency_ticker.price
+            margin_of_error = 1 / currency_ticker.price
         else:
             margin_of_error = 1 / float(round_to)
 
@@ -92,13 +112,13 @@ def currency_quantity(num: int | float, currency: str = '', default: str = '',
         return default
 
     if not currency:
-        currency = current_user.currency
+        currency = get_currency()
 
     return f'{long_number(num)} {currency.upper()}'
 
 
 def user_datetime(date: datetime, not_format: bool = False) -> str:
-    locale = current_user.locale
+    locale = get_locale()
     date = date - timedelta(seconds=time.timezone)
     if not_format:
         date = date.replace(tzinfo=None)

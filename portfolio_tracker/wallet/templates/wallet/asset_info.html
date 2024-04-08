@@ -19,7 +19,7 @@
         {% if ticker.image %}
           <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/40/' + ticker.image) }}">
         {% endif %}
-        <span class="fs-1 fw-semibold" id="AssetPrice">{{ asset.price|currency_price }}</span>
+        <span class="fs-1 fw-semibold" id="AssetPrice">{{ asset.price|currency_price(round_per=0.1) }}</span>
       </div>
     </div>
 

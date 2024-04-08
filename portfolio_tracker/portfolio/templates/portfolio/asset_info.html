@@ -21,7 +21,7 @@
         {% if ticker.image %}
           <img class="img-asset" src="{{ url_for('static', filename='images/tickers/' + ticker.market + '/40/' + ticker.image) }}">
         {% endif %}
-        <span class="fs-1 fw-semibold">{{ asset.price|currency_price }}</span>
+        <span class="fs-1 fw-semibold">{{ asset.price|currency_price(round_per=0.1) }}</span>
       </div>
 
       <div class="d-flex gap-1 align-items-end open-modal {{ 'disabled' if request_from == 'watchlist' }}" data-modal-id="WhitelistTickerInfoModal"
@@ -32,7 +32,7 @@
         </span>
         {% for alert in asset.alerts if alert.status != 'off' %}
           <span class="badge fw-normal d-flex gap-2 text-bg-{{ 'light text-muted' if alert.status == 'on' else 'success' }}">
-            {{ alert.price_usd|currency_price }}  
+            {{ alert.price_usd|currency_price(round_per=0.1) }}  
           </span>
         {% endfor %}
       </div>

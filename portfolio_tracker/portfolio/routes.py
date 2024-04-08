@@ -164,6 +164,11 @@ def asset_transfer():
                 transaction.update_dependencies()
 
         if asset2:
+            while asset.alerts:
+                alert = asset.alerts.pop()
+                alert.asset_id = asset2.id
+                asset2.alerts.append(alert)
+
             asset2.comment = f'{asset2.comment or ""}{asset.comment or ""}'
             asset.delete()
         else:

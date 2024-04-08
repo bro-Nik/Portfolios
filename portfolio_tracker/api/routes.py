@@ -38,8 +38,13 @@ def all_currencies():
     market = 'currency'
     result = []
 
+    # currencies = db.session.execute(
+    #     db.select(Ticker).filter_by(market=market)).scalars()
+
+    # ToDo
+    ids = ['cu-usd', 'cu-rub', 'cu-eur', 'cu-jpy']
     currencies = db.session.execute(
-        db.select(Ticker).filter_by(market=market)).scalars()
+        db.select(Ticker).filter(Ticker.id.in_(ids))).scalars()
     for currency in currencies:
         result.append({'value': remove_prefix(currency.id, market),
                        'text': currency.symbol.upper(),

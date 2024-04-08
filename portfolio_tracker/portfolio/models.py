@@ -249,7 +249,7 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
         for alert in self.alerts:
             # отставляем уведомления
             alert.asset_id = None
-            alert.comment = gettext('Портфель %(name)s удален',
+            alert.comment = gettext('Актив удален из портфеля %(name)s',
                                     name=self.portfolio.name)
         self.alerts = []
 
