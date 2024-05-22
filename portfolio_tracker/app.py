@@ -8,7 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from celery import Celery
-import redis
+from redis import Redis
 import sentry_sdk
 
 
@@ -29,8 +29,10 @@ login_manager.login_message = gettext(
     'Пожалуйста, войдите, чтобы получить доступ к этой странице')
 login_manager.login_message_category = 'danger'
 babel = Babel()
-celery = Celery()
-redis = redis.StrictRedis('127.0.0.1', 6379)
+# celery = Celery()
+celery = Celery('celery_app', broker='amqp://rabbitmq')
+# redis = redis.StrictRedis('127.0.0.1', 6379)
+redis = Redis(host='redis', port=6379)
 
 from .user.utils import get_locale, get_timezone
 from .errors.handlers import init_request_errors

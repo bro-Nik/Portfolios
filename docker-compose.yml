@@ -1,0 +1,79 @@
+# version: '3'
+services:
+  db:
+    image: mariadb
+    container_name: portfolios_db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - ./data/mysql_data:/var/lib/mysql
+      - ./data/mysql_dump/:/docker-entrypoint-initdb.d/
+    # ports:
+    #   - 3306:3306
+    networks:
+      - portfolios-net
+  app:
+    build: .
+    container_name: portfolios_app
+    image: flask_portfolios
+    environment:
+      - FLASK_APP=start
+      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} # путь до бд, см. db service
+      # для отладки (при запуске в релиз убрать!)
+      - FLASK_ENV=development
+      # Позволяет отслеживать процесс работы приложения в командной строке
+      - PYTHONUNBUFFERED=True                   
+    # Перезапускаем сервис в случае падения 
+    restart: on-failure
+    volumes:
+      - .:/app
+    # Открываем порт в контейнер
+    # Порт, который будет смотреть наружу : порт который используется внутри контейнера
+    ports:
+      - 5000:5000
+    command: python wsgi.py
+    # command: flask db upgrade && flask run
+    networks:
+      - portfolios-net
+    depends_on:
+      - db
+      - redis
+      - rabbitmq
+  redis:
+    image: redis:latest
+    container_name: portfolios_redis
+    restart: on-failure
+    volumes:
+      - ./data/redis_data:/root/redis
+      - ./data/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - portfolios-net
+  celery_worker:
+    restart: on-failure
+    image: flask_portfolios
+    container_name: portfolios_celery
+    command: celery -A start.celery worker -l info
+    environment:
+      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} # путь до бд, см. db service
+    networks:
+      - portfolios-net
+    depends_on:
+      - redis
+      - rabbitmq
+      - db
+      - app
+  rabbitmq:
+    image: rabbitmq
+    container_name: portfolios_rabbitmq
+    restart: always
+    volumes:
+      - ./data/rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - portfolios-net
+networks:
+  portfolios-net:
+    driver: bridge

@@ -5,6 +5,7 @@
 migrations/
 __pycache__/
 logs/
+data/
 portfolio_tracker/__pycache__/
 portfolio_tracker/static/images
 portfolio_tracker/static/admin

@@ -20,7 +20,7 @@ class Config:
     BABEL_TRANSLATION_DIRECTORIES = os.environ.get('BABEL_TRANSLATION_DIRECTORIES')
 
     # Celery
-    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
+    # CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
     # RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
     # CELERY_VISIBILITY_TIMEOUT = 12000
 
