@@ -93,14 +93,15 @@ class Wallet(db.Model):
         self.stable_assets = []
 
         for asset in self.wallet_assets:
+            self.assets.append(asset)
             # Стейблкоины и валюта
             if asset.ticker.stable:
-                self.stable_assets.append(asset)
+                # self.stable_assets.append(asset)
                 self.free += asset.free * asset.price
                 self.in_orders += asset.buy_orders * asset.price
             # Активы
-            else:
-                self.assets.append(asset)
+            # else:
+                # self.assets.append(asset)
             self.cost_now += asset.cost_now
 
     def get_asset(self, find_by: str | int | None):

@@ -18,17 +18,71 @@ from .utils import get_all_users, get_key, get_module, get_stream, get_tasks, \
 from . import bp
 
 
-@bp.route('/updater', methods=['GET'])
+@bp.route('/update', methods=['GET'])
 @admin_only
 def updater():
     # Обновление при изменениях
     try:
-        print('Обновления вополнены')
-        flash('Обновления вополнены', 'success')
+        return update()
     except Exception as e:
-        print(f'Ошибка. {e}')
-        flash(f'Ошибка. {e}', 'warning')
-    return redirect(url_for('.module_page'))
+        return f'Ошибка. {e}'
+
+
+def update():
+    from portfolio_tracker.user.models import User
+    for user in db.session.execute(db.select(User)).scalars():
+
+        # Портфель по умолчанию
+        portfolio_id = None
+        portfolio_assets_count = 0
+
+        for p in user.portfolios:
+            if not portfolio_id or portfolio_assets_count < len(p.assets):
+                portfolio_id = p.id
+                portfolio_assets_count = len(p.assets)
+
+        for p in user.portfolios:
+            for a in p.assets:
+                a.amount = 0
+                a.quantity = 0
+                a.in_orders = 0
+
+            for t in p.transactions:
+                if t.order is None:
+                    t.order = False
+                if t.type in ('TransferOut', 'TransferIn'):
+                    t.update_dependencies()
+        db.session.commit()
+
+        for w in user.wallets:
+            for a in w.wallet_assets:
+                a.quantity = 0
+                a.buy_orders = 0
+                a.sell_orders = 0
+
+            for t in w.transactions:
+                if t.type in ('Buy') and t.price == 0:
+                    t.type = 'Earning'
+                    t.ticker2_id = None
+                    db.session.commit()
+
+                if t.type in ('Input', 'Output') and not t.portfolio_id:
+                    t.portfolio_id = portfolio_id
+                if t.type in ('TransferIn', 'TransferOut'):
+                    t2 = t.related_transaction
+                    if t.portfolio_id == t2.portfolio_id:
+                        t.portfolio_id = None
+                        t2.portfolio_id = None
+                    if t.wallet_id == t2.wallet_id:
+                        t.wallet_id = None
+                        t2.wallet_id = None
+                    db.session.commit()
+
+                t.update_dependencies()
+
+
+        db.session.commit()
+    return 'Обновления вополнены'
 
 
 @bp.route('/index', methods=['GET'])

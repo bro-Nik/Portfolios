@@ -79,9 +79,7 @@
           </th>
           <th>{% trans %}Тип{% endtrans %}</th>
           <th>{% trans %}Связь{% endtrans %}</th>
-          {% if not ticker.stable %}
-            <th>{% trans %}Цена{% endtrans %}</th>
-          {% endif %}
+          <th>{% trans %}Цена{% endtrans %}</th>
           <th>{% trans %}Количество{% endtrans %}</th>
           <th>{% trans %}Комментарий{% endtrans %}</th>
           <th></th>
@@ -95,8 +93,11 @@
             {% set url = url_for('wallet.transaction_info', wallet_id=asset.wallet_id, asset_id=asset.id, transaction_id=transaction.id) %}
           {% endif %}
 
-          {% set quantity = transaction.quantity2 if transaction.portfolio_asset and ticker.stable else transaction.quantity %}
-          {% set quantity2 = transaction.quantity1 if transaction.portfolio_asset and ticker.stable else transaction.quantity2 %}
+          {#}
+          {% set quantity = transaction.quantity2 or 0 if transaction.portfolio_asset and ticker.stable else transaction.quantity or 0 %}
+          {#}
+          {% set quantity = transaction.quantity2 or 0 if transaction.ticker2_id == ticker.id else transaction.quantity or 0 %}
+          {% set quantity2 = transaction.quantity if transaction.portfolio_asset and ticker.stable else transaction.quantity2 %}
           {% set color = 'text-green' if quantity > 0 else 'text-red' %}
 
           <tr class="{{ 'table-order' if transaction.order }}">
@@ -117,7 +118,10 @@
             </td>
 
             <td>
+{#}
               {% if transaction.portfolio_asset %}
+{#}
+              {% if transaction.type in ('Buy', 'Sell', 'Input', 'Output', 'Earning') %}
                 <span class="link-secondary open-modal" data-modal-id="AssetInfoModal"
                   data-url="{{ url_for('portfolio.asset_info', portfolio_id=transaction.portfolio_id, ticker_id=transaction.ticker_id, request_from='wallet') }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0zM1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5z" /></svg>
@@ -147,35 +151,29 @@
 
             {% set other_currency = current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
 
-            {% if not ticker.stable %}
-              <td>
-                {% if transaction.portfolio_asset %}
-                  {% if other_currency %}
-                    {{ transaction.price|currency_price(currency=transaction.quote_ticker.symbol) }}<br>
-                  {% endif %}
-                  {{ transaction.price_usd|currency_price }}
-                {% else %}
-                -
+            <td>
+              {% if transaction.type in ('Buy', 'Sell') %}
+                {% if other_currency %}
+                  {{ transaction.price|currency_price(currency=transaction.quote_ticker.symbol) }}<br>
                 {% endif %}
-              </td>
-              <td>
-                {% if transaction.portfolio_asset %}
-                  {% if other_currency %}
-                    {{ '+' if quantity2 > 0 }}{{ quantity2|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }}<br>
-                  {% endif %}
-                  {{ '+' if quantity2 > 0 }}{{ (quantity * transaction.price_usd * -1)|currency_price(round_to='usd') }}<br>
+                {{ transaction.price_usd|currency_price }}
+              {% else %}
+              -
+              {% endif %}
+            </td>
+
+            <td>
+              {% if transaction.type in ('Buy', 'Sell') %}
+                {% if other_currency %}
+                  {{ '+' if quantity2 > 0 }}{{ quantity2|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }}<br>
                 {% endif %}
-                <span class="text-average small-text {{ color }}">
-                  {{ '+' if transaction.quantity > 0 }}{{ transaction.quantity|currency_quantity(round_to=ticker.price, currency=ticker.symbol) }}
-                </span>
-              </td>
-            {% else %}
-              <td>
-                <span class="text-average {{ color }}">
-                  {{ '+' if quantity > 0 }}{{ quantity|currency_quantity(round_per=1, currency=ticker.symbol) }}
-                </span>
-              </td>
-            {% endif %}
+                {{ '+' if quantity2 > 0 }}{{ (quantity * transaction.price_usd * -1)|currency_price(round_to='usd') }}<br>
+              {% endif %}
+              <span class="text-average small-text {{ color }}">
+                {{ '+' if transaction.quantity > 0 }}{{ transaction.quantity|currency_quantity(round_to=ticker.price, currency=ticker.symbol) }}
+              </span>
+
+            </td>
 
             <td>
               <div class="d-flex comment">

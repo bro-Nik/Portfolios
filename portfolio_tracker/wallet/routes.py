@@ -137,43 +137,47 @@ def transaction_info():
     transaction = asset.get_transaction(request.args.get('transaction_id')
                                         ) or asset.create_transaction()
 
-    print(transaction.type)
     # Apply transaction
     if request.method == 'POST':
-        transaction2 = transaction.related_transaction
+        # transaction2 = transaction.related_transaction
 
         if not transaction.id:
             asset.transactions.append(transaction)
             db.session.add(transaction)
         transaction.edit(request.form)
+        print(transaction.type)
         transaction.update_dependencies()
 
+        if transaction.type in ('TransferOut', 'TransferIn'):
+            print('update_related_transaction')
+            transaction.update_related_transaction(Wallet, request.form.get('wallet_id'))
+
         # Связанная транзакция
-        wallet2 = Wallet.get(request.form.get('wallet_id'))
-        if wallet2:
-            asset2 = wallet2.get_asset(asset.ticker_id)
-            if not asset2:
-                ticker2 = Ticker.get(asset.ticker_id) or abort(404)
-                asset2 = wallet2.create_asset(ticker2)
-                wallet2.wallet_assets.append(asset2)
-
-            if not transaction2:
-                transaction2 = asset2.create_transaction()
-                asset2.transactions.append(transaction2)
-                db.session.add(transaction2)
-
-            transaction2.edit({
-                'type': ('TransferOut' if transaction.type == 'TransferIn'
-                         else 'TransferIn'),
-                'date': transaction.date,
-                'quantity': transaction.quantity * -1
-            })
-
-            transaction2.update_dependencies()
-
-            db.session.flush()
-            transaction.related_transaction_id = transaction2.id
-            transaction2.related_transaction_id = transaction.id
+        # wallet2 = Wallet.get(request.form.get('wallet_id'))
+        # if wallet2:
+        #     asset2 = wallet2.get_asset(asset.ticker_id)
+        #     if not asset2:
+        #         ticker2 = Ticker.get(asset.ticker_id) or abort(404)
+        #         asset2 = wallet2.create_asset(ticker2)
+        #         wallet2.wallet_assets.append(asset2)
+        #
+        #     if not transaction2:
+        #         transaction2 = asset2.create_transaction()
+        #         asset2.transactions.append(transaction2)
+        #         db.session.add(transaction2)
+        #
+        #     transaction2.edit({
+        #         'type': ('TransferOut' if transaction.type == 'TransferIn'
+        #                  else 'TransferIn'),
+        #         'date': transaction.date,
+        #         'quantity': transaction.quantity * -1
+        #     })
+        #
+        #     transaction2.update_dependencies()
+        #
+        #     db.session.flush()
+        #     transaction.related_transaction_id = transaction2.id
+        #     transaction2.related_transaction_id = transaction.id
 
         db.session.commit()
         return ''

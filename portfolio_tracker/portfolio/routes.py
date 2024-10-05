@@ -215,6 +215,8 @@ def transaction_info():
     asset = portfolio.get_asset(find_by) or abort(404)
     transaction = asset.get_transaction(request.args.get('transaction_id')
                                         ) or asset.create_transaction()
+    if not transaction.base_ticker:
+        transaction.base_ticker = asset.ticker
 
     # Apply transaction
     if request.method == 'POST':
@@ -223,6 +225,9 @@ def transaction_info():
 
         transaction.edit(request.form)
         transaction.update_dependencies()
+
+        if transaction.type in ('TransferOut', 'TransferIn'):
+            transaction.update_related_transaction(Portfolio, request.form.get('portfolio_id'))
         db.session.commit()
         return ''
 
@@ -236,10 +241,10 @@ def transaction_info():
     if transaction.wallet:
         wallets[transaction.type] = transaction.wallet
 
-    if not transaction.quote_ticker:
-        wallet = transaction.wallet or wallets['Buy']
-        lt = wallet.last_transaction(transaction.type)
-        transaction.quote_ticker = lt.quote_ticker if lt else current_user.currency_ticker
+    # if not transaction.quote_ticker:
+    #     wallet = transaction.wallet or wallets['Buy']
+    #     lt = wallet.last_transaction(transaction.type)
+    #     transaction.quote_ticker = lt.quote_ticker if lt else current_user.currency_ticker
     calc_type = session.get('transaction_calculation_type', 'amount')
     return render_template('portfolio/transaction.html',
                            transaction=transaction, asset=asset,

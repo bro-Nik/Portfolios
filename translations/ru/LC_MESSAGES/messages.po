@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-03-12 17:44+0300\n"
+"POT-Creation-Date: 2024-10-05 08:53+0000\n"
 "PO-Revision-Date: 2023-10-18 07:45+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -18,6 +18,1146 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.14.0\n"
+
+#: portfolio_tracker/app.py:28
+msgid "Пожалуйста, войдите, чтобы получить доступ к этой странице"
+msgstr ""
+
+#: portfolio_tracker/wraps.py:27
+msgid "Демо юзер не может вносить изменения"
+msgstr ""
+
+#: portfolio_tracker/admin/templates/admin/imports.html:30
+#: portfolio_tracker/user/templates/user/settings_export_import.html:19
+#: portfolio_tracker/user/templates/user/settings_export_import.html:32
+#: portfolio_tracker/user/templates/user/settings_export_import.html:38
+msgid "Импорт"
+msgstr ""
+
+#: portfolio_tracker/api/routes.py:90
+msgid "В кошельках нет свободных остатков"
+msgstr ""
+
+#: portfolio_tracker/api/routes.py:121
+msgid "У вас только один кошелек"
+msgstr ""
+
+#: portfolio_tracker/api/routes.py:153
+msgid "Выберите кошелек"
+msgstr ""
+
+#: portfolio_tracker/errors/templates/errors/400.html:9
+#: portfolio_tracker/errors/templates/errors/403.html:9
+#: portfolio_tracker/errors/templates/errors/404.html:9
+#: portfolio_tracker/errors/templates/errors/405.html:9
+#: portfolio_tracker/errors/templates/errors/500.html:9
+msgid "Ошибка"
+msgstr ""
+
+#: portfolio_tracker/errors/templates/errors/400.html:16
+msgid "Некорректный запрос"
+msgstr ""
+
+#: portfolio_tracker/errors/templates/errors/400.html:17
+msgid "Ошибка 400"
+msgstr ""
+
+#: portfolio_tracker/errors/templates/errors/403.html:16
+msgid "В доступе отказано"
+msgstr ""
+
+#: portfolio_tracker/errors/templates/errors/403.html:17
+msgid "Ошибка 403"
+msgstr ""
+
+#: portfolio_tracker/errors/templates/errors/404.html:16
+msgid "Упс! Страница не найдена"
+msgstr ""
+
+#: portfolio_tracker/errors/templates/errors/404.html:17
+msgid "Ошибка 404"
+msgstr ""
+
+#: portfolio_tracker/errors/templates/errors/405.html:16
+msgid "Метод не разрешен"
+msgstr ""
+
+#: portfolio_tracker/errors/templates/errors/405.html:17
+msgid "Ошибка 405"
+msgstr ""
+
+#: portfolio_tracker/errors/templates/errors/500.html:16
+msgid "Произошла непредвиденная ошибка"
+msgstr ""
+
+#: portfolio_tracker/errors/templates/errors/500.html:17
+msgid "Администратор был уведомлен. Извините за неудобства!"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:51
+#: portfolio_tracker/user/templates/user/login.html:2
+#: portfolio_tracker/user/templates/user/login.html:6
+#: portfolio_tracker/user/templates/user/login.html:28
+#: portfolio_tracker/user/templates/user/register.html:8
+msgid "Вход"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:52
+#: portfolio_tracker/templates/navbar.html:90
+#: portfolio_tracker/user/templates/user/login.html:8
+#: portfolio_tracker/user/templates/user/register.html:2
+#: portfolio_tracker/user/templates/user/register.html:6
+#: portfolio_tracker/user/templates/user/register.html:25
+msgid "Регистрация"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:54
+#: portfolio_tracker/user/templates/user/login.html:9
+#: portfolio_tracker/user/templates/user/register.html:9
+msgid "Демо"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:65
+msgid "Отслеживай активы в одном месте"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:84
+msgid "Portfolios помогает не запутаться в инвестициях"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:85
+msgid ""
+"<b>Portfolios</b> позволяет вести учет по многим активам в одном личном "
+"кабинете, что позволяет ничего не растерять и не забыть."
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:94
+msgid "Криптовалюта"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:95
+msgid "Ведение криптовалютных портфелей с различнами стратегиями управления."
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:102
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_settings.html:22
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:46
+msgid "Акции"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:103
+msgid "Ведение портфелей с акциями разделенных по своему усмотрению."
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:110
+msgid "Офлайн активы"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:111
+msgid "Ведение портфелей с офлайн активами."
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:126
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:3
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:10
+#: portfolio_tracker/templates/navbar.html:21
+msgid "Портфели"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:127
+msgid ""
+"Управление портфелями с цифровыми и другими активами. Собирайте портфели "
+"по вашей собственной стратегии, цели или другому принципу."
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:129
+msgid "неограниченное количество портфелей"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:130
+msgid "процентное соотношение между портфелями и активами"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:131
+#: portfolio_tracker/page/templates/page/index.html:168
+msgid "уведомления по достижению цены"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:132
+msgid "история транзакций"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:145
+#: portfolio_tracker/templates/navbar.html:28
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:10
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:18
+msgid "Кошельки"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:146
+msgid ""
+"Удобное управление всеми кошельками, где хранятся активы. Вы можете вести"
+" столько кошельков, сколько необходимо, например, сколько у вас есть в "
+"реальности и понимать, где именно лежит интересующий актив и в каком "
+"количестве."
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:148
+msgid "неограниченное количество кошельков"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:149
+msgid "список активов в кошельке"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:150
+msgid "статистика по свободным средствам"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:151
+msgid "статистика по средствам, зарезервированным на ордеры"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:164
+msgid "Списки отслеживания"
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:165
+msgid "Не теряйте и отслеживайте интересующие вас активы."
+msgstr ""
+
+#: portfolio_tracker/page/templates/page/index.html:167
+msgid "список избранных активов"
+msgstr ""
+
+#: portfolio_tracker/portfolio/models.py:344
+#: portfolio_tracker/wallet/models.py:223
+#, python-format
+msgid "В активе %(name)s есть транзакции"
+msgstr ""
+
+#: portfolio_tracker/portfolio/models.py:354
+#, python-format
+msgid "Актив удален из портфеля %(name)s"
+msgstr ""
+
+#: portfolio_tracker/portfolio/models.py:430
+#, python-format
+msgid "Актив %(name)s не пустой"
+msgstr ""
+
+#: portfolio_tracker/portfolio/models.py:696
+#, python-format
+msgid "В портфеле %(name)s есть транзакции"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/add_asset_modal.html:4
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:15
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:15
+#: portfolio_tracker/wallet/templates/wallet/add_stable_modal.html:4
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:32
+msgid "Добавить актив"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/add_asset_modal.html:10
+#: portfolio_tracker/templates/base.html:56
+#: portfolio_tracker/wallet/templates/wallet/add_stable_modal.html:10
+msgid "Поиск"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:31
+#: portfolio_tracker/watchlist/templates/watchlist/alert.html:4
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:29
+msgid "Добавить уведомление"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:45
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:19
+#: portfolio_tracker/portfolio/templates/portfolio/other_transaction.html:3
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:4
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:29
+#: portfolio_tracker/wallet/templates/wallet/transaction.html:4
+msgid "Добавить транзакцию"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:48
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:26
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:19
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:19
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_settings.html:27
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:32
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:22
+msgid "Еще"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:53
+#: portfolio_tracker/portfolio/templates/portfolio/asset_settings.html:3
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:31
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_settings.html:3
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:131
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:153
+msgid "Изменить актив"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:58
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:38
+msgid "Пересчитать актив?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:59
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:39
+msgid "Все транзакции в этом активе будут пересчитаны"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:61
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:42
+msgid "Пересчитать актив"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:64
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:38
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:135
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:161
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:46
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:126
+#, python-format
+msgid "Удалить актив %(name)s?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:65
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:42
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:165
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:47
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:130
+msgid "Все транзакции в этом активе будут удалены"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:67
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:46
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:143
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:169
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:49
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:134
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:110
+msgid "Удалить актив"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:98
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:189
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:80
+msgid "Тип"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:99
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:74
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:92
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:82
+#: portfolio_tracker/watchlist/templates/watchlist/alert.html:19
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:44
+msgid "Цена"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:100
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:110
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:141
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:83
+#: portfolio_tracker/wallet/templates/wallet/transaction.html:22
+msgid "Количество"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:101
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:81
+msgid "Связь"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:102
+#: portfolio_tracker/portfolio/templates/portfolio/asset_settings.html:35
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:93
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:191
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_settings.html:28
+#: portfolio_tracker/portfolio/templates/portfolio/other_body.html:55
+#: portfolio_tracker/portfolio/templates/portfolio/other_body.html:60
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:74
+#: portfolio_tracker/portfolio/templates/portfolio/other_transaction.html:42
+#: portfolio_tracker/portfolio/templates/portfolio/other_transaction.html:47
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:79
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_settings.html:42
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:51
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:158
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:163
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:84
+#: portfolio_tracker/wallet/templates/wallet/wallet_settings.html:15
+#: portfolio_tracker/wallet/templates/wallet/wallet_settings.html:20
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:54
+#: portfolio_tracker/watchlist/templates/watchlist/alert.html:42
+#: portfolio_tracker/watchlist/templates/watchlist/alert.html:47
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:46
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:61
+msgid "Комментарий"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:122
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:42
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:115
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:93
+msgid "Ордер"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:177
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:141
+msgid "Удален"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:193
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:188
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:95
+msgid "Ордер сработал?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:194
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:189
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:96
+msgid "Ордер будет помечен как выполненный"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:195
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:191
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:98
+msgid "Ордер сработал"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:216
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:240
+#: portfolio_tracker/portfolio/templates/portfolio/other_transaction.html:3
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:4
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:202
+#: portfolio_tracker/wallet/templates/wallet/transaction.html:4
+msgid "Изменить транзакцию"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:219
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:244
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:206
+msgid "Удалить транзакцию?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:220
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:245
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:207
+msgid "Вы уверены, что хотите удалить эту транзакцию?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:221
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:246
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:208
+msgid "Удалить транзакцию"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:234
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:260
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:222
+msgid "Удалить транзакции?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:235
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:261
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:223
+msgid "Вы уверены, что хотите удалить эти транзакции?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_info.html:236
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:169
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:262
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:163
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:191
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:146
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:224
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:155
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:129
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:112
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:138
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:131
+msgid "Удалить"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_settings.html:21
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_settings.html:18
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_settings.html:32
+msgid "Планируемый процент портфеля"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_transfer.html:3
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:157
+msgid "Переместить актив"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_transfer.html:11
+msgid "Переместить в"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/asset_transfer.html:14
+msgid "-- Выберите портфель --"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:23
+#: portfolio_tracker/portfolio/templates/portfolio/other_body.html:3
+msgid "Добавить тело актива"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:41
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:138
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:164
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:129
+#, python-format
+msgid "Удалить актив %(name)s с содержимым?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:68
+msgid "Тело актива"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:73
+msgid "Транзакции"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:90
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_settings.html:11
+#: portfolio_tracker/portfolio/templates/portfolio/other_body.html:11
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:69
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:73
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_settings.html:12
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:45
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:72
+#: portfolio_tracker/wallet/templates/wallet/wallet_settings.html:10
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:50
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:59
+msgid "Название"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:91
+#: portfolio_tracker/portfolio/templates/portfolio/other_body.html:18
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:70
+msgid "Цена покупки"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:92
+#: portfolio_tracker/portfolio/templates/portfolio/other_body.html:34
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:71
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:46
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:73
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:51
+msgid "Стоимость сейчас"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:147
+#: portfolio_tracker/portfolio/templates/portfolio/other_body.html:3
+msgid "Изменить тело актива"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:151
+msgid "Удалить тело актива?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:152
+msgid "Вы уверены, что хотите удалить это тело актива?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:153
+msgid "Удалить тело актива"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:167
+msgid "Удалить тела актива?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:168
+msgid "Вы уверены, что хотите удалить эти активы?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_asset_info.html:190
+#: portfolio_tracker/portfolio/templates/portfolio/other_transaction.html:21
+msgid "Сумма"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_body.html:50
+#: portfolio_tracker/portfolio/templates/portfolio/other_transaction.html:37
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:153
+#: portfolio_tracker/wallet/templates/wallet/transaction.html:62
+msgid "Дата"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:24
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:24
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_settings.html:4
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:110
+msgid "Изменить портфель"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:30
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:30
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:114
+#, python-format
+msgid "Удалить портфель %(name)s?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:33
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:33
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:117
+#, python-format
+msgid "Удалить портфель %(name)s с содержимым?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:34
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:34
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:118
+msgid "Все активы и транзакции в этом портфеле будут удалены"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:38
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:38
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:122
+msgid "Удалить портфель"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:72
+#: portfolio_tracker/portfolio/templates/portfolio/other_transaction.html:11
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:76
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:48
+msgid "Прибыль"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:72
+#: portfolio_tracker/portfolio/templates/portfolio/other_transaction.html:14
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:76
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:48
+msgid "Убыток"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:73
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:77
+msgid "Доля от портфеля"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:139
+msgid "Все содержимое актива будет удалено"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:161
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:189
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:153
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:129
+msgid "Удалить активы?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:162
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:190
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:154
+msgid "Будут удалены только пустые активы"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:165
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:193
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:157
+msgid "Удалить активы с содержимым?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:166
+msgid "Все содержимое в этих активах будет удалено"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/other_portfolio_info.html:167
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:195
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:150
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:159
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:133
+msgid "Удалить с содержимым"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:74
+msgid "Средняя цена покупки"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:75
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:74
+msgid "Активы"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:78
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:50
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:52
+msgid "В ордерах"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_info.html:194
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:158
+msgid "Все транзакции в этих активах будут удалены"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_settings.html:4
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:14
+msgid "Добавить портфель"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_settings.html:18
+msgid "Рынок"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_settings.html:21
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:42
+msgid "Крипто"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolio_settings.html:23
+msgid "Другое"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:47
+msgid "Вложено"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:49
+msgid "Доля от всех инвестиций"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:144
+msgid "Удалить портфели?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:145
+msgid "Будут удалены только пустые портфели"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:148
+msgid "Удалить портфели с содержимым?"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/portfolios.html:149
+msgid "Все активы и транзакции в этих портфелях будут удалены"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:16
+msgid "Покупка"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:19
+msgid "Продажа"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:22
+msgid "Ввод"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:25
+msgid "Вывод"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:29
+#: portfolio_tracker/wallet/templates/wallet/transaction.html:12
+msgid "Отправка"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:32
+#: portfolio_tracker/wallet/templates/wallet/transaction.html:15
+msgid "Поступление"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:51
+msgid "Кошелек"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:74
+msgid "Портфель"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:82
+msgid "Портфель удален"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:112
+msgid "В портфеле:"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:113
+msgid "В кошельке:"
+msgstr ""
+
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:137
+#: portfolio_tracker/portfolio/templates/portfolio/transaction.html:140
+msgid "Сумма транзакции"
+msgstr ""
+
+#: portfolio_tracker/templates/base.html:36
+msgid "Да"
+msgstr ""
+
+#: portfolio_tracker/templates/base.html:37
+#: portfolio_tracker/templates/base.html:54
+msgid "Отмена"
+msgstr ""
+
+#: portfolio_tracker/templates/base.html:53
+msgid "Сохранить"
+msgstr ""
+
+#: portfolio_tracker/templates/base.html:55
+msgid "Отмечено:"
+msgstr ""
+
+#: portfolio_tracker/templates/base.html:57
+msgid "Загрузка..."
+msgstr ""
+
+#: portfolio_tracker/templates/base.html:58
+msgid "Ничего не найдено"
+msgstr ""
+
+#: portfolio_tracker/templates/macro_info.html:18
+msgid "Добавить комментарий"
+msgstr ""
+
+#: portfolio_tracker/templates/navbar.html:35
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:83
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:11
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:24
+msgid "Избранное"
+msgstr ""
+
+#: portfolio_tracker/templates/navbar.html:43
+msgid "Админ"
+msgstr ""
+
+#: portfolio_tracker/templates/navbar.html:77
+#: portfolio_tracker/user/templates/user/settings_export_import.html:5
+#: portfolio_tracker/user/templates/user/settings_export_import.html:12
+#: portfolio_tracker/user/templates/user/settings_profile.html:3
+#: portfolio_tracker/user/templates/user/settings_profile.html:10
+msgid "Настройки"
+msgstr ""
+
+#: portfolio_tracker/templates/navbar.html:85
+msgid "Выход"
+msgstr ""
+
+#: portfolio_tracker/templates/nothing.html:1
+msgid "Пока ничего нет..."
+msgstr ""
+
+#: portfolio_tracker/user/routes.py:58
+msgid "Пароль обновлен"
+msgstr ""
+
+#: portfolio_tracker/user/routes.py:60
+msgid "Новые пароли не совпадают"
+msgstr ""
+
+#: portfolio_tracker/user/routes.py:62
+msgid "Не верный старый пароль"
+msgstr ""
+
+#: portfolio_tracker/user/routes.py:102
+msgid "Профиль очищен"
+msgstr ""
+
+#: portfolio_tracker/user/utils.py:45
+msgid "Заполните адрес электронной почты, пароль и подтверждение пароля"
+msgstr ""
+
+#: portfolio_tracker/user/utils.py:49
+msgid "Данный почтовый ящик уже используется"
+msgstr ""
+
+#: portfolio_tracker/user/utils.py:52
+msgid "Пароли не совпадают"
+msgstr ""
+
+#: portfolio_tracker/user/utils.py:56
+msgid "Вы зарегистрированы. Теперь войдите в систему"
+msgstr ""
+
+#: portfolio_tracker/user/utils.py:69
+msgid "Введити адрес электронной почты и пароль"
+msgstr ""
+
+#: portfolio_tracker/user/utils.py:89
+#, python-format
+msgid "Вход заблокирован. Осталось %(m)s мин. %(s)s сек."
+msgstr ""
+
+#: portfolio_tracker/user/utils.py:96 portfolio_tracker/user/utils.py:107
+msgid "Неверный адрес электронной почты или пароль"
+msgstr ""
+
+#: portfolio_tracker/user/utils.py:113
+msgid "Вход заблокирован на 10 минут"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/login.html:14
+#: portfolio_tracker/user/templates/user/register.html:14
+msgid "Email"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/login.html:18
+#: portfolio_tracker/user/templates/user/register.html:18
+msgid "Пароль"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/login.html:24
+msgid "Запомнить меня"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/password.html:3
+#: portfolio_tracker/user/templates/user/settings_profile.html:29
+msgid "Изменить пароль"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/password.html:12
+msgid "Старый пароль"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/password.html:19
+msgid "Новый пароль"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/password.html:26
+msgid "Подтверждение"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/register.html:22
+msgid "Подтвердить пароль"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/settings_export_import.html:18
+#: portfolio_tracker/user/templates/user/settings_profile.html:16
+msgid "Профиль"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/settings_export_import.html:19
+#: portfolio_tracker/user/templates/user/settings_export_import.html:23
+msgid "Экспорт"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/settings_export_import.html:26
+msgid "Скачать"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/settings_profile.html:35
+msgid "Удалить все данные из профиля?"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/settings_profile.html:37
+msgid "Очистить профиль"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/settings_profile.html:40
+msgid "Удалить профиль?"
+msgstr ""
+
+#: portfolio_tracker/user/templates/user/settings_profile.html:42
+msgid "Удалить профиль"
+msgstr ""
+
+#: portfolio_tracker/wallet/models.py:39
+msgid "Кошелек по умолчанию"
+msgstr ""
+
+#: portfolio_tracker/wallet/models.py:135
+#, python-format
+msgid "Кошелек %(name)s не пустой"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/asset_info.html:146
+msgid "Наличные"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/transaction.html:45
+msgid "Второй кошелек"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/transaction.html:53
+msgid "Кошелек удален"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:27
+#: portfolio_tracker/wallet/templates/wallet/wallet_settings.html:3
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:95
+msgid "Изменить кошелек"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:33
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:100
+#, python-format
+msgid "Удалить кошелек %(name)s?"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:36
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:103
+#, python-format
+msgid "Удалить кошелек %(name)s с содержимым?"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:37
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:104
+msgid "Все транзакции, связанные с этим кошельком, будут удалены"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:41
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:108
+msgid "Удалить кошелек"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:75
+msgid "В ордерах на продажу"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:76
+msgid "В ордерах на покупку"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallet_info.html:122
+msgid "Отправить"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallet_settings.html:3
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:23
+msgid "Добавить кошелек"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:53
+msgid "Свободные средства"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:127
+msgid "Удалить кошельки?"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:128
+msgid "Будут удалены только пустые кошельки"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:131
+msgid "Удалить кошельки с содержимым?"
+msgstr ""
+
+#: portfolio_tracker/wallet/templates/wallet/wallets.html:132
+msgid "Все транзакции, связанные с этими кошельками, будут удалены"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/alert.html:4
+msgid "Изменить уведомление"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/alert.html:21
+msgid "Цена сейчас:"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/alert.html:56
+msgid "Это уведомление на ордер, его нельзя изменить"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/alert.html:66
+msgid "Когда цена выше"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/alert.html:67
+msgid "Когда цена ниже"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:45
+msgid "Добавленио из"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:66
+msgid "Выше"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:66
+msgid "Ниже"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:111
+msgid "Удалить уведомление?"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:126
+msgid "Включить уведомления?"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:127
+msgid "Вы уверены, что хотите включить эти уведомления?"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:128
+msgid "Включить"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:131
+msgid "Выключить уведомления?"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:132
+msgid "Вы уверены, что хотите выключить эти уведомления?"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:133
+msgid "Выключить"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:136
+msgid "Удалить уведомления?"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/asset_info.html:137
+msgid "Вы уверены, что хотите удалить эти уведомления?"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:22
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:60
+msgid "Уведомления"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:107
+msgid "Удалить актив?"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:108
+msgid ""
+"Уведомления, кроме ордеров, будут удалены. Актив без уведомлений также "
+"будет удален"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:113
+msgid "Удалить актив с ордерами?"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:114
+msgid ""
+"Все уведомления (включая уведомления на ордеры), связанные с этим активом"
+" будут удалены"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:116
+msgid "Удалить актив с ордерами"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:130
+msgid ""
+"Будут удалены только те активы, которые не содержат ордеров. Уведомления "
+"на ордеры останутся"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:133
+msgid "Удалить активы с ордерами?"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:134
+msgid ""
+"Все уведомления (включая уведомления на ордеры), связанные с этими "
+"активами будут удалены"
+msgstr ""
+
+#: portfolio_tracker/watchlist/templates/watchlist/assets.html:135
+msgid "Удалить с ордерами"
+msgstr ""
 
 msgid "Buy"
 msgstr "Покупка"

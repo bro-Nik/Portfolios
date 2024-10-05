@@ -34,7 +34,7 @@ services:
     # Открываем порт в контейнер
     # Порт, который будет смотреть наружу : порт который используется внутри контейнера
     ports:
-      - 5000:5000
+      - 8080:5000
     command: python wsgi.py
     # command: flask db upgrade && flask run
     networks:

@@ -12,61 +12,98 @@
 <form id="TransactionForm" data-url="{{ url_for('.transaction_info', portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
 
   <div class="btn-group silver col-12 mb-3 nav" role="group" id="TypeTransaction">
-    <input type="radio" class="btn-check" name="type" value="Buy" id="btnradio1">
-    <label class="btn btn-outline-active btn-sm" for="btnradio1">{% trans %}Покупка{% endtrans %}</label>
+      <input type="radio" class="btn-check" name="type" value="Buy" id="btnradio1">
+      <label class="btn btn-outline-active btn-sm" for="btnradio1">{% trans %}Покупка{% endtrans %}</label>
 
-    <input type="radio" class="btn-check" name="type" value="Sell" id="btnradio2">
-    <label class="btn btn-outline-not_active btn-sm" for="btnradio2">{% trans %}Продажа{% endtrans %}</label>
+      <input type="radio" class="btn-check" name="type" value="Sell" id="btnradio2">
+      <label class="btn btn-outline-not_active btn-sm" for="btnradio2">{% trans %}Продажа{% endtrans %}</label>
+
+      <input type="radio" class="btn-check" name="type" value="Input" id="btnradio3">
+      <label class="btn btn-outline-active btn-sm" for="btnradio3">{% trans %}Ввод{% endtrans %}</label>
+
+      <input type="radio" class="btn-check" name="type" value="Output" id="btnradio4">
+      <label class="btn btn-outline-not_active btn-sm" for="btnradio4">{% trans %}Вывод{% endtrans %}</label>
+
+      {% if transaction.type != 'TransferIn' %}
+        <input type="radio" class="btn-check" name="type" value="TransferOut" id="btnradio5">
+        <label class="btn btn-outline-not_active btn-sm" for="btnradio5">{% trans %}Отправка{% endtrans %}</label>
+      {% else %}
+        <input type="radio" class="btn-check" name="type" value="TransferIn" id="btnradio5">
+        <label class="btn btn-outline-not_active btn-sm" for="btnradio5">{% trans %}Поступление{% endtrans %}</label>
+      {% endif %}
+
+      <input type="radio" class="btn-check" name="type" value="Earning" id="btnradio6">
+      <label class="btn btn-outline-not_active btn-sm" for="btnradio6">{% trans %}Заработок{% endtrans %}</label>
   </div>
 
-  <div class="form-check mb-3">
-    <label class="form-check-label">{% trans %}Ордер{% endtrans %}
-      <input class="form-check-input" type="checkbox" value="true" {{ 'checked' if transaction.order }} name="order">
-    </label>
-  </div>
 
   <div class="row g-2">
-    <div class="col-md-12">
-      <div class="mb-1">
-        <label class="d-flex form-label h7">
-          {% trans %}Кошелек{% endtrans %}
-          <span class="open-modal link-primary small-text not-update ms-auto" data-modal-id="WalletsModal"
-            data-url="{{ url_for('wallet.wallets', modal='true') }}">
-            {% trans %}Открыть кошельки{% endtrans %}
-          </span>
+
+    {# Ордер #}
+    <div class="col-md-12 main-type-box">
+      <div class="form-check mb-3 type-box buy sell">
+        <label class="form-check-label">{% trans %}Ордер{% endtrans %}
+          <input class="form-check-input" type="checkbox" value="true" {{ 'checked' if transaction.order }} name="order">
         </label>
-        <div class="buy">
+      </div>
+    </div>
+
+    {# Кошелек #}
+    <div class="col-md-12 main-type-box">
+      <div class="mb-1">
+        <label class="d-flex form-label h7">{% trans %}Кошелек{% endtrans %}</label>
+        <div class="type-box buy input earning">
           <select name="buy_wallet_id" class="form-select" data-placeholder="-"
             data-url="{{ url_for('api.wallets_to_buy') }}">
-            {% if wallet_buy %}
-              <option selected value="{{ wallet_buy.id }}">{{ wallet_buy.name }}</option>
+            {% if transaction.type in ('Buy', 'Earning') and transaction.wallet_id %}
+              <option selected value="{{ transaction.wallet.id }}">{{ transaction.wallet.name }}</option>
             {% endif %}
           </select>
         </div>
-        <div class="sell">
+        <div class="type-box sell output">
           <select name="sell_wallet_id" class="form-select" data-placeholder="-"
             data-url="{{ url_for('api.wallets_to_sell', ticker_id=asset.ticker_id) }}">
-            {% if wallet_sell %}
-              <option selected value="{{ wallet_sell.id }}">{{ wallet_sell.name }}</option>
+            {% if transaction.type == 'Sell' and transaction.wallet_id %}
+              <option selected value="{{ transaction.wallet.id }}">{{ transaction.wallet.name }}</option>
             {% endif %}
           </select>
         </div>
       </div>
     </div>
 
-    <div class="col-md-12">
+    {# Портфель #}
+    <div class="col-md-12 main-type-box">
+      <div class="mb-1 ">
+        <label class="d-flex form-label h7">{% trans %}Портфель{% endtrans %}</label>
+        <div class="type-box transferin transferout">
+          <select name="portfolio_id" class="form-select" data-placeholder="-" data-url="{{ url_for('api.portfolios') }}">
+            {% if transaction.id %}
+              {% if transaction.related_transaction %}
+                <option selected value="{{ transaction.related_transaction.portfolio_id }}">
+                {{ transaction.related_transaction.portfolio.name }}</option>
+              {% else %}
+                <option selected>{% trans %}Портфель удален{% endtrans %}</option>
+              {% endif %}
+            {% endif %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-12 main-type-box">
       <div class="mb-1">
         <label class="form-label h7">{% trans %}Цена{% endtrans %}</label>
         <div class="input-group">
-          <div class="" {{ ticker_box_style }}>
-            <select name="ticker2_id" class="form-select" required>
-              {% if transaction.quote_ticker %}
-                <option selected value="{{ transaction.quote_ticker.id }}">{{ transaction.quote_ticker.symbol|upper }}</option>
-              {% endif %}
-            </select>
+          <div {{ ticker_box_style }}>
+            <div class="type-box buy">
+              <select name="buy_ticker2_id" class="form-select"></select>
+            </div>
+            <div class="type-box sell">
+              <select name="sell_ticker2_id" class="form-select"></select>
+            </div>
           </div>
           <input type="number" step="any" class="form-control focus" placeholder="0,00"
-            name="price" autocomplete="off" value="{{ transaction.price|long_number if transaction.price }}" required>
+            name="price" autocomplete="off" value="{{ transaction.price|long_number if transaction.price }}">
         </div>
       </div>
     </div>
@@ -74,27 +111,31 @@
     <div class="col-md-12">
       <div class="mb-1" data-type="quantity">
         <label class="d-flex form-label h7">{% trans %}Количество{% endtrans %}
-          <span class="small-text ms-auto gap-2 sell">
-            <span class="{{ 'text-red' if not asset.free > 0 }}">{% trans %}Свободно:{% endtrans %} {{ asset.free }}</span>
+          <span class="small-text ms-auto gap-2 type-box sell output transferout">
+            <span class="{{ 'text-red' if not asset.free > 0 }}">{% trans %}В портфеле:{% endtrans %} {{ asset.free }}</span>
+            <span class="{{ 'text-red' if not asset.free > 0 }}">{% trans %}В кошельке:{% endtrans %}<span class="wallet-asset-free"> - </span></span>
             {% if asset.free > 0 %}
               <span class="link-primary">
+                <span class="paste-into-input" data-value="">MAX</span>
+{#
                 <span class="paste-into-input" data-value="{{ asset.free * 0.25 }}">25%</span>
                 <span class="paste-into-input" data-value="{{ asset.free * 0.5 }}">50%</span>
                 <span class="paste-into-input" data-value="{{ asset.free * 0.75 }}">75%</span>
                 <span class="paste-into-input" data-value="{{ asset.free }}">100%</span>
+#}
               </span>
             {% endif %}
           </span>
         </label>
         <div class="input-group">
-          <span class="input-group-text" {{ ticker_box_style }}>{{ asset.ticker.symbol|upper }}</span>
+          <span class="input-group-text" {{ ticker_box_style }}>{{ transaction.base_ticker.symbol|upper }}</span>
           <input type="number" step="any" min="0.00001" class="form-control" placeholder="0,00"
             name="quantity" autocomplete="off" value="{{ transaction.quantity|smart_round|abs or '' }}">
         </div>
       </div>
     </div>
 
-    <div class="col-md-12">
+    <div class="col-md-12 type-box buy sell">
       <div class="mb-1" data-type="amount">
         <label class="d-flex form-label h7">{% trans %}Сумма транзакции{% endtrans %}
           <div class="ms-auto cursor-pointer text-primary calculation-type">
@@ -148,8 +189,8 @@
       }
     } })
 
-  function UpdateQuoteTicker(data) {
-    var $select = $('#TransactionForm').find('select[name=ticker2_id]');
+  function UpdateQuoteTicker(data, filter) {
+    var $select = $('#TransactionForm').find(`select[name=${filter}_ticker2_id]`);
     if (data.value) {
       $select.empty().append($('<option>', {
         value: data.value,
@@ -165,9 +206,20 @@
   
   $('#TransactionForm').on('change', 'select[name*=wallet_id]', function () {
     var wallet_id = $(this).val(),
-      $select = $('#TransactionForm select[name=ticker2_id]'),
-      url = "{{ url_for('api.wallet_stable_assets')}}" + '?wallet_id=' + wallet_id;
+      filter = $(this).attr('name').replace('_wallet_id', ''),
+      $select = $('#TransactionForm').find(`.${filter}`).find(`select[name=${filter}_ticker2_id]`),
+      url = "{{ url_for('api.wallet_assets')}}" + '?wallet_id=' + wallet_id + '&filter=' + filter;
     $select.attr('data-url', url);
+
+    var $selected = $(this).find('option:selected')
+    var subtext = $selected.data('subtext')
+    if (subtext) {
+      subtext = subtext.replace('(', '').replace(')', '')
+      subtext = parseFloat(subtext)
+      $('.wallet-asset-free').text(subtext);
+      UpdateAssetLimit(+subtext)
+    }
+    
 
     //
     var transaction_type = "{{ transaction.type }}",
@@ -178,15 +230,15 @@
         value: "{{ transaction.quote_ticker.id }}",
         text: "{{ transaction.quote_ticker.symbol|upper }}",
         info: "{{ transaction.quote_ticker.price }}"
-      });
-    } else {
-      $.get(url + '&last=' + transaction_type).done(function (data) {
-        UpdateQuoteTicker($.parseJSON(data));
-      });
+      }, filter);
+    //} else {
+      //$.get(url + '&last=' + transaction_type).done(function (data) {
+        ////UpdateQuoteTicker($.parseJSON(data));
+      //});
     }
   })
 
-  $('#TransactionForm').on('change', 'select[name=ticker2_id]', function () {
+  $('#TransactionForm').on('change', 'select[name*=ticker2_id]', function () {
     var $selected = $(this).find(':selected'),
       ticker_price = $selected.data('info'),
       text = $selected.text() || '-';
@@ -214,28 +266,66 @@
   $('#TransactionForm').on('change', 'input[name=type]', function () {
     var $form = $('#TransactionForm'),
       free_asset = +{{ asset.free }},
-      calculation_type = $form.find('.calculation-type').find('.visually-hidden').attr('data-type');
+      calculation_type = "",
+      transaction_type = $(this).val().toLowerCase();
+
+      if ('sell or buy'.includes(transaction_type)) {
+        calculation_type = $form.find('.calculation-type').find('.visually-hidden').attr('data-type');
+        //ToDo
+        $('#TransactionForm input[name=price]').attr('required', true)
+      } else {
+        calculation_type = "quantity";
+        //ToDo
+        $('#TransactionForm input[name=price]').attr('required', false)
+      }
+
+      $form.find('.main-type-box').addClass('visually-hidden')
+      $form.find('.type-box').each(function () {
+        if ($(this).hasClass(transaction_type)) {
+          $(this).removeClass('visually-hidden').find('select, input[name=price]').attr('required', true)
+          //$(this).find('input').attr('required', true)
+          $(this).closest('.main-type-box').removeClass('visually-hidden')
+        } else {
+          $(this).addClass('visually-hidden').find('select, input[name=price]').attr('required', false)
+        }
+      })
+
+      //$form.find('.main-type-box').addClass('visually-hidden').find('select').attr('required', false).parent().addClass('visually-hidden');
+      //$form.find('.type-box').addClass('visually-hidden').find('select').attr('required', false);
+      //$form.find('.type-box').sliUp(500).find('select').attr('required', false);
+      
+      //$form.find(`.main-type-box.${transaction_type}`).removeClass('visually-hidden').find(`.${transaction_type}`).removeClass('visually-hidden').find('select').attr('required', true);
+      //$form.find(`.${transaction_type}`).slideDown(500).find('select').attr('required', true);
 
     if ('Sell'.includes($(this).val())) {
-      $form.find('.buy').addClass('visually-hidden').find('select').attr('required', false);
-      $form.find('.sell').removeClass('visually-hidden').find('select').attr('required', true);
       $form.find('input[name=quantity]').attr('max', free_asset).attr('disabled', free_asset <= 0 || calculation_type != 'quantity');
       $form.find('input[name=quantity2]').attr('disabled', free_asset <= 0 || calculation_type != 'amount');
       $form.find('button[type=submit]').attr('disabled', free_asset <= 0);
+
     } else {
-      $form.find('.sell').addClass('visually-hidden').find('select').attr('required', false);
-      $form.find('.buy').removeClass('visually-hidden').find('select').attr('required', true);
       $form.find('input[name=quantity]').removeAttr('max').attr('disabled', calculation_type != 'quantity');
       $form.find('input[name=quantity2]').attr('disabled', calculation_type != 'amount');
       $form.find('button[type=submit]').attr('disabled', false);
     }
+
     $('#TransactionForm .calculation-type').find("[data-type=" + calculation_type + "]").trigger('click');
   })
+
+  function UpdateAssetLimit(wallet_limit) {
+    var $box = $('#TransactionForm .paste-into-input');
+    var portfolio_limit = {{ asset.free }};
+    var limit = Math.min(portfolio_limit, wallet_limit)
+console.log(limit)
+    $box.data('value', limit)
+  }
 
   // Run
   $('#TypeTransaction').find("input[value={{ transaction.type }}]").trigger('click');
   $('#TransactionForm').find("select[name={{ transaction.type|lower }}_wallet_id]").trigger('change');
   $('#TransactionForm .calculation-type').find("[data-type={{ calculation_type }}]").trigger('click');
+
+
+
 </script>
 
 {% endblock %}

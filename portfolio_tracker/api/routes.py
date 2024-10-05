@@ -52,6 +52,19 @@ def all_currencies():
     return json.dumps(result, ensure_ascii=False)
 
 
+@bp.route('/portfolios', methods=['GET'])
+@login_required
+def portfolios():
+    result = []
+
+    for portfolio in current_user.portfolios:
+
+        result.append({'value': str(portfolio.id),
+                       'text': portfolio.name})
+
+    return json.dumps(result)
+
+
 @bp.route('/wallets_to_sell', methods=['GET'])
 @login_required
 def wallets_to_sell():
@@ -86,7 +99,7 @@ def wallets_to_buy():
 
     for wallet in current_user.wallets:
         wallet.update_price()
-        free = smart_round(wallet.free, 1)
+        free = smart_round(wallet.cost_now, 1)
         result.append({'value': str(wallet.id),
                        'text': wallet.name,
                        'sort': wallet.free,
@@ -130,36 +143,50 @@ def wallets_to_transfer_out():
     return json.dumps(result)
 
 
-@bp.route('/wallet_stable_assets', methods=['GET'])
+@bp.route('/wallet_assets', methods=['GET'])
 @login_required
-def wallet_stable_assets():
+def wallet_assets():
     result = []
+    in_wallet = []
     wallet = Wallet.get(request.args.get('wallet_id'))
-    last_type = request.args.get('last')
+    if not wallet:
+        return json.dumps({'message': gettext('Выберите кошелек')})
 
-    if last_type:
-        last_transaction = wallet.last_transaction(last_type) if wallet else None
-        if last_transaction:
-            ticker = last_transaction.quote_ticker
-        else:
-            ticker = current_user.currency_ticker
-
-        result = {'value': ticker.id,
-                  'text': ticker.symbol.upper(),
-                  'info': ticker.price}
-        return json.dumps(result)
-
-    if wallet:
-        wallet.update_price()
-        stables = wallet.stable_assets
-        stables = sorted(stables, key=lambda asset: asset.free, reverse=True)
-        for asset in stables:
+    wallet.update_price()
+    assets = wallet.assets
+    assets = sorted(assets, key=lambda asset: asset.free, reverse=True)
+    for asset in assets:
+        if asset.free:
             result.append({'value': asset.ticker.id,
                            'text': asset.ticker.symbol.upper(),
-                           'subtext': f'(~ {int(asset.free)})',
+                           'subtext': f'({asset.free})',
                            'info': asset.ticker.price})
+            in_wallet.append(asset.ticker.id)
 
-    if not result:
-        result = {'message': gettext('Нет активов в кошельке')}
+    tickers = db.select(Ticker)
+    tickers = tickers.where(Ticker.id.not_in(in_wallet))
+    tickers = tickers.order_by(Ticker.market_cap_rank.is_(None),
+                               Ticker.market_cap_rank.asc())
+    # search = request.args.get('search')
+    # page = request.args.get('page', 1, type=int)
+    #
+    # if search:
+    #     tickers = tickers.filter(Ticker.name.contains(search) |
+    #                              Ticker.symbol.contains(search))
+
+    # tickers = db.paginate(tickers, page=page, per_page=20, error_out=False)
+    tickers = db.session.execute(tickers).scalars()
+    for t in tickers:
+        # result.append({'value': t.id,
+        #                'text': t.symbol.upper(),
+        #                'subtext': t.name})
+        result.append({'value': t.id,
+                       'text': t.symbol.upper(),
+                       'subtext': t.name,
+                       'info': t.price})
+
+    # if not result:
+    #     return json.dumps({'message': gettext('Нет активов в кошельке')})
 
     return json.dumps(result)
+
