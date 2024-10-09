@@ -51,8 +51,6 @@
 
 <div class="row xs-mb-3">
   {{ i.top("Стоимость сейчас", wallet.cost_now|currency_price(round_to='usd')) }}
-  {{ i.top("В ордерах", wallet.in_orders|currency_price(round_to='usd')) }}
-  {{ i.top("Свободные средства", wallet.free|currency_price(round_to='usd')) }}
 </div>
 
 {% if wallet.assets %}
@@ -72,14 +70,12 @@
             <th data-sortable="true" data-field="name">{% trans %}Название{% endtrans %}</th>
             <th data-sortable="true" data-field="cost_now" data-sort-name="_cost_now">{% trans %}Стоимость сейчас{% endtrans %}</th>
             <th>{% trans %}Активы{% endtrans %}</th>
-            <th data-sortable="true" data-field="in_orders_sell" data-sort-name="_in_orders_sell">{% trans %}В ордерах на продажу{% endtrans %}</th>
-            <th data-sortable="true" data-field="in_orders_buy" data-sort-name="_in_orders_buy">{% trans %}В ордерах на покупку{% endtrans %}</th>
+            <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}В ордерах{% endtrans %}</th>
             <th></th>
 
             <!-- For sorting -->
             <th class="visually-hidden" data-field="_cost_now"></th>
-            <th class="visually-hidden" data-field="_in_orders_buy"></th>
-            <th class="visually-hidden" data-field="_in_orders_sell"></th>
+            <th class="visually-hidden" data-field="_in_orders"></th>
           </tr>
         </thead>
         <tbody>
@@ -107,7 +103,6 @@
               <td>{{ asset.cost_now|currency_price(round_to='usd', default='-') }}</td>
               <td>{{ asset.quantity|currency_quantity(round_to=ticker.price, currency=ticker.symbol, default='-') }}</td>
               <td>{{ asset.sell_orders|currency_quantity(round_to='usd', currency=ticker.symbol, default='-') }}</td>
-              <td>{{ asset.buy_orders|currency_price(round_to='usd', default='-') }}</td>
 
               <td class="align-middle text-end">
                 <div class="d-flex justify-content-end">
@@ -141,7 +136,6 @@
               <!-- For sorting -->
               <td class="visually-hidden">{{ asset.cost_now }}</td>
               <td class="visually-hidden">{{ asset.sell_orders }}</td>
-              <td class="visually-hidden">{{ asset.buy_orders }}</td>
 
             </tr>
           {% endfor %}

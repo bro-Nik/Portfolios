@@ -53,7 +53,6 @@
              portfolio.amount|abs|currency_price(round_to='usd')) }}
     {{ i.top("Прибыль", portfolio|profit, portfolio|color) }}
     {{ i.top("Доля от всех инвестиций", [portfolio|share_of(portfolios.invested), ' / ', portfolio|percent]) }}
-    {{ i.top("В ордерах", portfolio.in_orders|currency_price(round_to='usd')) }}
   </div>
 
   <div class="big-table pt-3 pb-3">
@@ -119,7 +118,7 @@
                       {{ (asset.amount if asset.amount > 0 else 0)|currency_price(round_to='usd') }} /
                     {% endif %}
                     <span class="{{ asset|color }}">{{ asset.cost_now|currency_price(round_to='usd') }}</span><br>
-                    <span class="text-average small-text">{{ asset.quantity|currency_quantity(round_to=asset.ticker.price, currency=asset.ticker.symbol) }}</span>
+                    <span class="text-average small-text text-muted">{{ asset.quantity|currency_quantity(round_to=asset.ticker.price, currency=asset.ticker.symbol) }}</span>
                   {% else %}
                     -
                   {% endif %}
@@ -133,7 +132,7 @@
               </td>
 
               <td>{{ asset|share_of(portfolio.invested) }} / {{ asset|percent }}</td>
-              <td>{{ asset.in_orders|currency_price(round_to='usd', default='-') }}</td>
+              <td>{{ asset.in_orders|currency_price(round_per=0.1, currency=asset.ticker.symbol, default='-') }}</td>
 
               <td>
                 <div class="d-flex comment">

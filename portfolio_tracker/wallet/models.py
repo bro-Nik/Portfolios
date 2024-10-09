@@ -37,10 +37,6 @@ class Wallet(db.Model):
     @classmethod
     def create(cls, user: User = current_user, first=False) -> Wallet:
         wallet = Wallet(name=gettext('Кошелек по умолчанию') if first else '')
-        if not user.currency_ticker:
-            from ..portfolio.models import Ticker
-            user.currency_ticker = Ticker.get(user.currency_ticker_id)
-        wallet.create_asset(user.currency_ticker)
         return wallet
 
     @staticmethod
@@ -115,10 +111,10 @@ class Wallet(db.Model):
         asset = WalletAsset(ticker_id=ticker.id,
                             ticker=ticker,
                             wallet=self,
-                            wallet_id=self.id,
-                            quantity=0,
-                            buy_orders=0,
-                            sell_orders=0)
+                            wallet_id=self.id)
+        asset.set_default_data()
+
+        self.wallet_assets.append(asset)
         return asset
 
     def last_transaction(self, transaction_type: str) -> Transaction | None:
@@ -144,8 +140,8 @@ class Wallet(db.Model):
 
 class WalletAsset(db.Model, TransactionsMixin):
     id = db.Column(db.Integer, primary_key=True)
-    wallet_id: int = db.Column(db.Integer, db.ForeignKey('wallet.id'))
     ticker_id: str = db.Column(db.String(256), db.ForeignKey('ticker.id'))
+    wallet_id: int = db.Column(db.Integer, db.ForeignKey('wallet.id'))
     quantity: float = db.Column(db.Float, default=0)
     buy_orders: float = db.Column(db.Float, default=0)
     sell_orders: float = db.Column(db.Float, default=0)
@@ -176,17 +172,22 @@ class WalletAsset(db.Model, TransactionsMixin):
 
     @property
     def free(self) -> float:
-        if self.ticker.stable:
-            return self.quantity - self.buy_orders
+        # if self.ticker.stable:
+        #     return self.quantity - self.buy_orders
         return self.quantity - self.sell_orders
 
-    def recalculate(self) -> None:
+    def set_default_data(self):
         self.quantity = 0
         self.buy_orders = 0
         self.sell_orders = 0
 
+    def recalculate(self) -> None:
+        self.set_default_data()
+
         for t in self.transactions:
-            is_base_asset = bool(self.ticker_id == t.ticker_id)
+            # is_base_asset = bool(self.ticker_id == t.ticker_id)
+            # if is_base_asset:
+            #     t.update_dependencies()
 
             if not t.order:
                 quantity = 'quantity' if is_base_asset else 'quantity2'

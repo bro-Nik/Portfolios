@@ -119,85 +119,87 @@ class Transaction(db.Model):
         # Направление сделки (direction)
         d = -1 if param == 'cancel' else 1
 
-        # Кошелек
         wallet = Wallet.get(self.wallet_id)
         portfolio = Portfolio.get(self.portfolio_id)
+        p_asset1 = p_asset2 = w_asset1 = w_asset2 = None
 
-        # Базовый актив кошелька
-        if wallet:
-            w_asset1 = wallet.get_asset(self.ticker_id)
-            if not w_asset1:
-                ticker1 = Ticker.get(self.ticker_id) or abort(404)
-                w_asset1 = wallet.create_asset(ticker1)
-                wallet.wallet_assets.append(w_asset1)
+        # # New code
+        # # Базовый актив кошелька
+        # wallet = Wallet.get(self.wallet_id)
+        # if wallet:
+        #     w_asset1 = wallet.get_asset(self.ticker_id)
+        #     if not w_asset1:
+        #         ticker1 = Ticker.get(self.ticker_id)
+        #         w_asset1 = wallet.create_asset(ticker1)
+        #
+        # # Базовый актив портфеля
+        # portfolio = Portfolio.get(self.portfolio_id)
+        # if portfolio:
+        #     p_asset = self.portfolio_asset
+        #
+        # # End New code
 
         # Базовый актив портфеля
-        if portfolio:
-            p_asset = self.portfolio_asset or abort(404)
-        # if p_asset.ticker_id == self.ticker2_id:
-        #     print('p_asset.ticker_id == self.ticker2_id')
-        #     return
+        p_asset1 = get_or_create_asset(portfolio, self.ticker_id)
+        # Котируемый актив портфеля
+        p_asset2 = get_or_create_asset(portfolio, self.ticker2_id)
+        # Базовый актив кошелька
+        w_asset1 = get_or_create_asset(wallet, self.ticker_id)
+        # Котируемый актив кошелька
+        w_asset2 = get_or_create_asset(wallet, self.ticker2_id)
 
-        if self.type in ('Buy', 'Sell') and wallet and portfolio:
-            # Котируемый актив портфеля
-            p_asset2 = portfolio.get_asset(self.ticker2_id)
-            if not p_asset2:
-                p_asset2 = portfolio.create_asset(self.quote_ticker)
-                portfolio.assets.append(p_asset2)
-                db.session.commit()
 
-            # Котируемый актив кошелька
-            w_asset2 = wallet.get_asset(self.ticker2_id)
-            if not w_asset2:
-                ticker2 = Ticker.get(self.ticker2_id) or abort(404)
-                w_asset2 = wallet.create_asset(ticker2)
-                wallet.wallet_assets.append(w_asset2)
 
+        if self.type in ('Buy', 'Sell'):
+            # Условия
+            if not (p_asset1 and p_asset2 and w_asset1 and w_asset2):
+                return
+
+            # Ордер
             if self.order:
                 if self.type == 'Buy':
-                    p_asset.in_orders += self.quantity * self.price_usd * d
-                    p_asset2.in_orders += self.quantity2 * self.price_usd * d * -1
+                    # p_asset.in_orders += self.quantity * self.price_usd * d
+                    p_asset2.in_orders -= self.quantity2 * d
                     w_asset1.buy_orders += self.quantity * self.price_usd * d
                     w_asset2.buy_orders -= self.quantity2 * d
                 elif self.type == 'Sell':
                     w_asset1.sell_orders -= self.quantity * d
+                    p_asset1.in_orders -= self.quantity * d
 
+            # Не ордер
             else:
-                p_asset.amount += self.quantity * self.price_usd * d
-                p_asset.quantity += self.quantity * d
-                p_asset2.amount += self.quantity2 * d
+                p_asset1.amount += self.quantity * self.price_usd * d
+                p_asset1.quantity += self.quantity * d
+                p_asset2.amount += self.quantity2 * p_asset2.price * d
                 p_asset2.quantity += self.quantity2 * d
 
                 w_asset1.quantity += self.quantity * d
                 w_asset2.quantity += self.quantity2 * d
 
-        elif self.type in ('Earning') and wallet and portfolio:
-            p_asset.quantity += self.quantity * d
+        elif self.type in ('Earning'):
+            # Условия
+            if not (p_asset1 and w_asset1):
+                return
+
+            p_asset1.quantity += self.quantity * d
             w_asset1.quantity += self.quantity * d
 
         # elif self.type in ('Input', 'Output') and wallet and portfolio:
         else:
-            if portfolio:
-                p_asset.amount += self.quantity * d
-                p_asset.quantity += self.quantity * d
-            if wallet:
+            if portfolio and p_asset1:
+                p_asset1.amount += self.quantity * d
+                p_asset1.quantity += self.quantity * d
+            if wallet and w_asset1:
                 w_asset1.quantity += self.quantity * d
 
 
 
-    def update_related_transaction(self, cls, obj_id):
-            # Связанная транзакция
-        obj = cls.get(obj_id)
-        if obj:
-            asset2 = obj.get_asset(self.ticker_id)
-            if not asset2:
-                ticker2 = Ticker.get(self.ticker_id) or abort(404)
-                asset2 = obj.create_asset(ticker2)
-                if hasattr(obj, "assets"):
-                    obj.assets.append(asset2)
-                elif hasattr(obj, "wallet_assets"):
-                    obj.wallet_assets.append(asset2)
+    def update_related_transaction(self, parent_cls, parent_id):
+        # Связанная транзакция
+        parent = parent_cls.get(parent_id)
+        asset2 = get_or_create_asset(parent, self.ticker_id)
 
+        if asset2:
             transaction2 = self.related_transaction
             if not transaction2:
                 transaction2 = asset2.create_transaction()
@@ -230,6 +232,17 @@ class Transaction(db.Model):
     def delete(self) -> None:
         self.update_dependencies('cancel')
         db.session.delete(self)
+
+
+def get_or_create_asset(parent, ticker_id):
+    if not parent or not ticker_id:
+        return
+
+    asset = parent.get_asset(ticker_id)
+    if not asset:
+        ticker = Ticker.get(ticker_id)
+        asset = parent.create_asset(ticker)
+    return asset
 
 
 class Asset(db.Model, DetailsMixin, TransactionsMixin):
@@ -271,6 +284,10 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
     def cost_now(self) -> float:
         return self.quantity * self.price
 
+    @property
+    def free(self) -> float:
+        return self.quantity - self.in_orders
+
     def edit(self, form: dict) -> None:
         comment = form.get('comment')
         percent = form.get('percent')
@@ -280,9 +297,9 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
         if percent is not None:
             self.percent = percent
 
-    def get_free(self) -> float:
-        return sum(t.quantity for t in self.transactions
-                   if not (t.order and t.type == 'Buy'))
+    # def get_free(self) -> float:
+    #     return sum(t.quantity for t in self.transactions
+    #                if not (t.order and t.type == 'Buy'))
 
     def create_transaction(self) -> Transaction | OtherTransaction:
         """Возвращает новую транзакцию."""
@@ -296,13 +313,18 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
 
         return transaction
 
-    def recalculate(self):
+    def set_default_data(self):
         self.amount = 0
         self.quantity = 0
         self.in_orders = 0
 
+    def recalculate(self):
+        self.set_default_data()
+
         # for t in self.transactions:
-        #     t.update_dependencies()
+        #     is_base_asset = bool(self.ticker_id == t.ticker_id)
+        #     if is_base_asset:
+        #         t.update_dependencies()
             # if t.type in ('Buy', 'Sell'):
             #     if t.order:
             #         if t.type == 'Buy':
@@ -311,6 +333,7 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
             #         self.amount += t.quantity * t.price_usd
             #         self.quantity += t.quantity
 
+        # Рабочий
         for t in self.transactions:
 
             if t.type in ('Buy', 'Sell'):
@@ -318,7 +341,7 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
                     # Это котируемый актив
                     if t.order:
                         if t.type == 'Buy':
-                            self.in_orders += t.quantity2
+                            self.in_orders -= t.quantity2
                         # elif self.type == 'Sell':
                         #     w_asset1.sell_orders -= self.quantity * d
 
@@ -329,8 +352,8 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
                 else:
                     # Это базовый актив
                     if t.order:
-                        if t.type == 'Buy':
-                            self.in_orders += t.quantity * t.price_usd
+                        if t.type == 'Sell':
+                            self.in_orders -= t.quantity
                         # elif self.type == 'Sell':
                         #     w_asset1.sell_orders -= self.quantity * d
 
@@ -690,8 +713,10 @@ class Portfolio(db.Model, DetailsMixin):
 
     def create_asset(self, ticker: Ticker) -> Asset:
         """Возвращает новый актив"""
-        asset = Asset(ticker=ticker, ticker_id=ticker.id)
-        print(asset.ticker.name)
+        asset = Asset(ticker=ticker,
+                      ticker_id=ticker.id)
+        asset.set_default_data()
+        self.assets.append(asset)
         return asset
 
     def create_other_asset(self) -> OtherAsset:

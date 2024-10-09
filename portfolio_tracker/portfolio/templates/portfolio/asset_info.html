@@ -84,7 +84,8 @@
              "Зафиксировано", asset.amount|abs|currency_price(round_to='usd')) }}
     {{ i.top("Прибыль", asset|profit, asset|color) }}
     {{ i.top("Доля от портфеля", [asset|share_of(asset.portfolio.invested), " / ", asset|percent]) }}
-    {{ i.top("В ордерах", asset.in_orders|currency_price(round_to='usd')) }}
+    {{ i.top("В ордерах", asset.in_orders|currency_quantity(currency=ticker.symbol)) }}
+    {{ i.top("Свободно", asset.free|currency_quantity(currency=ticker.symbol)) }}
   </div>
 
 <div class="big-table pt-3 pb-3">
@@ -97,6 +98,7 @@
           </th>
           <th>{% trans %}Тип{% endtrans %}</th>
           <th>{% trans %}Цена{% endtrans %}</th>
+          <th>{% trans %}Сумма{% endtrans %}</th>
           <th>{% trans %}Количество{% endtrans %}</th>
           <th>{% trans %}Связь{% endtrans %}</th>
           <th>{% trans %}Комментарий{% endtrans %}</th>
@@ -121,29 +123,43 @@
               {{ transaction.base_ticker.name if transaction.ticker_id != asset.ticker_id }}
               {{ '(' + gettext('Ордер') + ')' if transaction.order }}
               <br>
-              <span class="small-text">{{ transaction.date|user_datetime }}</span>
+              <span class="small-text text-muted">{{ transaction.date|user_datetime }}</span>
             </div>
           </td>
 
+          {# Цена #}
           <td>
             {% if transaction.price and transaction.price_usd %}
-            {{ transaction.price_usd|currency_price(round_per=0.1) }}
-            {% if other_currency %}
-            ({{ transaction.price|currency_price(round_per=0.1, currency=transaction.quote_ticker.symbol) }})
-            {% endif %}
+              {{ transaction.price_usd|currency_price(round_per=0.1) }}
+              <br>
+              {% if other_currency %}
+                <span class="small-text text-muted">
+                  {{ transaction.price|currency_price(round_per=0.1, currency=transaction.quote_ticker.symbol) }}
+                </span>
+              {% endif %}
             {% endif %}
           </td>
 
+          {# Сумма #}
           <td>
             {% if transaction.quantity2 %}
             {{ '+' if transaction.quantity2 > 0 }}{{ (transaction.quantity * transaction.price_usd *
             -1)|currency_price(round_to='usd') }}
-            {% if other_currency %}
-            ({{ transaction.quantity2|abs|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }})
-            {% endif %}
             <br>
+            
+            {% if other_currency %}
+              <span class="small-text text-muted">
+                {{ '+' if transaction.quantity2 > 0 }}{{ transaction.quantity2|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }}
+              </span>
+            
             {% endif %}
-            <span class="text-average small-text {{ color }}">
+            {% endif %}
+          </td>
+
+
+          {# Количество #}
+          <td>
+            <span class="{{ color }}">
               {{ '+' if transaction.quantity > 0 }}{{
               transaction.quantity|currency_quantity(round_to=transaction.base_ticker.price,
               currency=transaction.base_ticker.symbol) }}

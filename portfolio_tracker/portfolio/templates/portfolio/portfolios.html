@@ -26,7 +26,6 @@
     {{ i.top("Вложено" if portfolios.amount >= 0 else "Зафиксировано",
              portfolios.amount|abs|currency_price(round_to='usd')) }}
     {{ i.top("Прибыль", portfolios|profit, portfolios|color) }}
-    {{ i.top("В ордерах", portfolios.in_orders|currency_price(round_to='usd')) }}
   </div>
 
   <div class="big-table">
@@ -47,7 +46,6 @@
             <th data-sortable="true" data-field="total_spent" data-sort-name="_total_spent">{% trans %}Вложено{% endtrans %}</th>
             <th data-sortable="true" data-field="profit" data-sort-name="_profit">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</th>
             <th data-sortable="true" data-field="percent" data-sort-name="_percent">{% trans %}Доля от всех инвестиций{% endtrans %}</th>
-            <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}В ордерах{% endtrans %}</th>
             <th>{% trans %}Комментарий{% endtrans %}</th>
             <th></th>
             <!-- For sorting -->
@@ -56,7 +54,6 @@
             <th class="visually-hidden" data-field="_cost_now"></th>
             <th class="visually-hidden" data-field="_profit"></th>
             <th class="visually-hidden" data-field="_percent"></th>
-            <th class="visually-hidden" data-field="_in_orders"></th>
           </tr>
         </thead>
 
@@ -91,7 +88,6 @@
               </td>
               
               <td>{{ portfolio|share_of(portfolios.invested) }} / {{ portfolio|percent }}</td>
-              <td>{{ portfolio.in_orders|currency_price(round_to='usd', default='-') }}</td>
 
               <td>
                 <div class="d-flex comment">
@@ -131,7 +127,6 @@
               <td class="visually-hidden">{{ portfolio.cost_now }}</td>
               <td class="visually-hidden">{{ portfolio.profit }}</td>
               <td class="visually-hidden">{{ (portfolio.cost_now / portfolios.cost_now * 100) if portfolios.cost_now }}</td>
-              <td class="visually-hidden">{{ portfolio.in_orders }}</td>
 
             </tr>
           {% endfor %}

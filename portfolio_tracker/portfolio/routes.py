@@ -235,7 +235,7 @@ def transaction_info():
         return render_template('portfolio/other_transaction.html', asset=asset,
                                transaction=transaction)
 
-    asset.free = asset.get_free() - transaction.quantity
+    # asset.free = asset.get_free() - transaction.quantity
     wallets = {'Buy': Wallet.last('buy'),
                'Sell': Wallet.get_has_asset(asset.ticker_id)}
     if transaction.wallet:

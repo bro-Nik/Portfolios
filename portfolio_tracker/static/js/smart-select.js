@@ -151,8 +151,9 @@ function GetOptions($select) {
         value: data[i].value,
         text: data[i].text
       })
-      .data('subtext', data[i].subtext)
-      .data('info', data[i].info)
+      
+      // Сохранение дополнительных данных
+      for (let key of Object.keys(data[i])) $newOption.data(key, data[i][key]);
 
       $select.append($newOption);
       if (data[i].value == selectedOptionValue) {

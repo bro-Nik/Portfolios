@@ -114,7 +114,22 @@ def currency_quantity(num: int | float, currency: str = '', default: str = '',
     if not currency:
         currency = get_currency()
 
-    return f'{long_number(num)} {currency.upper()}'
+    locale = get_locale()
+    s = str(long_number(num))
+    index = s.find('.')
+    length = len(s[index + 1:]) if index >0 else 0
+    frac = (length, length)
+
+    locale = Locale.parse(locale)
+    p = locale.currency_formats['standard']
+    rez = str(p.apply(num, locale, currency=currency.upper(), force_frac=frac))
+
+    # Разрыв, если у валюта пишется вначале и у нее нет символа
+    if rez.startswith(currency):
+        rez = rez.replace(currency, f'{currency} ')
+
+    # return f'{long_number(num)} {currency.upper()}'
+    return rez
 
 
 def user_datetime(date: datetime, not_format: bool = False) -> str:
@@ -134,7 +149,17 @@ def percent(obj):
 def share_of(obj, parent_amount):
     if obj.amount <= 0 or parent_amount <= 0:
         return '-'
-    return f'{smart_round(obj.amount / parent_amount * 100, 0.1)}%'
+    num = smart_round(obj.amount / parent_amount * 100, 0.1)
+
+    locale = get_locale()
+    s = str(long_number(num))
+    length = len(s[s.find('.'):])
+    frac = (length, length)
+
+    locale = Locale.parse(locale)
+    p = locale.currency_formats['standard']
+    rez = str(p.apply(num, locale, currency='%', force_frac=frac))
+    return rez
 
 
 def profit(obj):

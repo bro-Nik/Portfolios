@@ -55,7 +55,7 @@
         <div class="type-box buy input earning">
           <select name="buy_wallet_id" class="form-select" data-placeholder="-"
             data-url="{{ url_for('api.wallets_to_buy') }}">
-            {% if transaction.type in ('Buy', 'Earning') and transaction.wallet_id %}
+            {% if transaction.type in ('Buy', 'Input', 'Earning') and transaction.wallet_id %}
               <option selected value="{{ transaction.wallet.id }}">{{ transaction.wallet.name }}</option>
             {% endif %}
           </select>
@@ -63,7 +63,7 @@
         <div class="type-box sell output">
           <select name="sell_wallet_id" class="form-select" data-placeholder="-"
             data-url="{{ url_for('api.wallets_to_sell', ticker_id=asset.ticker_id) }}">
-            {% if transaction.type == 'Sell' and transaction.wallet_id %}
+            {% if transaction.type in ('Sell', 'Output') and transaction.wallet_id %}
               <option selected value="{{ transaction.wallet.id }}">{{ transaction.wallet.name }}</option>
             {% endif %}
           </select>
@@ -212,12 +212,11 @@
     $select.attr('data-url', url);
 
     var $selected = $(this).find('option:selected')
-    var subtext = $selected.data('subtext')
-    if (subtext) {
-      subtext = subtext.replace('(', '').replace(')', '')
-      subtext = parseFloat(subtext)
-      $('.wallet-asset-free').text(subtext);
-      UpdateAssetLimit(+subtext)
+    var free_in_wallet = $selected.data('free')
+console.log(free_in_wallet)
+    if (free_in_wallet) {
+      $('.wallet-asset-free').text(+free_in_wallet);
+      UpdateAssetLimit(+free_in_wallet)
     }
     
 

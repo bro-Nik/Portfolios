@@ -94,12 +94,17 @@ def user_action():
         db.session.commit()
         return {'redirect': str(url_for('user.login'))}
 
-    if action == 'delete_data':
+    elif action == 'delete_data':
         current_user.cleare()
         wallet = Wallet.create(first=True)
         current_user.wallets.append(wallet)
         db.session.commit()
         flash(gettext('Профиль очищен'))
+
+    elif action == 'recalculate':
+        current_user.recalculate()
+        db.session.commit()
+        flash(gettext('Активы пересчитны'))
 
     return ''
 

@@ -81,6 +81,7 @@ def wallets_to_sell():
                 result.append({'value': str(wallet.id),
                                'text': wallet.name,
                                'sort': asset.free,
+                               'free': asset.free,
                                'subtext': f'({quantity})'})
 
     if result:
@@ -99,11 +100,11 @@ def wallets_to_buy():
 
     for wallet in current_user.wallets:
         wallet.update_price()
-        free = smart_round(wallet.cost_now, 1)
-        result.append({'value': str(wallet.id),
+        cost_now = smart_round(wallet.cost_now, 1)
+        result.append({'value': wallet.id,
                        'text': wallet.name,
-                       'sort': wallet.free,
-                       'subtext': f"(~ {currency_quantity(free)})"})
+                       'sort': cost_now,
+                       'subtext': f"(~ {currency_quantity(cost_now)})"})
 
     result = sorted(result, key=lambda wallet: wallet.get('sort'),
                     reverse=True)
@@ -160,6 +161,7 @@ def wallet_assets():
             result.append({'value': asset.ticker.id,
                            'text': asset.ticker.symbol.upper(),
                            'subtext': f'({asset.free})',
+                           'free': asset.free,
                            'info': asset.ticker.price})
             in_wallet.append(asset.ticker.id)
 

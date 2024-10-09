@@ -58,15 +58,10 @@
 
 {% if asset.transactions %}
   <div class="row mb-5 xs-mb-3">
-    {% if not ticker.stable %}
-      {{ i.top("Количество", asset.quantity|currency_quantity(currency=ticker.symbol)) }}
-      {{ i.top("Стоимость сейчас", asset.cost_now|currency_price(round_to='usd')) }}
-      {{ i.top("В ордерах на продажу", asset.sell_orders|currency_quantity(round_to='usd', currency=ticker.symbol)) }}
-      {{ i.top("В ордерах на покупку", asset.buy_orders|currency_price(round_to='usd')) }}
-    {% else %}
-      {{ i.top("Свободно", asset.free|currency_quantity(round_per=1, currency=ticker.symbol)) }}
-      {{ i.top("В ордерах", asset.buy_orders|currency_quantity(round_per=1, currency=ticker.symbol)) }}
-    {% endif %}
+    {{ i.top("Количество", asset.quantity|currency_quantity(currency=ticker.symbol)) }}
+    {{ i.top("Стоимость сейчас", asset.cost_now|currency_price(round_to='usd')) }}
+    {{ i.top("В ордерах", asset.sell_orders|currency_quantity(round_to='usd', currency=ticker.symbol)) }}
+    {{ i.top("Свободно", asset.free|currency_quantity(round_to='usd', currency=ticker.symbol)) }}
   </div>
 
 <div class="big-table pt-3 pb-3">
@@ -78,9 +73,10 @@
             <input class="form-check-input check-all" type="checkbox">
           </th>
           <th>{% trans %}Тип{% endtrans %}</th>
-          <th>{% trans %}Связь{% endtrans %}</th>
           <th>{% trans %}Цена{% endtrans %}</th>
+          <th>{% trans %}Сумма{% endtrans %}</th>
           <th>{% trans %}Количество{% endtrans %}</th>
+          <th>{% trans %}Связь{% endtrans %}</th>
           <th>{% trans %}Комментарий{% endtrans %}</th>
           <th></th>
         </tr>
@@ -93,12 +89,8 @@
             {% set url = url_for('wallet.transaction_info', wallet_id=asset.wallet_id, asset_id=asset.id, transaction_id=transaction.id) %}
           {% endif %}
 
-          {#}
-          {% set quantity = transaction.quantity2 or 0 if transaction.portfolio_asset and ticker.stable else transaction.quantity or 0 %}
-          {#}
-          {% set quantity = transaction.quantity2 or 0 if transaction.ticker2_id == ticker.id else transaction.quantity or 0 %}
-          {% set quantity2 = transaction.quantity if transaction.portfolio_asset and ticker.stable else transaction.quantity2 %}
-          {% set color = 'text-green' if quantity > 0 else 'text-red' %}
+          {% set color = 'text-green' if transaction.quantity > 0 else 'text-red' %}
+          {% set other_currency = current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
 
           <tr class="{{ 'table-order' if transaction.order }}">
 
@@ -110,12 +102,52 @@
               <div class="open-modal" data-modal-id="TransactionModal" data-url="{{ url }}">
                 <span class="{{ color }}">{{ gettext(transaction.type) }}</span>
                 {% if transaction.portfolio_asset and ticker.stable %}
-                  <span class="text-muted">{{ transaction.base_ticker.symbol|upper }}</span>
+                  {{ transaction.base_ticker.name }}
                 {% endif %}
                 {{ '(' + gettext('Ордер') + ')' if transaction.order }}<br>
-                <span class="small-text">{{ transaction.date|user_datetime }}</span>
+                <span class="small-text text-muted">{{ transaction.date|user_datetime }}</span>
               </div>
             </td>
+
+
+            {# Цена #}
+            <td>
+              {% if transaction.type in ('Buy', 'Sell') %}
+                {{ transaction.price_usd|currency_price }}
+                {% if other_currency %}
+                  <br>
+                  <span class="small-text text-muted">
+                    {{ transaction.price|currency_price(currency=transaction.quote_ticker.symbol) }}<br>
+                  </span>
+                {% endif %}
+              {% endif %}
+            </td>
+
+          {# Сумма #}
+          <td>
+            {% if transaction.quantity2 %}
+            {{ '+' if transaction.quantity2 > 0 }}{{ (transaction.quantity * transaction.price_usd *
+            -1)|currency_price(round_to='usd') }}
+            <br>
+            
+            {% if other_currency %}
+              <span class="small-text text-muted">
+                {{ '+' if transaction.quantity2 > 0 }}{{ transaction.quantity2|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }}
+              </span>
+            
+            {% endif %}
+            {% endif %}
+          </td>
+
+
+          {# Количество #}
+          <td>
+            <span class="{{ color }}">
+              {{ '+' if transaction.quantity > 0 }}{{
+              transaction.quantity|currency_quantity(round_to=transaction.base_ticker.price,
+              currency=transaction.base_ticker.symbol) }}
+            </span>
+          </td>
 
             <td>
 {#}
@@ -149,31 +181,6 @@
               {% endif %}
             </td>
 
-            {% set other_currency = current_user.currency|lower != transaction.quote_ticker.symbol|lower %}
-
-            <td>
-              {% if transaction.type in ('Buy', 'Sell') %}
-                {% if other_currency %}
-                  {{ transaction.price|currency_price(currency=transaction.quote_ticker.symbol) }}<br>
-                {% endif %}
-                {{ transaction.price_usd|currency_price }}
-              {% else %}
-              -
-              {% endif %}
-            </td>
-
-            <td>
-              {% if transaction.type in ('Buy', 'Sell') %}
-                {% if other_currency %}
-                  {{ '+' if quantity2 > 0 }}{{ quantity2|currency_price(round_to='usd', currency=transaction.quote_ticker.symbol) }}<br>
-                {% endif %}
-                {{ '+' if quantity2 > 0 }}{{ (quantity * transaction.price_usd * -1)|currency_price(round_to='usd') }}<br>
-              {% endif %}
-              <span class="text-average small-text {{ color }}">
-                {{ '+' if transaction.quantity > 0 }}{{ transaction.quantity|currency_quantity(round_to=ticker.price, currency=ticker.symbol) }}
-              </span>
-
-            </td>
 
             <td>
               <div class="d-flex comment">

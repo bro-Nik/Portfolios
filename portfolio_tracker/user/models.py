@@ -100,6 +100,33 @@ class User(db.Model, UserMixin):
     def unmake_admin(self) -> None:
         self.type = ''
 
+    def recalculate(self) -> None:
+        transactions = []
+        for p in self.portfolios:
+            # Сброс активов
+            for a in p.assets:
+                a.data_reset()
+
+            # Сбор транзакций
+            for t in p.transactions:
+                # if t not in transactions and t.related_transaction not in transactions:
+                if t not in transactions:
+                    transactions.append(t)
+
+        for w in self.wallets:
+            # Сброс активов
+            for a in w.wallet_assets:
+                a.data_reset()
+
+            # Сбор транзакций
+            for t in w.transactions:
+                # if t not in transactions and t.related_transaction not in transactions:
+                if t not in transactions:
+                    transactions.append(t)
+
+        for t in transactions:
+            t.update_dependencies()
+
 
 class UserInfo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
