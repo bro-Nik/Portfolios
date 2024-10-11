@@ -2,7 +2,7 @@
 *instance/
 .idea/
 .coverage
-migrations/
+# migrations/
 __pycache__/
 logs/
 data/
