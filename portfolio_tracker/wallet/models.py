@@ -8,7 +8,7 @@ from flask_login import current_user
 from sqlalchemy.orm import Mapped
 
 from ..app import db
-from ..models import TransactionsMixin
+from ..models import AssetMixin, TransactionsMixin
 from ..general_functions import find_by_attr
 
 if TYPE_CHECKING:
@@ -100,7 +100,7 @@ class Wallet(db.Model):
         db.session.delete(self)
 
 
-class WalletAsset(db.Model, TransactionsMixin):
+class WalletAsset(db.Model, AssetMixin, TransactionsMixin):
     id = db.Column(db.Integer, primary_key=True)
     ticker_id: str = db.Column(db.String(256), db.ForeignKey('ticker.id'))
     wallet_id: int = db.Column(db.Integer, db.ForeignKey('wallet.id'))
@@ -119,22 +119,6 @@ class WalletAsset(db.Model, TransactionsMixin):
         viewonly=True,
         backref=db.backref('wallet_asset', lazy=True)
     )
-
-    @property
-    def is_empty(self) -> bool:
-        return not self.transactions
-
-    @property
-    def price(self):
-        return self.ticker.price
-
-    @property
-    def cost_now(self):
-        return self.quantity * self.price
-
-    @property
-    def free(self) -> float:
-        return self.quantity - self.sell_orders
 
     def set_default_data(self):
         self.quantity = 0
@@ -174,13 +158,6 @@ class WalletAsset(db.Model, TransactionsMixin):
         )
 
         return transaction
-
-    def delete_if_empty(self) -> None:
-        if self.is_empty:
-            self.delete()
-        else:
-            flash(gettext('В активе %(name)s есть транзакции',
-                          name=self.ticker.name), 'warning')
 
     def delete(self) -> None:
         for transaction in self.transactions:

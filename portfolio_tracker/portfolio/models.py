@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped
 
 from ..app import db
 from ..general_functions import find_by_attr, from_user_datetime, remove_prefix
-from ..models import DetailsMixin, TransactionsMixin
+from ..models import AssetMixin, DetailsMixin, TransactionsMixin
 from ..wallet.models import Wallet
 
 
@@ -229,7 +229,7 @@ def get_or_create_asset(parent, ticker_id):
     return asset
 
 
-class Asset(db.Model, DetailsMixin, TransactionsMixin):
+class Asset(db.Model, DetailsMixin, AssetMixin, TransactionsMixin):
     id = db.Column(db.Integer, primary_key=True)
     ticker_id: str = db.Column(db.String(256), db.ForeignKey('ticker.id'))
     portfolio_id: int = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
@@ -253,24 +253,9 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
     )
 
     @property
-    def is_empty(self) -> bool:
-        return not (self.transactions or self.comment)
-
-    @property
-    def price(self) -> float:
-        return self.ticker.price
-
-    @property
     def average_buy_price(self) -> float:
         return self.amount / self.quantity if self.quantity and self.amount > 0 else 0
 
-    @property
-    def cost_now(self) -> float:
-        return self.quantity * self.price
-
-    @property
-    def free(self) -> float:
-        return self.quantity - self.sell_orders
 
     def edit(self, form: dict) -> None:
         comment = form.get('comment')
@@ -280,10 +265,6 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
             self.comment = comment
         if percent is not None:
             self.percent = percent
-
-    # def get_free(self) -> float:
-    #     return sum(t.quantity for t in self.transactions
-    #                if not (t.order and t.type == 'Buy'))
 
     def create_transaction(self) -> Transaction | OtherTransaction:
         """Возвращает новую транзакцию."""
@@ -354,14 +335,6 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
                 self.amount += t.quantity
                 self.quantity += t.quantity
 
-
-
-    def delete_if_empty(self) -> None:
-        if self.is_empty:
-            self.delete()
-        else:
-            flash(gettext('В активе %(name)s есть транзакции',
-                          name=self.ticker.name), 'warning')
 
     def delete(self) -> None:
         for transaction in self.transactions:
