@@ -105,7 +105,7 @@ class User(db.Model, UserMixin):
         for p in self.portfolios:
             # Сброс активов
             for a in p.assets:
-                a.data_reset()
+                a.set_default_data()
 
             # Сбор транзакций
             for t in p.transactions:
@@ -116,7 +116,7 @@ class User(db.Model, UserMixin):
         for w in self.wallets:
             # Сброс активов
             for a in w.wallet_assets:
-                a.data_reset()
+                a.set_default_data()
 
             # Сбор транзакций
             for t in w.transactions:

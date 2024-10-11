@@ -123,22 +123,6 @@ class Transaction(db.Model):
         portfolio = Portfolio.get(self.portfolio_id)
         p_asset1 = p_asset2 = w_asset1 = w_asset2 = None
 
-        # # New code
-        # # Базовый актив кошелька
-        # wallet = Wallet.get(self.wallet_id)
-        # if wallet:
-        #     w_asset1 = wallet.get_asset(self.ticker_id)
-        #     if not w_asset1:
-        #         ticker1 = Ticker.get(self.ticker_id)
-        #         w_asset1 = wallet.create_asset(ticker1)
-        #
-        # # Базовый актив портфеля
-        # portfolio = Portfolio.get(self.portfolio_id)
-        # if portfolio:
-        #     p_asset = self.portfolio_asset
-        #
-        # # End New code
-
         # Базовый актив портфеля
         p_asset1 = get_or_create_asset(portfolio, self.ticker_id)
         # Котируемый актив портфеля
@@ -149,7 +133,6 @@ class Transaction(db.Model):
         w_asset2 = get_or_create_asset(wallet, self.ticker2_id)
 
 
-
         if self.type in ('Buy', 'Sell'):
             # Условия
             if not (p_asset1 and p_asset2 and w_asset1 and w_asset2):
@@ -158,13 +141,13 @@ class Transaction(db.Model):
             # Ордер
             if self.order:
                 if self.type == 'Buy':
-                    # p_asset.in_orders += self.quantity * self.price_usd * d
-                    p_asset2.in_orders -= self.quantity2 * d
+                    p_asset1.buy_orders += self.quantity * self.price_usd * d
+                    p_asset2.sell_orders -= self.quantity2 * d
                     w_asset1.buy_orders += self.quantity * self.price_usd * d
-                    w_asset2.buy_orders -= self.quantity2 * d
+                    w_asset2.sell_orders -= self.quantity2 * d
                 elif self.type == 'Sell':
                     w_asset1.sell_orders -= self.quantity * d
-                    p_asset1.in_orders -= self.quantity * d
+                    p_asset1.sell_orders -= self.quantity * d
 
             # Не ордер
             else:
@@ -249,12 +232,12 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
     id = db.Column(db.Integer, primary_key=True)
     ticker_id: str = db.Column(db.String(256), db.ForeignKey('ticker.id'))
     portfolio_id: int = db.Column(db.Integer, db.ForeignKey('portfolio.id'))
+    quantity: float = db.Column(db.Float, default=0)
+    buy_orders: float = db.Column(db.Float, default=0)
+    sell_orders: float = db.Column(db.Float, default=0)
+    amount: float = db.Column(db.Float, default=0)
     percent: float = db.Column(db.Float, default=0)
     comment: str = db.Column(db.String(1024))
-    quantity: float = db.Column(db.Float, default=0)
-    in_orders: float = db.Column(db.Float, default=0)
-    amount: float = db.Column(db.Float, default=0)
-    # average_buy_price: float = db.Column(db.Float, default=0)  # usd
 
     # Relationships
     ticker: Mapped[Ticker] = db.relationship(
@@ -286,7 +269,7 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
 
     @property
     def free(self) -> float:
-        return self.quantity - self.in_orders
+        return self.quantity - self.sell_orders
 
     def edit(self, form: dict) -> None:
         comment = form.get('comment')
@@ -316,7 +299,8 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
     def set_default_data(self):
         self.amount = 0
         self.quantity = 0
-        self.in_orders = 0
+        self.sell_orders = 0
+        self.buy_orders = 0
 
     def recalculate(self):
         self.set_default_data()
@@ -341,9 +325,9 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
                     # Это котируемый актив
                     if t.order:
                         if t.type == 'Buy':
-                            self.in_orders -= t.quantity2
-                        # elif self.type == 'Sell':
-                        #     w_asset1.sell_orders -= self.quantity * d
+                            self.sell_orders -= t.quantity2
+                        elif t.type == 'Sell':
+                            self.buy_orders -= t.quantity2
 
                     else:
                         self.amount += t.quantity2
@@ -353,8 +337,9 @@ class Asset(db.Model, DetailsMixin, TransactionsMixin):
                     # Это базовый актив
                     if t.order:
                         if t.type == 'Sell':
-                            self.in_orders -= t.quantity
-                        # elif self.type == 'Sell':
+                            self.sell_orders -= t.quantity
+                        elif t.type == 'Buy':
+                            self.buy_orders -= t.quantity
                         #     w_asset1.sell_orders -= self.quantity * d
 
                     else:
@@ -691,8 +676,8 @@ class Portfolio(db.Model, DetailsMixin):
 
     def update_info(self) -> None:
         self.cost_now = 0
-        self.in_orders = 0
         self.amount = 0
+        self.buy_orders = 0
         self.invested = 0
 
         prefix = 'other_' if self.market == 'other' else ''
@@ -700,7 +685,8 @@ class Portfolio(db.Model, DetailsMixin):
             self.cost_now += asset.cost_now
             self.amount += asset.amount
             self.invested += asset.amount if asset.amount > 0 else 0
-            self.in_orders += getattr(asset, 'in_orders', 0)
+            if self.market != 'other':
+                self.buy_orders += asset.buy_orders
 
     def get_asset(self, find_by: str | int | None):
         if find_by:

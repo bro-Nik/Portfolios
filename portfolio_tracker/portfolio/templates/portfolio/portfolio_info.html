@@ -53,6 +53,7 @@
              portfolio.amount|abs|currency_price(round_to='usd')) }}
     {{ i.top("Прибыль", portfolio|profit, portfolio|color) }}
     {{ i.top("Доля от всех инвестиций", [portfolio|share_of(portfolios.invested), ' / ', portfolio|percent]) }}
+    {{ i.top("В ордерах на покупку", portfolio.buy_orders|currency_price(round_to='usd')) }}
   </div>
 
   <div class="big-table pt-3 pb-3">
@@ -74,14 +75,16 @@
             <th data-sortable="true" data-field="cost_now" data-sort-name="_cost_now">{% trans %}Активы{% endtrans %}</th>
             <th data-sortable="true" data-field="profit" data-sort-name="_profit">{% trans %}Прибыль{% endtrans %} / {% trans %}Убыток{% endtrans %}</th>
             <th data-sortable="true" data-field="percent" data-sort-name="_percent">{% trans %}Доля от портфеля{% endtrans %}</th>
-            <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}В ордерах{% endtrans %}</th>
+            <th data-sortable="true" data-field="in_sell_orders" data-sort-name="_in_sell_orders">{% trans %}В ордерах на продажу{% endtrans %}</th>
+            <th data-sortable="true" data-field="in_buy_orders" data-sort-name="_in_buy_orders">{% trans %}В ордерах на покупку{% endtrans %}</th>
             <th>{% trans %}Комментарий{% endtrans %}</th>
             <th></th>
             <!-- For sorting -->
             <th class="visually-hidden" data-field="_cost_now"></th>
             <th class="visually-hidden" data-field="_profit"></th>
             <th class="visually-hidden" data-field="_percent"></th>
-            <th class="visually-hidden" data-field="_in_orders"></th>
+            <th class="visually-hidden" data-field="_in_sell_orders"></th>
+            <th class="visually-hidden" data-field="_in_buy_orders"></th>
           </tr>
         </thead>
         <tbody>
@@ -132,7 +135,8 @@
               </td>
 
               <td>{{ asset|share_of(portfolio.invested) }} / {{ asset|percent }}</td>
-              <td>{{ asset.in_orders|currency_price(round_per=0.1, currency=asset.ticker.symbol, default='-') }}</td>
+              <td>{{ asset.sell_orders|currency_price(round_per=0.1, currency=asset.ticker.symbol, default='-') }}</td>
+              <td>{{ asset.buy_orders|currency_price(round_to='usd', default='-') }}</td>
 
               <td>
                 <div class="d-flex comment">
@@ -175,7 +179,8 @@
               <td class="visually-hidden">{{ asset.cost_now }}</td>
               <td class="visually-hidden">{{ asset.profit }}</td>
               <td class="visually-hidden">{{ (asset.amount / portfolio.amount * 100) if portfolio.amount }}</td>
-              <td class="visually-hidden">{{ asset.in_orders }}</td>
+              <td class="visually-hidden">{{ asset.sell_orders }}</td>
+              <td class="visually-hidden">{{ asset.buy_orders }}</td>
 
             </tr>
           {% endfor %}

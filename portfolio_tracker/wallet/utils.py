@@ -11,5 +11,5 @@ class Wallets(DetailsMixin):
         for wallet in current_user.wallets:
             wallet.update_price()
             self.cost_now += wallet.cost_now
-            self.in_orders += wallet.in_orders
+            self.buy_orders += wallet.buy_orders
             self.free += wallet.free

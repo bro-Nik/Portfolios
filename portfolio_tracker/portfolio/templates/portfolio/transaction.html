@@ -9,9 +9,10 @@
 
 
 {% block content %}
-<form id="TransactionForm" data-url="{{ url_for('.transaction_info', portfolio_id=asset.portfolio_id, asset_id=asset.id, transaction_id=transaction.id) }}">
+<form id="TransactionForm" data-url="{{ url_for('.transaction_info', portfolio_id=asset.portfolio_id, wallet_id=asset.wallet_id, asset_id=asset.id, transaction_id=transaction.id) }}">
 
   <div class="btn-group silver col-12 mb-3 nav" role="group" id="TypeTransaction">
+    {% if asset.portfolio %}
       <input type="radio" class="btn-check" name="type" value="Buy" id="btnradio1">
       <label class="btn btn-outline-active btn-sm" for="btnradio1">{% trans %}Покупка{% endtrans %}</label>
 
@@ -24,16 +25,19 @@
       <input type="radio" class="btn-check" name="type" value="Output" id="btnradio4">
       <label class="btn btn-outline-not_active btn-sm" for="btnradio4">{% trans %}Вывод{% endtrans %}</label>
 
-      {% if transaction.type != 'TransferIn' %}
-        <input type="radio" class="btn-check" name="type" value="TransferOut" id="btnradio5">
-        <label class="btn btn-outline-not_active btn-sm" for="btnradio5">{% trans %}Отправка{% endtrans %}</label>
-      {% else %}
-        <input type="radio" class="btn-check" name="type" value="TransferIn" id="btnradio5">
-        <label class="btn btn-outline-not_active btn-sm" for="btnradio5">{% trans %}Поступление{% endtrans %}</label>
-      {% endif %}
+      <input type="radio" class="btn-check" name="type" value="Earning" id="btnradio5">
+      <label class="btn btn-outline-not_active btn-sm" for="btnradio5">{% trans %}Заработок{% endtrans %}</label>
 
-      <input type="radio" class="btn-check" name="type" value="Earning" id="btnradio6">
-      <label class="btn btn-outline-not_active btn-sm" for="btnradio6">{% trans %}Заработок{% endtrans %}</label>
+    {% endif %}
+
+    {% if transaction.type != 'TransferIn' %}
+      <input type="radio" class="btn-check" name="type" value="TransferOut" id="btnradio6">
+      <label class="btn btn-outline-not_active btn-sm" for="btnradio6">{% trans %}Отправка{% endtrans %}</label>
+    {% else %}
+      <input type="radio" class="btn-check" name="type" value="TransferIn" id="btnradio7">
+      <label class="btn btn-outline-not_active btn-sm" for="btnradio7">{% trans %}Поступление{% endtrans %}</label>
+    {% endif %}
+
   </div>
 
 
@@ -52,7 +56,7 @@
     <div class="col-md-12 main-type-box">
       <div class="mb-1">
         <label class="d-flex form-label h7">{% trans %}Кошелек{% endtrans %}</label>
-        <div class="type-box buy input earning">
+        <div class="type-box {{ 'buy input earning' if asset.portfolio }}{{ 'transferout' if asset.wallet }}">
           <select name="buy_wallet_id" class="form-select" data-placeholder="-"
             data-url="{{ url_for('api.wallets_to_buy') }}">
             {% if transaction.type in ('Buy', 'Input', 'Earning') and transaction.wallet_id %}
@@ -60,7 +64,7 @@
             {% endif %}
           </select>
         </div>
-        <div class="type-box sell output">
+        <div class="type-box {{ 'sell output' if asset.portfolio }}{{ 'transferin' if asset.wallet }}">
           <select name="sell_wallet_id" class="form-select" data-placeholder="-"
             data-url="{{ url_for('api.wallets_to_sell', ticker_id=asset.ticker_id) }}">
             {% if transaction.type in ('Sell', 'Output') and transaction.wallet_id %}
@@ -75,7 +79,7 @@
     <div class="col-md-12 main-type-box">
       <div class="mb-1 ">
         <label class="d-flex form-label h7">{% trans %}Портфель{% endtrans %}</label>
-        <div class="type-box transferin transferout">
+        <div class="type-box {{ 'transferin transferout' if asset.portfolio }}">
           <select name="portfolio_id" class="form-select" data-placeholder="-" data-url="{{ url_for('api.portfolios') }}">
             {% if transaction.id %}
               {% if transaction.related_transaction %}

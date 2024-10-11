@@ -29,11 +29,12 @@ def updater():
 
 
 def update():
-    return 'Обновлений нет'
+    # return 'Обновлений нет'
 
     from portfolio_tracker.user.models import User
     for user in db.session.execute(db.select(User)).scalars():
-        pass
+        user.recalculate()
+    db.session.commit()
 
     return 'Обновления вополнены'
 

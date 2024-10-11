@@ -30,6 +30,7 @@
 
 <div class="row xs-mb-3">
   {{ i.top("Стоимость сейчас", wallets.cost_now|currency_price(round_to='usd')) }}
+  {{ i.top("В ордерах на покупку", wallets.buy_orders|currency_price(round_to='usd')) }}
 </div>
 
 <div class="big-table">
@@ -47,11 +48,13 @@
           </th>
           <th data-sortable="true" data-field="name">{% trans %}Название{% endtrans %}</th>
           <th data-sortable="true" data-field="cost_now" data-sort-name="_cost_now">{% trans %}Стоимость сейчас{% endtrans %}</th>
+          <th data-sortable="true" data-field="in_buy_orders" data-sort-name="_in_buy_orders">{% trans %}В ордерах на покупку{% endtrans %}</th>
           <th>{% trans %}Комментарий{% endtrans %}</th>
           <th></th>
 
           <!-- For sorting -->
           <th class="visually-hidden" data-field="_cost_now"></th>
+          <th class="visually-hidden" data-field="_in_buy_orders"></th>
         </tr>
       </thead>
       <tbody>
@@ -69,6 +72,7 @@
             </td>
 
             <td>{{ wallet.cost_now|currency_price(round_to='usd', default='-') }}</td>
+            <td>{{ wallet.buy_orders|currency_price(round_to='usd', default='-') }}</td>
 
             <td>
               <div class="d-flex comment">
@@ -105,6 +109,7 @@
 
             <!-- For sorting -->
             <td class="visually-hidden">{{ wallet.cost_now }}</td>
+            <td class="visually-hidden">{{ wallet.buy_orders }}</td>
 
           </tr>
         {% endfor %}

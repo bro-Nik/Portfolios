@@ -210,9 +210,12 @@ def asset_info():
 @closed_for_demo_user(['POST'])
 def transaction_info():
     """Transaction info."""
-    portfolio = Portfolio.get(request.args.get('portfolio_id')) or abort(404)
+    if request.args.get('portfolio_id'):
+        w_or_p = Portfolio.get(request.args.get('portfolio_id')) or abort(404)
+    elif request.args.get('wallet_id'):
+        w_or_p = Wallet.get(request.args.get('wallet_id')) or abort(404)
     find_by = request.args.get('ticker_id') or request.args.get('asset_id')
-    asset = portfolio.get_asset(find_by) or abort(404)
+    asset = w_or_p.get_asset(find_by) or abort(404)
     transaction = asset.get_transaction(request.args.get('transaction_id')
                                         ) or asset.create_transaction()
     if not transaction.base_ticker:

@@ -83,7 +83,7 @@ class Wallet(db.Model):
 
     def update_price(self) -> None:
         self.cost_now = 0
-        self.in_orders = 0
+        self.buy_orders = 0
         self.free = 0
         self.assets = []
         self.stable_assets = []
@@ -94,7 +94,7 @@ class Wallet(db.Model):
             if asset.ticker.stable:
                 # self.stable_assets.append(asset)
                 self.free += asset.free * asset.price
-                self.in_orders += asset.buy_orders * asset.price
+                self.buy_orders += asset.buy_orders * asset.price
             # Активы
             # else:
                 # self.assets.append(asset)

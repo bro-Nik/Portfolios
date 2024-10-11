@@ -51,6 +51,7 @@
 
 <div class="row xs-mb-3">
   {{ i.top("Стоимость сейчас", wallet.cost_now|currency_price(round_to='usd')) }}
+  {{ i.top("В ордерах на покупку", wallet.buy_orders|currency_price(round_to='usd')) }}
 </div>
 
 {% if wallet.assets %}
@@ -70,12 +71,14 @@
             <th data-sortable="true" data-field="name">{% trans %}Название{% endtrans %}</th>
             <th data-sortable="true" data-field="cost_now" data-sort-name="_cost_now">{% trans %}Стоимость сейчас{% endtrans %}</th>
             <th>{% trans %}Активы{% endtrans %}</th>
-            <th data-sortable="true" data-field="in_orders" data-sort-name="_in_orders">{% trans %}В ордерах{% endtrans %}</th>
+            <th data-sortable="true" data-field="in_sell_orders" data-sort-name="_in_sell_orders">{% trans %}В ордерах на продажу{% endtrans %}</th>
+            <th data-sortable="true" data-field="in_buy_orders" data-sort-name="_in_buy_orders">{% trans %}В ордерах на покупку{% endtrans %}</th>
             <th></th>
 
             <!-- For sorting -->
             <th class="visually-hidden" data-field="_cost_now"></th>
-            <th class="visually-hidden" data-field="_in_orders"></th>
+            <th class="visually-hidden" data-field="_in_sell_orders"></th>
+            <th class="visually-hidden" data-field="_in_buy_orders"></th>
           </tr>
         </thead>
         <tbody>
@@ -103,6 +106,7 @@
               <td>{{ asset.cost_now|currency_price(round_to='usd', default='-') }}</td>
               <td>{{ asset.quantity|currency_quantity(round_to=ticker.price, currency=ticker.symbol, default='-') }}</td>
               <td>{{ asset.sell_orders|currency_quantity(round_to='usd', currency=ticker.symbol, default='-') }}</td>
+              <td>{{ asset.buy_orders|currency_price(round_to='usd', default='-') }}</td>
 
               <td class="align-middle text-end">
                 <div class="d-flex justify-content-end">
@@ -113,7 +117,7 @@
                     </a>
                     <div class="dropdown-menu" aria-labelledby="dropdownAction">
                       <a class="dropdown-item open-modal" data-modal-id="WalletInOutferModal"
-                        data-url="{{ url_for('.transaction_info', wallet_id=wallet.id, ticker_id=ticker.id) }}">
+                        data-url="{{ url_for('portfolio.transaction_info', wallet_id=wallet.id, ticker_id=ticker.id) }}">
                         {% trans %}Отправить{% endtrans %}
                       </a>
                       <a class="dropdown-item link-danger open-modal-confirmation"
