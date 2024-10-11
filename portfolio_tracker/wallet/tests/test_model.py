@@ -129,7 +129,7 @@ class TestWalletAssetModel(unittest.TestCase):
         db.session.commit()
 
         a.delete_if_empty()
-        self.assertEqual(w.wallet_assets, [])
+        self.assertEqual(w.assets, [])
 
     def test_delete(self):
         # Актив
@@ -139,4 +139,4 @@ class TestWalletAssetModel(unittest.TestCase):
         db.session.commit()
 
         a.delete()
-        self.assertEqual(w.wallet_assets, [])
+        self.assertEqual(w.assets, [])

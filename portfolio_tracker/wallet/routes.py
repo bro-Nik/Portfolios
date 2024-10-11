@@ -4,7 +4,6 @@ from flask_login import current_user, login_required
 from ..app import db
 from ..general_functions import actions_in
 from ..wraps import closed_for_demo_user
-from ..portfolio.models import Ticker
 from ..wallet.models import Wallet
 from .utils import Wallets
 from . import bp
@@ -80,78 +79,4 @@ def asset_info():
         db.session.commit()
         return ''
 
-    # page = 'stable_' if asset.ticker.stable else ''
     return render_template('wallet/asset_info.html', asset=asset)
-
-
-@bp.route('/add_stable', methods=['GET', 'POST'])
-@login_required
-@closed_for_demo_user(['POST'])
-def stable_add():
-    wallet_id = request.args.get('wallet_id')
-
-    if request.method == 'POST':
-        ticker_id = request.args.get('ticker_id')
-        wallet = Wallet.get(wallet_id) or abort(404)
-        asset = wallet.get_asset(ticker_id)
-        if not asset:
-            ticker = Ticker.get(ticker_id) or abort(404)
-            asset = wallet.create_asset(ticker)
-            wallet.wallet_assets.append(asset)
-            db.session.commit()
-
-        return str(url_for('.asset_info',
-                           only_content=request.args.get('only_content'),
-                           wallet_id=wallet.id, ticker_id=ticker.id))
-
-    return render_template('wallet/add_stable_modal.html', wallet_id=wallet_id)
-
-
-@bp.route('/add_stable_tickers', methods=['GET'])
-@login_required
-def stable_add_tickers():
-    search = request.args.get('search')
-
-    query = (Ticker.query.filter_by(stable=True).order_by(Ticker.id))
-    # .order_by(Ticker.market_cap_rank.nulls_last(), Ticker.id))
-
-    if search:
-        query = query.filter(Ticker.name.contains(search) |
-                             Ticker.symbol.contains(search))
-
-    tickers = query.paginate(page=request.args.get('page', 1, type=int),
-                             per_page=20, error_out=False)
-    if tuple(tickers):
-        return render_template('wallet/add_stable_tickers.html',
-                               tickers=tickers)
-    return 'end'
-
-
-# @bp.route('/transaction', methods=['GET', 'POST'])
-# @login_required
-# @closed_for_demo_user(['POST'])
-# def transaction_info():
-#     wallet = Wallet.get(request.args.get('wallet_id')) or abort(404)
-#     find_by = request.args.get('ticker_id') or request.args.get('asset_id')
-#     asset = wallet.get_asset(find_by) or abort(404)
-#     transaction = asset.get_transaction(request.args.get('transaction_id')
-#                                         ) or asset.create_transaction()
-#
-#     # Apply transaction
-#     if request.method == 'POST':
-#         # transaction2 = transaction.related_transaction
-#
-#         if not transaction.id:
-#             asset.transactions.append(transaction)
-#             db.session.add(transaction)
-#         transaction.edit(request.form)
-#         transaction.update_dependencies()
-#
-#         if transaction.type in ('TransferOut', 'TransferIn'):
-#             transaction.update_related_transaction(Wallet, request.form.get('wallet_id'))
-#
-#         db.session.commit()
-#         return ''
-#
-#     return render_template('wallet/transaction.html',
-#                            asset=asset, transaction=transaction)

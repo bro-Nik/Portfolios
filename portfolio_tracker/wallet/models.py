@@ -23,7 +23,7 @@ class Wallet(db.Model):
     comment: str = db.Column(db.String(1024))
 
     # Relationships
-    wallet_assets: Mapped[List[WalletAsset]] = db.relationship(
+    assets: Mapped[List[WalletAsset]] = db.relationship(
         'WalletAsset', backref=db.backref('wallet', lazy=True))
     transactions: Mapped[List[Transaction]] = db.relationship(
         'Transaction', backref=db.backref('wallet', lazy=True,
@@ -38,26 +38,6 @@ class Wallet(db.Model):
     def create(cls, user: User = current_user, first=False) -> Wallet:
         wallet = Wallet(name=gettext('Кошелек по умолчанию') if first else '')
         return wallet
-
-    @staticmethod
-    def last(transaction_type: str) -> Wallet:
-        date = result = None
-
-        for wallet in current_user.wallets:
-            transaction = wallet.last_transaction(transaction_type)
-            if transaction:
-                if not date or date < transaction.date:
-                    date = transaction.date
-                    result = wallet
-
-        return result if result else current_user.wallets[-1]
-
-    @staticmethod
-    def get_has_asset(ticker_id: str | None) -> Wallet | None:
-        for wallet in current_user.wallets:
-            asset = wallet.get_asset(ticker_id)
-            if asset and asset.free > 0:
-                return wallet
 
     def edit(self, form: dict) -> None:
         name = form.get('name')
@@ -79,33 +59,22 @@ class Wallet(db.Model):
 
     @property
     def is_empty(self) -> bool:
-        return not (self.wallet_assets or self.transactions or self.comment)
+        return not (self.assets or self.transactions or self.comment)
 
     def update_price(self) -> None:
         self.cost_now = 0
         self.buy_orders = 0
-        self.free = 0
-        self.assets = []
-        self.stable_assets = []
 
-        for asset in self.wallet_assets:
-            self.assets.append(asset)
-            # Стейблкоины и валюта
-            if asset.ticker.stable:
-                # self.stable_assets.append(asset)
-                self.free += asset.free * asset.price
-                self.buy_orders += asset.buy_orders * asset.price
-            # Активы
-            # else:
-                # self.assets.append(asset)
+        for asset in self.assets:
+            self.buy_orders += asset.buy_orders
             self.cost_now += asset.cost_now
 
     def get_asset(self, find_by: str | int | None):
         if find_by:
             try:
-                return find_by_attr(self.wallet_assets, 'id', int(find_by))
+                return find_by_attr(self.assets, 'id', int(find_by))
             except ValueError:
-                return find_by_attr(self.wallet_assets, 'ticker_id', find_by)
+                return find_by_attr(self.assets, 'ticker_id', find_by)
 
     def create_asset(self, ticker: Ticker) -> WalletAsset:
         asset = WalletAsset(ticker_id=ticker.id,
@@ -114,15 +83,8 @@ class Wallet(db.Model):
                             wallet_id=self.id)
         asset.set_default_data()
 
-        self.wallet_assets.append(asset)
+        self.assets.append(asset)
         return asset
-
-    def last_transaction(self, transaction_type: str) -> Transaction | None:
-        transaction_type = transaction_type.lower()
-        for transaction in reversed(self.transactions):
-            print(transaction.date)
-            if transaction.type.lower() == transaction_type:
-                return transaction
 
     def delete_if_empty(self) -> None:
         if self.is_empty:
@@ -132,7 +94,7 @@ class Wallet(db.Model):
                           name=self.name), 'warning')
 
     def delete(self) -> None:
-        for asset in self.wallet_assets:
+        for asset in self.assets:
             asset.delete()
         current_user.wallets.remove(self)
         db.session.delete(self)
@@ -172,8 +134,6 @@ class WalletAsset(db.Model, TransactionsMixin):
 
     @property
     def free(self) -> float:
-        # if self.ticker.stable:
-        #     return self.quantity - self.buy_orders
         return self.quantity - self.sell_orders
 
     def set_default_data(self):
@@ -185,9 +145,7 @@ class WalletAsset(db.Model, TransactionsMixin):
         self.set_default_data()
 
         for t in self.transactions:
-            # is_base_asset = bool(self.ticker_id == t.ticker_id)
-            # if is_base_asset:
-            #     t.update_dependencies()
+            is_base_asset = bool(self.ticker_id == t.ticker_id)
 
             if not t.order:
                 quantity = 'quantity' if is_base_asset else 'quantity2'

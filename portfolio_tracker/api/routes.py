@@ -72,7 +72,7 @@ def wallets_to_sell():
     result = []
 
     for wallet in current_user.wallets:
-        for asset in wallet.wallet_assets:
+        for asset in wallet.assets:
             if ticker_id != asset.ticker_id:
                 continue
 
@@ -126,7 +126,7 @@ def wallets_to_transfer_out():
             continue
 
         quantity = sort = 0
-        for asset in wallet.wallet_assets:
+        for asset in wallet.assets:
             if ticker_id != asset.ticker_id:
                 continue
 

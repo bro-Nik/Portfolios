@@ -134,6 +134,6 @@ class TestWalletUtils(unittest.TestCase):
         db.session.commit()
 
         a = create_wallet_asset(w, btc)
-        self.assertEqual(w.wallet_assets, [a])
+        self.assertEqual(w.assets, [a])
         self.assertEqual(a.ticker_id, 'btc')
 

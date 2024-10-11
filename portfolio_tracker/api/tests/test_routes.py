@@ -102,9 +102,9 @@ class TestApiRoutes(unittest.TestCase):
         asset2 = WalletAsset(ticker_id='eth', quantity=0.7)
         asset3 = WalletAsset(ticker_id='btc', quantity=2)
 
-        wallet1.wallet_assets = [asset1]
-        wallet2.wallet_assets = [asset2]
-        wallet3.wallet_assets = [asset3]
+        wallet1.assets = [asset1]
+        wallet2.assets = [asset2]
+        wallet3.assets = [asset3]
 
         # Тикеры
         db.session.add_all([Ticker(id='btc', symbol='btc'),

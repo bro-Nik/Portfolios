@@ -282,7 +282,7 @@ class TestTransactionModel(unittest.TestCase):
 
     def test_update_dependencies_create_wallet_assets(self):
         # Wallet assets
-        self.w.wallet_assets = [WalletAsset(ticker_id='usdt'),
+        self.w.assets = [WalletAsset(ticker_id='usdt'),
                                 WalletAsset(ticker_id='btc')]
 
         self.t.type = 'Buy'

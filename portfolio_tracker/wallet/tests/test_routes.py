@@ -181,7 +181,7 @@ class TestWalletRoutes(unittest.TestCase):
                                     query_string={'wallet_id': '2'})
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'', response.data)
-        self.assertEqual(w.wallet_assets, [a2])
+        self.assertEqual(w.assets, [a2])
 
         # Удалить, ести актив не пустой, но action == delete
         data = {'action': 'delete', 'ids': ['1', '2', '3']}
@@ -189,7 +189,7 @@ class TestWalletRoutes(unittest.TestCase):
                                     query_string={'wallet_id': '2'})
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'', response.data)
-        self.assertEqual(w.wallet_assets, [])
+        self.assertEqual(w.assets, [])
 
     def test_asset_info(self):
         url = url_for('wallet.asset_info')
@@ -275,7 +275,7 @@ class TestWalletRoutes(unittest.TestCase):
         response = self.client.get(url, query_string={'ticker_id': 'btc',
                                                       'wallet_id': '2'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(w.wallet_assets), 1)
+        self.assertEqual(len(w.assets), 1)
         self.assertIn(response.data.decode(), url_for('wallet.asset_info',
                                                       wallet_id=2,
                                                       ticker_id='btc'))
@@ -284,7 +284,7 @@ class TestWalletRoutes(unittest.TestCase):
         response = self.client.get(url, query_string={'ticker_id': 'usdt',
                                                       'wallet_id': '2'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(w.wallet_assets), 2)
+        self.assertEqual(len(w.assets), 2)
         self.assertIn(response.data.decode(), url_for('wallet.asset_info',
                                                       wallet_id=2,
                                                       ticker_id='usdt'))

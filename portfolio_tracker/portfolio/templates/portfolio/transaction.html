@@ -3,8 +3,6 @@
 
 {% set modal_title = gettext('Изменить транзакцию') if transaction.id else gettext('Добавить транзакцию') %}
 {% set ticker_box_style = 'style=min-width:100px;' %}
-{% set wallet_buy = wallets['Buy'] %}
-{% set wallet_sell = wallets['Sell'] %}
 
 
 
@@ -115,9 +113,12 @@
     <div class="col-md-12">
       <div class="mb-1" data-type="quantity">
         <label class="d-flex form-label h7">{% trans %}Количество{% endtrans %}
-          <span class="small-text ms-auto gap-2 type-box sell output transferout">
-            <span class="{{ 'text-red' if not asset.free > 0 }}">{% trans %}В портфеле:{% endtrans %} {{ asset.free }}</span>
-            <span class="{{ 'text-red' if not asset.free > 0 }}">{% trans %}В кошельке:{% endtrans %}<span class="wallet-asset-free"> - </span></span>
+          <span class="small-text ms-auto gap-2">
+            {% if asset.portfolio %}
+              <span class="type-box sell output transferout {{ 'text-red' if not asset.free > 0 }}">{% trans %}В портфеле:{% endtrans %} {{ asset.free }}</span>
+            {% endif %}
+
+            <span class="{{ 'text-red' if not asset.free > 0 }} type-box sell output">{% trans %}В кошельке:{% endtrans %}<span class="wallet-asset-free"> - </span></span>
             {% if asset.free > 0 %}
               <span class="link-primary">
                 <span class="paste-into-input" data-value="">MAX</span>
@@ -216,12 +217,8 @@
     $select.attr('data-url', url);
 
     var $selected = $(this).find('option:selected')
-    var free_in_wallet = $selected.data('free')
-console.log(free_in_wallet)
-    if (free_in_wallet) {
-      $('.wallet-asset-free').text(+free_in_wallet);
-      UpdateAssetLimit(+free_in_wallet)
-    }
+    $('.wallet-asset-free').text(+$selected.data('free') || '-');
+    UpdateAssetLimit(+$selected.data('free') || 0)
     
 
     //
@@ -314,12 +311,10 @@ console.log(free_in_wallet)
     $('#TransactionForm .calculation-type').find("[data-type=" + calculation_type + "]").trigger('click');
   })
 
-  function UpdateAssetLimit(wallet_limit) {
+  function UpdateAssetLimit(limit2) {
     var $box = $('#TransactionForm .paste-into-input');
-    var portfolio_limit = {{ asset.free }};
-    var limit = Math.min(portfolio_limit, wallet_limit)
-console.log(limit)
-    $box.data('value', limit)
+    var limit1 = {{ asset.free }};
+    $box.data('value', Math.min(limit1, limit2))
   }
 
   // Run

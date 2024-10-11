@@ -210,10 +210,14 @@ def asset_info():
 @closed_for_demo_user(['POST'])
 def transaction_info():
     """Transaction info."""
+    w_or_p = None
     if request.args.get('portfolio_id'):
         w_or_p = Portfolio.get(request.args.get('portfolio_id')) or abort(404)
     elif request.args.get('wallet_id'):
         w_or_p = Wallet.get(request.args.get('wallet_id')) or abort(404)
+    if not w_or_p:
+        return
+
     find_by = request.args.get('ticker_id') or request.args.get('asset_id')
     asset = w_or_p.get_asset(find_by) or abort(404)
     transaction = asset.get_transaction(request.args.get('transaction_id')
@@ -225,12 +229,19 @@ def transaction_info():
     if request.method == 'POST':
         if not transaction.id:
             asset.transactions.append(transaction)
+            db.session.add(transaction)
 
         transaction.edit(request.form)
         transaction.update_dependencies()
 
         if transaction.type in ('TransferOut', 'TransferIn'):
-            transaction.update_related_transaction(Portfolio, request.form.get('portfolio_id'))
+            if transaction.portfolio2_id:
+                w_or_p2 = Portfolio.get(transaction.portfolio2_id) or abort(404)
+            elif transaction.wallet2_id:
+                w_or_p2 = Wallet.get(transaction.wallet2_id) or abort(404)
+            else:
+                return
+            transaction.update_related_transaction(w_or_p2)
         db.session.commit()
         return ''
 
@@ -239,19 +250,11 @@ def transaction_info():
                                transaction=transaction)
 
     # asset.free = asset.get_free() - transaction.quantity
-    wallets = {'Buy': Wallet.last('buy'),
-               'Sell': Wallet.get_has_asset(asset.ticker_id)}
-    if transaction.wallet:
-        wallets[transaction.type] = transaction.wallet
 
-    # if not transaction.quote_ticker:
-    #     wallet = transaction.wallet or wallets['Buy']
-    #     lt = wallet.last_transaction(transaction.type)
-    #     transaction.quote_ticker = lt.quote_ticker if lt else current_user.currency_ticker
     calc_type = session.get('transaction_calculation_type', 'amount')
     return render_template('portfolio/transaction.html',
                            transaction=transaction, asset=asset,
-                           wallets=wallets, calculation_type=calc_type)
+                           calculation_type=calc_type)
 
 
 @bp.route('/other_asset_body', methods=['GET', 'POST'])

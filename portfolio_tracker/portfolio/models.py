@@ -46,6 +46,7 @@ class Transaction(db.Model):
         # Направление сделки (direction)
         self.type = form['type']
         d = 1 if self.type in ('Buy', 'Input', 'TransferIn', 'Earning') else -1
+        print(self.type)
 
         self.date = from_user_datetime(form['date'])
         self.comment = form.get('comment')
@@ -79,11 +80,12 @@ class Transaction(db.Model):
         # Wallet transaction
         elif self.type in ('Input', 'Output'):
             self.quantity = float(form['quantity']) * d
-            # self.wallet_id = form['sell_wallet_id']
+
         elif self.type in ('TransferIn', 'TransferOut'):
             self.quantity = float(form['quantity']) * d
-            # self.portfolio2_id = form['portfolio_id']
-            # self.wallet2_id = form['sell_wallet_id']
+            self.wallet2_id = form.get('buy_wallet_id')
+            self.portfolio2_id = form.get('portfolio_id')
+
         elif self.type in ('Earning'):
             self.quantity = float(form['quantity']) * d
 
@@ -177,10 +179,9 @@ class Transaction(db.Model):
 
 
 
-    def update_related_transaction(self, parent_cls, parent_id):
+    def update_related_transaction(self, asset_parent):
         # Связанная транзакция
-        parent = parent_cls.get(parent_id)
-        asset2 = get_or_create_asset(parent, self.ticker_id)
+        asset2 = get_or_create_asset(asset_parent, self.ticker_id)
 
         if asset2:
             transaction2 = self.related_transaction

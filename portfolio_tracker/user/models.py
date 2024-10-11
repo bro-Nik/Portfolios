@@ -68,7 +68,7 @@ class User(db.Model, UserMixin):
 
         # wallets
         for wallet in self.wallets:
-            for asset in wallet.wallet_assets:
+            for asset in wallet.assets:
                 db.session.delete(asset)
             db.session.delete(wallet)
 
@@ -115,7 +115,7 @@ class User(db.Model, UserMixin):
 
         for w in self.wallets:
             # Сброс активов
-            for a in w.wallet_assets:
+            for a in w.assets:
                 a.set_default_data()
 
             # Сбор транзакций
