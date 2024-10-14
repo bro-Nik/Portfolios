@@ -1,27 +1,37 @@
 import json
 
-from flask import render_template, redirect, url_for, request, flash, session
-from flask_babel import gettext
+from flask import render_template, redirect, url_for, request, session, flash
 from flask_login import login_user, login_required, current_user, logout_user
+from flask_babel import gettext
 
-from ..app import db
+from ..general_functions import actions_in, print_flash_messages
+from ..repository import Repository
 from ..settings import LANGUAGES
 from ..wraps import closed_for_demo_user
-from ..wallet.models import Wallet
+from .repository import UserRepository
+from .service import UserService
 from . import bp, utils
+
+
+us = UserService(current_user)
 
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     """Отдает страницу входа и принимает форму."""
-    if current_user.is_authenticated and current_user.type != 'demo':
+
+    # Если это авторизованный пользователь - перебросить
+    if us.is_authenticated() and not us.is_demo():
         return redirect(url_for('portfolio.portfolios'))
 
+    # Проверка данных входа
     if request.method == 'POST':
-        # Проверка данных
-        if utils.login(request.form) is True:
-            db.session.commit()
+        result, messages = utils.login(request.form)
+        print_flash_messages(messages)
+
+        if result is True:
             page = request.args.get('next', url_for('portfolio.portfolios'))
+            Repository.save()
             return redirect(page)
 
     return render_template('user/login.html')
@@ -30,13 +40,17 @@ def login():
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
     """Отдает страницу регистрации и принимает форму."""
-    if current_user.is_authenticated and current_user.type != 'demo':
+
+    # Если это авторизованный пользователь - перебросить
+    if us.is_authenticated() and not us.is_demo():
         return redirect(url_for('portfolio.portfolios'))
 
+    # Проверка данных входа
     if request.method == 'POST':
-        # Регистрация
-        if utils.register(request.form) is True:
-            db.session.commit()
+        result, messages = utils.register(request.form)
+        print_flash_messages(messages)
+
+        if result is True:
             return redirect(url_for('.login'))
 
     return render_template('user/register.html', locale=utils.get_locale())
@@ -46,20 +60,15 @@ def register():
 @login_required
 @closed_for_demo_user(['GET', 'POST'])
 def change_password():
+    """Отдает страницу смены пароля и принимает форму."""
 
+    # Проверка данных входа
     if request.method == 'POST':
-        # Проверка старого пароля
-        if current_user.check_password(request.form.get('old_pass')):
-            new_pass = request.form.get('new_pass')
-            # Пароль с подтверждением совпадают
-            if new_pass == request.form.get('new_pass2'):
-                current_user.set_password(new_pass)
-                db.session.commit()
-                flash(gettext('Пароль обновлен'))
-            else:
-                flash(gettext('Новые пароли не совпадают'), 'warning')
-        else:
-            flash(gettext('Не верный старый пароль'), 'warning')
+        result, messages = utils.change_password(request.form)
+        print_flash_messages(messages)
+
+        if result is True:
+            Repository.save()
 
     return render_template('user/password.html', locale=utils.get_locale())
 
@@ -86,32 +95,19 @@ def redirect_to_signin(response):
 @login_required
 @closed_for_demo_user(['GET', 'POST'])
 def user_action():
-    data = json.loads(request.data) if request.data else {}
-    action = data.get('action')
+    """Действия над пользователем."""
+    actions_in(request.data, UserRepository.get)
+    Repository.save()
 
-    if action == 'delete':
-        current_user.delete()
-        db.session.commit()
+    if not us.is_authenticated():
         return {'redirect': str(url_for('user.login'))}
-
-    elif action == 'delete_data':
-        current_user.cleare()
-        wallet = Wallet.create(first=True)
-        current_user.wallets.append(wallet)
-        db.session.commit()
-        flash(gettext('Профиль очищен'))
-
-    elif action == 'recalculate':
-        current_user.recalculate()
-        db.session.commit()
-        flash(gettext('Активы пересчитны'))
-
     return ''
 
 
 @bp.route('/demo_user')
 def demo_user():
-    login_user(utils.get_demo_user())
+    demo = UserRepository.get_demo_user()
+    login_user(demo)
     return redirect(url_for('portfolio.portfolios'))
 
 
@@ -134,9 +130,9 @@ def ajax_locales():
 @bp.route('/change_locale', methods=['GET'])
 def change_locale():
     locale = request.args.get('value')
-    if current_user.is_authenticated and current_user.type != 'demo':
-        current_user.change_locale(locale)
-        db.session.commit()
+    if us.is_authenticated() and not us.is_demo():
+        us.change_locale(locale)
+        Repository.save()
     else:
         session['locale'] = locale
     return ''
@@ -145,9 +141,9 @@ def change_locale():
 @bp.route('/change_currency', methods=['GET'])
 def change_currency():
     currency = request.args.get('value')
-    if current_user.is_authenticated and current_user.type != 'demo':
-        current_user.change_currency(currency)
-        db.session.commit()
+    if us.is_authenticated() and not us.is_demo():
+        us.change_currency(currency)
+        Repository.save()
     else:
         session['currency'] = currency or 'usd'
     return ''

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Iterable, Literal, TypeAlias
 
 from babel.dates import format_date
-from flask import current_app
+from flask import current_app, flash
 from flask_login import current_user
 
 from .app import redis
@@ -113,3 +113,12 @@ def remove_prefix(ticker_id: Ticker.id, market: Market) -> str:
         ticker_id = ticker_id[len(prefix):]
 
     return ticker_id
+
+
+def print_flash_messages(messages):
+    if messages:
+        for message in messages:
+            if isinstance(message, list):
+                print_flash_messages(message)
+            else:
+                flash(message[0], message[1] if len(message) > 1 else '')

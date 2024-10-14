@@ -24,29 +24,35 @@
     </div>
 
     <div class="mt-3">
-      <a class="open-modal-confirmation text-decoration-none"
-        data-title="{% trans %}Пересчитать все активы?{% endtrans %}"
-        data-form="#UserActions" data-action="recalculate">
-        {% trans %}Пересчитать активы{% endtrans %}
-      </a>
-    </div>
-
-    <div class="mt-3">
       <a class="open-modal text-decoration-none" data-modal-id="UserPasswordModal"
         data-url="{{ url_for('user.change_password') }}">
         {% trans %}Изменить пароль{% endtrans %}
       </a>
     </div>
 
+
+
+
+
     <form id="UserActions" class="d-grid mt-5" action="{{ url_for('user.user_action') }}">
+      <a class="open-modal-confirmation text-decoration-none"
+        data-title="{% trans %}Пересчитать все активы?{% endtrans %}"
+        data-form="#UserActions" data-action="recalculate"
+        data-id="{{ current_user.id }}">
+        {% trans %}Пересчитать активы{% endtrans %}
+      </a>
+
       <a class="link-danger open-modal-confirmation text-decoration-none"
         data-title="{% trans %}Удалить все данные из профиля?{% endtrans %}"
-        data-form="#UserActions" data-action="delete_data">
+        data-form="#UserActions" data-action="cleare_data"
+        data-id="{{ current_user.id }}">
         {% trans %}Очистить профиль{% endtrans %}
       </a>
+
       <a class="link-danger open-modal-confirmation text-decoration-none"
         data-title="{% trans %}Удалить профиль?{% endtrans %}"
-        data-form="#UserActions" data-action="delete">
+        data-form="#UserActions" data-action="delete"
+        data-id="{{ current_user.id }}">
         {% trans %}Удалить профиль{% endtrans %}
       </a>
     </form>

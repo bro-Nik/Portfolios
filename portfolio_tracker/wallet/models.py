@@ -1,4 +1,7 @@
 from __future__ import annotations
+from typing import Optional
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List
 from flask import flash
@@ -22,9 +25,16 @@ class Wallet(db.Model):
     name: str = db.Column(db.String(255))
     comment: str = db.Column(db.String(1024))
 
+    # id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    # user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('User.id'), index=True)
+    # name: so.Mapped[str] = so.mapped_column(sa.String(255), index=True)
+    # comment: so.Mapped[str] = so.mapped_column(sa.String(1024), index=True)
+
     # Relationships
-    assets: Mapped[List[WalletAsset]] = db.relationship(
-        'WalletAsset', backref=db.backref('wallet', lazy=True))
+    # assets: so.Mapped[WalletAsset] = so.relationship(back_populates='wallet')
+    assets: Mapped[List[WalletAsset]] = so.relationship(back_populates="wallet")
+    # assets: Mapped[List[WalletAsset]] = db.relationship(
+    #     'WalletAsset', backref=db.backref('wallet', lazy=True))
     transactions: Mapped[List[Transaction]] = db.relationship(
         'Transaction', backref=db.backref('wallet', lazy=True,
                                           order_by='Transaction.date.desc()'))
@@ -35,9 +45,8 @@ class Wallet(db.Model):
         return find_by_attr(user.wallets, 'id', wallet_id)
 
     @classmethod
-    def create(cls, user: User = current_user, first=False) -> Wallet:
-        wallet = Wallet(name=gettext('Кошелек по умолчанию') if first else '')
-        return wallet
+    def create(cls) -> Wallet:
+        return Wallet(name=gettext('Кошелек по умолчанию'))
 
     def edit(self, form: dict) -> None:
         name = form.get('name')
@@ -107,6 +116,9 @@ class WalletAsset(db.Model, AssetMixin, TransactionsMixin):
     quantity: float = db.Column(db.Float, default=0)
     buy_orders: float = db.Column(db.Float, default=0)
     sell_orders: float = db.Column(db.Float, default=0)
+
+    wallet: Mapped["Wallet"] = so.relationship(back_populates="assets")
+
 
     # Relationships
     ticker: Mapped[Ticker] = db.relationship(

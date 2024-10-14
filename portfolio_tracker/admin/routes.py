@@ -1,6 +1,7 @@
 import re
 import time
 from flask import abort, flash, redirect, render_template, url_for, request
+from portfolio_tracker.user.repository import UserRepository
 
 
 from ..app import db, redis
@@ -8,7 +9,6 @@ from ..wraps import admin_only
 from ..jinja_filters import user_datetime
 from ..general_functions import MARKETS, actions_in, when_updated
 from ..portfolio.models import Ticker
-from ..user.utils import find_user
 from .models import Key, Task
 from .integrations import Log, get_api_task, tasks_trans
 from .integrations_api import API_NAMES, ApiIntegration
@@ -81,7 +81,7 @@ def users_detail():
 @bp.route('/users/action', methods=['POST'])
 @admin_only
 def users_action():
-    actions_in(request.data, find_user)
+    actions_in(request.data, UserRepository.get)
     return ''
 
 
