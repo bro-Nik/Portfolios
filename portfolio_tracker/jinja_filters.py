@@ -10,7 +10,7 @@ from requests.api import get
 from portfolio_tracker.general_functions import add_prefix
 from portfolio_tracker.portfolio.models import Ticker
 
-from .user.utils import get_currency, get_locale
+from .user.services.ui import get_currency, get_locale
 
 
 bp = Blueprint('jinja_filters', __name__)

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import json
 
@@ -13,15 +14,16 @@ from .user import UserService
 from .ui import get_locale
 
 
-def login(form: dict) -> tuple[bool, list | dict]:
-    """Обработка формы входа. Вход пользовалетя"""
+def login(form: dict) -> tuple[bool, list]:
+    """Обработка формы входа. Вход пользовалетя."""
     email = form.get('email')
     password = form.get('password')
     redis_key = 'user_auth'
 
     # Поля не заполнены
     if not email or not password:
-        return False, ['Введити адрес электронной почты и пароль', 'warning']
+        message = [gettext('Введити адрес электронной почты и пароль'), 'warning']
+        return False, message
 
     # Поиск прошлых попыток входа
     login_attempts = redis.hget(redis_key, email)
@@ -39,17 +41,21 @@ def login(form: dict) -> tuple[bool, list | dict]:
             m = int(delta // 60)
             s = delta - 60 * m if m else delta
 
-            return False, [gettext('Вход заблокирован. Осталось %(m)s мин. %(s)s сек.',
-                           m=m, s=round(s)), 'warning']
+            message = [gettext('Вход заблокирован. '
+                       'Осталось %(m)s мин. %(s)s сек.', m=m, s=round(s)),
+                       'warning']
+            return False, message
 
     user = UserRepository.get(email=email)
 
     # Пользователь не найден
     if not user:
-        return False, [gettext('Неверный адрес электронной почты или пароль'), 'warning']
+        message = [gettext('Неверный адрес электронной почты или пароль'), 'warning'] 
+        return False, message
+
+    us = UserService(user)
 
     # Проверка пройдена
-    us = UserService(user)
     if us.check_password(password):
         login_user(user, form.get('remember-me', False))
         us.new_login()
@@ -57,22 +63,21 @@ def login(form: dict) -> tuple[bool, list | dict]:
         return True, []
 
     # Проверка не пройдена
-    mes = []
-    mes.append([gettext('Неверный адрес электронной почты или пароль'), 'warning'])
+    message = [gettext('Неверный адрес электронной почты или пароль'), 'warning']
 
     login_attempts.setdefault('count', 0)
     login_attempts['count'] += 1
     if login_attempts['count'] >= 5:
         next_try = datetime.now(timezone.utc) + timedelta(minutes=10)
         login_attempts['next_try_time'] = str(next_try)
-        mes.append([gettext('Вход заблокирован на 10 минут'), 'warning'])
+        message = [gettext('Вход заблокирован на 10 минут'), 'warning']
 
     redis.hset(redis_key, email, json.dumps(login_attempts))
-    return False, mes
+    return False, message
 
 
 def register(form: dict) -> tuple[bool, list | dict]:
-    """Обработка формы регистрации. Регистрация пользователя"""
+    """Обработка формы регистрации. Регистрация пользователя."""
     email = form.get('email')
     password = form.get('password')
     password2 = form.get('password2')
@@ -80,19 +85,20 @@ def register(form: dict) -> tuple[bool, list | dict]:
     # Поля не заполнены
     if not (email and password and password2):
         m = 'Заполните адрес электронной почты, пароль и подтверждение пароля'
-        return False, [m, 'warning']
+        return False, [gettext(m), 'warning']
 
     if UserRepository.get(email=email):
-        return False, ['Данный почтовый ящик уже используется', 'warning']
+        return False, [gettext('Данный почтовый ящик уже используется'), 'warning']
 
     if password != password2:
-        return False, ['Пароли не совпадают', 'warning']
+        return False, [gettext('Пароли не совпадают'), 'warning']
 
     user = UserRepository.create(email=email)
-    service = UserService(user)
-    service.set_password(password)
-    service.change_currency()
-    service.change_locale(get_locale())
+    us = UserService(user)
+
+    us.set_password(password)
+    us.change_currency()
+    us.change_locale(get_locale())
     Wallet.create()
     user.info = UserInfo()
     Repository.add(user)
@@ -101,6 +107,8 @@ def register(form: dict) -> tuple[bool, list | dict]:
 
 
 def change_password(form: dict, user: User = current_user):
+    """Обработка формы смены пароля."""
+
     us = UserService(user)
 
     # Проверка старого пароля

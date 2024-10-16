@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 def get_locale(user: User = current_user) -> str:
     us = UserService(user)
+
     if us.is_authenticated() and not us.is_demo() and user.locale:
         return user.locale
     return (session.get('locale')
@@ -21,6 +22,7 @@ def get_locale(user: User = current_user) -> str:
 
 def get_currency(user: User = current_user) -> str:
     us = UserService(user)
+
     if us.is_authenticated() and not us.is_demo() and user.currency:
         return user.currency
     return session.get('currency', 'usd')
@@ -28,5 +30,6 @@ def get_currency(user: User = current_user) -> str:
 
 def get_timezone(user: User = current_user) -> str | None:
     us = UserService(user)
+
     if us.is_authenticated():
         return current_user.timezone

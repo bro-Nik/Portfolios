@@ -1,6 +1,6 @@
 from flask import render_template
 
-from ..user.utils import get_locale
+from ..user.services.ui import get_locale
 from . import bp
 
 

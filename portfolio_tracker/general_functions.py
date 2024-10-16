@@ -117,8 +117,9 @@ def remove_prefix(ticker_id: Ticker.id, market: Market) -> str:
 
 def print_flash_messages(messages):
     if messages:
-        for message in messages:
-            if isinstance(message, list):
+        if isinstance(messages[0], list):
+            for message in messages:
                 print_flash_messages(message)
-            else:
-                flash(message[0], message[1] if len(message) > 1 else '')
+
+        else:
+            flash(messages[0], messages[1] if len(messages) > 1 else '')

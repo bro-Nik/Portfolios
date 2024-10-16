@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import List, TYPE_CHECKING
 from datetime import datetime, timezone
 

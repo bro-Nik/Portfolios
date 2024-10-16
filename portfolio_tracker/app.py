@@ -34,7 +34,7 @@ celery = Celery('celery_app', broker='amqp://rabbitmq')
 # redis = redis.StrictRedis('127.0.0.1', 6379)
 redis = Redis(host='redis', port=6379)
 
-from .user.utils import get_locale, get_timezone
+from .user.services.ui import get_locale, get_timezone
 from .errors.handlers import init_request_errors
 
 

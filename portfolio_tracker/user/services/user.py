@@ -4,7 +4,7 @@ import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from flask_babel import gettext
-from flask import request, current_app, flash
+from flask import request, current_app
 from flask_login import current_user
 
 from portfolio_tracker.repository import Repository
@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class UserService:
+    """Сервис для управления пользователем."""
+
     def __init__(self, user: User) -> None:
         self.user = user
 
@@ -26,12 +28,16 @@ class UserService:
         return check_password_hash(self.user.password, password)
 
     def is_authenticated(self):
+        """Проверить, аутентифицирован ли пользователь."""
         return self.user.is_authenticated
 
     def is_demo(self) -> bool:
+        """Проверить, является ли пользователь демо-аккаунтом."""
         return self.user.type == 'demo'
 
     def delete(self) -> None:
+        """Удалить пользователя и его данные."""
+
         self.cleare_data()
         if self.user.info:
             Repository.delete(self.user.info)
@@ -62,9 +68,6 @@ class UserService:
                     Repository.delete(transaction)
                 Repository.delete(asset)
             Repository.delete(portfolio)
-
-        if current_user.id == self.user.id:
-            flash(gettext('Профиль очищен'))
 
 
     def change_currency(self, currency: str = 'usd') -> None:
@@ -116,6 +119,3 @@ class UserService:
 
         for t in transactions:
             t.update_dependencies()
-
-        if current_user.id == self.user.id:
-            flash(gettext('Активы пересчитны'))
