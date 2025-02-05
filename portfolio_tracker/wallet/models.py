@@ -60,6 +60,7 @@ class WalletAsset(Base, AssetMixin, TransactionsMixin):
         primaryjoin="and_(or_(WalletAsset.ticker_id == foreign(Transaction.ticker_id),"
                     "WalletAsset.ticker_id == foreign(Transaction.ticker2_id)),"
                     "WalletAsset.wallet_id == foreign(Transaction.wallet_id))",
+        viewonly=True,
         backref=backref('wallet_asset', lazy=True)
     )
 
