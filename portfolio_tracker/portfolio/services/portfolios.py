@@ -1,16 +1,20 @@
 from __future__ import annotations
-
-from flask_login import current_user
+from typing import TYPE_CHECKING
 
 from ..models import DetailsMixin
 
+if TYPE_CHECKING:
+    from portfolio_tracker.user.models import User
 
 class Portfolios(DetailsMixin):
     """Класс объединяет все портфели пользователя."""
-    def __init__(self):
+
+    def __init__(self, user: User):
         super().__init__()
-        for portfolio in current_user.portfolios:
-            portfolio.update_info()
+
+        for portfolio in user.portfolios:
+            portfolio.service.update_info()
+
             self.amount += portfolio.amount
             self.buy_orders += portfolio.buy_orders
             self.invested += portfolio.amount if portfolio.amount > 0 else 0

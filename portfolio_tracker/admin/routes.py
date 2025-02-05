@@ -7,7 +7,7 @@ from portfolio_tracker.user.repository import UserRepository
 from ..app import db, redis
 from ..wraps import admin_only
 from ..jinja_filters import user_datetime
-from ..general_functions import MARKETS, actions_in, when_updated
+from ..general_functions import MARKETS, actions_on_objects, when_updated
 from ..portfolio.models import Ticker
 from .models import Key, Task
 from .integrations import Log, get_api_task, tasks_trans
@@ -29,14 +29,7 @@ def updater():
 
 
 def update():
-    # return 'Обновлений нет'
-
-    from portfolio_tracker.user.models import User
-    for user in db.session.execute(db.select(User)).scalars():
-        user.recalculate()
-    db.session.commit()
-
-    return 'Обновления вополнены'
+    return 'Обновлений нет'
 
 
 @bp.route('/index', methods=['GET'])
@@ -81,7 +74,7 @@ def users_detail():
 @bp.route('/users/action', methods=['POST'])
 @admin_only
 def users_action():
-    actions_in(request.data, UserRepository.get)
+    actions_on_objects(request.data, UserRepository.get)
     return ''
 
 
@@ -94,7 +87,7 @@ def imports():
 @bp.route('/tickers/action', methods=['POST'])
 @admin_only
 def tickers_action():
-    actions_in(request.data, Ticker.get)
+    actions_on_objects(request.data, Ticker.get)
     return ''
 
 
@@ -299,7 +292,7 @@ def api_key_settings():
 @bp.route('/api/key_action/', methods=['POST'])
 @admin_only
 def api_key_action():
-    actions_in(request.data, get_key)
+    actions_on_objects(request.data, get_key)
 
     module = ApiIntegration(request.args.get('api_name'))
     module.update_streams()
@@ -321,14 +314,14 @@ def api_stream_settings():
 @bp.route('/api/stream_action/', methods=['POST'])
 @admin_only
 def api_stream_action():
-    actions_in(request.data, get_stream)
+    actions_on_objects(request.data, get_stream)
     return ''
 
 
 @bp.route('/api/events', methods=['POST'])
 @admin_only
 def api_event_action():
-    actions_in(request.data, Ticker.get)
+    actions_on_objects(request.data, Ticker.get)
     db.session.commit()
     return ''
 

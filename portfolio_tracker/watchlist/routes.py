@@ -1,11 +1,14 @@
 import json
 
 from flask import abort, render_template, session, url_for, request
-from flask_login import login_required
+from flask_login import current_user, login_required
 
+from portfolio_tracker.watchlist.repository import WatchlistRepository
+
+from ..services import user_object_search_engine as ose
 from ..app import db
 from ..wraps import closed_for_demo_user
-from ..general_functions import actions_in
+from ..general_functions import actions_on_objects
 from ..portfolio.models import Ticker
 from .models import Watchlist
 from . import bp
@@ -19,17 +22,15 @@ def assets():
     market = request.args.get('market',
                               session.get('watchlist_market', 'crypto'))
     session['watchlist_market'] = market
-    status = request.args.get('status')
-    watchlist = Watchlist.get(market, status)
+    watchlist = ose.get_watchlist(market=market, **request.args)
 
     # Actions
     if request.method == 'POST':
-        actions_in(request.data, watchlist.get_asset)
-        db.session.commit()
+        actions_on_objects(request.data, watchlist.service.get_asset)
         return ''
 
     return render_template('watchlist/assets.html', watchlist=watchlist,
-                           market=market, status=status)
+                           market=market, status=request.args.get('status'))
 
 
 @bp.route('/add_asset', methods=['POST'])
@@ -37,12 +38,7 @@ def assets():
 @closed_for_demo_user(['POST'])
 def asset_add():
     """ Add to Tracking list """
-    watchlist = Watchlist.get()
-    ticker_id = request.args.get('ticker_id')
-    asset = watchlist.get_asset(ticker_id)
-    if not asset:
-        ticker = Ticker.get(ticker_id) or abort(404)
-        asset = watchlist.create_asset(ticker)
+    asset = ose.get_watchlist_asset(create=True, **request.args) or abort(404)
 
     return str(url_for('.asset_info', ticker_id=asset.ticker_id,
                        only_content=request.args.get('only_content')))
@@ -53,23 +49,11 @@ def asset_add():
 @closed_for_demo_user(['POST'])
 def asset_info():
     """Asset page and actions on alerts."""
-    watchlist = Watchlist.get()
-    ticker_id = request.args.get('ticker_id')
-    asset = watchlist.get_asset(ticker_id)
-    if not asset:
-        ticker = Ticker.get(ticker_id) or abort(404)
-        asset = watchlist.create_asset(ticker)
-
-        # Если из портфеля, то не создавать, пока нет уведомлений
-        need_create = not request.args.get('asset_id')
-        if need_create:
-            watchlist.assets.append(asset)
-            db.session.commit()
+    asset = ose.get_watchlist_asset(create=True, **request.args) or abort(404)
 
     # Actions
     if request.method == 'POST':
-        actions_in(request.data, asset.get_alert)
-        db.session.commit()
+        actions_on_objects(request.data, asset.service.get_alert)
         return ''
 
     return render_template('watchlist/asset_info.html', asset=asset)
@@ -79,12 +63,10 @@ def asset_info():
 @login_required
 @closed_for_demo_user(['POST'])
 def asset_settings():
-    watchlist = Watchlist.get()
-    asset = watchlist.get_asset(request.args.get('ticker_id')) or abort(404)
+    asset = ose.get_watchlist_asset(create=True, **request.args) or abort(404)
 
     # Apply settings
-    asset.edit(request.form)
-    db.session.commit()
+    asset.service.edit(request.form)
     return ''
 
 
@@ -92,29 +74,20 @@ def asset_settings():
 @login_required
 @closed_for_demo_user(['POST'])
 def alert_info():
-    watchlist = Watchlist.get()
-    ticker_id = request.args.get('ticker_id')
-    asset = watchlist.get_asset(ticker_id)
-    if not asset:
-        ticker = Ticker.get(ticker_id) or abort(404)
-        asset = watchlist.create_asset(ticker)
-
-    alert = asset.get_alert(request.args.get('alert_id')
-                            ) or asset.create_alert()
+    alert = ose.get_alert(create=True, **request.args) or abort(404)
 
     # Apply
     if request.method == 'POST':
-        if asset not in watchlist.assets:
-            watchlist.assets.append(asset)
-        if alert not in asset.alerts:
-            asset.alerts.append(alert)
-
         alert.asset_id = request.args.get('asset_id')
-        alert.edit(request.form)
-        db.session.commit()
+        alert.service.edit(request.form)
         return ''
 
-    return render_template('watchlist/alert.html', asset=asset,
+        # if asset not in watchlist.assets:
+        #     watchlist.assets.append(asset)
+        # if alert not in asset.alerts:
+        #     asset.alerts.append(alert)
+
+    return render_template('watchlist/alert.html', asset=alert.asset,
                            asset_id=request.args.get('asset_id'), alert=alert)
 
 

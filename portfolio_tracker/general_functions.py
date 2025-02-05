@@ -9,7 +9,7 @@ from babel.dates import format_date
 from flask import current_app, flash
 from flask_login import current_user
 
-from .app import redis
+from .app import redis, db
 
 
 Market: TypeAlias = Literal['crypto', 'stocks', 'currency']
@@ -83,20 +83,30 @@ def when_updated(update_date: datetime | str, default: str = '') -> str:
     return result
 
 
-def actions_in(data_str: bytes, function: Callable) -> None:
+def _json_to_dict(data_str: bytes):
     try:
         data = json.loads(data_str)
+        return data if isinstance(data, dict) else {}
     except json.JSONDecodeError:
-        data = {}
+        return {}
 
-    if isinstance(data, dict):
-        ids = data.get('ids', [])
-        action = data.get('action', '')
 
+def actions_on_objects(data_str: bytes, function: Callable) -> None:
+
+    # ToDo Пересмотреть, чтобы была одна выборка из базы по списку id
+    data = _json_to_dict(data_str)
+
+    ids = data.get('ids', [])
+    action = data.get('action', '')
+    if ids and action:
         for item_id in ids:
             item = function(item_id)
+            if item and hasattr(item, 'service'):
+                item = item.service
             if item and hasattr(item, action):
                 getattr(item, action)()
+
+        db.session.commit()
 
 
 def get_prefix(market: Market) -> str:
@@ -107,7 +117,7 @@ def add_prefix(ticker_id: str, market: Market) -> str:
     return (get_prefix(market) + ticker_id).lower()
 
 
-def remove_prefix(ticker_id: Ticker.id, market: Market) -> str:
+def remove_prefix(ticker_id: str, market: Market) -> str:
     prefix = get_prefix(market)
     if ticker_id.startswith(prefix):
         ticker_id = ticker_id[len(prefix):]

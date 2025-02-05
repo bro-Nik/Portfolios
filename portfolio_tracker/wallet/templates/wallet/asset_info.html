@@ -25,7 +25,7 @@
 
     <div class="col-auto ms-auto">
       <button class="btn btn-primary open-modal focus" type="button" data-modal-id="TransactionModal"
-        data-url="{{ url_for('portfolio.transaction_info', wallet_id=asset.wallet_id, ticker_id=ticker.id) }}">
+        data-url="{{ url_for('.transaction_info', wallet_id=asset.wallet_id, ticker_id=ticker.id) }}">
         {% trans %}Добавить транзакцию{% endtrans %}
       </button>
       <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">

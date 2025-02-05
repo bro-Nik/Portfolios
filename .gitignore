@@ -18,3 +18,4 @@ messages.pot
 test.py
 request_streams/
 wsgi.py
+.DS_Store

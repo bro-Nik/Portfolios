@@ -4,16 +4,12 @@ from flask import render_template, redirect, url_for, request, session
 from flask_login import login_user, login_required, current_user, logout_user
 from flask_babel import gettext
 
-from ..general_functions import actions_in, print_flash_messages
-from ..repository import Repository
+from ..general_functions import actions_on_objects, print_flash_messages
 from ..settings import LANGUAGES
 from ..wraps import closed_for_demo_user
 from .repository import UserRepository
-from .services import auth, user, ui
+from .services import auth, ui
 from . import bp
-
-
-us = user.UserService(current_user)
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -21,7 +17,7 @@ def login():
     """Отдает страницу входа и обрабатывает форму входа."""
 
     # Если это авторизованный пользователь - перебросить
-    if us.is_authenticated() and not us.is_demo():
+    if current_user.is_authenticated and not current_user.is_demo:
         return redirect(url_for('portfolio.portfolios'))
 
     # Проверка данных
@@ -31,7 +27,6 @@ def login():
 
         if result is True:
             page = request.args.get('next', url_for('portfolio.portfolios'))
-            Repository.save()  # Сохранение метаданных входа
             return redirect(page)
 
     return render_template('user/login.html')
@@ -42,7 +37,7 @@ def register():
     """Отдает страницу регистрации и обрабатывает форму регистрации."""
 
     # Если это авторизованный пользователь - перебросить
-    if us.is_authenticated() and not us.is_demo():
+    if current_user.is_authenticated and not current_user.is_demo:
         return redirect(url_for('portfolio.portfolios'))
 
     # Проверка данных
@@ -68,7 +63,7 @@ def change_password():
         print_flash_messages(messages)
 
         if result is True:
-            Repository.save()
+            UserRepository.save(current_user)
 
     return render_template('user/password.html', locale=ui.get_locale())
 
@@ -96,11 +91,10 @@ def redirect_to_signin(response):
 @closed_for_demo_user(['GET', 'POST'])
 def user_action():
     """Действия над пользователем."""
-    actions_in(request.data, UserRepository.get)
-    Repository.save()
+    actions_on_objects(request.data, UserRepository.get)
     print_flash_messages([gettext('Готово'), 'success'])
 
-    if not us.is_authenticated():
+    if not current_user.is_authenticated:
         return {'redirect': str(url_for('user.login'))}
     return ''
 
@@ -135,9 +129,9 @@ def ajax_locales():
 def change_locale():
     """Смена локализации пользователя или демо пользователя."""
     locale = request.args.get('value')
-    if us.is_authenticated() and not us.is_demo():
-        us.change_locale(locale)
-        Repository.save()
+    if current_user.is_authenticated and not current_user.is_demo:
+        current_user.service.change_locale(locale)
+        UserRepository.save(current_user)
     else:
         session['locale'] = locale
     return ''
@@ -147,9 +141,9 @@ def change_locale():
 def change_currency():
     """Смена валюты пользователя или демо пользователя."""
     currency = request.args.get('value')
-    if us.is_authenticated() and not us.is_demo():
-        us.change_currency(currency)
-        Repository.save()
+    if current_user.is_authenticated and not current_user.is_demo:
+        current_user.service.change_currency(currency)
+        UserRepository.save(current_user)
     else:
         session['currency'] = currency or 'usd'
     return ''

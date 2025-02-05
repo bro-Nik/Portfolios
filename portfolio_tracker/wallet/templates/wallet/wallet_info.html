@@ -147,11 +147,11 @@
       </table>
       <!-- Actions buttons -->
       <div class="sticky-bottom-buttons">
-        <a class="open-modal-confirmation" data-action="delete"
+        <a class="open-modal-confirmation" data-action="delete_if_empty"
           data-title="{% trans %}Удалить активы?{% endtrans %}"
           data-text="{% trans %}Будут удалены только пустые активы{% endtrans %}">
           {% trans %}Удалить{% endtrans %}</a>
-        <a class="open-modal-confirmation" data-action="delete_with_contents"
+        <a class="open-modal-confirmation" data-action="delete"
           data-title="{% trans %}Удалить активы с содержимым?{% endtrans %}"
           data-text="{% trans %}Все транзакции в этих активах будут удалены{% endtrans %}">
           {% trans %}Удалить с содержимым{% endtrans %}</a>

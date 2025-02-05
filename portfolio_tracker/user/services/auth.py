@@ -6,12 +6,9 @@ from flask import current_app
 from flask_login import current_user, login_user
 from flask_babel import gettext
 
-from portfolio_tracker.app import redis
-from portfolio_tracker.repository import Repository
-from portfolio_tracker.wallet.models import Wallet
+from ...app import redis
 from ..models import User, UserInfo
 from ..repository import UserRepository
-from .user import UserService
 from .ui import get_locale
 
 
@@ -83,12 +80,10 @@ def login(form: dict) -> tuple[bool, list]:
         mes = gettext('Неверный адрес электронной почты или пароль') 
         return False, [mes, 'warning']
 
-    us = UserService(user)
-
     # Проверка пройдена
-    if us.check_password(password):
+    if user.service.check_password(password):
         login_user(user, form.get('remember-me', False))
-        us.new_login()
+        user.service.new_login()
         redis.hdel(redis_key, email)
         return True, []
 
@@ -144,15 +139,13 @@ def register(form: dict) -> tuple[bool, list]:
         return False, [mes, 'warning']
 
     user = UserRepository.create(email=email)
-    us = UserService(user)
 
-    us.set_password(password)
-    us.change_currency()
-    us.change_locale(get_locale())
-    Wallet.create()
+    user.service.set_password(password)
+    user.service.change_currency()
+    user.service.change_locale(get_locale())
+    user.service.create_default_wallet()
     user.info = UserInfo()
-    Repository.add(user)
-    Repository.save()
+    UserRepository.save(user)
     return True, [gettext('Вы зарегистрированы. Теперь войдите в систему')]
 
 
@@ -177,16 +170,14 @@ def change_password(form: dict, user: User = current_user):
 
     """
 
-    us = UserService(user)
-
     # Проверка старого пароля
-    if not us.check_password(form.get('old_pass', '')):
+    if not user.service.check_password(form.get('old_pass', '')):
         return False, [gettext('Не верный старый пароль'), 'warning']
 
     new_pass = form.get('new_pass')
     # Пароль с подтверждением совпадают
     if new_pass and new_pass == form.get('new_pass2'):
-        us.set_password(new_pass)
+        user.service.set_password(new_pass)
         return True, [gettext('Пароль обновлен')]
     return False, [gettext('Новые пароли не совпадают'), 'warning']
 

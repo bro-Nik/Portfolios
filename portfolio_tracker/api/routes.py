@@ -5,12 +5,13 @@ from flask import request
 from flask_babel import gettext
 from flask_login import current_user, login_required
 
+from portfolio_tracker.portfolio.repository import TickerRepository
 
+from ..services import user_object_search_engine as ose
 from ..app import db
 from ..jinja_filters import currency_price, currency_quantity, smart_round
 from ..general_functions import remove_prefix
 from ..portfolio.models import Ticker
-from ..wallet.models import Wallet
 from . import bp
 
 
@@ -25,8 +26,8 @@ def before_request():
 @login_required
 def worked_alerts_count():
     count = 0
-    for wasset in current_user.watchlist:
-        for alert in wasset.alerts:
+    for asset in current_user.watchlist:
+        for alert in asset.alerts:
             if alert.status == 'worked':
                 count += 1
     return f'<span>{count}</span>' if count else ''
@@ -43,8 +44,7 @@ def all_currencies():
 
     # ToDo
     ids = ['cu-usd', 'cu-rub', 'cu-eur', 'cu-jpy']
-    currencies = db.session.execute(
-        db.select(Ticker).filter(Ticker.id.in_(ids))).scalars()
+    currencies = TickerRepository.get_with_ids(ids)
     for currency in currencies:
         result.append({'value': remove_prefix(currency.id, market),
                        'text': currency.symbol.upper(),
@@ -99,7 +99,7 @@ def wallets_to_buy():
     result = []
 
     for wallet in current_user.wallets:
-        wallet.update_price()
+        wallet.service.update_price()
         cost_now = smart_round(wallet.cost_now, 1)
         result.append({'value': wallet.id,
                        'text': wallet.name,
@@ -149,11 +149,12 @@ def wallets_to_transfer_out():
 def wallet_assets():
     result = []
     in_wallet = []
-    wallet = Wallet.get(request.args.get('wallet_id'))
+    # wallet = WalletRepository.get(request.args.get('wallet_id'))
+    wallet = ose.get_wallet(**request.args)
     if not wallet:
         return json.dumps({'message': gettext('Выберите кошелек')})
 
-    wallet.update_price()
+    wallet.service.update_price()
     assets = wallet.assets
     assets = sorted(assets, key=lambda asset: asset.free, reverse=True)
     for asset in assets:

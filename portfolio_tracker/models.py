@@ -1,4 +1,18 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+
 from .general_functions import find_by_attr
+
+if TYPE_CHECKING:
+    pass
+
+
+class Base(DeclarativeBase):
+    id: Mapped[int] = mapped_column(primary_key=True)
 
 
 class DetailsMixin:
@@ -15,8 +29,7 @@ class DetailsMixin:
 
 
 class TransactionsMixin:
-    def get_transaction(self, transaction_id: str | int | None
-                        ):
+    def get_transaction(self, transaction_id: str | int | None):
         return find_by_attr(self.transactions, 'id', transaction_id)
 
 
@@ -36,10 +49,3 @@ class AssetMixin:
     @property
     def free(self) -> float:
         return self.quantity - self.sell_orders
-
-    def delete_if_empty(self) -> None:
-        if self.is_empty:
-            self.delete()
-        else:
-            flash(gettext('В активе %(name)s есть транзакции',
-                          name=self.ticker.name), 'warning')

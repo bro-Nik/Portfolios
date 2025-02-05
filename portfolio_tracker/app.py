@@ -9,7 +9,8 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 from celery import Celery
 from redis import Redis
-import sentry_sdk
+from sqlalchemy.orm import scoped_session, sessionmaker
+# import sentry_sdk
 
 
 from .settings import Config
@@ -33,6 +34,7 @@ babel = Babel()
 celery = Celery('celery_app', broker='amqp://rabbitmq')
 # redis = redis.StrictRedis('127.0.0.1', 6379)
 redis = Redis(host='redis', port=6379)
+
 
 from .user.services.ui import get_locale, get_timezone
 from .errors.handlers import init_request_errors

@@ -59,6 +59,8 @@
             data-url="{{ url_for('api.wallets_to_buy') }}">
             {% if transaction.type in ('Buy', 'Input', 'Earning') and transaction.wallet_id %}
               <option selected value="{{ transaction.wallet.id }}">{{ transaction.wallet.name }}</option>
+            {% elif transaction.type in ('TransferOut',) and transaction.related_transaction %}
+              <option selected value="{{ transaction.related_transaction.wallet_id }}">{{ transaction.related_transaction.wallet.name }}</option>
             {% endif %}
           </select>
         </div>
@@ -116,6 +118,8 @@
           <span class="small-text ms-auto gap-2">
             {% if asset.portfolio %}
               <span class="type-box sell output transferout {{ 'text-red' if not asset.free > 0 }}">{% trans %}В портфеле:{% endtrans %} {{ asset.free }}</span>
+            {% elif asset.wallet %}
+              <span class="type-box sell output transferout {{ 'text-red' if not asset.free > 0 }}">{% trans %}В кошельке:{% endtrans %} {{ asset.free }}</span>
             {% endif %}
 
             <span class="{{ 'text-red' if not asset.free > 0 }} type-box sell output">{% trans %}В кошельке:{% endtrans %}<span class="wallet-asset-free"> - </span></span>
@@ -218,7 +222,6 @@
 
     var $selected = $(this).find('option:selected')
     $('.wallet-asset-free').text(+$selected.data('free') || '-');
-    UpdateAssetLimit(+$selected.data('free') || 0)
     
 
     //
@@ -236,6 +239,10 @@
         ////UpdateQuoteTicker($.parseJSON(data));
       //});
     }
+
+    // Изменение лимита подставляемого значения
+    if (!'TransferOut'.includes(selected_type)) UpdateAssetLimit(+$selected.data('free') || 0)
+    else UpdateAssetLimit()
   })
 
   $('#TransactionForm').on('change', 'select[name*=ticker2_id]', function () {
@@ -254,7 +261,7 @@
       disabled = $('#TransactionForm input[name=type]:checked').val() == 'Sell' && free_asset <= 0,
       $form = $('#TransactionForm');
 
-    $.get("{{ url_for('.change_session_param', name='transaction_calculation_type') }}" + '&value=' + to_show);
+    $.get("{{ url_for('portfolio.change_session_param', name='transaction_calculation_type') }}" + '&value=' + to_show);
 
     $form.find('span[data-type=' + to_show + ']').addClass('visually-hidden');
     $form.find('[data-type=' + to_show + '] input').attr('disabled', disabled).attr('required', true);
@@ -311,9 +318,10 @@
     $('#TransactionForm .calculation-type').find("[data-type=" + calculation_type + "]").trigger('click');
   })
 
-  function UpdateAssetLimit(limit2) {
+  function UpdateAssetLimit(limit2=undefined) {
     var $box = $('#TransactionForm .paste-into-input');
     var limit1 = {{ asset.free }};
+    if (limit2 == undefined) limit2 = limit1;
     $box.data('value', Math.min(limit1, limit2))
   }
 

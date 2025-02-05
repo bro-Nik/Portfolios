@@ -48,6 +48,33 @@ class UserRepository:
         return User(email=email)
 
     @staticmethod
+    def save(user: User) -> None:
+        """Сохранение нового пользователя в базе данных.
+
+        Параметры:
+            User: Объект созданного пользователя.
+
+        """
+
+        if not user.id:
+            db.session.add(user)
+        db.session.commit()
+
+    @staticmethod
+    def delete(user: User) -> None:
+        """Удаление пользователя из базе данных.
+
+        Параметры:
+            User: Объект пользователя.
+
+        """
+        if user.info:
+            db.session.delete(user.info)
+
+        db.session.delete(user)
+        db.session.commit()
+
+    @staticmethod
     def get_demo_user() -> User | None:
         """Получить демо-пользователя.
 
