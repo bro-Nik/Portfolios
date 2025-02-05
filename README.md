@@ -1,28 +1,34 @@
-# Portfolios. Отслеживай активы в одном месте
-**Portfolios** помогает не запутаться в инвестициях и вести учет по многим активам в одном личном кабинете.
-- **Криптовалюта.** Ведение криптовалютных портфелей с различнами стратегиями управления.
-- **Акции.** Ведение портфелей с акциями разделенных по своему усмотрению.
-- **Офлайн активы.** Ведение портфелей с офлайн активами.
+# Portfolios. Track your assets in one place
 
-## Сущности
-### Портфели
-Управление портфелями с цифровыми и другими активами. Собирайте портфели по вашей собственной стратегии, цели или другому принципу.
+**Portfolios** helps you not to get confused in investments and keep track of many assets in one personal account.
 
-- неограниченное количество портфелей
-- процентное соотношение между портфелями и активами
-- уведомления по достижению цены
-- история транзакций
+- :white_check_mark: **Cryptocurrency.** Maintaining cryptocurrency portfolios using various management strategies.
+- :white_check_mark: **Stocks.** Maintain stock portfolios divided at your discretion.
+- :white_check_mark: **Offline assets.** Maintaining portfolios with offline assets.
 
-### Кошельки
-Удобное управление всеми кошельками, где хранятся активы. Вы можете вести столько кошельков, сколько необходимо, например, сколько у вас есть в реальности и понимать, где именно лежит интересующий актив и в каком количестве.
+## Entities
+### Portfolios
+Manage portfolios of digital and other assets. Create portfolios based on your own strategy, goal, or other principle.
 
-- неограниченное количество кошельков
-- список активов в кошельке
-- статистика по свободным средствам
-- статистика по средствам, зарезервированным на ордеры
+- unlimited number of portfolios
+- percentage ratio between portfolios and assets
+- notifications when price is reached
+- transaction history
 
-### Списки отслеживания
-Не теряйте и отслеживайте интересующие вас активы.
+### Wallets
+Convenient management of all wallets where assets are stored. You can maintainas many wallets as necessary, for example, how many you actually have, and understand exactly where the asset of interest is located and in what quantity.
 
-- список избранных активов
-- уведомления по достижению цены
+- unlimited number of wallets
+- list of assets in the wallet
+- statistics on available funds
+- statistics on funds reserved for orders
+
+### Watch Lists
+Don't lose and track the assets you are interested in.
+
+- list of tracked assets
+- notifications when price is reached
+
+_____
+* :link: [Screenshots](docs/screenshots.md)
+* :link: [Portfolios Web site](https://allmyportfolios.com) | [Demo](https://allmyportfolios.com/user/demo_user)
