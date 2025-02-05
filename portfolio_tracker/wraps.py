@@ -22,7 +22,7 @@ def closed_for_demo_user(methods: List):
     def actual_decorator(func):
         @wraps(func)
         def decorated_function(*args, **kwargs):
-            if current_user.type == 'demo' and request.method in methods:
+            if current_user.type == 'demo' and request.method in methods and False:
                 if request.method == 'POST':
                     flash(gettext('Демо юзер не может вносить изменения'), 'warning')
                     return ''

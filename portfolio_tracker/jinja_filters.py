@@ -9,6 +9,7 @@ from requests.api import get
 
 from portfolio_tracker.general_functions import add_prefix
 from portfolio_tracker.portfolio.models import Ticker
+from portfolio_tracker.portfolio.repository import TickerRepository
 
 from .user.services.ui import get_currency, get_locale
 
@@ -49,7 +50,7 @@ def get_currency_ticker(u=current_user):
         if u.is_authenticated and u.type != 'demo' and u.currency:
             currency_ticker = u.currency_ticker
         else:
-            currency_ticker = Ticker.get(add_prefix(get_currency(), 'currency'))
+            currency_ticker = TickerRepository.get(add_prefix(get_currency(), 'currency'))
 
         g.currency_ticker = currency_ticker
     return currency_ticker
@@ -165,7 +166,7 @@ def share_of(obj, parent_amount):
 def profit(obj):
     profit = currency_price(obj.profit, round_to='usd')
     percent_str = ''
-    if obj.profit and obj.amount > 0:
+    if obj.profit and obj.amount > 1:
         percent = abs(round(obj.profit / obj.amount * 100))
         percent_str = f' ({percent}%)' if percent else ''
     return f'{profit}{percent_str}' if profit else '-'
