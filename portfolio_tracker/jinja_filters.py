@@ -5,12 +5,9 @@ from babel.dates import format_datetime
 from flask import Blueprint, g
 from flask_babel import Locale
 from flask_login import current_user
-from requests.api import get
 
-from portfolio_tracker.general_functions import add_prefix
-from portfolio_tracker.portfolio.models import Ticker
-from portfolio_tracker.portfolio.repository import TickerRepository
-
+from .general_functions import add_prefix
+from .portfolio.repository import TickerRepository
 from .user.services.ui import get_currency, get_locale
 
 
@@ -129,7 +126,6 @@ def currency_quantity(num: int | float, currency: str = '', default: str = '',
     if rez.startswith(currency):
         rez = rez.replace(currency, f'{currency} ')
 
-    # return f'{long_number(num)} {currency.upper()}'
     return rez
 
 
