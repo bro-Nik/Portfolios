@@ -7,7 +7,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from portfolio_tracker.models import Base
 
-from ..app import db
 
 if TYPE_CHECKING:
     from portfolio_tracker.portfolio.models import Ticker, Portfolio
@@ -33,7 +32,6 @@ class User(Base, UserMixin):
     watchlist: Mapped[List['WatchlistAsset']] = relationship(back_populates='user', lazy=True)
     info: Mapped['UserInfo'] = relationship(back_populates='user', lazy=True, uselist=False)
 
-    # Сервисы
     @property
     def service(self):
         from portfolio_tracker.user.services.user import UserService
