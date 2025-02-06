@@ -1,14 +1,13 @@
 from __future__ import annotations
-from sqlalchemy import ForeignKey, String, and_, or_
-import sqlalchemy.orm as so
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy.orm import Mapped, backref, foreign, mapped_column, relationship
+from sqlalchemy import ForeignKey, String
+from sqlalchemy.orm import Mapped, backref, mapped_column, relationship
 
 from portfolio_tracker.portfolio.models import Transaction
-
 from ..models import Base
 from ..mixins import AssetMixin
+
 
 if TYPE_CHECKING:
     from ..portfolio.models import Ticker
@@ -22,8 +21,8 @@ class Wallet(Base):
     comment: Mapped[str] = mapped_column(String(1024))
 
     user: Mapped['User'] = relationship(back_populates='wallets')
-    assets: Mapped[List[WalletAsset]] = relationship(back_populates="wallet")
-    transactions: Mapped[List[Transaction]] = relationship(back_populates='wallet', lazy=True,
+    assets: Mapped[List['WalletAsset']] = relationship(back_populates="wallet")
+    transactions: Mapped[List['Transaction']] = relationship(back_populates='wallet', lazy=True,
                                           order_by='Transaction.date.desc()')
 
     @property
@@ -49,13 +48,6 @@ class WalletAsset(Base, AssetMixin):
 
     # Relationships
     ticker: Mapped[Ticker] = relationship(back_populates='', lazy=True)
-    # transactions: Mapped[List['Transaction']] = relationship(
-    #     primaryjoin="and_(or_(WalletAsset.ticker_id == foreign(Transaction.ticker_id),"
-    #                 "WalletAsset.ticker_id == foreign(Transaction.ticker2_id)),"
-    #                 "WalletAsset.wallet_id == foreign(Transaction.wallet_id))",
-    #     # viewonly=True,
-    #     # back_populates='wallet_asset',
-    # )
     transactions: Mapped[List[Transaction]] = relationship(
         "Transaction",
         primaryjoin="and_(or_(WalletAsset.ticker_id == foreign(Transaction.ticker_id),"
