@@ -1,7 +1,6 @@
 from flask_login import current_user
 
 from portfolio_tracker.portfolio.models import Asset, OtherAsset, OtherTransaction, Portfolio, Transaction
-from portfolio_tracker.portfolio.repository import PortfolioRepository
 from portfolio_tracker.user.models import User
 from portfolio_tracker.user.repository import UserRepository
 from portfolio_tracker.wallet.models import Wallet, WalletAsset
