@@ -23,13 +23,11 @@ class OtherTransactionService:
             t.amount_usd = t.amount * t.amount_ticker.price
 
     def update_dependencies(self, param: str = '') -> None:
-        if param in ('cancel', ):
-            direction = -1
-        else:
-            direction = 1
+        # Направление сделки (direction)
+        d = -1 if param == 'cancel' else 1
 
         t = self.transaction
-        t.asset.cost_now += t.amount_usd * direction
+        t.asset.cost_now += t.amount_usd * d
 
     def delete(self) -> None:
         self.update_dependencies('cancel')
