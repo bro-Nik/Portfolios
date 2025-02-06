@@ -8,7 +8,8 @@ from sqlalchemy.orm import Mapped, backref, foreign
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
-from ..models import AssetMixin, Base, DetailsMixin
+from ..models import Base
+from ..mixins import AssetMixin, DetailsMixin
 
 
 class Transaction(Base):

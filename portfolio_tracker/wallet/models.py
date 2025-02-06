@@ -7,7 +7,8 @@ from sqlalchemy.orm import Mapped, backref, foreign, mapped_column, relationship
 
 from portfolio_tracker.portfolio.models import Transaction
 
-from ..models import AssetMixin, Base, TransactionsMixin
+from ..models import Base
+from ..mixins import AssetMixin
 
 if TYPE_CHECKING:
     from ..portfolio.models import Ticker
@@ -35,7 +36,7 @@ class Wallet(Base):
         return WalletService(self)
 
 
-class WalletAsset(Base, AssetMixin, TransactionsMixin):
+class WalletAsset(Base, AssetMixin):
     __tablename__ = "wallet_asset"
 
     ticker_id: Mapped[str] = mapped_column(String(256), ForeignKey("ticker.id"))
