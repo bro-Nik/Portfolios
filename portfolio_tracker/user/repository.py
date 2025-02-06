@@ -1,6 +1,5 @@
-from .models import User, db
-
-from ..app import login_manager
+from .models import User
+from ..app import login_manager, db
 
 
 class UserRepository:
