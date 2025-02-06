@@ -5,8 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from portfolio_tracker.models import Base
-
+from ..models import Base
 from ..portfolio.models import Ticker, Transaction
 
 
@@ -19,8 +18,8 @@ class WatchlistAsset(Base):
 
     # Relationships
     user: Mapped['User'] = relationship(back_populates="watchlist")
-    ticker: Mapped[Ticker] = relationship(uselist=False)
-    alerts: Mapped[List[Alert]] = relationship(back_populates='watchlist_asset', lazy=True)
+    ticker: Mapped['Ticker'] = relationship(uselist=False)
+    alerts: Mapped[List['Alert']] = relationship(back_populates='watchlist_asset', lazy=True)
 
     @property
     def service(self):
@@ -50,10 +49,10 @@ class Alert(Base):
     transaction_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("transaction.id"))
 
     # Relationships
-    asset: Mapped[Asset] = relationship(back_populates='alerts', lazy=True)
-    transaction: Mapped[Transaction] = relationship(back_populates='alert', uselist=False)
-    price_ticker: Mapped[Ticker] = relationship(uselist=False)
-    watchlist_asset: Mapped[WatchlistAsset] = relationship(uselist=False)
+    asset: Mapped['Asset'] = relationship(back_populates='alerts', lazy=True)
+    transaction: Mapped['Transaction'] = relationship(back_populates='alert', uselist=False)
+    price_ticker: Mapped['Ticker'] = relationship(uselist=False)
+    watchlist_asset: Mapped['WatchlistAsset'] = relationship(uselist=False)
 
     @property
     def service(self):
