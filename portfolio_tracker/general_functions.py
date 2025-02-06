@@ -1,4 +1,3 @@
-from __future__ import annotations
 import json
 import pickle
 import time
@@ -17,7 +16,6 @@ MARKETS: tuple[Market, ...] = ('crypto', 'stocks', 'currency')
 
 
 def find_by_attr(iterable: Iterable, attr: str, attr_value: str | int | None):
-    # Если iterable или search пустое - выход
     if not (iterable and attr_value):
         return
 
