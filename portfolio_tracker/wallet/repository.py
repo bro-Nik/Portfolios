@@ -1,13 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
-from portfolio_tracker.portfolio.models import Ticker
 from portfolio_tracker.wallet.models import Wallet, WalletAsset
-
 from ..app import db
-
-if TYPE_CHECKING:
-    pass
 
 
 class WalletRepository:
