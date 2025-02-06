@@ -1,11 +1,10 @@
 from flask import abort, render_template, session, url_for, request
 from flask_login import current_user as user, login_required
 
-from portfolio_tracker.portfolio.models import OtherAsset
-
 from ..services import user_object_search_engine as ose
 from ..general_functions import actions_on_objects
 from ..wraps import closed_for_demo_user
+from .models import OtherAsset
 from .repository import TickerRepository
 from .services.portfolios import Portfolios
 from . import bp
