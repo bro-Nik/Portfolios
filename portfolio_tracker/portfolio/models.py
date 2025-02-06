@@ -2,9 +2,9 @@ from __future__ import annotations
 from datetime import datetime, date
 from typing import List
 
-from sqlalchemy import Date, ForeignKey, and_, or_
+from sqlalchemy import ForeignKey
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, backref, foreign
+from sqlalchemy.orm import Mapped, backref
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
@@ -33,21 +33,9 @@ class Transaction(Base):
     alert: Mapped['Alert'] = relationship(back_populates='transaction', lazy=True)
     portfolio: Mapped['Portfolio'] = relationship(back_populates='transactions', lazy=True)
     wallet: Mapped['Wallet'] = relationship(back_populates='transactions', lazy=True)
-    base_ticker: Mapped[Ticker] = relationship(foreign_keys=[ticker_id], viewonly=True)
-    quote_ticker: Mapped[Ticker] = relationship(foreign_keys=[ticker2_id], viewonly=True)
-    related_transaction: Mapped[Transaction] = relationship(foreign_keys=[related_transaction_id], uselist=False)
-    # portfolio_asset: Mapped['Asset'] = relationship(
-    #     primaryjoin="and_(or_(Transaction.ticker_id == foreign(Asset.ticker_id),"
-    #                 "Transaction.ticker2_id == foreign(Asset.ticker_id)),"
-    #                 "Transaction.portfolio_id == foreign(Asset.portfolio_id))",
-    #     back_populates='transactions',
-    # )
-    # wallet_asset: Mapped['WalletAsset'] = relationship(
-    #     primaryjoin="and_(or_(Transaction.ticker_id == foreign(WalletAsset.ticker_id),"
-    #                 "Transaction.ticker2_id == foreign(WalletAsset.ticker_id)),"
-    #                 "Transaction.wallet_id == foreign(WalletAsset.wallet_id))",
-    #     back_populates='transactions',
-    # )
+    base_ticker: Mapped['Ticker'] = relationship(foreign_keys=[ticker_id], viewonly=True)
+    quote_ticker: Mapped['Ticker'] = relationship(foreign_keys=[ticker2_id], viewonly=True)
+    related_transaction: Mapped['Transaction'] = relationship(foreign_keys=[related_transaction_id], uselist=False)
 
     @property
     def service(self):
@@ -69,14 +57,8 @@ class Asset(Base, DetailsMixin, AssetMixin):
 
     # Relationships
     portfolio: Mapped['Portfolio'] = relationship(back_populates='assets', lazy=True)
-    ticker: Mapped[Ticker] = relationship(foreign_keys=ticker_id, back_populates="assets", lazy=True)
-    # transactions: Mapped[List['Transaction']] = relationship(
-    #     primaryjoin="and_(or_(Asset.ticker_id == foreign(Transaction.ticker_id),"
-    #                 "Asset.ticker_id == foreign(Transaction.ticker2_id)),"
-    #                 "Asset.portfolio_id == foreign(Transaction.portfolio_id))",
-    #     back_populates='portfolio_asset',
-    # )
-    transactions: Mapped[List[Transaction]] = relationship(
+    ticker: Mapped['Ticker'] = relationship(foreign_keys=ticker_id, back_populates="assets", lazy=True)
+    transactions: Mapped[List['Transaction']] = relationship(
         "Transaction",
         primaryjoin="and_(or_(Asset.ticker_id == foreign(Transaction.ticker_id), Asset.ticker_id == foreign(Transaction.ticker2_id)), "
                     "Asset.portfolio_id == Transaction.portfolio_id)",
@@ -84,7 +66,6 @@ class Asset(Base, DetailsMixin, AssetMixin):
     )
     alerts: Mapped[List['Alert']] = relationship(
         primaryjoin="Asset.id == foreign(Alert.asset_id)"
-        # back_populates='transactions',
     )
 
     @property
@@ -109,8 +90,8 @@ class OtherAsset(Base, DetailsMixin):
 
     # Relationships
     portfolio: Mapped['Portfolio'] = relationship(back_populates='other_assets', lazy=True)
-    transactions: Mapped[List[OtherTransaction]] = relationship(back_populates="portfolio_asset", lazy=True)
-    bodies: Mapped[List[OtherBody]] = relationship(back_populates="asset", lazy=True)
+    transactions: Mapped[List['OtherTransaction']] = relationship(back_populates="portfolio_asset", lazy=True)
+    bodies: Mapped[List['OtherBody']] = relationship(back_populates="asset", lazy=True)
 
     @property
     def service(self):
@@ -134,8 +115,8 @@ class OtherTransaction(Base):
     comment: Mapped[str] = mapped_column(String(1024))
 
     # Relationships
-    amount_ticker: Mapped[Ticker] = relationship(uselist=False)
-    portfolio_asset: Mapped[OtherAsset] = relationship(back_populates="transactions", lazy=True)
+    amount_ticker: Mapped['Ticker'] = relationship(uselist=False)
+    portfolio_asset: Mapped['OtherAsset'] = relationship(back_populates="transactions", lazy=True)
 
     @property
     def service(self):
@@ -158,9 +139,9 @@ class OtherBody(Base):
     comment: Mapped[str] = mapped_column(String(1024))
 
     # Relationships
-    amount_ticker: Mapped[Ticker] = relationship(foreign_keys=[amount_ticker_id], viewonly=True)
-    cost_now_ticker: Mapped[Ticker] = relationship(foreign_keys=[cost_now_ticker_id], viewonly=True)
-    asset: Mapped[OtherAsset] = relationship(back_populates="bodies", lazy=True)
+    amount_ticker: Mapped['Ticker'] = relationship(foreign_keys=[amount_ticker_id], viewonly=True)
+    cost_now_ticker: Mapped['Ticker'] = relationship(foreign_keys=[cost_now_ticker_id], viewonly=True)
+    asset: Mapped['OtherAsset'] = relationship(back_populates="bodies", lazy=True)
 
     @property
     def service(self):
@@ -180,13 +161,8 @@ class Ticker(Base):
     market: Mapped[str] = mapped_column(String(32))
     stable: Mapped[bool] = mapped_column()
 
-    assets: Mapped[List[Asset]] = relationship()
+    assets: Mapped[List['Asset']] = relationship()
     history: Mapped['PriceHistory'] = relationship(back_populates="ticker", lazy=True)
-    # def get_history_price(self, date: datetime.date) -> float | None:
-    #     if date:
-    #         for day in self.history:
-    #             if day.date == date:
-    #                 return day.price_usd
 
 
 class Portfolio(Base, DetailsMixin):
@@ -200,9 +176,9 @@ class Portfolio(Base, DetailsMixin):
 
     # Relationships
     user: Mapped['User'] = relationship(back_populates="portfolios")
-    assets: Mapped[List[Asset]] = relationship(back_populates="portfolio", lazy=True)
-    other_assets: Mapped[List[OtherAsset]] = relationship(back_populates="portfolio", lazy=True)
-    transactions: Mapped[List[Transaction]] = relationship(back_populates="portfolio", lazy=True)
+    assets: Mapped[List['Asset']] = relationship(back_populates="portfolio", lazy=True)
+    other_assets: Mapped[List['OtherAsset']] = relationship(back_populates="portfolio", lazy=True)
+    transactions: Mapped[List['Transaction']] = relationship(back_populates="portfolio", lazy=True)
 
     @property
     def service(self):
@@ -211,8 +187,6 @@ class Portfolio(Base, DetailsMixin):
 
     @property
     def is_empty(self) -> bool:
-        # ToDo
-        return False
         return not (self.assets or self.other_assets or self.comment)
 
 
@@ -224,4 +198,4 @@ class PriceHistory(Base):
     price_usd: Mapped[float] = mapped_column()
 
     # Relationships
-    ticker: Mapped[Ticker] = relationship(back_populates="history", lazy=True)
+    ticker: Mapped['Ticker'] = relationship(back_populates="history", lazy=True)
