@@ -18,7 +18,6 @@ def wallets():
     if request.method == 'POST':
         actions_on_objects(request.data, user.service.get_wallet)
 
-        # Create default wallet
         user.service.create_default_wallet()
         return ''
 
