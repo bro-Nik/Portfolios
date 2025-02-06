@@ -51,13 +51,6 @@ class PortfolioService:
 
         prefix = 'other_' if self.portfolio.market == 'other' else ''
         for asset in getattr(self.portfolio, f'{prefix}assets'):
-            # if asset.portfolio.market == 'crypto':
-            #     print(asset.ticker_id)
-            # if asset.portfolio.market == 'crypto' and not asset.ticker_id:
-            #     from portfolio_tracker.app import db
-            #     db.session.delete(asset)
-            #     db.session.commit()
-            #     continue
             self.portfolio.cost_now += asset.cost_now
             self.portfolio.amount += asset.amount
             self.portfolio.invested += asset.amount if asset.amount > 0 else 0
