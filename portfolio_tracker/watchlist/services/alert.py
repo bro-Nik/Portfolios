@@ -1,9 +1,8 @@
-
 from portfolio_tracker.portfolio.models import Transaction
 from portfolio_tracker.portfolio.repository import TickerRepository
-from portfolio_tracker.watchlist.models import Alert
-from portfolio_tracker.watchlist.models import Watchlist
-from portfolio_tracker.watchlist.repository import AlertRepository
+from ..models import Alert
+from ..models import Watchlist
+from ..repository import AlertRepository
 
 
 class AlertService:
