@@ -4,9 +4,8 @@ from flask import flash
 from flask_babel import gettext
 
 from portfolio_tracker.general_functions import find_by_attr
-
 from ..models import Asset, OtherTransaction, Transaction
-from ..repository import AssetRepository, TransactionRepository
+from ..repository import AssetRepository
 
 
 class AssetService:
@@ -85,39 +84,6 @@ class AssetService:
         for t in self.asset.transactions:
             t.service.update_dependencies()
 
-            # if t.type in ('Buy', 'Sell'):
-            #     if self.asset.ticker_id == t.ticker2_id:
-            #         # Это котируемый актив
-            #         if t.order:
-            #             if t.type == 'Buy':
-            #                 self.asset.sell_orders -= t.quantity2
-            #             elif t.type == 'Sell':
-            #                 self.asset.buy_orders -= t.quantity2
-            #
-            #         else:
-            #             self.asset.amount += t.quantity2
-            #             self.asset.quantity += t.quantity2
-            #
-            #     else:
-            #         # Это базовый актив
-            #         if t.order:
-            #             if t.type == 'Sell':
-            #                 self.asset.sell_orders -= t.quantity
-            #             elif t.type == 'Buy':
-            #                 self.asset.buy_orders -= t.quantity
-            #             #     w_asset1.sell_orders -= self.quantity * d
-            #
-            #         else:
-            #             self.asset.amount += t.quantity * t.price_usd
-            #             self.asset.quantity += t.quantity
-            #
-            # elif t.type in ('Earning'):
-            #     self.asset.quantity += t.quantity
-            #
-            # elif t.type in ('Input', 'Output'):
-            #     self.asset.amount += t.quantity
-            #     self.asset.quantity += t.quantity
-
     def delete_if_empty(self) -> None:
         if self.asset.is_empty:
             self.delete()
@@ -130,7 +96,7 @@ class AssetService:
             transaction.service.delete()
 
         for alert in self.asset.alerts:
-            # отставляем уведомления
+            # оставляем уведомления
             alert.asset_id = None
             alert.comment = gettext('Актив удален из портфеля %(name)s',
                                     name=self.asset.portfolio.name)
