@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 from portfolio_tracker.general_functions import find_by_attr
 from portfolio_tracker.portfolio.models import Transaction
-from portfolio_tracker.portfolio.repository import TransactionRepository
 from portfolio_tracker.wallet.models import WalletAsset
 from portfolio_tracker.wallet.repository import WalletAssetRepository
 
