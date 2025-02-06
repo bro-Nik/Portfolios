@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from ..mixins import DetailsMixin
+from ..models import DetailsMixin
 
 if TYPE_CHECKING:
     from portfolio_tracker.user.models import User
