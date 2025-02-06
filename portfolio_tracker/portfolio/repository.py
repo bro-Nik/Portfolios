@@ -88,12 +88,6 @@ class OtherAssetRepository:
 
 class TransactionRepository:
 
-    # @staticmethod
-    # def add(transaction: Transaction) -> None:
-    #     """Добавляет новую транзакцию в сессиию."""
-    #     if not transaction.id:
-    #         db.session.add(transaction)
-
     @staticmethod
     def save(transaction: Transaction) -> None:
         if not transaction in db.session:
