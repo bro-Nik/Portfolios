@@ -9,17 +9,8 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 from celery import Celery
 from redis import Redis
-from sqlalchemy.orm import scoped_session, sessionmaker
-# import sentry_sdk
-
 
 from .settings import Config
-
-
-# sentry_sdk.init(
-#     dsn="https://c2b86bd70d07ec2d3b82ff30024cc3e1@o4506602896490496.ingest.sentry.io/4506602912088064",
-#     traces_sample_rate=1,
-# )
 
 
 db = SQLAlchemy()
@@ -30,9 +21,7 @@ login_manager.login_message = gettext(
     'Пожалуйста, войдите, чтобы получить доступ к этой странице')
 login_manager.login_message_category = 'danger'
 babel = Babel()
-# celery = Celery()
 celery = Celery('celery_app', broker='amqp://rabbitmq')
-# redis = redis.StrictRedis('127.0.0.1', 6379)
 redis = Redis(host='redis', port=6379)
 
 
@@ -43,7 +32,6 @@ from .errors.handlers import init_request_errors
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
-    # app.config.from_pyfile('settings.py')
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -91,7 +79,6 @@ def register_blueprints(app):
 
 
 def configure_logging(app):
-    # if app.debug or app.testing:
     if app.testing:
         app.logger.setLevel(logging.CRITICAL)
         return
