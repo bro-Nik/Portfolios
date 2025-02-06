@@ -1,16 +1,14 @@
 from datetime import datetime, timezone
 
 from flask import flash
-from flask_login import current_user
 from flask_babel import gettext
 
 from portfolio_tracker.general_functions import find_by_attr
-from portfolio_tracker.models import TransactionsMixin
-from portfolio_tracker.portfolio.models import OtherAsset, OtherBody
-from portfolio_tracker.portfolio.repository import BodyRepository, OtherAssetRepository, OtherTransactionRepository
+from portfolio_tracker.portfolio.models import OtherAsset, OtherBody, Transaction
+from portfolio_tracker.portfolio.repository import OtherAssetRepository
 
 
-class OtherAssetService(TransactionsMixin):
+class OtherAssetService:
 
     def __init__(self, asset: OtherAsset) -> None:
         self.asset = asset
@@ -41,8 +39,7 @@ class OtherAssetService(TransactionsMixin):
         return find_by_attr(self.asset.transactions, 'id', transaction_id)
 
     def create_transaction(self):
-        # asset = self.asset
-        transaction = OtherTransactionRepository.create()
+        transaction = Transaction()
         transaction.type = 'Profit'
         transaction.amount = 0
         transaction.date = datetime.now(timezone.utc)
@@ -51,9 +48,9 @@ class OtherAssetService(TransactionsMixin):
     def get_body(self, body_id: str | int | None):
         return find_by_attr(self.asset.bodies, 'id', body_id)
 
-    def create_body(self, user=current_user) -> OtherBody:
+    def create_body(self) -> OtherBody:
         """Возвращает новое тело актива."""
-        body = BodyRepository.create()
+        body = OtherBody()
         body.date = datetime.now(timezone.utc)
         body.asset = self.asset
         return body
