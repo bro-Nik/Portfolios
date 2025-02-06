@@ -1,16 +1,13 @@
 import json
 
 from flask import abort, render_template, session, url_for, request
-from flask_login import current_user, login_required
-
-from portfolio_tracker.watchlist.repository import WatchlistRepository
+from flask_login import login_required
 
 from ..services import user_object_search_engine as ose
 from ..app import db
 from ..wraps import closed_for_demo_user
 from ..general_functions import actions_on_objects
 from ..portfolio.models import Ticker
-from .models import Watchlist
 from . import bp
 
 
@@ -22,7 +19,7 @@ def assets():
     market = request.args.get('market',
                               session.get('watchlist_market', 'crypto'))
     session['watchlist_market'] = market
-    watchlist = ose.get_watchlist(market=market, **request.args)
+    watchlist = ose.get_watchlist(market=market, **request.args) or abort(404)
 
     # Actions
     if request.method == 'POST':
@@ -81,11 +78,6 @@ def alert_info():
         alert.asset_id = request.args.get('asset_id')
         alert.service.edit(request.form)
         return ''
-
-        # if asset not in watchlist.assets:
-        #     watchlist.assets.append(asset)
-        # if alert not in asset.alerts:
-        #     asset.alerts.append(alert)
 
     return render_template('watchlist/alert.html', asset=alert.asset,
                            asset_id=request.args.get('asset_id'), alert=alert)
