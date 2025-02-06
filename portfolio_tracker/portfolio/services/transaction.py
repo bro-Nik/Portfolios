@@ -33,7 +33,6 @@ class TransactionService:
             self.transaction.wallet_id = form['sell_wallet_id']
 
         if self.transaction.type in ('Buy', 'Sell'):
-            # self.ticker2_id = form['ticker2_id']
             self.transaction.ticker2_id = form[type.lower() + '_ticker2_id']
             self.transaction.price = float(form['price'])
 
@@ -42,7 +41,6 @@ class TransactionService:
                 return
 
             self.transaction.price_usd = self.transaction.price * quote_ticker.price
-            # self.wallet_id = form[self.type.lower() + '_wallet_id']
             self.transaction.order = bool(form.get('order'))
             if form.get('quantity') is not None:
                 self.transaction.quantity = float(form['quantity']) * d
@@ -88,7 +86,6 @@ class TransactionService:
 
 
         if t.type in ('Buy', 'Sell'):
-            # Условия
             if not (p_asset1 and p_asset2 and w_asset1 and w_asset2):
                 return
 
@@ -114,14 +111,12 @@ class TransactionService:
                 w_asset2.quantity += t.quantity2 * d
 
         elif t.type in ('Earning'):
-            # Условия
             if not (p_asset1 and w_asset1):
                 return
 
             p_asset1.quantity += t.quantity * d
             w_asset1.quantity += t.quantity * d
 
-        # elif self.type in ('Input', 'Output') and wallet and portfolio:
         else:
             if portfolio and p_asset1:
                 p_asset1.amount += t.quantity * d
@@ -141,11 +136,7 @@ class TransactionService:
                     t2.related_transaction = None
                     t2.service.delete()
             else:
-                # wallet2_id = (getattr(t, 'wallet2_id', None) or
-                #               getattr(t.related_transaction, 'wallet_id', None))
                 wallet2 = WalletRepository.get(getattr(t, 'wallet2_id', None))
-                # portfolio2_id = (getattr(t, 'portfolio2_id', None) or
-                #                  getattr(t.related_transaction, 'portfolio_id', None))
                 portfolio2 = PortfolioRepository.get(getattr(t, 'portfolio2_id', None))
                 self.update_related_transaction(portfolio2 or wallet2)
 
@@ -159,9 +150,7 @@ class TransactionService:
             t2 = t.related_transaction
             if not t2:
                 t2 = asset2.service.create_transaction()
-                # asset2.transactions.append(t2)
                 t.related_transaction = t2
-                # DataBase.add(t2)
 
             t2.service.edit({
                 'type': 'TransferOut' if t.type == 'TransferIn' else 'TransferIn',
@@ -174,7 +163,6 @@ class TransactionService:
             t.related_transaction_id = t2.id
             t2.related_transaction_id = t.id
 
-            # t2.service.update_dependencies()
             TransactionRepository.save(t)
             TransactionRepository.save(t2)
 
