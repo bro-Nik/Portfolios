@@ -1,4 +1,3 @@
-# version: '3'
 services:
   db:
     image: mariadb
@@ -12,8 +11,6 @@ services:
     volumes:
       - ./data/mysql_data:/var/lib/mysql
       - ./data/mysql_dump/:/docker-entrypoint-initdb.d/
-    # ports:
-    #   - 3306:3306
     networks:
       - portfolios-net
   app:
@@ -22,21 +19,15 @@ services:
     image: flask_portfolios
     environment:
       - FLASK_APP=start
-      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} # путь до бд, см. db service
-      # для отладки (при запуске в релиз убрать!)
+      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
       - FLASK_ENV=development
-      # Позволяет отслеживать процесс работы приложения в командной строке
       - PYTHONUNBUFFERED=True                   
-    # Перезапускаем сервис в случае падения 
     restart: on-failure
     volumes:
       - .:/app
-    # Открываем порт в контейнер
-    # Порт, который будет смотреть наружу : порт который используется внутри контейнера
     ports:
       - 8080:5000
     command: python wsgi.py
-    # command: flask db upgrade && flask run
     networks:
       - portfolios-net
     depends_on:
@@ -58,7 +49,7 @@ services:
     container_name: portfolios_celery
     command: celery -A start.celery worker -l info
     environment:
-      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} # путь до бд, см. db service
+      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
     networks:
       - portfolios-net
     depends_on:
