@@ -3,13 +3,13 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 from flask import current_app
 
-from ..app import db, celery
-from ..general_functions import Market, add_prefix, remove_prefix
-from ..portfolio.models import PriceHistory
-from .integrations import task_logging
-from .integrations_api import ApiName
-from .integrations_market import MarketIntegration
-from .utils import create_ticker, get_tickers, find_ticker_in_list
+from portfolio_tracker.app import db, celery
+from portfolio_tracker.general_functions import Market, add_prefix, remove_prefix
+from portfolio_tracker.portfolio.models import PriceHistory
+from portfolio_tracker.admin.services.integrations import task_logging
+from portfolio_tracker.admin.services.integrations_api import ApiName
+from portfolio_tracker.admin.services.integrations_market import MarketIntegration
+from portfolio_tracker.admin.services.other_services import create_ticker, get_tickers, find_ticker_in_list
 
 if TYPE_CHECKING:
     import requests
@@ -21,8 +21,7 @@ BASE_URL: str = 'http://api.currencylayer.com/'
 
 
 class Api(MarketIntegration):
-    def monthly_limit_trigger(self, response: requests.models.Response
-                              ) -> bool:
+    def monthly_limit_trigger(self, response: requests.models.Response) -> bool:
         try:
             e = response.json()['error']
             return e['code'] == 104 and 'Your monthly usage limit' in e['info']
@@ -123,7 +122,6 @@ def currency_load_tickers(self) -> None:
         # Обновление информации
         ticker.name = data[external_id]
         ticker.symbol = external_id
-        ticker.stable = True
 
     db.session.commit()
 
@@ -171,7 +169,7 @@ def currency_load_history(self) -> None:
 
             price = data[currency]
             if ticker and price:
-                ticker.set_price(date, 1 / price)
+                ticker.service.set_price(date, 1 / price)
 
         db.session.commit()
         api.logs.set('info', f'Получены цены на {date}', self.name)

@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Dict, Literal, TypeAlias
 
 from flask import current_app
 
-from ..app import db, redis
-from .models import Task
+from portfolio_tracker.app import db, redis
+from portfolio_tracker.admin.models import Task
 
 if TYPE_CHECKING:
     pass
@@ -156,8 +156,8 @@ def task_logging(function):
         next_run_time = None
         retry_after = None
         task_settings = get_api_task(task.name)
-        if task_settings and task_settings.retry_after():
-            retry_after = task_settings.retry_after()
+        if task_settings and task_settings.retry_after:
+            retry_after = task_settings.retry_after
             task.default_retry_delay = retry_after
             run_time = datetime.now() + timedelta(seconds=retry_after)
             next_run_time = run_time.isoformat(sep=' ', timespec='minutes')

@@ -7,15 +7,14 @@ from flask import current_app
 from sqlalchemy import func
 from PIL import Image
 
-from ..app import db, celery
-from ..general_functions import MARKETS, Market, add_prefix, remove_prefix
-from ..portfolio.models import Ticker
-from ..watchlist.models import WatchlistAsset
-from ..user.models import User
-from ..admin.models import Key, Stream
-from .integrations_api import API_NAMES, ApiIntegration, request_data
-from .integrations_market import MarketIntegration
-from .integrations_other import MODULE_NAMES, OtherIntegration
+from portfolio_tracker.app import db, celery
+from portfolio_tracker.general_functions import MARKETS, Market, add_prefix, remove_prefix
+from portfolio_tracker.portfolio.models import Ticker
+from portfolio_tracker.watchlist.models import WatchlistAsset
+from portfolio_tracker.user.models import User
+from portfolio_tracker.admin.services.integrations_api import API_NAMES, ApiIntegration, request_data
+from portfolio_tracker.admin.services.integrations_market import MarketIntegration
+from portfolio_tracker.admin.services.integrations_other import MODULE_NAMES, OtherIntegration
 
 if TYPE_CHECKING:
     pass
@@ -33,10 +32,6 @@ def get_tickers(market: Market | None = None, without_image: bool = False,
         select = select.filter(Ticker.id.notin_(without_ids))
 
     return list(db.session.execute(select).scalars())
-
-
-def get_all_users() -> tuple[User, ...]:
-    return tuple(db.session.execute(db.select(User)).scalars())
 
 
 def get_tickers_count(market: Market) -> int:
@@ -167,14 +162,6 @@ def alerts_update(market):
                 alert.status = 'worked'
 
     db.session.commit()
-
-
-def get_key(key_id):
-    return db.session.execute(db.select(Key).filter_by(id=key_id)).scalar()
-
-
-def get_stream(stream_id):
-    return db.session.execute(db.select(Stream).filter_by(id=stream_id)).scalar()
 
 
 def get_module(module_name: str | None

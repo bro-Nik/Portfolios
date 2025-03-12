@@ -2,12 +2,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Literal, TypeAlias
 
-from portfolio_tracker.admin.integrations_api import ApiIntegration
+from portfolio_tracker.admin.services.integrations_api import ApiIntegration
 from portfolio_tracker.general_functions import MARKETS
-
-from ..portfolio.models import Ticker
-from ..app import db
-from . import integrations
+from portfolio_tracker.portfolio.models import Ticker
+from portfolio_tracker.admin.services import integrations
+from portfolio_tracker.app import db
 
 if TYPE_CHECKING:
     pass
@@ -56,11 +55,9 @@ class MarketEvent(integrations.Event):
 
 class MarketIntegration(ApiIntegration):
     def __init__(self, name):
-        if name not in MARKETS:
-            return
-
-        super().__init__(name)
-        self.events = MarketEvent(name)
+        if name in MARKETS:
+            super().__init__(name)
+            self.events = MarketEvent(name)
 
     def evets_info(self, event):
         ids = []

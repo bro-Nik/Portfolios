@@ -1,1 +1,1 @@
-from . import currency, stocks, crypto, proxy, other
+from .services import currency, stocks, crypto, proxy, other

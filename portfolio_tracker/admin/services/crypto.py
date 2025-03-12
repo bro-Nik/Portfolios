@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 
 from flask import current_app
 
-from ..app import db, celery
-from ..general_functions import Market, remove_prefix
-from .integrations import task_logging
-from .integrations_api import ApiName
-from .integrations_market import MarketIntegration
-from .utils import alerts_update, create_ticker, get_tickers, \
+from portfolio_tracker.app import db, celery
+from portfolio_tracker.general_functions import Market, remove_prefix
+from portfolio_tracker.admin.services.integrations import task_logging
+from portfolio_tracker.admin.services.integrations_api import ApiName
+from portfolio_tracker.admin.services.integrations_market import MarketIntegration
+from portfolio_tracker.admin.services.other_services import alerts_update, create_ticker, get_tickers, \
     load_image, find_ticker_in_list
 
 if TYPE_CHECKING:

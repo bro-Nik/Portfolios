@@ -1,19 +1,21 @@
 import re
 import time
 from flask import abort, flash, redirect, render_template, url_for, request
+from portfolio_tracker.admin.repository import KeyRepository, StreamRepository
+from portfolio_tracker.user.models import User
 from portfolio_tracker.user.repository import UserRepository
 
 
-from ..app import db, redis
-from ..wraps import admin_only
-from ..jinja_filters import user_datetime
-from ..general_functions import MARKETS, actions_on_objects, when_updated
-from ..portfolio.models import Ticker
-from .models import Key, Task
-from .integrations import Log, get_api_task, tasks_trans
-from .integrations_api import API_NAMES, ApiIntegration
-from .integrations_other import MODULE_NAMES
-from .utils import get_all_users, get_key, get_module, get_stream, get_tasks, \
+from portfolio_tracker.app import db, redis
+from portfolio_tracker.wraps import admin_only
+from portfolio_tracker.jinja_filters import user_datetime
+from portfolio_tracker.general_functions import MARKETS, actions_on_objects, when_updated
+from portfolio_tracker.portfolio.models import Ticker
+from portfolio_tracker.admin.models import Key, Task
+from portfolio_tracker.admin.services.integrations import Log, get_api_task, tasks_trans
+from portfolio_tracker.admin.services.integrations_api import API_NAMES, ApiIntegration
+from portfolio_tracker.admin.services.integrations_other import MODULE_NAMES
+from portfolio_tracker.admin.services.other_services import get_module, get_tasks, \
     get_tickers, get_tickers_count, task_action
 from . import bp
 
@@ -47,13 +49,13 @@ def users_page():
 @bp.route('/users_detail', methods=['GET'])
 @admin_only
 def users_detail():
-    users = get_all_users()
+    users = tuple(db.session.execute(db.select(User)).scalars())
 
     result = {"total": len(users),
               "totalNotFiltered": len(users),
               "rows": []}
     for user in users:
-        if user.type == 'demo':
+        if user.is_demo:
             continue
 
         result['rows'].append({
@@ -278,10 +280,10 @@ def api_key_settings():
     module = ApiIntegration(request.args.get('api_name'))
     api = module.api
 
-    key = get_key(request.args.get('key_id')) or Key(api_id=api.id)
+    key = KeyRepository.get_by_id(request.args.get('key_id')) or Key(api_id=api.id)
 
     if request.method == 'POST':
-        key.edit(request.form)
+        key.service.edit(request.form)
         # Обновляем потоки
         module.update_streams()
         return ''
@@ -292,7 +294,7 @@ def api_key_settings():
 @bp.route('/api/key_action/', methods=['POST'])
 @admin_only
 def api_key_action():
-    actions_on_objects(request.data, get_key)
+    actions_on_objects(request.data, KeyRepository.get_by_id)
 
     module = ApiIntegration(request.args.get('api_name'))
     module.update_streams()
@@ -302,7 +304,7 @@ def api_key_action():
 @bp.route('/api/stream_settings/', methods=['GET', 'POST'])
 @admin_only
 def api_stream_settings():
-    stream = get_stream(request.args.get('stream_id')) or abort(404)
+    stream = StreamRepository.get_by_id(request.args.get('stream_id')) or abort(404)
 
     if request.method == 'POST':
         stream.edit(request.form)
@@ -314,7 +316,7 @@ def api_stream_settings():
 @bp.route('/api/stream_action/', methods=['POST'])
 @admin_only
 def api_stream_action():
-    actions_on_objects(request.data, get_stream)
+    actions_on_objects(request.data, StreamRepository.get_by_id)
     return ''
 
 
@@ -439,7 +441,7 @@ def tasks_action():
                 continue
             # Запускать только повторяющиеся (имеющие retry_after)
             api_task = get_api_task(task['name'])
-            if not api_task or not api_task.retry_after():
+            if not api_task or not api_task.retry_after:
                 continue
             task_action(active_ids, action, task_id=task.get('id'),
                         task_name=task['name'])

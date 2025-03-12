@@ -12,7 +12,6 @@ if TYPE_CHECKING:
     from werkzeug.datastructures.structures import ImmutableMultiDict
 
 
-# class Api(db.Model):
 class Api(Base):
     __tablename__ = 'api'
 
@@ -30,46 +29,29 @@ class Api(Base):
     streams: Mapped[List[Stream]] = db.relationship(
         'Stream', backref=db.backref('api', lazy=True))
 
-    def edit(self, form: ImmutableMultiDict) -> None:
-        self.minute_limit = form.get('minute_limit', 0, type=int)
-        self.month_limit = form.get('month_limit', 0, type=int)
-        self.key_prefix = form.get('key_prefix', '', type=str)
-        self.need_key = form.get('need_key', False, type=bool)
-        self.need_proxy = form.get('need_proxy', False, type=bool)
-        db.session.commit()
+    @property
+    def service(self):
+        from portfolio_tracker.admin.services.api import ApiService
+        return ApiService(self)
 
 
-# class Key(db.Model):
+
 class Key(Base):
     __tablename__ = 'api_key'
-    # __table_args__ = {'extend_existing': True}
 
     id: Mapped[int] = mapped_column(primary_key=True)
     api_id: Api.id = db.Column(db.Integer, db.ForeignKey('api.id'))
     api_key: str = db.Column(db.String(1024))
     comment: str = db.Column(db.Text)
 
-    # Relationships
-    # api: Mapped[Api]
-    # stream: Mapped[ApiStream]
-
-    def edit(self, form: ImmutableMultiDict) -> None:
-        if not self.id:
-            db.session.add(self)
-        self.api_key = form['api_key']
-        self.comment = form['comment']
-        db.session.commit()
-
-    def delete(self) -> None:
-        self.stream.api_key_id = None
-        db.session.delete(self)
-        db.session.commit()
+    @property
+    def service(self):
+        from portfolio_tracker.admin.services.api import KeyService
+        return KeyService(self)
 
 
-# class Stream(db.Model):
 class Stream(Base):
     __tablename__ = 'api_stream'
-    # __table_args__ = {'extend_existing': True}
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name = db.Column(db.String(128))
@@ -88,19 +70,9 @@ class Stream(Base):
     # Relationships
     key: Mapped[List[Key]] = db.relationship(
         'Key', backref=db.backref('stream', uselist=False, lazy=True))
-    # api: Mapped[Api]
-
-    def edit(self, form: ImmutableMultiDict) -> None:
-        self.next_call = form['next_call']
-        self.active = form.get('active', False, type=bool)
-        db.session.commit()
-
-    def delete(self) -> None:
-        db.session.delete(self)
-        db.session.commit()
 
 
-# class Task(db.Model):
+
 class Task(Base):
     __tablename__ = 'api_task'
 
@@ -108,10 +80,6 @@ class Task(Base):
     retry_period_type: int = db.Column(db.Integer, default=0)
     retry_period_count: int = db.Column(db.Integer, default=0)
 
-    def edit(self, form: ImmutableMultiDict) -> None:
-        self.retry_period_type = form.get('retry_period_type', 0, type=int)
-        self.retry_period_count = form.get('retry_period_count', 0, type=int)
-        db.session.commit()
-
+    @property
     def retry_after(self) -> int:
         return 60 * self.retry_period_type * self.retry_period_count  # секунды

@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING
 
 from flask import current_app
 
-from ..app import celery
-from .integrations import get_api_task, task_logging
-from .integrations_api import API_NAMES, ApiIntegration, ApiName
+from portfolio_tracker.app import celery
+from portfolio_tracker.admin.services.integrations import get_api_task, task_logging
+from portfolio_tracker.admin.services.integrations_api import API_NAMES, ApiIntegration, ApiName
 
 if TYPE_CHECKING:
     import requests
@@ -17,8 +17,7 @@ BASE_URL: str = 'https://proxy6.net/api'
 
 
 class Api(ApiIntegration):
-    def response_processing(self, response: requests.models.Response | None,
-                            ) -> dict | None:
+    def response_processing(self, response: requests.models.Response | None,) -> dict | None:
         if response:
             # Ответ с данными
             if response.status_code == 200:
@@ -59,8 +58,8 @@ def proxy_update(self) -> None:
         time_left = (proxy_end - datetime.now()).total_seconds()
         need_time = 6*60*60  # По умолчанию 6 часов
         task = get_api_task(self.name)
-        if task and task.retry_after():
-            need_time = task.retry_after()
+        if task and task.retry_after:
+            need_time = task.retry_after
         if need_time > time_left:
             del data[proxy['id']]
 

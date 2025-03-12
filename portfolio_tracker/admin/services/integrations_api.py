@@ -6,9 +6,10 @@ import requests
 
 from flask import current_app
 
-from ..app import db, redis
-from .models import Api, Stream
-from . import integrations
+from portfolio_tracker.admin.repository import ApiRepository
+from portfolio_tracker.app import db, redis
+from portfolio_tracker.admin.models import Stream
+from portfolio_tracker.admin.services import integrations
 
 if TYPE_CHECKING:
     pass
@@ -20,33 +21,24 @@ API_NAMES: tuple[ApiName, ...] = ('crypto', 'stocks', 'currency', 'proxy')
 
 class ApiIntegration(integrations.Integration):
     def __init__(self, name: str | None):
-        if name not in API_NAMES:
-            return
+        if name in API_NAMES:
+            super().__init__(name)
+            self.api = ApiRepository.get_by_name(name) or ApiRepository.create(name=name)
 
-        super().__init__(name)
-        api = db.session.execute(db.select(Api).filter_by(name=name)).scalar()
-        if not api:
-            api = Api(name=name)
-            db.session.add(api)
-        self.api = api
-
-    def minute_limit_trigger(self, response: requests.models.Response
-                             ) -> int | bool:
+    def minute_limit_trigger(self, response: requests.models.Response) -> int | bool:
         return False
 
-    def monthly_limit_trigger(self, response: requests.models.Response
-                              ) -> bool:
+    def monthly_limit_trigger(self, response: requests.models.Response) -> bool:
         return False
 
     def update_streams(self) -> None:
-        from . import proxy
+        from portfolio_tracker.admin import proxy
         api = self.api
 
         # Использование без прокси
         if api.need_proxy is False:
             if not api.streams:
-                api.streams.append(
-                    Stream(name=f'Поток {len(api.streams) + 1}'))
+                api.streams.append(Stream(name=f'Поток {len(api.streams) + 1}'))
             api.streams[0].api_key_id = api.keys[0].id if api.keys else None
             db.session.commit()
             return
@@ -97,7 +89,7 @@ class ApiIntegration(integrations.Integration):
         for stream in streams_without_proxy:
             stream.active = False
 
-        db.session.commit()
+        ApiRepository.save(self.api)
 
     def start_work(self) -> None:
         redis.set(f'api.{self.api.name}.working', str(datetime.now()))
@@ -177,12 +169,6 @@ class ApiIntegration(integrations.Integration):
         self.change_next_call(datetime.now() + timedelta(seconds=retry_after),
                               stream)
 
-        # Уменьшаем лимит
-        # if self.api.minute_limit > 1:
-        #     self.api.minute_limit -= 1
-        #     # Лог
-        #     self.logs.set('warning',
-        #                   f'Уменьшен лимит запросов в минуту. {stream.name}')
         db.session.commit()
 
     def change_next_call(self, next_datetime, stream):

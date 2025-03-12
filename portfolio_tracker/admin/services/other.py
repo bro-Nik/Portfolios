@@ -1,7 +1,7 @@
 from datetime import datetime
-from ..app import celery
-from .integrations import task_logging, Log
-from .integrations_other import OtherIntegration
+from portfolio_tracker.app import celery
+from portfolio_tracker.admin.services.integrations import task_logging, Log
+from portfolio_tracker.admin.services.integrations_other import OtherIntegration
 
 
 MODULE_NAME = 'other'

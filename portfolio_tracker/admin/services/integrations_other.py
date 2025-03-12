@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Literal, TypeAlias
 
-from . import integrations
+from portfolio_tracker.admin.services import integrations
 
 
 ModuleName: TypeAlias = Literal['other', 'requests']

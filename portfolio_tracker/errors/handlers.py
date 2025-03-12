@@ -1,6 +1,6 @@
 from flask import current_app, render_template, request
 
-from ..admin.integrations_other import OtherIntegration
+from ..admin.services.integrations_other import OtherIntegration
 from ..app import db
 
 
