@@ -33,12 +33,12 @@ class AlertService:
             self.alert.asset_id = None
         self.alert.status = 'on'
 
+    def convert_order_to_transaction(self):
+        self.alert.transaction.service.convert_order_to_transaction()
+
     def delete(self) -> None:
         if not self.alert.transaction_id:
             AlertRepository.delete(self.alert)
-
-    def convert_order_to_transaction(self):
-        self.alert.transaction.convert_order_to_transaction()
 
 
 def update_alert(alert: Alert | None, transaction: Transaction) -> None:

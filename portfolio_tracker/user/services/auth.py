@@ -77,7 +77,7 @@ def login(form: dict) -> tuple[bool, list]:
 
     # Пользователь не найден
     if not user:
-        mes = gettext('Неверный адрес электронной почты или пароль') 
+        mes = gettext('Неверный адрес электронной почты или пароль')
         return False, [mes, 'warning']
 
     # Проверка пройдена

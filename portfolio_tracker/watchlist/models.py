@@ -12,6 +12,7 @@ from ..portfolio.models import Ticker, Transaction
 class WatchlistAsset(Base):
     __tablename__ = "watchlist_asset"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
     ticker_id: Mapped[str] = mapped_column(String(32), ForeignKey("ticker.id"))
     comment: Mapped[str] = mapped_column()
@@ -37,6 +38,7 @@ class WatchlistAsset(Base):
 class Alert(Base):
     __tablename__ = "alert"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
     asset_id: Mapped[int | str | None] = mapped_column(Integer, ForeignKey("asset.id"))
     watchlist_asset_id: Mapped[int] = mapped_column(ForeignKey("watchlist_asset.id"))

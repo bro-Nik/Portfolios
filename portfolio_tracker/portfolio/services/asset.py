@@ -27,7 +27,7 @@ class AssetService:
     def get_transaction(self, transaction_id: str | int | None):
         return find_by_attr(self.asset.transactions, 'id', transaction_id)
 
-    def create_transaction(self) -> Transaction | OtherTransaction:
+    def create_transaction(self) -> Transaction:
         """Возвращает новую транзакцию."""
         transaction = Transaction()
 
@@ -39,8 +39,8 @@ class AssetService:
         transaction.date = datetime.now(timezone.utc)
         transaction.price = 0
 
-        transaction.portfolio_asset = self.asset
-        transaction.portfolio = self.asset.portfolio
+        # transaction.portfolio_asset = self.asset
+        # transaction.portfolio = self.asset.portfolio
 
         return transaction
 
@@ -50,7 +50,7 @@ class AssetService:
         self.asset.sell_orders = 0
         self.asset.buy_orders = 0
 
-    def move_asset_to(self, portfolio_id: str | None = None):
+    def move_asset_to(self, portfolio_id: str | int | None = None):
         """Перемещение актива"""
         user = self.asset.portfolio.user
 

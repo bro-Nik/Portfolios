@@ -10,10 +10,12 @@ from flask_migrate import Migrate
 from celery import Celery
 from redis import Redis
 
+from portfolio_tracker.models import Base
+
 from .settings import Config
 
 
-db = SQLAlchemy()
+db = SQLAlchemy(model_class=Base)
 migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = 'user.login'
@@ -81,6 +83,10 @@ def register_blueprints(app):
 def configure_logging(app):
     if app.testing:
         app.logger.setLevel(logging.CRITICAL)
+
+        #NEW
+        # logging.basicConfig()
+        # logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
         return
 
     if not os.path.exists('logs'):

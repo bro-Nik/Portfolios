@@ -9,8 +9,7 @@ class WalletRepository:
     @staticmethod
     def get(wallet_id: int | str | None) -> Wallet | None:
         if wallet_id:
-            return db.session.execute(
-                db.select(Wallet).filter_by(id=wallet_id)).scalar()
+            return db.session.get(Wallet, wallet_id)
 
     @staticmethod
     def save(wallet: Wallet) -> None:

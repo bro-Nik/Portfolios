@@ -33,7 +33,7 @@ class TransactionService:
             self.transaction.wallet_id = form['sell_wallet_id']
 
         if self.transaction.type in ('Buy', 'Sell'):
-            self.transaction.ticker2_id = form[type.lower() + '_ticker2_id']
+            self.transaction.ticker2_id = form.get(type.lower() + '_ticker2_id')
             self.transaction.price = float(form['price'])
 
             quote_ticker = TickerRepository.get(self.transaction.ticker2_id)
@@ -62,7 +62,7 @@ class TransactionService:
         update_alert(self.transaction.alert, self.transaction)
 
         self.update_dependencies()
-        self.update_related_transaction_before()
+        self.update_related_transaction()
         TransactionRepository.save(self.transaction)
 
 
@@ -83,7 +83,6 @@ class TransactionService:
         w_asset1 = get_or_create_asset(wallet, t.ticker_id)
         # Котируемый актив кошелька
         w_asset2 = get_or_create_asset(wallet, t.ticker2_id)
-
 
         if t.type in ('Buy', 'Sell'):
             if not (p_asset1 and p_asset2 and w_asset1 and w_asset2):
@@ -124,8 +123,7 @@ class TransactionService:
             if wallet and w_asset1:
                 w_asset1.quantity += t.quantity * d
 
-    def update_related_transaction_before(self, param: str = '') -> None:
-        # ToDo поменять имя
+    def update_related_transaction(self, param: str = '') -> None:
         t = self.transaction
 
         if t.type in ('TransferOut', 'TransferIn'):
@@ -138,34 +136,28 @@ class TransactionService:
             else:
                 wallet2 = WalletRepository.get(getattr(t, 'wallet2_id', None))
                 portfolio2 = PortfolioRepository.get(getattr(t, 'portfolio2_id', None))
-                self.update_related_transaction(portfolio2 or wallet2)
 
-    def update_related_transaction(self, asset_parent):
-        t = self.transaction
+                # Связанная транзакция
+                asset2 = get_or_create_asset(portfolio2 or wallet2, t.ticker_id)
 
-        # Связанная транзакция
-        asset2 = get_or_create_asset(asset_parent, t.ticker_id)
+                if asset2:
+                    t2 = t.related_transaction
+                    if not t2:
+                        t2 = asset2.service.create_transaction()
+                        t.related_transaction = t2
 
-        if asset2:
-            t2 = t.related_transaction
-            if not t2:
-                t2 = asset2.service.create_transaction()
-                t.related_transaction = t2
+                    t2.service.edit({
+                        'type': 'TransferOut' if t.type == 'TransferIn' else 'TransferIn',
+                        'date': t.date,
+                        'quantity': t.quantity * -1
+                    })
 
-            t2.service.edit({
-                'type': 'TransferOut' if t.type == 'TransferIn' else 'TransferIn',
-                'date': t.date,
-                'quantity': t.quantity * -1
-            })
+                    db.session.flush()
+                    t.related_transaction_id = t2.id
+                    t2.related_transaction_id = t.id
 
-
-            db.session.flush()
-            t.related_transaction_id = t2.id
-            t2.related_transaction_id = t.id
-
-            TransactionRepository.save(t)
-            TransactionRepository.save(t2)
-
+                    TransactionRepository.save(t)
+                    TransactionRepository.save(t2)
 
     def convert_order_to_transaction(self) -> None:
         self.update_dependencies('cancel')

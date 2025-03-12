@@ -61,14 +61,18 @@ class PortfolioService:
         asset = None
         if find_by:
             if getattr(self.portfolio, 'market') == 'other':
-                asset = find_by_attr(self.portfolio.other_assets, 'id', find_by)
-            try:
-                asset = find_by_attr(self.portfolio.assets, 'id', int(find_by))
-            except ValueError:
-                asset = find_by_attr(self.portfolio.assets, 'ticker_id', find_by)
+                try:
+                    asset = find_by_attr(self.portfolio.other_assets, 'id', int(find_by))
+                except ValueError:
+                    asset = None
+            else:
+                try:
+                    asset = find_by_attr(self.portfolio.assets, 'id', int(find_by))
+                except ValueError:
+                    asset = find_by_attr(self.portfolio.assets, 'ticker_id', find_by)
 
         if not asset and create is True:
-            self.create_asset(ticker_id=str(find_by))
+            asset = self.create_asset(ticker_id=str(find_by))
         return asset
 
     def _create_market_asset(self, ticker_id: str | None) -> Asset | None:
@@ -98,9 +102,6 @@ class PortfolioService:
             return self._create_other_asset()
 
         return self._create_market_asset(ticker_id)
-
-    def get_or_create_asset(self, ticker_id: str | None) -> Asset | OtherAsset | None:
-        return self.get_asset(ticker_id) or self.create_asset(ticker_id)
 
     def delete_if_empty(self) -> None:
         if self.portfolio.is_empty:

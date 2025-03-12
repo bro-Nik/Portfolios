@@ -2,7 +2,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import Mapped, mapped_column
+
+from portfolio_tracker.models import Base
 
 from ..app import db
 
@@ -10,10 +12,11 @@ if TYPE_CHECKING:
     from werkzeug.datastructures.structures import ImmutableMultiDict
 
 
-class Api(db.Model):
+# class Api(db.Model):
+class Api(Base):
     __tablename__ = 'api'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
     name: str = db.Column(db.String(32))
     need_key: bool = db.Column(db.Boolean)
     need_proxy: bool = db.Column(db.Boolean, default=True)
@@ -36,11 +39,12 @@ class Api(db.Model):
         db.session.commit()
 
 
-class Key(db.Model):
+# class Key(db.Model):
+class Key(Base):
     __tablename__ = 'api_key'
     # __table_args__ = {'extend_existing': True}
 
-    id = db.Column(db.Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
     api_id: Api.id = db.Column(db.Integer, db.ForeignKey('api.id'))
     api_key: str = db.Column(db.String(1024))
     comment: str = db.Column(db.Text)
@@ -62,11 +66,12 @@ class Key(db.Model):
         db.session.commit()
 
 
-class Stream(db.Model):
+# class Stream(db.Model):
+class Stream(Base):
     __tablename__ = 'api_stream'
     # __table_args__ = {'extend_existing': True}
 
-    id = db.Column(db.Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
     name = db.Column(db.String(128))
     api_id: Api.id = db.Column(db.Integer, db.ForeignKey('api.id'))
     api_key_id: Key.id = db.Column(db.Integer, db.ForeignKey('api_key.id'))
@@ -95,7 +100,8 @@ class Stream(db.Model):
         db.session.commit()
 
 
-class Task(db.Model):
+# class Task(db.Model):
+class Task(Base):
     __tablename__ = 'api_task'
 
     name = db.Column(db.String(128), primary_key=True)

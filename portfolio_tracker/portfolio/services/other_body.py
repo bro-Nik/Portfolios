@@ -11,14 +11,17 @@ class OtherBodyService:
     def edit(self, form: dict) -> None:
         body = self.body
 
-        body.name = form['name']
-        body.date = from_user_datetime(form['date'])
-        body.comment = form['comment']
-        body.amount = float(form['amount'])
-        body.cost_now = float(form['cost_now'])
+        date = form.get('date')
+        if date:
+            body.date = from_user_datetime(date)
 
-        body.amount_ticker_id = form['amount_ticker_id']
-        body.cost_now_ticker_id = form['cost_now_ticker_id']
+        body.name = form.get('name', '')
+        body.comment = form.get('comment')
+        body.amount = float(form.get('amount', 0))
+        body.cost_now = float(form.get('cost_now', 0))
+
+        body.amount_ticker_id = form.get('amount_ticker_id', '')
+        body.cost_now_ticker_id = form.get('cost_now_ticker_id', '')
 
         amount_ticker = TickerRepository.get(body.amount_ticker_id)
         cost_now_ticker = TickerRepository.get(body.cost_now_ticker_id)
@@ -33,8 +36,8 @@ class OtherBodyService:
         # Направление сделки (direction)
         d = -1 if param == 'cancel' else 1
 
-        self.asset.amount += self.asset.amount_usd * d
-        self.asset.cost_now += self.asset.cost_now_usd * d
+        self.body.asset.amount += self.body.amount_usd * d
+        self.body.asset.cost_now += self.body.cost_now_usd * d
 
     def delete(self) -> None:
         self.update_dependencies('cancel')

@@ -16,9 +16,10 @@ if TYPE_CHECKING:
 class Wallet(Base):
     __tablename__ = "wallet"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
     name: Mapped[str] = mapped_column(String(255))
-    comment: Mapped[str] = mapped_column(String(1024))
+    comment: Mapped[str | None] = mapped_column(String(1024))
 
     user: Mapped['User'] = relationship(back_populates='wallets')
     assets: Mapped[List['WalletAsset']] = relationship(back_populates="wallet")
@@ -38,6 +39,7 @@ class Wallet(Base):
 class WalletAsset(Base, AssetMixin):
     __tablename__ = "wallet_asset"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
     ticker_id: Mapped[str] = mapped_column(String(256), ForeignKey("ticker.id"))
     wallet_id: Mapped[int] = mapped_column(ForeignKey("wallet.id"))
     quantity: Mapped[float] = mapped_column(default=0)

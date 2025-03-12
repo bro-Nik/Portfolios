@@ -17,13 +17,14 @@ if TYPE_CHECKING:
 class User(Base, UserMixin):
     __tablename__ = "user"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
-    type: Mapped[str] = mapped_column(String(255))
-    locale: Mapped[str] = mapped_column(String(32))
-    timezone: Mapped[str] = mapped_column(String(32))
-    currency: Mapped[str] = mapped_column(String(32))
-    currency_ticker_id: Mapped[str] = mapped_column(String(32), ForeignKey('ticker.id'))
+    type: Mapped[str | None] = mapped_column(String(255))
+    locale: Mapped[str | None] = mapped_column(String(32))
+    timezone: Mapped[str | None] = mapped_column(String(32))
+    currency: Mapped[str | None] = mapped_column(String(32))
+    currency_ticker_id: Mapped[str | None] = mapped_column(String(32), ForeignKey('ticker.id'))
 
     # Relationships
     currency_ticker: Mapped['Ticker'] = relationship(uselist=False)
@@ -46,9 +47,10 @@ class User(Base, UserMixin):
 class UserInfo(Base):
     __tablename__ = "user_info"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
-    country: Mapped[str] = mapped_column(String(255))
-    city: Mapped[str] = mapped_column(String(255))
+    country: Mapped[str | None] = mapped_column(String(255))
+    city: Mapped[str | None] = mapped_column(String(255))
     first_visit: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
     last_visit: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
 

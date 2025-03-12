@@ -26,8 +26,7 @@ class OtherTransactionService:
         # Направление сделки (direction)
         d = -1 if param == 'cancel' else 1
 
-        t = self.transaction
-        t.asset.cost_now += t.amount_usd * d
+        self.transaction.portfolio_asset.cost_now += self.transaction.amount_usd * d
 
     def delete(self) -> None:
         self.update_dependencies('cancel')

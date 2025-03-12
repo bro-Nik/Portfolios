@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import List
 
 from sqlalchemy import ForeignKey
@@ -15,19 +15,20 @@ from ..mixins import AssetMixin, DetailsMixin
 class Transaction(Base):
     __tablename__ = "transaction"
 
-    date: Mapped[datetime] = mapped_column()
+    id: Mapped[int] = mapped_column(primary_key=True)
+    date: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
     ticker_id: Mapped[str] = mapped_column(String(32), ForeignKey("ticker.id"))
-    ticker2_id: Mapped[str] = mapped_column(String(32), ForeignKey("ticker.id"))
+    ticker2_id: Mapped[str | None] = mapped_column(String(32), ForeignKey("ticker.id"))
     quantity: Mapped[float] = mapped_column()
-    quantity2: Mapped[float] = mapped_column()
-    price: Mapped[float] = mapped_column()
-    price_usd: Mapped[float] = mapped_column()
+    quantity2: Mapped[float | None] = mapped_column()
+    price: Mapped[float | None] = mapped_column()
+    price_usd: Mapped[float | None] = mapped_column()
     type: Mapped[str] = mapped_column(String(24))
-    comment: Mapped[str] = mapped_column(String(1024))
+    comment: Mapped[str | None] = mapped_column(String(1024))
     wallet_id: Mapped[int] = mapped_column(ForeignKey("wallet.id"))
-    portfolio_id: Mapped[int] = mapped_column(ForeignKey("portfolio.id"))
+    portfolio_id: Mapped[int | None] = mapped_column(ForeignKey("portfolio.id"))
     order: Mapped[bool] = mapped_column(default=False)
-    related_transaction_id: Mapped[int] = mapped_column(ForeignKey("transaction.id"))
+    related_transaction_id: Mapped[int | None] = mapped_column(ForeignKey("transaction.id"))
 
     # Relationships
     alert: Mapped['Alert'] = relationship(back_populates='transaction', lazy=True)
@@ -46,6 +47,7 @@ class Transaction(Base):
 class Asset(Base, DetailsMixin, AssetMixin):
     __tablename__ = "asset"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
     ticker_id: Mapped[str] = mapped_column(String(256), ForeignKey("ticker.id"))
     portfolio_id: Mapped[int] = mapped_column(ForeignKey("portfolio.id"))
     quantity: Mapped[float] = mapped_column(default=0)
@@ -53,7 +55,7 @@ class Asset(Base, DetailsMixin, AssetMixin):
     sell_orders: Mapped[float] = mapped_column(default=0)
     amount: Mapped[float] = mapped_column(default=0)
     percent: Mapped[float] = mapped_column(default=0)
-    comment: Mapped[str] = mapped_column(String(1024))
+    comment: Mapped[str | None] = mapped_column(String(1024))
 
     # Relationships
     portfolio: Mapped['Portfolio'] = relationship(back_populates='assets', lazy=True)
@@ -81,8 +83,9 @@ class Asset(Base, DetailsMixin, AssetMixin):
 class OtherAsset(Base, DetailsMixin):
     __tablename__ = "other_asset"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
     portfolio_id: Mapped[int] = mapped_column(ForeignKey("portfolio.id"))
-    name: Mapped[str] = mapped_column(String(255))
+    name: Mapped[str | None] = mapped_column(String(255))
     percent: Mapped[float] = mapped_column(default=0)
     amount: Mapped[float] = mapped_column(default=0)
     cost_now: Mapped[float] = mapped_column(default=0)
@@ -95,7 +98,7 @@ class OtherAsset(Base, DetailsMixin):
 
     @property
     def service(self):
-        from portfolio_tracker.portfolio.services.asset import OtherAssetService
+        from portfolio_tracker.portfolio.services.other_asset import OtherAssetService
         return OtherAssetService(self)
 
     @property
@@ -106,13 +109,14 @@ class OtherAsset(Base, DetailsMixin):
 class OtherTransaction(Base):
     __tablename__ = "other_transaction"
 
-    date: Mapped[datetime] = mapped_column()
+    id: Mapped[int] = mapped_column(primary_key=True)
+    date: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
     asset_id: Mapped[int] = mapped_column(ForeignKey("other_asset.id"))
     amount: Mapped[float] = mapped_column(default=0)
     amount_ticker_id: Mapped[str] = mapped_column(String(32), ForeignKey("ticker.id"))
     amount_usd: Mapped[float] = mapped_column(default=0)
     type: Mapped[str] = mapped_column(String(24))
-    comment: Mapped[str] = mapped_column(String(1024))
+    comment: Mapped[str | None] = mapped_column(String(1024))
 
     # Relationships
     amount_ticker: Mapped['Ticker'] = relationship(uselist=False)
@@ -127,8 +131,9 @@ class OtherTransaction(Base):
 class OtherBody(Base):
     __tablename__ = "other_body"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
-    date: Mapped[datetime] = mapped_column()
+    date: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
     asset_id: Mapped[int] = mapped_column(ForeignKey("other_asset.id"))
     amount: Mapped[float] = mapped_column(default=0)
     amount_usd: Mapped[float] = mapped_column(default=0)
@@ -136,7 +141,7 @@ class OtherBody(Base):
     cost_now: Mapped[float] = mapped_column(default=0)
     cost_now_usd: Mapped[float] = mapped_column(default=0)
     cost_now_ticker_id: Mapped[str] = mapped_column(String(32), ForeignKey("ticker.id"))
-    comment: Mapped[str] = mapped_column(String(1024))
+    comment: Mapped[str | None] = mapped_column(String(1024))
 
     # Relationships
     amount_ticker: Mapped['Ticker'] = relationship(foreign_keys=[amount_ticker_id], viewonly=True)
@@ -159,19 +164,25 @@ class Ticker(Base):
     market_cap_rank: Mapped[int | None] = mapped_column()
     price: Mapped[float] = mapped_column(default=0)
     market: Mapped[str] = mapped_column(String(32))
-    stable: Mapped[bool] = mapped_column()
+    # stable: Mapped[bool] = mapped_column()
 
     assets: Mapped[List['Asset']] = relationship()
-    history: Mapped['PriceHistory'] = relationship(back_populates="ticker", lazy=True)
+    history: Mapped[List['PriceHistory']] = relationship(back_populates="ticker", lazy=True)
+
+    @property
+    def service(self):
+        from portfolio_tracker.portfolio.services.ticker import TickerService
+        return TickerService(self)
 
 
 class Portfolio(Base, DetailsMixin):
     __tablename__ = "portfolio"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
     market: Mapped[str] = mapped_column(String(32))
     name: Mapped[str] = mapped_column(String(255))
-    comment: Mapped[str] = mapped_column(String(1024))
+    comment: Mapped[str | None] = mapped_column(String(1024))
     percent: Mapped[float] = mapped_column(default=0)
 
     # Relationships
@@ -193,6 +204,7 @@ class Portfolio(Base, DetailsMixin):
 class PriceHistory(Base):
     __tablename__ = "price_history"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[date] = mapped_column(primary_key=True)
     ticker_id: Mapped[str] = mapped_column(String(32), ForeignKey("ticker.id"), primary_key=True)
     price_usd: Mapped[float] = mapped_column()

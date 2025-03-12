@@ -43,12 +43,14 @@ class UserService:
         for asset in self.user.watchlist:
             for alert in asset.alerts:
                 AlertRepository.delete(alert)
+
             AssetRepository.delete(asset)
 
         from portfolio_tracker.wallet.repository import WalletAssetRepository, WalletRepository
         for wallet in self.user.wallets:
             for asset in wallet.assets:
                 WalletAssetRepository.delete(asset)
+
             WalletRepository.delete(wallet)
 
         from portfolio_tracker.portfolio.repository import AssetRepository, TransactionRepository, BodyRepository, OtherTransactionRepository, OtherAssetRepository, PortfolioRepository
@@ -64,6 +66,7 @@ class UserService:
                 for transaction in asset.transactions:
                     OtherTransactionRepository.delete(transaction)
                 OtherAssetRepository.delete(asset)
+
             PortfolioRepository.delete(portfolio)
 
     def change_currency(self, currency: str | None = None) -> None:
@@ -74,7 +77,7 @@ class UserService:
         prefix = current_app.config['CURRENCY_PREFIX']
         self.user.currency_ticker_id = f'{prefix}{currency}'
 
-    def change_locale(self, locale: str | None) -> None:
+    def change_locale(self, locale: str | None = None) -> None:
         """Изменить локаль пользователя."""
         if not locale:
             locale = 'en'
@@ -120,18 +123,20 @@ class UserService:
         for t in transactions:
             t.service.update_dependencies()
 
-    def get_portfolio(self, portfolio_id: int | str | None) -> Portfolio | None:
-        return find_by_attr(self.user.portfolios, 'id', portfolio_id)
-
     def create_portfolio(self) -> Portfolio:
         """Возвращает новый портфель"""
         portfolio = Portfolio()
+        portfolio.user_id = self.user.id
         portfolio.user = self.user
         return portfolio
+
+    def get_portfolio(self, portfolio_id: int | str | None) -> Portfolio | None:
+        return find_by_attr(self.user.portfolios, 'id', portfolio_id)
 
     def create_wallet(self) -> Wallet:
         """Возвращает новый кошелек"""
         wallet = Wallet()
+        wallet.user_id = self.user.id
         wallet.user = self.user
         return wallet
 

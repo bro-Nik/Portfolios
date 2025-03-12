@@ -25,14 +25,16 @@ class AssetService:
         return alert
 
     def delete_if_empty(self) -> None:
-        for alert in self.asset.alerts:
-            if not alert.transaction_id:
-                self.asset.alerts.remove(alert)
-                alert.service.delete()
         if self.asset.is_empty:
+            for alert in self.asset.alerts:
+                if not alert.transaction_id:
+                    self.asset.alerts.remove(alert)
+                    alert.service.delete()
+
             self.delete()
 
     def delete(self) -> None:
         for alert in self.asset.alerts:
             alert.service.delete()
-        db.session.delete(self.asset)
+
+        AssetRepository.delete(self.asset)
