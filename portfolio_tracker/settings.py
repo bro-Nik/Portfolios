@@ -13,6 +13,9 @@ class Config:
     FLASK_DEBUG = os.environ.get('FLASK_DEBUG')
     FLASK_RUN_PORT = os.environ.get('FLASK_RUN_PORT')
 
+    REDIS_HOST = os.environ.get('REDIS_HOST')
+    REDIS_PORT = os.environ.get('REDIS_PORT')
+
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER')
     ALLOWED_EXTENSIONS = os.environ.get('ALLOWED_EXTENSIONS')
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 1024))

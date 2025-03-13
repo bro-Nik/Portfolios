@@ -24,7 +24,7 @@ login_manager.login_message = gettext(
 login_manager.login_message_category = 'danger'
 babel = Babel()
 celery = Celery('celery_app', broker='amqp://rabbitmq')
-redis = Redis(host='redis', port=6379)
+redis = Redis()
 
 
 from .user.services.ui import get_locale, get_timezone
@@ -39,6 +39,7 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     login_manager.init_app(app)
     init_celery(app)
+    init_redis(app)
 
     babel.init_app(app, default_locale='ru',
                    locale_selector=get_locale, timezone_selector=get_timezone)
@@ -49,6 +50,13 @@ def create_app(config_class=Config):
     init_request_errors(app)
 
     return app
+
+def init_redis(app):
+    redis.__init__(
+        host=app.config.get('REDIS_HOST', 'redis'),
+        port=app.config.get('REDIS_PORT', 6379),
+        # decode_responses=True
+    )
 
 
 def register_blueprints(app):
