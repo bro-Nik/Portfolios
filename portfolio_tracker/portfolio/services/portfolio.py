@@ -78,6 +78,7 @@ class PortfolioService:
     def _create_market_asset(self, ticker_id: str | None) -> Asset | None:
         """Создает новый цифровой актив"""
         if not self.get_asset(ticker_id):
+            # TickerRepository = DefaultRepository(model=Ticker)
             ticker = TickerRepository.get(ticker_id)
             if ticker and ticker.market == self.portfolio.market:
                 asset = Asset()

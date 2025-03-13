@@ -8,7 +8,7 @@ from flask import current_app
 
 from portfolio_tracker.admin.repository import ApiRepository
 from portfolio_tracker.app import db, redis
-from portfolio_tracker.admin.models import Stream
+from portfolio_tracker.admin.models import Api, Stream
 from portfolio_tracker.admin.services import integrations
 
 if TYPE_CHECKING:
@@ -23,7 +23,7 @@ class ApiIntegration(integrations.Integration):
     def __init__(self, name: str | None):
         if name in API_NAMES:
             super().__init__(name)
-            self.api = ApiRepository.get_by_name(name) or ApiRepository.create(name=name)
+            self.api = ApiRepository.get_by_name(name) or Api(name=name)
 
     def minute_limit_trigger(self, response: requests.models.Response) -> int | bool:
         return False

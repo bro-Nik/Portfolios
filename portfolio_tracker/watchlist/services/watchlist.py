@@ -22,7 +22,7 @@ class WatchlistService:
         if not self.get_asset(ticker_id):
             ticker = TickerRepository.get(ticker_id)
             if ticker:
-                asset = AssetRepository.create()
+                asset = WatchlistAsset()
                 asset.ticker_id = ticker.id
                 asset.ticker = ticker
 

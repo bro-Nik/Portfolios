@@ -128,11 +128,9 @@ class TestWalletService(unittest.TestCase):
         self.assertEqual(result, btc)
 
     @patch('portfolio_tracker.wallet.services.wallet.TickerRepository.get')
-    @patch('portfolio_tracker.wallet.services.wallet.WalletAssetRepository.create')
     @patch('portfolio_tracker.wallet.services.wallet.WalletAssetRepository.save')
-    def test_create_asset(self, mock_save, mock_create, mock_get):
+    def test_create_asset(self, mock_save, mock_get):
         mock_get.return_value = MagicMock(id='btc')
-        mock_create.return_value = MockWalletAsset(id=1, ticker_id='btc')
 
         asset = self.wallet.service.create_asset('btc')
         self.assertIsNotNone(asset)

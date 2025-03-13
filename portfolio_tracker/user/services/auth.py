@@ -138,7 +138,7 @@ def register(form: dict) -> tuple[bool, list]:
         mes = gettext('Пароли не совпадают')
         return False, [mes, 'warning']
 
-    user = UserRepository.create(email=email)
+    user = User(email=email)
 
     user.service.set_password(password)
     user.service.change_currency()

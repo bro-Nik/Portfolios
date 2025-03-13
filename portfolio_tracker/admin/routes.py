@@ -280,7 +280,7 @@ def api_key_settings():
     module = ApiIntegration(request.args.get('api_name'))
     api = module.api
 
-    key = KeyRepository.get_by_id(request.args.get('key_id')) or Key(api_id=api.id)
+    key = KeyRepository.get(request.args.get('key_id')) or Key(api_id=api.id)
 
     if request.method == 'POST':
         key.service.edit(request.form)
@@ -294,7 +294,7 @@ def api_key_settings():
 @bp.route('/api/key_action/', methods=['POST'])
 @admin_only
 def api_key_action():
-    actions_on_objects(request.data, KeyRepository.get_by_id)
+    actions_on_objects(request.data, KeyRepository.get)
 
     module = ApiIntegration(request.args.get('api_name'))
     module.update_streams()
@@ -304,7 +304,7 @@ def api_key_action():
 @bp.route('/api/stream_settings/', methods=['GET', 'POST'])
 @admin_only
 def api_stream_settings():
-    stream = StreamRepository.get_by_id(request.args.get('stream_id')) or abort(404)
+    stream = StreamRepository.get(request.args.get('stream_id')) or abort(404)
 
     if request.method == 'POST':
         stream.edit(request.form)
@@ -316,7 +316,7 @@ def api_stream_settings():
 @bp.route('/api/stream_action/', methods=['POST'])
 @admin_only
 def api_stream_action():
-    actions_on_objects(request.data, StreamRepository.get_by_id)
+    actions_on_objects(request.data, StreamRepository.get)
     return ''
 
 

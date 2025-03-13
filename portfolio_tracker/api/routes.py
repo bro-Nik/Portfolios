@@ -39,9 +39,6 @@ def all_currencies():
     market = 'currency'
     result = []
 
-    # currencies = db.session.execute(
-    #     db.select(Ticker).filter_by(market=market)).scalars()
-
     # ToDo
     ids = ['cu-usd', 'cu-rub', 'cu-eur', 'cu-jpy']
     currencies = TickerRepository.get_with_ids(ids)

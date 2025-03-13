@@ -52,7 +52,7 @@ class WalletService:
         if not self.get_asset(ticker_id):
             ticker = TickerRepository.get(ticker_id)
             if ticker:
-                asset = WalletAssetRepository.create()
+                asset = WalletAsset()
                 asset.ticker = ticker
                 asset.ticker_id = ticker.id
 
