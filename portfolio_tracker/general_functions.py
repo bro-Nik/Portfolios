@@ -2,7 +2,7 @@ import json
 import pickle
 import time
 from datetime import datetime, timedelta
-from typing import Any, Callable, Iterable, Literal, TypeAlias
+from typing import Any, Callable, Dict, Iterable, List, Literal, TypeAlias
 
 from babel.dates import format_date
 from flask import current_app, flash
@@ -81,7 +81,7 @@ def when_updated(update_date: datetime | str, default: str = '') -> str:
     return result
 
 
-def _json_to_dict(data_str: bytes):
+def _json_to_dict(data_str: bytes) -> Dict[str, Any]:
     try:
         data = json.loads(data_str)
         return data if isinstance(data, dict) else {}
@@ -89,20 +89,20 @@ def _json_to_dict(data_str: bytes):
         return {}
 
 
-def actions_on_objects(data_str: bytes, function: Callable) -> None:
-
-    # ToDo Пересмотреть, чтобы была одна выборка из базы по списку id
+def actions_on_objects(data_str: bytes,
+                       get_by_id: Callable[[List[int]], List[Any]]) -> None:
     data = _json_to_dict(data_str)
-
     ids = data.get('ids', [])
     action = data.get('action', '')
-    if ids and action:
+
+    if ids and action and get_by_id:
+        # items = get_by_id(ids)
+        # for item in items:
         for item_id in ids:
-            item = function(item_id)
-            if item and hasattr(item, 'service'):
-                item = item.service
-            if item and hasattr(item, action):
-                getattr(item, action)()
+            item = get_by_id(item_id)
+            method = getattr(item.service, action, None)
+            if callable(method):
+                method()
 
         db.session.commit()
 
