@@ -67,6 +67,7 @@ jobs:
 
       - name: Add SSH host to known hosts
         run: |
+          echo "${{ secrets.SSH_HOST }}"
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy to server
