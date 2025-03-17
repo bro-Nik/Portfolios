@@ -61,9 +61,9 @@ jobs:
         run: |
           nslookup ${{ secrets.SSH_HOST }}
 
-      - name: Ping SSH host
-        run: |
-          ping -c 4 ${{ secrets.SSH_HOST }}
+      # - name: Ping SSH host
+      #   run: |
+      #     ping -c 4 ${{ secrets.SSH_HOST }}
 
       - name: Add SSH host to known hosts
         run: |
