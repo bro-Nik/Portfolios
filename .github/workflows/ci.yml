@@ -57,6 +57,14 @@ jobs:
           eval "$(ssh-agent -s)"
           echo "${{ secrets.SSH_KEY_PASSPHRASE }}" | ssh-add ~/.ssh/id_rsa
 
+      - name: Resolve SSH host
+        run: |
+          nslookup ${{ secrets.SSH_HOST }}
+
+      - name: Ping SSH host
+        run: |
+          ping -c 4 ${{ secrets.SSH_HOST }}
+
       - name: Add SSH host to known hosts
         run: |
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
