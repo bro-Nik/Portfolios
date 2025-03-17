@@ -64,6 +64,14 @@ jobs:
       # - name: Ping SSH host
       #   run: |
       #     ping -c 4 ${{ secrets.SSH_HOST }}
+      #
+      #
+      - name: Print SSH host keys
+        run: |
+          echo "Trying to get SSH host keys for ${{ secrets.SSH_HOST }}..."
+          KEYS=$(ssh-keyscan -H ${{ secrets.SSH_HOST }} 2>&1)
+          echo "Command output:"
+          echo "$KEYS"
 
       - name: Add SSH host to known hosts
         run: | 
