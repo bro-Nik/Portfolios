@@ -67,24 +67,25 @@ jobs:
       #
       #
 
-      - name: Write SSH keys
-        run: |
-          install -m 600 -D /dev/null ~/.ssh/id_rsa
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          host='allmyportfolios.com'
-          hosts="$(dig +short "$host" | grep -v '\.$' | sed -z 's|\n|,|g')$host"
-          ssh-keyscan -H "$hosts" > ~/.ssh/known_hosts
+      # - name: Write SSH keys
+      #   run: |
+      #     install -m 600 -D /dev/null ~/.ssh/id_rsa
+      #     echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+      #     host='allmyportfolios.com'
+      #     hosts="$(dig +short "$host" | grep -v '\.$' | sed -z 's|\n|,|g')$host"
+      #     ssh-keyscan -H "$hosts" > ~/.ssh/known_hosts
 
-      - name: Print SSH host keys
-        run: |
-          echo "Trying to get SSH host keys for ${{ secrets.SSH_HOST }}..."
-          KEYS=$(ssh-keyscan -H -t ed25519 -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} 2>&1)
-          echo "Command output:"
-          echo "$KEYS"
+      # - name: Print SSH host keys
+      #   run: |
+      #     echo "Trying to get SSH host keys for ${{ secrets.SSH_HOST }}..."
+      #     KEYS=$(ssh-keyscan -H -t ed25519 -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} 2>&1)
+      #     echo "Command output:"
+      #     echo "$KEYS"
 
       - name: Add SSH host to known hosts
         run: | 
-          ssh-keyscan -H -t ed25519 -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          # ssh-keyscan -H -t ed25519 -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           # ssh-keyscan -t ed25519 allmyportfolios.com >> ~/.ssh/known_hosts
           # ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
