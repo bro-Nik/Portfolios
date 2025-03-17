@@ -7,7 +7,7 @@ echo "Port checking..."
 nmap -p $SSH_PORT $SSH_HOST
 
 echo "Connecting to SSH..."
-if ! ssh -tt -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
+if ! ssh -tt -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
   cd /home/nik/portfolios
   git pull
   python -m pip install --upgrade pip
