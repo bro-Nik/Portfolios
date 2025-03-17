@@ -69,7 +69,7 @@ jobs:
       - name: Print SSH host keys
         run: |
           echo "Trying to get SSH host keys for ${{ secrets.SSH_HOST }}..."
-          KEYS=$(ssh-keyscan -H ${{ secrets.SSH_HOST }} 2>&1)
+          KEYS=$(ssh-keyscan -H -t ed25519 -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} 2>&1)
           echo "Command output:"
           echo "$KEYS"
 
