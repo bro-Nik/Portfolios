@@ -20,7 +20,7 @@ class Config:
     ALLOWED_EXTENSIONS = os.environ.get('ALLOWED_EXTENSIONS')
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 1024))
 
-    BABEL_TRANSLATION_DIRECTORIES = os.environ.get('BABEL_TRANSLATION_DIRECTORIES')
+    BABEL_TRANSLATION_DIRECTORIES = os.path.join('portfolio_tracker', 'translations')
     BABEL_DEFAULT_LOCALE = 'ru'
     BABEL_SUPPORTED_LOCALES = ['en', 'ru']
 
