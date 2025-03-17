@@ -4,7 +4,7 @@ echo "Knocking on ports..."
 for x in $SSH_PORTS; do sudo nmap -Pn --max-retries 0 -p $x $SSH_HOST; done
 
 echo "Connecting to SSH..."
-ssh -tt -o StrictHostKeyChecking=no -i $SSH_PRIVATE_KEY $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
+if ! ssh -tt -o StrictHostKeyChecking=no -i $SSH_PRIVATE_KEY $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
   cd /home/nik/portfolios
   git pull
   python -m pip install --upgrade pip
@@ -13,5 +13,9 @@ ssh -tt -o StrictHostKeyChecking=no -i $SSH_PRIVATE_KEY $SSH_USERNAME@$SSH_HOST 
   sudo systemctl restart celery
   sudo systemctl restart nginx
 EOF
+then
+  echo "SSH connection failed!"
+  exit 1
+fi
 
 echo "Deployment completed!"
