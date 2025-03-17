@@ -61,27 +61,6 @@ jobs:
         run: |
           nslookup ${{ secrets.SSH_HOST }}
 
-      # - name: Ping SSH host
-      #   run: |
-      #     ping -c 4 ${{ secrets.SSH_HOST }}
-      #
-      #
-
-      # - name: Write SSH keys
-      #   run: |
-      #     install -m 600 -D /dev/null ~/.ssh/id_rsa
-      #     echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-      #     host='allmyportfolios.com'
-      #     hosts="$(dig +short "$host" | grep -v '\.$' | sed -z 's|\n|,|g')$host"
-      #     ssh-keyscan -H "$hosts" > ~/.ssh/known_hosts
-
-      # - name: Print SSH host keys
-      #   run: |
-      #     echo "Trying to get SSH host keys for ${{ secrets.SSH_HOST }}..."
-      #     KEYS=$(ssh-keyscan -H -t ed25519 -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} 2>&1)
-      #     echo "Command output:"
-      #     echo "$KEYS"
-
       - name: Add SSH host to known hosts
         run: | 
           echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
