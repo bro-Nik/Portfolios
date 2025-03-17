@@ -3,6 +3,9 @@
 echo "Knocking on ports..."
 for x in $SSH_PORTS; do sudo nmap -Pn --max-retries 0 -p $x $SSH_HOST; done
 
+echo "Port checking..."
+nmap -p $SSH_PORT $SSH_HOST
+
 echo "Connecting to SSH..."
 if ! ssh -tt -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
   cd /home/nik/portfolios
