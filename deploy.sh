@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Knocking on ports..."
-for x in $SSH_PORTS; do nmap -Pn --max-retries 0 -p $x $SSH_HOST; done
+for x in $SSH_PORTS; do sudo nmap -Pn --max-retries 0 -p $x $SSH_HOST; done
 
 echo "Connecting to SSH..."
 ssh -tt -o StrictHostKeyChecking=no -i $SSH_PRIVATE_KEY $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
