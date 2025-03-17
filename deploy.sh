@@ -4,10 +4,13 @@ echo "Knocking on ports..."
 for x in $SSH_PORTS; do sudo nmap -Pn --max-retries 0 -p $x $SSH_HOST; done
 
 echo "Port checking..."
-nmap -p $SSH_PORT $SSH_HOST
+if ! nmap -p $SSH_PORT $SSH_HOST | grep -q "open"; then
+  echo "Port SSH is not open!"
+  exit 1
+fi
 
 echo "Connecting to SSH..."
-if ! ssh -tt -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
+if ! ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
   cd /home/nik/portfolios
   git pull
   python -m pip install --upgrade pip
