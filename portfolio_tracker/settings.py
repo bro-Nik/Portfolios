@@ -21,7 +21,8 @@ class Config:
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 1024))
 
     BABEL_TRANSLATION_DIRECTORIES = os.environ.get('BABEL_TRANSLATION_DIRECTORIES')
-    BABEL_DEFAULT_LOCALE = 'en'
+    BABEL_DEFAULT_LOCALE = 'ru'
+    BABEL_SUPPORTED_LOCALES = ['en', 'ru']
 
     # Prefix
     CRYPTO_PREFIX = os.environ.get('CRYPTO_PREFIX', '')

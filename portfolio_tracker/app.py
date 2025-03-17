@@ -41,8 +41,7 @@ def create_app(config_class=Config):
     init_celery(app)
     init_redis(app)
 
-    babel.init_app(app, default_locale='ru',
-                   locale_selector=get_locale, timezone_selector=get_timezone)
+    babel.init_app(app, locale_selector=get_locale, timezone_selector=get_timezone)
 
     register_blueprints(app)
 
