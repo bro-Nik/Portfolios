@@ -12,6 +12,9 @@ if ! nmap -p $SSH_PORT $SSH_HOST | grep -q "open"; then
 fi
 
 echo "Connecting to SSH..."
+eval "$(ssh-agent -s)"
+echo "$SSH_KEY_PASSPHRASE" | ssh-add ~/.ssh/id_ed25519
+
 if ! ssh -v -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
   cd /home/nik/portfolios
   git pull

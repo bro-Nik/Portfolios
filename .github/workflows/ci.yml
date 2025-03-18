@@ -54,8 +54,8 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
-          eval "$(ssh-agent -s)"
-          echo "${{ secrets.SSH_KEY_PASSPHRASE }}" | ssh-add ~/.ssh/id_ed25519
+          # eval "$(ssh-agent -s)"
+          # echo "${{ secrets.SSH_KEY_PASSPHRASE }}" | ssh-add ~/.ssh/id_ed25519
 
       - name: Resolve SSH host
         run: |
