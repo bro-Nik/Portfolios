@@ -15,14 +15,14 @@ echo "Connecting to SSH..."
 eval "$(ssh-agent -s)"
 echo "$SSH_KEY_PASSPHRASE" | ssh-add ~/.ssh/id_ed25519
 
-if ! ssh -v -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
+if ! ssh -tt -v -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
   cd /home/nik/portfolios
   git pull
-  python -m pip install --upgrade pip
+  python3 -m pip install --upgrade pip
   pip install -r requirements.txt
-  sudo systemctl restart portfolios
-  sudo systemctl restart celery
-  sudo systemctl restart nginx
+  echo "$SUDO_PASSWORD" | sudo -S systemctl restart portfolios
+  echo "$SUDO_PASSWORD" | sudo -S systemctl restart celery
+  echo "$SUDO_PASSWORD" | sudo -S systemctl restart nginx
 EOF
 then
   echo "SSH connection failed!"
