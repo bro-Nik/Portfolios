@@ -1,7 +1,9 @@
 #!/bin/bash
 
 echo "Knocking on ports..."
-for x in $SSH_PORTS; do sudo nmap -Pn --max-retries 0 -p $x $SSH_HOST; done
+for x in $SSH_PORTS; do
+  sudo nmap -Pn --max-retries 0 -p $x $SSH_HOST;
+done
 
 echo "Port checking..."
 if ! nmap -p $SSH_PORT $SSH_HOST | grep -q "open"; then
@@ -10,7 +12,10 @@ if ! nmap -p $SSH_PORT $SSH_HOST | grep -q "open"; then
 fi
 
 echo "Connecting to SSH..."
-if ! echo "$SSH_KEY_PASSPHRASE" | ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
+eval "$(ssh-agent -s)"
+echo "$SSH_KEY_PASSPHRASE" | ssh-add ~/.ssh/id_ed25519
+
+if ! ssh -v -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST -p $SSH_PORT << EOF
   cd /home/nik/portfolios
   git pull
   python -m pip install --upgrade pip
