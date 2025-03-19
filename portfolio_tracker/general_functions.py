@@ -96,8 +96,6 @@ def actions_on_objects(data_str: bytes,
     action = data.get('action', '')
 
     if ids and action and get_by_id:
-        # items = get_by_id(ids)
-        # for item in items:
         for item_id in ids:
             item = get_by_id(item_id)
             method = getattr(item.service, action, None)
