@@ -1,3 +1,5 @@
+> 🚨 **This repository is an old version (v1) of the project**  
+> 🔥 **Check out the new version → [Portfolio Platform](https://github.com/bro-Nik/portfolio-platform)**
 # Portfolios. Track your assets in one place
 
 **Portfolios** helps you not to get confused in investments and keep track of many assets in one personal account.
